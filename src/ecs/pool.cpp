@@ -1,0 +1,19 @@
+#include "ecs/pool.hpp"
+
+#include "ecs/gComponent.hpp"
+
+std::vector<Field> Pool::getFields() const {
+    return m_fieldMap;
+}
+
+Component *Pool::CreatComponent(std::size_t size, Entity *entity) {
+    auto component = reinterpret_cast<Component *>(std::malloc(size));
+    if (!component) {
+        return nullptr;
+    }
+    component->entity = entity;
+    return component;
+}
+
+Pool::Pool() : update(nullptr) {}
+
