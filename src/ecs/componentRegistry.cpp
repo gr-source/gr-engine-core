@@ -25,3 +25,9 @@ void ComponentRegistry::Clean() {
     instance.m_pool.clear();
 
 }
+
+
+
+
+
+

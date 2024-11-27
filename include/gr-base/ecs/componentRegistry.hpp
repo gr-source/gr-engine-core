@@ -53,8 +53,14 @@ inline bool ComponentRegistry::RegisterComponent() {
     if (!added) {
         throw std::runtime_error("Component: " + it->first + " replaced.");
     }
-
+    ptr->init = reinterpret_cast<void (*) (Component *)>((void *) &T::Init);
+    ptr->start = reinterpret_cast<void (*) (Component *)>((void *) &T::Start);
     ptr->update = reinterpret_cast<void (*) (Component *)>((void *) &T::Update);
+    ptr->enable = reinterpret_cast<void (*) (Component *)>((void *) &T::Enable);
+    ptr->disable = reinterpret_cast<void (*) (Component *)>((void *) &T::Disable);
+    ptr->serialize = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::Serialize);
+    ptr->deserialize = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::Deserialize);
+    ptr->destroy = reinterpret_cast<void (*) (Component *)>((void *) &T::Destroy);
     
     return true;
 }

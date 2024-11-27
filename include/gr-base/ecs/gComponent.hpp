@@ -25,7 +25,7 @@ public:
 
     virtual bool Deserialize(Stream *streaming) { return false; }
 
-    virtual ~Component() {}
+    virtual void Destroy() {}
 
     GameObject *getGameObject() const;
     

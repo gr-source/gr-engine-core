@@ -15,5 +15,5 @@ Component *Pool::CreatComponent(std::size_t size, Entity *entity) {
     return component;
 }
 
-Pool::Pool() : update(nullptr) {}
+Pool::Pool() : init(nullptr), start(nullptr), update(nullptr), enable(nullptr), disable(nullptr), serialize(nullptr), deserialize(nullptr), destroy(nullptr) {}
 

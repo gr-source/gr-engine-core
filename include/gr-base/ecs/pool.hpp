@@ -10,6 +10,8 @@ enum class FuncType {
     DESTROY,
 };
 
+class Stream;
+
 class Pool {
 public:
     static Component *CreatComponent(std::size_t size, Entity *entity);
@@ -27,7 +29,21 @@ public:
 
     std::vector<Field> getFields() const;
 
+    void (*init)(Component *component);
+
+    void (*start)(Component *component);
+
     void (*update)(Component *component);
+
+    void (*enable)(Component *component);
+
+    void (*disable)(Component *component);
+
+    bool (*serialize)(Component *component, Stream *streaming);
+
+    bool (*deserialize)(Component *component, Stream *streaming);
+
+    void (*destroy)(Component *component);
     
 private:
     std::unordered_map<std::string, grm::size> m_fieldID;
