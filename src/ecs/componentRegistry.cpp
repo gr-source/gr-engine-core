@@ -13,7 +13,7 @@ Pool *ComponentRegistry::Find(const std::string &name) {
     return &(*it->second);
 }
 
-std::unordered_map<std::string, Pool *> ComponentRegistry::GetPool() {
+std::unordered_map<std::string, Pool *> ComponentRegistry::GetPoolList() {
     return getInstance().m_poolMap;
 }
 

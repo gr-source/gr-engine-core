@@ -1,6 +1,6 @@
 #include "ecs/pool.hpp"
 
-#include "ecs/gComponent.hpp"
+#include "ecs/component.hpp"
 
 std::vector<Field> Pool::getFields() const {
     return m_fieldMap;

@@ -8,22 +8,28 @@ class __attribute__((visibility("default"))) ComponentRegistry {
 public:
     static ComponentRegistry &getInstance();
 
+    static std::unordered_map<std::string, Pool *> GetPoolList();
+
     static Pool *Find(const std::string &name);
 
-    static std::unordered_map<std::string, Pool *> GetPool();
+    template <typename T>
+    static bool Registry();
+
+    template <typename T>
+    static ComponentPool<T> *GetPool();
 
     static void Clean();
-
-    template <typename T>
-    bool RegisterComponent();
-
-    template <typename T>
-    ComponentPool<T> *GetComponentPool();
 
 private:
     std::unordered_map<std::string, Pool *> m_poolMap;
 
     std::vector<std::unique_ptr<Pool>> m_pool;
+
+    template <typename T>
+    bool registry();
+
+    template <typename T>
+    ComponentPool<T> *getPool();
 };
 
 static std::string nRemoveNumber(const std::string &text) {
@@ -37,10 +43,20 @@ static std::string nRemoveNumber(const std::string &text) {
     return result;
 }
 
+template <typename T>
+inline bool ComponentRegistry::Registry() {
+    return getInstance().registry<T>();
+}
+
+template <typename T>
+inline ComponentPool<T> *ComponentRegistry::GetPool() {
+    return getInstance().getPool<T>();
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpmf-conversions"
 template <typename T>
-inline bool ComponentRegistry::RegisterComponent() {
+inline bool ComponentRegistry::registry() {
     auto name = nRemoveNumber(typeid(T).name());
 
     auto it = m_poolMap.find(name);
@@ -51,7 +67,8 @@ inline bool ComponentRegistry::RegisterComponent() {
 
     auto &&[iterator, added] = m_poolMap.emplace(name, &(*ptr));
     if (!added) {
-        throw std::runtime_error("Component: " + it->first + " replaced.");
+        Error::SetError("Component: " + it->first + " replaced.");
+        return false;
     }
     ptr->init = reinterpret_cast<void (*) (Component *)>((void *) &T::Init);
     ptr->start = reinterpret_cast<void (*) (Component *)>((void *) &T::Start);
@@ -66,19 +83,22 @@ inline bool ComponentRegistry::RegisterComponent() {
 }
 
 template <typename T>
-inline ComponentPool<T> *ComponentRegistry::GetComponentPool() {
+inline ComponentPool<T> *ComponentRegistry::getPool() {
     auto it = m_poolMap.find(nRemoveNumber(typeid(T).name()));
     if (it == m_poolMap.end()) {
-        throw std::runtime_error("Component do not added: " + std::string(nRemoveNumber(typeid(T).name())));
+        Error::SetError("Component do not added: " + std::string(nRemoveNumber(typeid(T).name())));
+        return nullptr;
     }
     auto ptr = &(*it->second);
     if (!ptr) {
-        throw std::runtime_error("Ivalid component pointer: " + std::string(nRemoveNumber(typeid(T).name())));
+        Error::SetError("Ivalid component pointer: " + std::string(nRemoveNumber(typeid(T).name())));
+        return nullptr;
     }
 
     auto typedPool = static_cast<ComponentPool<T> *>(ptr);
     if (!typedPool) {
-        throw std::runtime_error("Error in type cast.");
+        Error::SetError("Error in type cast.");
+        return nullptr;
     }
     return typedPool;
 }

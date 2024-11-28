@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ecs/gComponent.hpp"
+#include "ecs/component.hpp"
 
 #include <unordered_map>
 #include <vector>

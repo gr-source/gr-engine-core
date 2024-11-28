@@ -25,7 +25,7 @@ public:
     virtual Component *Instance(Component *component) = 0;
 
     template <typename ...Args>
-    void RegisterField(const std::string &name, Args &&...args);
+    bool RegisterField(const std::string &name, Args &&...args);
 
     std::vector<Field> getFields() const;
 
@@ -52,15 +52,16 @@ private:
 };
 
 template <typename... Args>
-inline void Pool::RegisterField(const std::string &name, Args &&...args) {
+inline bool Pool::RegisterField(const std::string &name, Args &&...args) {
     auto it = m_fieldID.find(name);
     if (it != m_fieldID.end()) {
-        return;
+        return true;
     }
 
     auto id = m_fieldMap.size();
     m_fieldMap.emplace_back(name, std::forward<Args>(args)...);
     m_fieldID.emplace(name, id);
+    return true;
 }
 
 
