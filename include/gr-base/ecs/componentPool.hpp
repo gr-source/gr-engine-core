@@ -7,10 +7,15 @@
 template <typename T>
 class ComponentPool : public Pool {
 public:
+    ComponentPool();
+
     Component *CreateInstance(const Component *component, Entity *entity) override;
 
     Component *Instance(Component *component) override;
 };
+
+template <typename T>
+inline ComponentPool<T>::ComponentPool() : Pool(sizeof(T), typeid(T).name()) {}
 
 template <typename T>
 inline Component *ComponentPool<T>::CreateInstance(const Component *component, Entity *entity) {

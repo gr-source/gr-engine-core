@@ -16,7 +16,7 @@ class Pool {
 public:
     static Component *CreatComponent(std::size_t size, Entity *entity);
 
-    Pool();
+    Pool(const std::size_t &size, const std::string &name);
 
     virtual ~Pool() {}
 
@@ -44,11 +44,19 @@ public:
     bool (*deserialize)(Component *component, Stream *streaming);
 
     void (*destroy)(Component *component);
-    
+
+    std::size_t getSize() const;
+
+    std::string getName() const;
+
 private:
     std::unordered_map<std::string, grm::size> m_fieldID;
 
     std::vector<Field> m_fieldMap;
+
+    std::size_t m_size;
+
+    std::string m_name;
 };
 
 template <typename... Args>

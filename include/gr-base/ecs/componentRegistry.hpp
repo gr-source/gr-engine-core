@@ -20,10 +20,16 @@ public:
 
     static void Clean();
 
+    static std::vector<std::string> GetRequestScriptUpdate();
+
 private:
+    std::unordered_map<std::string, std::size_t> m_sizeKlass;
+
     std::unordered_map<std::string, Pool *> m_poolMap;
 
     std::vector<std::unique_ptr<Pool>> m_pool;
+
+    std::vector<std::string> m_script;
 
     template <typename T>
     bool registry();
@@ -59,17 +65,29 @@ template <typename T>
 inline bool ComponentRegistry::registry() {
     auto name = nRemoveNumber(typeid(T).name());
 
-    auto it = m_poolMap.find(name);
-    if (it != m_poolMap.end()) {
+    if (m_poolMap.find(name) != m_poolMap.end()) {
         return true;
     }
     auto &ptr = m_pool.emplace_back(std::make_unique<ComponentPool<T>>());
 
     auto &&[iterator, added] = m_poolMap.emplace(name, &(*ptr));
     if (!added) {
-        Error::SetError("Component: " + it->first + " replaced.");
+        Error::SetError("Component: " + name + " replaced.");
         return false;
     }
+
+    if (m_sizeKlass.find(name) == m_sizeKlass.end()) {
+        m_sizeKlass[name] = ptr->getSize();
+    }
+
+    if (m_sizeKlass[name] != ptr->getSize()) {
+        std::cout << "Warning: Script Resized: " << name << ", last " <<  m_sizeKlass[name] << "->" << ptr->getSize() << std::endl;
+
+        m_script.push_back(name);
+        
+        m_sizeKlass[name] = ptr->getSize();
+    }
+    
     ptr->init = reinterpret_cast<void (*) (Component *)>((void *) &T::Init);
     ptr->start = reinterpret_cast<void (*) (Component *)>((void *) &T::Start);
     ptr->update = reinterpret_cast<void (*) (Component *)>((void *) &T::Update);

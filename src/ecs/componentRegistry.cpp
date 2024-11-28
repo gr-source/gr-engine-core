@@ -19,15 +19,21 @@ std::unordered_map<std::string, Pool *> ComponentRegistry::GetPoolList() {
 
 void ComponentRegistry::Clean() {
     auto &instance = getInstance();
-    std::cout << "Clean: " << instance.m_pool.size() << std::endl;
+
+    for (auto [name, pool] : instance.m_poolMap) {
+        instance.m_sizeKlass[name] = pool->getSize();
+    }
     
     instance.m_poolMap.clear();
-    instance.m_pool.clear();
 
+    instance.m_pool.clear();
 }
 
+std::vector<std::string> ComponentRegistry::GetRequestScriptUpdate() {
+    auto &instance = getInstance();
 
+    auto temp = instance.m_script;
+    instance.m_script.clear();
 
-
-
-
+    return temp;
+}
