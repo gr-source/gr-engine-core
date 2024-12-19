@@ -24,7 +24,7 @@ inline Component *ComponentPool<T>::CreateInstance(const Component *component, E
         return nullptr;
     }
 
-    ptr = new (ptr) T();
+    ptr = component != nullptr ? new (ptr) T(*static_cast<const T *>(component)) : new (ptr) T();
 
     return ptr;
 }
