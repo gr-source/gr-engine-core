@@ -72,8 +72,7 @@ inline bool ComponentRegistry::registry() {
 
     auto &&[iterator, added] = m_poolMap.emplace(name, &(*ptr));
     if (!added) {
-        Error::SetError("Component: " + name + " replaced.");
-        return false;
+        throw std::runtime_error("Component: " + name + " replaced.");
     }
 
     if (m_sizeKlass.find(name) == m_sizeKlass.end()) {
@@ -104,19 +103,17 @@ template <typename T>
 inline ComponentPool<T> *ComponentRegistry::getPool() {
     auto it = m_poolMap.find(nRemoveNumber(typeid(T).name()));
     if (it == m_poolMap.end()) {
-        Error::SetError("Component do not added: " + std::string(nRemoveNumber(typeid(T).name())));
-        return nullptr;
+        throw std::runtime_error("Component do not added: " + std::string(nRemoveNumber(typeid(T).name())));
     }
+
     auto ptr = &(*it->second);
     if (!ptr) {
-        Error::SetError("Ivalid component pointer: " + std::string(nRemoveNumber(typeid(T).name())));
-        return nullptr;
+        throw std::runtime_error("Ivalid component pointer: " + std::string(nRemoveNumber(typeid(T).name())));
     }
 
     auto typedPool = static_cast<ComponentPool<T> *>(ptr);
     if (!typedPool) {
-        Error::SetError("Error in type cast.");
-        return nullptr;
+        throw std::runtime_error("Error in type cast.");
     }
     return typedPool;
 }

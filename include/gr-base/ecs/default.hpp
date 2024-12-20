@@ -6,8 +6,6 @@
 
 #include <gr-math/gmath.hpp>
 
-#include "core/error.hpp"
-
 class GameObject;
 class Component;
 class Entity;
