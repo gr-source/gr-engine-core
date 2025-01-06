@@ -38,11 +38,11 @@ public:
     int deserialize(Stream *streaming);
 
 private:
+    std::vector<BoneWeight> m_boneWeight;
+
     std::vector<Vertex3D> m_vertices;
 
     std::vector<int> m_indices;
-
-    std::vector<BoneWeight> m_boneWeight;
 
     std::string m_name;
 };
