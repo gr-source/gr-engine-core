@@ -9,10 +9,10 @@ BoneWeight::BoneWeight() {
 
 template <>
 void BoneWeight::insert(int idx, float value) {
-    m_weight[idx] = value;
+    m_weight[idx >= 4 ? 0 : idx] = value;
 }
 
 template <>
 void BoneWeight::insert(int idx, int value) {
-    m_index[idx] = value;
+    m_index[idx >= 4 ? 0 : idx] = value;
 }

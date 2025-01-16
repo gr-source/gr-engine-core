@@ -9,7 +9,7 @@ class GameObject;
 class Entity;
 class Stream;
 
-class __attribute__((visibility("default"))) Component {
+class Component {
 public:
     virtual void Init() {}
 

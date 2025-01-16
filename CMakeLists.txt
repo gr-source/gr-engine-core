@@ -19,14 +19,22 @@ set(geometry
     src/core/geometry/mesh.cpp
 )
 
+set(animation
+    src/core/animation/animation.cpp
+    src/core/animation/keyframe.cpp
+    src/core/animation/bone.cpp
+)
+
 set(file
     src/core/file/stream.cpp
 )
 
 set(core
+    src/core/threadpool.cpp
+    src/core/event.cpp
 )
 
-add_library(${PROJECT_NAME} SHARED ${ecs} ${geometry} ${file} ${core})
+add_library(${PROJECT_NAME} SHARED ${ecs} ${geometry} ${file} ${core} ${animation})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
