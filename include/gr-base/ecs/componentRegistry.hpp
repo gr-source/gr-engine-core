@@ -4,7 +4,7 @@
 
 #include <memory>
 
-class __attribute__((visibility("default"))) ComponentRegistry {
+class ComponentRegistry {
 public:
     static ComponentRegistry &getInstance();
 
@@ -18,9 +18,9 @@ public:
     template <typename T>
     static ComponentPool<T> *GetPool();
 
-    static void Clean();
-
     static std::vector<std::string> GetRequestScriptUpdate();
+
+    void clear();
 
 private:
     std::unordered_map<std::string, std::size_t> m_sizeKlass;
@@ -87,14 +87,14 @@ inline bool ComponentRegistry::registry() {
         m_sizeKlass[name] = ptr->getSize();
     }
     
-    ptr->init = reinterpret_cast<void (*) (Component *)>((void *) &T::Init);
-    ptr->start = reinterpret_cast<void (*) (Component *)>((void *) &T::Start);
-    ptr->update = reinterpret_cast<void (*) (Component *)>((void *) &T::Update);
-    ptr->enable = reinterpret_cast<void (*) (Component *)>((void *) &T::Enable);
-    ptr->disable = reinterpret_cast<void (*) (Component *)>((void *) &T::Disable);
-    ptr->serialize = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::Serialize);
+    ptr->init        = reinterpret_cast<void (*) (Component *)>((void *) &T::Init);
+    ptr->start       = reinterpret_cast<void (*) (Component *)>((void *) &T::Start);
+    ptr->update      = reinterpret_cast<void (*) (Component *)>((void *) &T::Update);
+    ptr->enable      = reinterpret_cast<void (*) (Component *)>((void *) &T::Enable);
+    ptr->disable     = reinterpret_cast<void (*) (Component *)>((void *) &T::Disable);
+    ptr->serialize   = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::Serialize);
     ptr->deserialize = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::Deserialize);
-    ptr->destroy = reinterpret_cast<void (*) (Component *)>((void *) &T::Destroy);
+    ptr->destroy     = reinterpret_cast<void (*) (Component *)>((void *) &T::Destroy);
     
     return true;
 }

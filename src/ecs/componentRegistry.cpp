@@ -17,18 +17,6 @@ std::unordered_map<std::string, Pool *> ComponentRegistry::GetPoolList() {
     return getInstance().m_poolMap;
 }
 
-void ComponentRegistry::Clean() {
-    auto &instance = getInstance();
-
-    for (auto [name, pool] : instance.m_poolMap) {
-        instance.m_sizeKlass[name] = pool->getSize();
-    }
-    
-    instance.m_poolMap.clear();
-
-    instance.m_pool.clear();
-}
-
 std::vector<std::string> ComponentRegistry::GetRequestScriptUpdate() {
     auto &instance = getInstance();
 
@@ -37,3 +25,24 @@ std::vector<std::string> ComponentRegistry::GetRequestScriptUpdate() {
 
     return temp;
 }
+
+void ComponentRegistry::clear() {
+    for (auto [name, pool] : m_poolMap) {
+        m_sizeKlass[name] = pool->getSize();
+    }
+    
+    m_poolMap.clear();
+
+    m_pool.clear();
+}
+
+
+
+
+
+
+
+
+
+
+
