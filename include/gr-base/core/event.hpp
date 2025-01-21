@@ -1,8 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <algorithm>
-#include <string>
 #include <mutex>
 #include <list>
 
@@ -15,7 +13,7 @@ public:
 
     static void AddEvent(std::function<void()> func);
 
-    static void ProcessEvent();
+    static void Update();
 
     static grm::size GetCount();
 

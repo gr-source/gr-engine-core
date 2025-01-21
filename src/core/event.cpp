@@ -9,7 +9,7 @@ void Event::AddEvent(std::function<void()> func) {
     m_events.push_back(func);
 }
 
-void Event::ProcessEvent() {
+void Event::Update() {
     std::unique_lock<std::mutex> lock(m_mutex);
     while (!m_events.empty()) {
         auto event = m_events.front();
@@ -23,11 +23,7 @@ void Event::ProcessEvent() {
 }
 
 grm::size Event::GetCount() {
-    grm::size count = 0;
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        count = m_events.size();
-    }
-    return count;
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_events.size();
 }
 
