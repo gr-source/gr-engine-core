@@ -1,11 +1,22 @@
 #include "ecs/entity.hpp"
+
+#include "script/meshRender.hpp"
+
+#include "core/console.hpp"
+#include "core/scene.hpp"
+
 #include "ecs/componentRegistry.hpp"
+#include "ecs/gameObject.hpp"
+
+#include "script/transform.hpp"
 
 #include <list>
 
 Entity::Entity(GameObject *go, EntityID id) : m_gameObject(go), m_entityID(id) { }
 
 Entity::~Entity() {
+    destroy();
+    
     for (auto c : m_components) {
         std::free(c);
     }
@@ -114,4 +125,56 @@ void Entity::destroy() {
             pool->destroy(component);
         }
     }
+}
+
+void Entity::copy(const Entity *entity) {
+    for (const auto& [name, component] : entity->m_componentPtr) {
+        if (hasComponent(name)) {
+            continue;
+        }
+
+        addComponent(name, &(*component));
+    }
+
+    auto go = entity->getGameObject();
+
+    auto targetTransform = go->getTransform();
+    auto localTransform = m_gameObject->getTransform();
+
+    if (targetTransform) {
+        localTransform->setLocalScale(targetTransform->getLocalScale());
+        localTransform->setLocalRotation(targetTransform->getLocalRotation());
+        localTransform->setLocalPosition(targetTransform->getLocalPosition());
+
+        if (!targetTransform->hasParent()) {
+            Scene::GetCurrentScene()->insert(getGameObject());
+        } else {
+            localTransform->setParent(targetTransform->getParent());
+        }
+
+        for (const auto& child : targetTransform->getChildren()) {
+
+            auto childGameObject = child->getGameObject();
+            auto clonedObject = GameObject::Instantiate(childGameObject);
+            if (!clonedObject) {
+                Console::LogError("[ Entity ] Failed to create child object %s->%s.", go->getName().c_str(), childGameObject->getName().c_str());
+                continue;
+            }
+
+            auto clonedTransform = clonedObject->getTransform();
+            if (clonedTransform) {
+                clonedTransform->setParent(localTransform);
+            }
+        }
+    } else {
+        Console::LogError("[ Entity ] Target game object does not have a transform.");
+    }
+
+    // /*
+    init();
+
+    if (hasComponent<MeshRender>()) {
+        getComponent<MeshRender>()->build();
+    }
+    // */
 }

@@ -33,7 +33,17 @@ GameObject *GameObject::Create(const std::string &name, const std::string &tag) 
 }
 
 GameObject *GameObject::Instantiate(GameObject *go) {
-    return nullptr;
+    auto gameObject = GameObject::Create(go->name, go->tag);
+    if (!gameObject) {
+        return nullptr;
+    }
+    
+    gameObject->enable = go->enable;
+    gameObject->active = go->active;
+
+    gameObject->getEntity()->copy(go->getEntity());
+
+    return gameObject;
 }
 
 void GameObject::Rename(GameObject *go, std::string name) {

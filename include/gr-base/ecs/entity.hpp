@@ -48,6 +48,8 @@ public:
     void update();
 
     void destroy();
+
+    void copy(const Entity *entity);
     
 private:
     std::unordered_map<std::string, Component *> m_componentPtr;
