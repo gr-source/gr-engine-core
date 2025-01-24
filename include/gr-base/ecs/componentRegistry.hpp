@@ -4,16 +4,21 @@
 
 #include <memory>
 
+struct PoolData {
+    Pool *pointer;
+    bool system;
+};
+
 class ComponentRegistry {
 public:
     static ComponentRegistry &getInstance();
 
-    static std::unordered_map<std::string, Pool *> GetPoolList();
+    static std::unordered_map<std::string, PoolData> GetPoolList();
 
     static Pool *Find(const std::string &name);
 
     template <typename T>
-    static bool Registry();
+    static bool Registry(bool system = false);
 
     template <typename T>
     static ComponentPool<T> *GetPool();
@@ -22,17 +27,18 @@ public:
 
     void clear();
 
+    ComponentRegistry();
+    ~ComponentRegistry();
+
 private:
     std::unordered_map<std::string, std::size_t> m_sizeKlass;
 
-    std::unordered_map<std::string, Pool *> m_poolMap;
-
-    std::vector<std::unique_ptr<Pool>> m_pool;
+    std::unordered_map<std::string, PoolData> m_poolMap;
 
     std::vector<std::string> m_script;
 
     template <typename T>
-    bool registry();
+    bool registry(bool system);
 
     template <typename T>
     ComponentPool<T> *getPool();
@@ -50,8 +56,8 @@ static std::string nRemoveNumber(const std::string &text) {
 }
 
 template <typename T>
-inline bool ComponentRegistry::Registry() {
-    return getInstance().registry<T>();
+inline bool ComponentRegistry::Registry(bool system) {
+    return getInstance().registry<T>(system);
 }
 
 template <typename T>
@@ -62,15 +68,17 @@ inline ComponentPool<T> *ComponentRegistry::GetPool() {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpmf-conversions"
 template <typename T>
-inline bool ComponentRegistry::registry() {
+inline bool ComponentRegistry::registry(bool system) {
     auto name = nRemoveNumber(typeid(T).name());
 
     if (m_poolMap.find(name) != m_poolMap.end()) {
         return true;
     }
-    auto &ptr = m_pool.emplace_back(std::make_unique<ComponentPool<T>>());
+    // auto &ptr = m_pool.emplace_back(std::make_unique<ComponentPool<T>>());
 
-    auto &&[iterator, added] = m_poolMap.emplace(name, &(*ptr));
+    auto ptr = new ComponentPool<T>();
+
+    auto &&[iterator, added] = m_poolMap.emplace(name, PoolData{ptr, system});
     if (!added) {
         throw std::runtime_error("Component: " + name + " replaced.");
     }
@@ -106,7 +114,7 @@ inline ComponentPool<T> *ComponentRegistry::getPool() {
         throw std::runtime_error("Component do not added: " + std::string(nRemoveNumber(typeid(T).name())));
     }
 
-    auto ptr = &(*it->second);
+    auto ptr = &(*it->second.pointer);
     if (!ptr) {
         throw std::runtime_error("Ivalid component pointer: " + std::string(nRemoveNumber(typeid(T).name())));
     }

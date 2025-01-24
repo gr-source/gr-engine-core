@@ -1,5 +1,5 @@
 #include "ecs/component.hpp"
-#include "ecs/gEntity.hpp"
+#include "ecs/entity.hpp"
 
 GameObject *Component::getGameObject() const {
     return entity->getGameObject();

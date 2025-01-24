@@ -2,7 +2,7 @@
 
 #include "pool.hpp"
 
-#include "ecs/component.hpp"
+#include "ecs/default.hpp"
 
 template <typename T>
 class ComponentPool : public Pool {

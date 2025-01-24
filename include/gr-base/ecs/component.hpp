@@ -48,7 +48,7 @@ public:
     inline GameObject *GetGameObject() { \
         return entity->getGameObject(); \
     } \
-
+ 
 #ifdef REGISTRY
 #include "ecs/componentRegistry.hpp"
 
@@ -61,4 +61,14 @@ public:
         ComponentRegistry::GetPool<cls>() != nullptr ? ComponentRegistry::GetPool<cls>()->RegisterField(#field, FieldType_ ##type, reinterpret_cast<std::size_t>(&reinterpret_cast<cls *>(0)->field)) : false;
         
 #endif
+
+#ifdef INTERNAL_REGISTER_SCRIPT
+#include "ecs/componentRegistry.hpp"
+
+#define REGISTER_COMPONENT(cls) \
+    static bool is_register_##cls = \
+        ComponentRegistry::Registry<cls>(true); \
+
+#endif
+
 

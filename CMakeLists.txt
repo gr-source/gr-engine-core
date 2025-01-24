@@ -6,8 +6,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 set(ecs
     src/ecs/componentRegistry.cpp
+    src/ecs/gameObject.cpp
     src/ecs/component.cpp
-    src/ecs/gEntity.cpp
+    src/ecs/manager.cpp
+    src/ecs/entity.cpp
     src/ecs/field.cpp
     src/ecs/pool.cpp
 )
@@ -30,12 +32,23 @@ set(file
 )
 
 set(core
+    src/core/nameManager.cpp
     src/core/threadpool.cpp
+    src/core/display.cpp
+    src/core/string.cpp
     src/core/event.cpp
 )
 
-add_library(${PROJECT_NAME} SHARED ${ecs} ${geometry} ${file} ${core} ${animation})
+set(script
+    src/script/transform.cpp
+    src/script/camera.cpp
+)
+
+add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${animation})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
 )
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC INTERNAL_REGISTER_SCRIPT)
+

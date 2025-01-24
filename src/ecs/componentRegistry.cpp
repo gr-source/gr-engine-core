@@ -10,10 +10,10 @@ Pool *ComponentRegistry::Find(const std::string &name) {
     if (it == getInstance().m_poolMap.end()) {
         return nullptr;
     }
-    return &(*it->second);
+    return it->second.pointer;
 }
 
-std::unordered_map<std::string, Pool *> ComponentRegistry::GetPoolList() {
+std::unordered_map<std::string, PoolData> ComponentRegistry::GetPoolList() {
     return getInstance().m_poolMap;
 }
 
@@ -28,21 +28,29 @@ std::vector<std::string> ComponentRegistry::GetRequestScriptUpdate() {
 
 void ComponentRegistry::clear() {
     for (auto [name, pool] : m_poolMap) {
-        m_sizeKlass[name] = pool->getSize();
+        m_sizeKlass[name] = pool.pointer->getSize();
     }
-    
-    m_poolMap.clear();
 
-    m_pool.clear();
+    for (auto it = m_poolMap.begin(); it != m_poolMap.end();) {
+        if (!it->second.system) {
+            delete it->second.pointer;
+
+            it = m_poolMap.erase(it);
+            
+            continue;
+        }
+        it++;
+    } 
+    
+    // m_poolMap.clear();
+
+    // m_pool.clear();
 }
 
+ComponentRegistry::ComponentRegistry() { }
 
-
-
-
-
-
-
-
-
-
+ComponentRegistry::~ComponentRegistry() {
+    for (auto [name, data] : m_poolMap) {
+        delete data.pointer;
+    }
+}
