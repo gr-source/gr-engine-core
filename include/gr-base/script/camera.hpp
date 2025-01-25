@@ -24,7 +24,7 @@ public:
 
     void setAspectRatio(float aspect);
 
-    void setEnable();
+    void setActive(bool value);
 
     Vector3 getPosition() const;
 

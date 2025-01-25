@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-std::vector<Camera*> Camera::s_camera;
+std::vector<Camera *> Camera::s_camera;
 
 Camera *Camera::s_current = nullptr;
 
@@ -71,8 +71,14 @@ void Camera::setAspectRatio(float aspect) {
     updateProjection();
 }
 
-void Camera::setEnable() {
-    s_current = this;
+void Camera::setActive(bool value) {
+    if (value) {
+        s_current = this;
+        return;
+    }
+    if (s_current == this) {
+        s_current = nullptr;
+    }
 }
 
 Vector3 Camera::getPosition() const {

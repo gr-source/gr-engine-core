@@ -1,18 +1,11 @@
 #include "core/geometry/batching.hpp"
 
-// #include "renderManager.h"
-
 #include "core/assetsManager.hpp"
-// #include "core/statistics.hpp"
 #include "core/event.hpp"
 
 #include "script/transform.hpp"
 #include "script/animator.hpp"
 #include "script/light.hpp"
-
-// #include "culling/frustum.h"
-
-// #include "scriptManager/scriptManager.hpp"
 
 #include "ecs/gameObject.hpp"
 

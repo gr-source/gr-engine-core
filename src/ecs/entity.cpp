@@ -57,6 +57,14 @@ void Entity::destroy(const std::string &name) {
     if (it == m_componentPtr.end()) {
         return;
     }
+
+    auto pool = ComponentRegistry::Find(name);
+    if (!pool) {
+        return;
+    }
+
+    pool->destroy(it->second);
+    
     m_components.erase(std::remove(m_components.begin(), m_components.end(), it->second), m_components.end());
 
     m_componentPtr.erase(it);
