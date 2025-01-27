@@ -1,10 +1,10 @@
-#include "script/camera.hpp"
+#include "gr-base/script/camera.hpp"
 
-#include "script/transform.hpp"
+#include "gr-base/script/transform.hpp"
 
-#include "core/display.hpp"
+#include "gr-base/core/display.hpp"
 
-#include "ecs/gameObject.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
 #include <algorithm>
 

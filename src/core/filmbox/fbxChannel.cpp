@@ -1,4 +1,4 @@
-#include "core/filmbox/fbxChannel.hpp"
+#include "gr-base/core/filmbox/fbxChannel.hpp"
 
 FbxChannel::FbxChannel(const std::string &name) : m_name(name) {}
 

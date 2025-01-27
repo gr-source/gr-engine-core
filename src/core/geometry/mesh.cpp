@@ -1,6 +1,6 @@
-#include "core/geometry/mesh.hpp"
+#include "gr-base/core/geometry/mesh.hpp"
 
-#include "core/file/stream.hpp"
+#include "gr-base/core/file/stream.hpp"
 
 Mesh::Mesh(const std::string &name) : m_name(name) {}
 

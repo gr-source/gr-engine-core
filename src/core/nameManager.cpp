@@ -1,4 +1,4 @@
-#include "core/nameManager.hpp"
+#include "gr-base/core/nameManager.hpp"
 
 static const char delimiter = '&';
 

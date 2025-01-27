@@ -1,4 +1,4 @@
-#include "core/display.hpp"
+#include "gr-base/core/display.hpp"
 
 Rect Display::displayRect;
 

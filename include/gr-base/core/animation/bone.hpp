@@ -3,7 +3,7 @@
 #include <gr-math/gmath.hpp>
 #include <string>
 
-#include "core/file/default.hpp"
+#include "gr-base/core/file/default.hpp"
 
 // TODO: Remover o nome do bone dessa classe, inutil?
 class Bone {

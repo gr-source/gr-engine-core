@@ -5,7 +5,7 @@
 #include <mutex>
 #include <list>
 
-#include "core/string.hpp"
+#include "gr-base/core/string.hpp"
 
 struct Log {
     enum LogType {

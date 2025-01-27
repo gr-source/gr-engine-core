@@ -1,4 +1,4 @@
-#include "core/filmbox/fbxScene.hpp"
+#include "gr-base/core/filmbox/fbxScene.hpp"
 
 FbxScene::FbxScene(const std::string & name) : m_name(name) {}
 

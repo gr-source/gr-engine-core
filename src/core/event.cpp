@@ -1,4 +1,4 @@
-#include "core/event.hpp"
+#include "gr-base/core/event.hpp"
 
 std::list<std::function<void()>> Event::m_events;
 

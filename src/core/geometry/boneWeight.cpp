@@ -1,4 +1,4 @@
-#include "core/geometry/boneWeight.hpp"
+#include "gr-base/core/geometry/boneWeight.hpp"
 
 BoneWeight::BoneWeight() {
     for (int i=0;i<4;++i) {

@@ -1,8 +1,8 @@
-#include "core/geometry/material.hpp"
+#include "gr-base/core/geometry/material.hpp"
 
-#include "core/file/stream.hpp"
+#include "gr-base/core/file/stream.hpp"
 
-#include "core/assetsManager.hpp"
+#include "gr-base/core/assetsManager.hpp"
 
 Material::Material(const std::string &name, const Color &albedo, float metallic, float roughness, float ao) : m_name(name), m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr) {}
 

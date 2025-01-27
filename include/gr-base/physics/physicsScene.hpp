@@ -7,8 +7,9 @@
 
 #include <gr-math/gmath.hpp>
 
-#include "ecs/default.hpp"
-// #include "../renderer.h"
+#include "gr-base/ecs/default.hpp"
+
+#include "default.hpp"
 
 #define VEC3_TO_BTVEC3(vec) btVector3(vec.x, vec.y, vec.z)
 #define QUAT_TO_BTQUAT(q) btQuaternion(q.x, q.y, q.z, q.w)

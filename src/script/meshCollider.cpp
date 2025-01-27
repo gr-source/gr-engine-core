@@ -1,16 +1,15 @@
-#include "script/meshCollider.hpp"
+#include "gr-base/script/meshCollider.hpp"
 
-#include "script/meshFilter.hpp"
-#include "script/transform.hpp"
+#include "gr-base/script/meshFilter.hpp"
+#include "gr-base/script/transform.hpp"
 
-#include "physics/physicsScene.hpp"
+#include "gr-base/physics/physicsScene.hpp"
 
-#include <core/geometry/mesh.hpp>
+#include "gr-base/core/geometry/mesh.hpp"
 
-#include "core/console.hpp"
+#include "gr-base/core/console.hpp"
 
-#include "ecs/gameObject.hpp"
-#include "ecs/entity.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
 MeshCollider::MeshCollider() : m_triangleMesh(nullptr), m_shape(nullptr) {}
 

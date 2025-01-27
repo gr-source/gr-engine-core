@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/geometry/boundbox.hpp"
-#include "core/geometry/default.hpp"
+#include "gr-base/core/geometry/boundbox.hpp"
+#include "gr-base/core/geometry/default.hpp"
 
-#include "ecs/component.hpp"
+#include "gr-base/ecs/component.hpp"
 
 class MeshFilter : public Component {
 public:

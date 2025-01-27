@@ -1,10 +1,10 @@
 #pragma once
 
+#include "gr-base/physics/default.hpp"
+
+#include "gr-base/ecs/entity.hpp"
+
 #include "default.hpp"
-
-#include "physics/default.hpp"
-
-#include "ecs/entity.hpp"
 
 class Rigidbody : public Component {
     CLASS_FUNCTIONS

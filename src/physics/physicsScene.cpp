@@ -1,4 +1,4 @@
-#include "physics/physicsScene.hpp"
+#include "gr-base/physics/physicsScene.hpp"
 
 Vector3 PhysicsScene::gravity = {0.0f, -9.8f, 0.0f};
 

@@ -1,13 +1,12 @@
 #pragma once
 
+#include "gr-base/script/default.hpp"
+
 #include <gr-render/gRender.h>
 
 #include "default.hpp"
-
 #include "material.hpp"
 #include "boundbox.hpp"
-
-#include "script/default.hpp"
 
 #include <vector>
 #include <memory>

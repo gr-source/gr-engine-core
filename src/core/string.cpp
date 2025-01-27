@@ -1,4 +1,4 @@
-#include "core/string.hpp"
+#include "gr-base/core/string.hpp"
 
 std::string String::RemoveNumber(const std::string &str) {
     std::string result;

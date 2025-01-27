@@ -1,6 +1,6 @@
-#include "ecs/pool.hpp"
+#include "gr-base/ecs/pool.hpp"
 
-#include "ecs/component.hpp"
+#include "gr-base/ecs/component.hpp"
 
 Pool::Pool(const std::size_t &size, const std::string &name) : init(nullptr), start(nullptr), update(nullptr), enable(nullptr), disable(nullptr), serialize(nullptr), deserialize(nullptr), destroy(nullptr), m_size(size), m_name(name) {}
 

@@ -1,19 +1,19 @@
-#include "core/geometry/batching.hpp"
+#include "gr-base/core/geometry/batching.hpp"
 
-#include "core/assetsManager.hpp"
-#include "core/event.hpp"
+#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/event.hpp"
 
-#include "script/transform.hpp"
-#include "script/animator.hpp"
-#include "script/light.hpp"
+#include "gr-base/script/transform.hpp"
+#include "gr-base/script/animator.hpp"
+#include "gr-base/script/light.hpp"
 
-#include "ecs/gameObject.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gTexture.h>
 #include <gr-render/gShader.h>
 
-#include <core/geometry/mesh.hpp>
+#include "gr-base/core/geometry/mesh.hpp"
 
 std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::s_batchedInstances;
 

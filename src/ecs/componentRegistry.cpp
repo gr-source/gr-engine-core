@@ -1,4 +1,4 @@
-#include "ecs/componentRegistry.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
 
 ComponentRegistry &ComponentRegistry::getInstance() {
     static ComponentRegistry m_instance;

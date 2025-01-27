@@ -1,10 +1,10 @@
-#include "script/meshFilter.hpp"
+#include "gr-base/script/meshFilter.hpp"
 
-#include "core/geometry/mesh.hpp"
+#include "gr-base/core/geometry/mesh.hpp"
 
-#include "core/file/stream.hpp"
+#include "gr-base/core/file/stream.hpp"
 
-#include "core/assetsManager.hpp"
+#include "gr-base/core/assetsManager.hpp"
 
 MeshFilter::MeshFilter() : m_sharedMesh(nullptr) {}
 

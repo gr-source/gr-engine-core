@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ecs/component.hpp"
+#include "gr-base/ecs/component.hpp"
 
 #include <unordered_map>
 #include <vector>
@@ -61,7 +61,7 @@ private:
     EntityID m_entityID;
 };
 
-#include "core/string.hpp"
+#include "gr-base/core/string.hpp"
 
 template <typename T>
 inline T *Entity::addComponent() {

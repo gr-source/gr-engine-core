@@ -1,13 +1,13 @@
-#include "script/animator.hpp"
+#include "gr-base/script/animator.hpp"
 
-#include "core/animation/animation.hpp"
-#include "core/animation/bone.hpp"
+#include "gr-base/core/animation/animation.hpp"
+#include "gr-base/core/animation/bone.hpp"
 
 // #include "core/timer.hpp"
 
-#include "script/transform.hpp"
+#include "gr-base/script/transform.hpp"
 
-#include "ecs/gameObject.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
 // #include "renderer.h"
 

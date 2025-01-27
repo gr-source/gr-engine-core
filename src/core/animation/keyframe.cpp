@@ -1,4 +1,4 @@
-#include "core/animation/keyframe.hpp"
+#include "gr-base/core/animation/keyframe.hpp"
 
 Keyframe::Keyframe(const std::string &name) : m_name(name) {}
 

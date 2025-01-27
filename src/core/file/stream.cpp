@@ -1,4 +1,4 @@
-#include "core/file/stream.hpp"
+#include "gr-base/core/file/stream.hpp"
 
 Stream::Stream(const std::string &path, std::ios_base::openmode mode) : m_path(path), std::fstream(path, mode) {}
 

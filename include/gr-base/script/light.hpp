@@ -2,7 +2,7 @@
 
 #include "default.hpp"
 
-#include "ecs/entity.hpp"
+#include "gr-base/ecs/entity.hpp"
 
 class Light : public Component {
     CLASS_FUNCTIONS

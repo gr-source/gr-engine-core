@@ -1,4 +1,4 @@
-#include "core/console.hpp"
+#include "gr-base/core/console.hpp"
 
 std::list<Log> Console::m_logs;
 

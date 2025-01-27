@@ -5,10 +5,11 @@
 #include <mutex>
 #include <list>
 
-#include "core/filmbox/default.hpp"
+#include "gr-base/core/filmbox/default.hpp"
 
-#include "../../script/default.hpp"
-#include "ecs/default.hpp"
+#include "gr-base/script/default.hpp"
+
+#include "gr-base/ecs/default.hpp"
 
 #include <gr-render/gRender.h>
 

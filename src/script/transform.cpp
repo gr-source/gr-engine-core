@@ -1,8 +1,8 @@
-#include "script/transform.hpp"
+#include "gr-base/script/transform.hpp"
 
-#include "ecs/gameObject.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
-#include "core/file/stream.hpp"
+#include "gr-base/core/file/stream.hpp"
 
 #include <algorithm>
 

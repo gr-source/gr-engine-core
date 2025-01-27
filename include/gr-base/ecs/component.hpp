@@ -50,7 +50,7 @@ public:
     } \
  
 #ifdef REGISTRY
-#include "ecs/componentRegistry.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
 
 #define REGISTER_COMPONENT(cls) \
     static bool is_register_##cls = \
@@ -63,7 +63,7 @@ public:
 #endif
 
 #ifdef INTERNAL_REGISTER_SCRIPT
-#include "ecs/componentRegistry.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
 
 #define REGISTER_COMPONENT(cls) \
     static bool is_register_##cls = \

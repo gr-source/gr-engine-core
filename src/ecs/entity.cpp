@@ -1,14 +1,14 @@
-#include "ecs/entity.hpp"
+#include "gr-base/ecs/entity.hpp"
 
-#include "script/meshRender.hpp"
+#include "gr-base/script/meshRender.hpp"
 
-#include "core/console.hpp"
-#include "core/scene.hpp"
+#include "gr-base/core/console.hpp"
+#include "gr-base/core/scene.hpp"
 
-#include "ecs/componentRegistry.hpp"
-#include "ecs/gameObject.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
-#include "script/transform.hpp"
+#include "gr-base/script/transform.hpp"
 
 #include <list>
 

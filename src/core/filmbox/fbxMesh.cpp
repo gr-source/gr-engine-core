@@ -1,4 +1,4 @@
-#include "core/filmbox/fbxMesh.hpp"
+#include "gr-base/core/filmbox/fbxMesh.hpp"
 
 #include <algorithm>
 

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "core/animation/default.hpp"
+#include "gr-base/core/animation/default.hpp"
 
-#include "script/default.hpp"
+#include "gr-base/script/default.hpp"
 
-#include "ecs/component.hpp"
+#include "gr-base/ecs/component.hpp"
 
 class Animator : public Component {
 public:

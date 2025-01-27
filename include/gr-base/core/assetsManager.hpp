@@ -11,20 +11,20 @@
 
 #include <gr-render/gRender.h>
 
-#include "core/animation/animation.hpp"
+#include "gr-base/core/animation/animation.hpp"
 
-#include "core/binary/gHeader.hpp"
+#include "gr-base/core/binary/gHeader.hpp"
 
-#include "core/file/file.hpp"
+#include "gr-base/core/file/file.hpp"
 
-#include "core/filmbox/default.hpp"
+#include "gr-base/core/filmbox/default.hpp"
 
 #include "geometry/material.hpp"
 
-#include "script/default.hpp"
-#include "ecs/default.hpp"
+#include "gr-base/script/default.hpp"
+#include "gr-base/ecs/default.hpp"
 
-#include <core/geometry/mesh.hpp>
+#include "gr-base/core/geometry/mesh.hpp"
 
 class GameObjectHandle {
 public:

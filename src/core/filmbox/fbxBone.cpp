@@ -1,4 +1,4 @@
-#include "core/filmbox/fbxBone.hpp"
+#include "gr-base/core/filmbox/fbxBone.hpp"
 
 FbxBone::FbxBone(const std::string & name, int id) : m_name(name), m_id(id) {}
 

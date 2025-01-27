@@ -5,7 +5,7 @@
 #include "boneWeight.hpp"
 #include "vertex3D.hpp"
 
-#include "core/file/default.hpp"
+#include "gr-base/core/file/default.hpp"
 
 class Mesh {
 public:

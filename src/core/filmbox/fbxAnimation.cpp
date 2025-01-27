@@ -1,4 +1,4 @@
-#include "core/filmbox/fbxAnimation.hpp"
+#include "gr-base/core/filmbox/fbxAnimation.hpp"
 
 FbxAnimation::FbxAnimation(const std::string &name, float duration, float tick) : m_name(name), m_duration(duration), m_tick(tick) {}
 

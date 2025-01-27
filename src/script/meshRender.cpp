@@ -1,16 +1,16 @@
-#include "script/meshRender.hpp"
-#include "script/meshFilter.hpp"
-#include "script/transform.hpp"
-#include "script/animator.hpp"
+#include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/meshFilter.hpp"
+#include "gr-base/script/transform.hpp"
+#include "gr-base/script/animator.hpp"
 
-#include "core/assetsManager.hpp"
-#include "core/console.hpp"
+#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/console.hpp"
 
-#include "ecs/gameObject.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
-#include "core/geometry/mesh.hpp"
+#include "gr-base/core/geometry/mesh.hpp"
 
-#include "core/file/stream.hpp"
+#include "gr-base/core/file/stream.hpp"
 
 MeshRender::MeshRender() : m_batched(nullptr), m_transform(nullptr) {}
 

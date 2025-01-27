@@ -1,8 +1,8 @@
-#include "script/boxCollider.hpp"
+#include "gr-base/script/boxCollider.hpp"
 
-#include "physics/physicsScene.hpp"
+#include "gr-base/physics/physicsScene.hpp"
 
-#include "core/file/stream.hpp"
+#include "gr-base/core/file/stream.hpp"
 
 BoxCollider::BoxCollider() : m_CollisionShape(nullptr), boxSize(Vector3::one) {
     build(boxSize);

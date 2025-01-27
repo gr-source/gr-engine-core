@@ -1,25 +1,25 @@
-#include "core/assetsManager.hpp"
+#include "gr-base/core/assetsManager.hpp"
 
-#include "core/file/stream.hpp"
-#include "core/file/file.hpp"
+#include "gr-base/core/file/stream.hpp"
+#include "gr-base/core/file/file.hpp"
 
-#include "core/animation/animation.hpp"
+#include "gr-base/core/animation/animation.hpp"
 
-#include "core/threadpool.hpp"
-#include "core/console.hpp"
-#include "core/scene.hpp"
-#include "core/event.hpp"
+#include "gr-base/core/threadpool.hpp"
+#include "gr-base/core/console.hpp"
+#include "gr-base/core/scene.hpp"
+#include "gr-base/core/event.hpp"
 
-#include "ecs/componentRegistry.hpp"
-#include "ecs/gameObject.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
-#include "script/meshFilter.hpp"
-#include "script/meshRender.hpp"
-#include "script/transform.hpp"
-#include "script/animator.hpp"
+#include "gr-base/script/meshFilter.hpp"
+#include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/transform.hpp"
+#include "gr-base/script/animator.hpp"
 
-#include "core/filmbox/fbxAnimation.hpp"
-#include "core/filmbox/fbxScene.hpp"
+#include "gr-base/core/filmbox/fbxAnimation.hpp"
+#include "gr-base/core/filmbox/fbxScene.hpp"
 
 #include <filesystem>
 #include <cassert>
@@ -30,7 +30,7 @@
 #include <gr-render/gError.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "core/stb/stb_image.h"
+#include "gr-base/core/stb/stb_image.h"
 
 grm::u32 AssetsManager::m_processCount = 0;
 

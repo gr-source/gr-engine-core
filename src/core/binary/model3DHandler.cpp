@@ -1,26 +1,26 @@
-#include "core/binary/model3DHandler.hpp"
+#include "gr-base/core/binary/model3DHandler.hpp"
 
-#include "core/binary/gHeader.hpp"
+#include "gr-base/core/binary/gHeader.hpp"
 
-#include "core/assetsManager.hpp"
-#include "core/threadpool.hpp"
-#include "core/console.hpp"
-#include "core/event.hpp"
-#include "core/scene.hpp"
+#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/threadpool.hpp"
+#include "gr-base/core/console.hpp"
+#include "gr-base/core/event.hpp"
+#include "gr-base/core/scene.hpp"
 
-#include "core/file/stream.hpp"
-#include "core/file/file.hpp"
+#include "gr-base/core/file/stream.hpp"
+#include "gr-base/core/file/file.hpp"
 
-#include "core/filmbox/filmbox.hpp"
+#include "gr-base/core/filmbox/filmbox.hpp"
 
-#include "ecs/gameObject.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
-#include "script/meshRender.hpp"
-#include "script/meshFilter.hpp"
-#include "script/transform.hpp"
-#include "script/animator.hpp"
+#include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/meshFilter.hpp"
+#include "gr-base/script/transform.hpp"
+#include "gr-base/script/animator.hpp"
 
-#include "core/animation/bone.hpp"
+#include "gr-base/core/animation/bone.hpp"
 
 std::mutex Model3DHandler::m_mutex;
 

@@ -1,8 +1,8 @@
-#include "script/light.hpp"
+#include "gr-base/script/light.hpp"
 
-#include "script/transform.hpp"
+#include "gr-base/script/transform.hpp"
 
-#include "core/file/stream.hpp"
+#include "gr-base/core/file/stream.hpp"
 
 std::vector<Light *> Light::m_lights;
 

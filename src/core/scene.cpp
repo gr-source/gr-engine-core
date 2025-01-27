@@ -1,24 +1,24 @@
-#include "core/scene.hpp"
+#include "gr-base/core/scene.hpp"
 
 // #include "../scriptManager/scriptManager.hpp"
 
-#include "core/file/stream.hpp"
-#include "core/file/file.hpp"
+#include "gr-base/core/file/stream.hpp"
+#include "gr-base/core/file/file.hpp"
 
-#include "core/binary/gHeader.hpp"
+#include "gr-base/core/binary/gHeader.hpp"
 
-#include "core/assetsManager.hpp"
-#include "core/console.hpp"
-#include "core/event.hpp"
+#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/console.hpp"
+#include "gr-base/core/event.hpp"
 // #include "settings.h"
 
-#include "script/meshRender.hpp"
-#include "script/transform.hpp"
-#include "script/camera.hpp"
+#include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/transform.hpp"
+#include "gr-base/script/camera.hpp"
 
-#include "ecs/gameObject.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
-#include <ecs/componentRegistry.hpp>
+#include "gr-base/ecs/componentRegistry.hpp"
 
 std::unordered_map<std::string, std::unique_ptr<Scene>> Scene::m_scenes;
 
@@ -91,7 +91,7 @@ Scene *Scene::Create(const std::string &name) {
     return &(*it->second);
 }
 
-#include "core/threadpool.hpp"
+#include "gr-base/core/threadpool.hpp"
 void Scene::LoadScene(const std::string &path, std::function<void(Scene *)> func) {
     Threadpool::AddTask(&Scene::Load, path, LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, func, nullptr);
 }

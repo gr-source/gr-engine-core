@@ -1,5 +1,5 @@
-#include "ecs/manager.hpp"
-#include "ecs/entity.hpp"
+#include "gr-base/ecs/manager.hpp"
+#include "gr-base/ecs/entity.hpp"
 
 #include <algorithm>
 

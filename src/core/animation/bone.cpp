@@ -1,6 +1,6 @@
-#include "core/animation/bone.hpp"
+#include "gr-base/core/animation/bone.hpp"
 
-#include "core/file/stream.hpp"
+#include "gr-base/core/file/stream.hpp"
 
 Bone::Bone(const std::string &name, const Vector3 &position, const Vector3 &scale, const Quaternion &rotation, int id) : m_name(name), m_position(position), m_scale(scale), m_rotation(rotation), m_boneIndex(id), m_localMatrix(Matrix4x4::identityMatrix) {
     updateMatrix();

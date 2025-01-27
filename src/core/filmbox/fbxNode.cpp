@@ -1,4 +1,4 @@
-#include "core/filmbox/fbxNode.hpp"
+#include "gr-base/core/filmbox/fbxNode.hpp"
 
 FbxNode::FbxNode(const std::string &name, FbxNode *parent) : m_name(name), m_parent(parent) {}
 

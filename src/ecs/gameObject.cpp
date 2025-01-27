@@ -1,9 +1,9 @@
-#include "ecs/gameObject.hpp"
-#include "ecs/manager.hpp"
+#include "gr-base/ecs/gameObject.hpp"
+#include "gr-base/ecs/manager.hpp"
 
-#include "core/nameManager.hpp"
+#include "gr-base/core/nameManager.hpp"
 
-#include "script/transform.hpp"
+#include "gr-base/script/transform.hpp"
 
 #include <stdexcept>
 

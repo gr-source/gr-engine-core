@@ -2,12 +2,12 @@
 
 #include "default.hpp"
 
-#include "core/geometry/vertex3D.hpp"
-#include "core/geometry/default.hpp"
+#include "gr-base/core/geometry/vertex3D.hpp"
+#include "gr-base/core/geometry/default.hpp"
 
-#include "physics/default.hpp"
+#include "gr-base/physics/default.hpp"
 
-#include "ecs/entity.hpp"
+#include "gr-base/ecs/entity.hpp"
 
 class MeshCollider : public Component {
     CLASS_FUNCTIONS

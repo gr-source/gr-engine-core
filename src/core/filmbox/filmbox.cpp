@@ -1,10 +1,10 @@
-#include "core/filmbox/filmbox.hpp"
+#include "gr-base/core/filmbox/filmbox.hpp"
 
-#include "core/file/file.hpp"
+#include "gr-base/core/file/file.hpp"
 
-#include "core/assetsManager.hpp"
-#include "core/console.hpp"
-#include "core/event.hpp"
+#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/console.hpp"
+#include "gr-base/core/event.hpp"
 
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>

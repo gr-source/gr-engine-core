@@ -1,4 +1,4 @@
-#include "core/filmbox/fbxMaterial.hpp"
+#include "gr-base/core/filmbox/fbxMaterial.hpp"
 
 FbxMaterial::FbxMaterial(const std::string & name) : m_name(name) {}
 

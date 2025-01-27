@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../script/default.hpp"
-#include "ecs/default.hpp"
+#include "gr-base/script/default.hpp"
+
+#include "gr-base/ecs/default.hpp"
 
 #include "geometry/material.hpp"
 

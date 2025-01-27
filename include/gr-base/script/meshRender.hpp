@@ -1,12 +1,12 @@
 #pragma once
 
 
-#include "core/geometry/batching.hpp"
-#include "core/geometry/material.hpp"
+#include "gr-base/core/geometry/batching.hpp"
+#include "gr-base/core/geometry/material.hpp"
+
+#include "gr-base/ecs/entity.hpp"
 
 #include "default.hpp"
-
-#include "ecs/entity.hpp"
 
 class MeshRender : public Component {
     CLASS_FUNCTIONS

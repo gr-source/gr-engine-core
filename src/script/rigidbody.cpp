@@ -1,18 +1,16 @@
-#include "script/rigidbody.hpp"
+#include "gr-base/script/rigidbody.hpp"
 
-#include "script/meshCollider.hpp"
+#include "gr-base/script/meshCollider.hpp"
+#include "gr-base/script/boxCollider.hpp"
+#include "gr-base/script/transform.hpp"
 
-#include "physics/physicsScene.hpp"
+#include "gr-base/physics/physicsScene.hpp"
 
-#include "script/boxCollider.hpp"
-#include "script/transform.hpp"
+#include "gr-base/core/console.hpp"
 
-#include "core/console.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
-#include "ecs/gameObject.hpp"
-#include "ecs/entity.hpp"
-
-#include "core/file/stream.hpp"
+#include "gr-base/core/file/stream.hpp"
 
 Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f) {}
 
