@@ -85,7 +85,7 @@ private:
 
     grr::gShader *m_shader;
 
-    void setupMaterial();
+    void setupMaterial(grr::gShader *shader);
 
     static void RegisterShaderShadow(grr::gShader *shader);
 };

@@ -20,11 +20,15 @@ public:
 
     std::vector<Vertex3D> getVertices() const;
 
+    void setVertices(const std::vector<Vertex3D> &vertices);
+
     void addTriangles(int t0, int t1, int t2);
 
     void addIndice(int t0);
 
     std::vector<int> getIndices() const;
+
+    void setIndices(const std::vector<int> &indices);
 
     bool hasIndices() const;
 

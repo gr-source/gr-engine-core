@@ -246,13 +246,15 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
     const char *fShader = frag.c_str();
     const char *vShader = vert.c_str();
 
-    auto shader = grr::gShader::Create(&fShader, &vShader);
+    auto shader = new grr::gShader();
 
-    if (CheckShaderError(shader, handle.m_name)) {
+    shader->build(&fShader, 1, &vShader, 1);
+    if (!shader->isValid()) {
+        Console::LogError("[ Shader ] Fail to build shader, %s, %s", handle.m_name.c_str(), grr::error());
         delete shader;
         return;
     }
-
+    
     s_shaderList.emplace(handle.m_name, std::unique_ptr<grr::gShader>(shader));
 
     handle.invoke(shader);
@@ -265,6 +267,7 @@ bool AssetsManager::CheckShaderError(grr::gShader *shader, const std::string &na
         return false;
     }
 
+    /*
     std::stringstream iss(grr::gError::GetError());
 
     Console::log(Log::ERROR, "Shader error: " + name);
@@ -272,6 +275,7 @@ bool AssetsManager::CheckShaderError(grr::gShader *shader, const std::string &na
     while (std::getline(iss, line)) {
         Console::log(Log::ERROR, line);
     }
+    */
 
     return true;
 }

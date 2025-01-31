@@ -35,6 +35,7 @@ void Batching::Shutdown() {
 }
 
 void Batching::RenderShadowPass() {
+    /*
     if (!s_shadowShader) {
         return;
     }
@@ -53,6 +54,7 @@ void Batching::RenderShadowPass() {
     }
 
     grr::gShader::Unbind();
+    */
 }
 
 grm::size Batching::GetBatchCount() {
@@ -236,7 +238,9 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
     auto transform = m_models[0];
     auto go = transform->getGameObject();
 
-    grr::gShader::SetUniform("u_model", transform->getGlobalMatrix());
+    auto model = transform->getGlobalMatrix();
+
+    shader->setUniform("u_model", 1, &model);
 
     /*
     auto animator =  go->getComponent<Animator>();
@@ -246,15 +250,15 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
         grr::gShader::SetUniform<Matrix4x4>("u_boneMatrices", metrices.data());
     }
     */
-    
-    if (bSetMaterial)
-        setupMaterial();
 
-    grr::gShader::Bind(shader);
+    if (bSetMaterial)
+        setupMaterial(shader);
+
     
     m_vertexArray->bind();
 
-    grr::gShader::Flush();
+    shader->bind();
+    shader->flush();
 
     if (m_flags & BatchingFlags_HasIndices) {
         grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
@@ -265,13 +269,18 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
     for (int i=0;i<10;i++) {
         grr::gTexture::Bind(nullptr, i);
     }
+
+    m_vertexArray->unbind();
+    shader->unbind();
 }
 
-void Batching::setupMaterial() {
+void Batching::setupMaterial(grr::gShader *shader) {
     int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     int idxEn[10] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    for (auto i=0;i<m_materials->size();i++) {
+    char buff[256] = {0};
+
+    for (int i=0;i<m_materials->size();i++) {
         auto &material = (*m_materials)[i];
 
         // 0 - Albedo
@@ -285,14 +294,23 @@ void Batching::setupMaterial() {
             idxEn[i] = 1;
         }
 
-        grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].albedo", material->getAlbedo());
-        grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].params", Vector3({material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()}));
+        auto params = Vector3{material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()};
+        auto albedo = material->getAlbedo();
+
+        sprintf(buff, "m_material[%d].albedo", i);
+        shader->setUniform(buff, 1, &albedo);
+
+        sprintf(buff, "m_material[%d].params", i);
+        shader->setUniform(buff, 1, &params);
+
+
     }
-    grr::gShader::SetUniform("m_texture", (const int *)idx);
-    grr::gShader::SetUniform("m_activate", (const int *)idxEn);
+    shader->setUniform("m_texture", 10, (const void *)idx);
+    shader->setUniform("m_activate", 10, (const void *)idxEn);
 }
 
 void Batching::RegisterShaderShadow(grr::gShader *shader) {
+    /*
     if (!shader) {
         return;
     }
@@ -301,6 +319,7 @@ void Batching::RegisterShaderShadow(grr::gShader *shader) {
     grr::gShader::Register("u_light", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
     
     s_shadowShader = shader;
+    */
 }
 
 bool Batching::isValid() const {
