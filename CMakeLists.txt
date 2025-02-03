@@ -60,6 +60,7 @@ set(filmbox
 
 set(binary
     src/core/binary/model3DHandler.cpp
+    src/core/binary/modelhandle.cpp
     src/core/binary/gHeader.cpp
 )
 
@@ -93,9 +94,11 @@ endif()
 
 add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${filmbox} ${binary} ${animation} ${physics})
 
-target_include_directories(${PROJECT_NAME} PRIVATE
+target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     ${BULLET_INCLUDE_DIRS}
+    imgui/src/backends
+    imgui/src
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE assimp ${BULLET_LIBRARIES})

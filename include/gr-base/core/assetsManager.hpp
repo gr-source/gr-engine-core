@@ -125,6 +125,8 @@ public:
 
     static std::string GetRefMaterialToName(Material *material);
 
+    static std::unordered_map<std::string, std::unique_ptr<Material>> &GetMaterialMap();
+
 private:
     /***************** Shader *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_shaderList;
@@ -165,8 +167,6 @@ private:
 
     static void SetupShader(ShaderHandle handle, const std::string &frag, const std::string &vert);
     
-    static bool CheckShaderError(grr::gShader *shader, const std::string &name);
-
     static void ProcessShader();
 
     static void SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *target);
@@ -178,6 +178,8 @@ private:
     static void doInBackgroundGameObject(GameObjectHandle handle);
 
     static void ReadData(Stream *stream, GameObjectHandle handle);
+
+    static int ReadMaterial(Stream *stream, std::unordered_map<std::string, GameObject *> &gameObjectMap);
 
     static void CreateComponent(GameObject *gameObject, std::string componentName);
 

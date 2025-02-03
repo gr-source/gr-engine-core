@@ -40,6 +40,8 @@ private:
 
     static int WriteData(Stream *stream, const GameObject *gameObject);
 
+    static int WriteMaterial();
+    
     static int WriteGameObject(Stream *stream, const GameObject *gameObject, std::list<std::tuple<std::string, std::string, Component *>> &tempList);
 
     static int WriteScript(Stream *stream, std::list<std::tuple<std::string, std::string, Component *>> &tempList);

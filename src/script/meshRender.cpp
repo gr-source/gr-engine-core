@@ -26,8 +26,12 @@ void MeshRender::Destroy() {
     m_batched = nullptr;
 }
 
-std::vector<std::shared_ptr<Material>> &MeshRender::getMaterials() {
+std::vector<Material *> MeshRender::getMaterials() const {
     return m_materials;
+}
+
+void MeshRender::removeMaterial(Material *material) {
+    m_materials.erase(std::remove(m_materials.begin(), m_materials.end(), material), m_materials.end());
 }
 
 Batching *MeshRender::getBatchGroup() {
@@ -94,8 +98,13 @@ bool MeshRender::Serialize(Stream *stream) {
     auto size = m_materials.size();
     stream->write(reinterpret_cast<const char *>(&size), sizeof(std::size_t));
 
-    for (auto &material : m_materials) {
-        material->serialize(stream);
+    for (auto material : m_materials) {
+        auto name = AssetsManager::GetRefMaterialToName(material);
+        auto sname = name.size();
+
+        stream->write(&sname, sizeof(size_t));
+
+        stream->write(name.c_str(), sname * sizeof(char));
     }
     return true;
 }
@@ -110,6 +119,7 @@ bool MeshRender::Deserialize(Stream *stream) {
     }
     
     std::size_t size = 0;
+    std::size_t sname = 0;
     stream->read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
     if (size <= 0) {
         return false;
@@ -118,7 +128,15 @@ bool MeshRender::Deserialize(Stream *stream) {
     m_materials.clear();
 
     for (std::size_t i={};i<size;i++) {
-        m_materials.emplace_back(std::make_shared<Material>())->deserialize(stream);
+        stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t));
+
+        std::string name(sname, '\0');
+        stream->read(name.data(), sname * sizeof(char));
+
+        auto material = AssetsManager::FindMaterial(name);
+        if (material) {
+            m_materials.push_back(material);
+        }
     }
 
     return true;

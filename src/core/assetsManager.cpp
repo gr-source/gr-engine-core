@@ -262,24 +262,6 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
     Console::LogInfo("[ AssetsManager::Shader ] Shader loadedd sucessfull: %s", handle.m_name.c_str());
 }
 
-bool AssetsManager::CheckShaderError(grr::gShader *shader, const std::string &name) {
-    if (shader->isValid()) {
-        return false;
-    }
-
-    /*
-    std::stringstream iss(grr::gError::GetError());
-
-    Console::log(Log::ERROR, "Shader error: " + name);
-    std::string line;
-    while (std::getline(iss, line)) {
-        Console::log(Log::ERROR, line);
-    }
-    */
-
-    return true;
-}
-
 void AssetsManager::ProcessShader() {
     std::unique_lock<std::mutex> lock(s_shaderMutex);
     while (!s_shaderFromLoader.empty()) {
@@ -466,12 +448,19 @@ void AssetsManager::ReadData(Stream *stream, GameObjectHandle handle) {
             break;
         }
 
+        auto segment_name = struct_name[segment.type];
+
         auto next_position = stream->tellg() + static_cast<std::streampos>(segment.sizeData);
 
         auto result = -1;
         switch (segment.type) {
         case gHeaderType_Object:
             result = ReadGameObject(stream, nullptr, &gameObject, m_gameObjectTemp);
+            break;
+        case gHeaderType_Texture:
+            break;
+        case gHeaderType_Material:
+            result = ReadMaterial(stream, m_gameObjectTemp);
             break;
         case gHeaderType_Script:
             result = ReadScript(stream, m_gameObjectTemp);
@@ -489,6 +478,55 @@ void AssetsManager::ReadData(Stream *stream, GameObjectHandle handle) {
     }
 
     Event::Add(handle.m_function, gameObject);
+}
+
+int AssetsManager::ReadMaterial(Stream *stream, std::unordered_map<std::string, GameObject *> &gameObjectMap) {
+    std::size_t sname = 0;
+
+    if (!stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t))) {
+        return 1;
+    }
+
+    std::string name(sname, '\0');
+    if (!stream->read(name.data(), sname * sizeof(char))) {
+        return 2;
+    }
+
+    auto go = gameObjectMap[name];
+
+    std::size_t mcount = 0;
+    if (!stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t))) {
+        return 3;
+    }
+
+    for (std::size_t i=0;i<mcount;i++) {
+        if (!stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t))) {
+            return 4;
+        }
+
+        std::string name(sname, '\0');
+        if (!stream->read(name.data(), sname * sizeof(char))) {
+            return 5;
+        }
+
+        auto material = AssetsManager::CreateMaterial(name, name);
+        material->deserialize(stream);
+    }
+
+    std::size_t ccount = 0;
+    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
+        return 6;
+    }
+
+    int result = 0;
+    for (int i=0;i<ccount;i++) {
+        result = ReadMaterial(stream, gameObjectMap);
+        if (result != 0) {
+            break;
+        }
+    }
+
+    return result != 0 ? 7 + result : 0;
 }
 
 void AssetsManager::CreateComponent(GameObject *gameObject, std::string componentName) {
@@ -520,32 +558,33 @@ void AssetsManager::SetupScript(GameObject *gameObject, std::string path, std::s
 }
 
 int AssetsManager::ReadScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList) {
-    std::size_t size = 0;
+    std::size_t gnsize = 0;
 
-    if (!stream->readS(&size, 1)) {
+    if (!stream->read(reinterpret_cast<char *>(&gnsize), sizeof(std::size_t))) {
         return 1;
     }
 
-    for (std::size_t i=0;i<size;i++) {
-        std::size_t nsize = 0;
+    std::string gname(gnsize, '\0');
+    if (!stream->read(gname.data(), gnsize * sizeof(char))) {
+        return 2;
+    }
 
-        // GameObject - name
-        if (!stream->readS(&nsize, 1)) {
-            return 2;
-        }
-        
-        std::string objectName(nsize, '\0');
-        if (!stream->readS(objectName.data(), nsize)) {
-            return 3;
-        }
+    auto go = tempList[gname];
 
-        // GameObject - ScriptName
-        if (!stream->readS(&nsize, 1)) {
+    std::size_t ccount = 0;
+    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
+        return 3;
+    }
+
+
+    std::size_t nsize = 0;
+    for (std::size_t i=0;i<ccount;i++) {
+        if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
             return 4;
         }
-        
-        std::string componentName(nsize, '\0');
-        if (!stream->readS(componentName.data(), nsize)) {
+
+        std::string cname(nsize, '\0');
+        if (!stream->read(cname.data(), nsize * sizeof(char))) {
             return 5;
         }
 
@@ -556,25 +595,25 @@ int AssetsManager::ReadScript(Stream *stream, std::unordered_map<std::string, Ga
         
         auto nextPosition = stream->tellg() + static_cast<std::streampos>(stream_size);
 
-        // deserialize
-        auto it = tempList.find(objectName);
-        if (it == tempList.end()) {
-            stream->seekg(nextPosition, std::ios_base::beg);
-        }
+        Event::Add(&AssetsManager::SetupScript, go, stream->getPath(), stream->tellg(), cname);
 
-        auto gameObject = it->second;
-
-        if (stream_size <= 0) {
-            Event::Add(&AssetsManager::CreateComponent, gameObject, componentName);
-            continue;
-        }
-
-        Event::Add(&AssetsManager::SetupScript, gameObject, stream->getPath(), stream->tellg(), componentName);
-
-        if (stream->tellg() != nextPosition)
-            stream->seekg(nextPosition, std::ios_base::beg);
+        stream->seekg(nextPosition, std::ios_base::beg);
     }
-    return 0;
+
+
+    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
+        return 7;
+    }
+
+    int result =0;
+    for (std::size_t i=0;i<ccount;i++) {
+        result = ReadScript(stream, tempList);
+        if (result != 0) {
+            break;
+        }
+    }
+
+    return result != 0 ? 8 + result : 0;
 }
 
 void AssetsManager::CreateGameObject(std::string name, std::string tag, bool enable, bool active, Transform *parent, Transform *&out, std::condition_variable &cv, std::mutex &mutex, GameObject **gameOut) {
@@ -606,22 +645,22 @@ int AssetsManager::ReadGameObject(Stream *stream, Transform *parent, GameObject 
     std::size_t nsize = 0;
 
     // write-name
-    if (!stream->readS(&nsize, 1)) {
+    if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
         return 1;
     }
 
     std::string name(nsize, '\0');
-    if (!stream->readS(name.data(), nsize)) {
+    if (!stream->read(name.data(), nsize * sizeof(char))) {
         return 2;
     }
 
     // write-tag
-    if (!stream->readS(&nsize, 1)) {
+    if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
         return 3;
     }
 
     std::string tag(nsize, '\0');
-    if (!stream->readS(tag.data(), nsize)) {
+    if (!stream->read(tag.data(), nsize * sizeof(char))) {
         return 4;
     }
 
@@ -630,11 +669,11 @@ int AssetsManager::ReadGameObject(Stream *stream, Transform *parent, GameObject 
 
     // write-status
     {
-        if (!stream->readS(&bActive, 1)) {
+        if (!stream->read(reinterpret_cast<char *>(&bActive), sizeof(bool))) {
             return 5;
         }
 
-        if (!stream->readS(&bEnable, 1)) {
+        if (!stream->read(reinterpret_cast<char *>(&bEnable), sizeof(bool))) {
             return 6;
         }
     }
@@ -654,7 +693,7 @@ int AssetsManager::ReadGameObject(Stream *stream, Transform *parent, GameObject 
     lock.unlock();
 
     std::size_t children_size = 0;
-    if (!stream->readS(&children_size, 1)) {
+    if (!stream->read(reinterpret_cast<char *>(&children_size), sizeof(std::size_t))) {
         return 7;
     }
     
@@ -847,6 +886,6 @@ std::string AssetsManager::GetRefMaterialToName(Material *material) {
     return it->second;
 }
 
-
-
-
+std::unordered_map<std::string, std::unique_ptr<Material>> &AssetsManager::GetMaterialMap() {
+    return materialsMap;
+}

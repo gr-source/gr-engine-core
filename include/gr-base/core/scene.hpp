@@ -95,39 +95,45 @@ private:
     bool m_enable;
 
     enum LoadFlags : std::uint8_t {
-        LoadFlags_Mesh    = 1 << 1,
-        LoadFlags_Object  = 1 << 2,
-        LoadFlags_Texture = 1 << 3,
-        LoadFlags_Script  = 1 << 4,
+        LoadFlags_Texture  = 1 << 1,
+        LoadFlags_Material = 1 << 2,
+        LoadFlags_Mesh     = 1 << 3,
+        LoadFlags_Script   = 1 << 4,
+        LoadFlags_Object   = 1 << 5,
     };
 
-    static void Load(const std::string &path, std::uint8_t flags = LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, std::function<void(Scene *)> func = nullptr, Scene *scene = nullptr);
+    static void Load(const std::string &path, std::uint8_t flags = LoadFlags_Material | LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, std::function<void(Scene *)> func = nullptr, Scene *scene = nullptr);
 
     void setEnable(bool value);
 
     void setDisableEntity(Transform *transform, bool value);
 
-    int writeScene(Stream *streaming);
+    int writeScene(Stream *stream);
 
-    int writeTexture(Stream *streaming);
+    int writeMaterial(Stream *stream);
 
-    int writeMesh(Stream *streaming);
+    int writeTexture(Stream *stream);
 
-    int writeObject(Stream *streaming);
+    int writeMesh(Stream *stream);
 
-    int writeScript(Stream *streaming);
+    int writeObject(Stream *stream);
 
-    int writeGameObject(Stream *streaming, GameObject *gameObject);
+    int writeScript(Stream *stream);
 
-    static int readObject(Stream *streaming, Scene *scene, std::unordered_map<std::string, GameObject *> &tempObject);
+    int writeGameObject(Stream *stream, GameObject *gameObject);
 
-    static int readTexture(Stream *streaming);
+    static int readMainListGameObject(Stream *stream, Scene *scene, std::unordered_map<std::string, GameObject *> &tempObject);
 
-    static int readMesh(Stream *streaming);
+    static int readGameObject(Stream *stream, Scene *scene, Transform *parent, std::unordered_map<std::string, GameObject *> &tempObject);
 
-    static int readScript(Stream *streaming, std::unordered_map<std::string, GameObject *> &tempObject);
+    static int readMaterial(Stream *stream);
 
-    static int readNode(Stream *streaming, Scene *scene, Transform *parent, std::unordered_map<std::string, GameObject *> &tempObject);
+    static int readTexture(Stream *stream);
+
+    static int readMesh(Stream *stream);
+
+    static int readScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempObject);
+
 
     static void SetupScene(Scene *scene);
 

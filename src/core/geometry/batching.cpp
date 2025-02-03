@@ -96,7 +96,7 @@ void Batching::RenderBatches() {
     }
 }
 
-Batching::Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, grr::gShader *shader, BatchingFlags_ flags) : m_shader(shader), m_flags(flags), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indexCount(0), m_instanceCount(0), m_VBO(0), m_EBO(0), m_PBO(0) {}
+Batching::Batching(const std::string &name, std::vector<Material *> *materials, grr::gShader *shader, BatchingFlags_ flags) : m_shader(shader), m_flags(flags), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indexCount(0), m_instanceCount(0), m_VBO(0), m_EBO(0), m_PBO(0) {}
 
 Batching::~Batching() {
     if (m_vertexArray) {

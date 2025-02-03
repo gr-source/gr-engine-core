@@ -284,15 +284,19 @@ int Model3DHandler::ReadScript(Stream *stream, std::unordered_map<std::string, G
 }
 
 int Model3DHandler::WriteData(Stream *stream, const GameObject *gameObject) {
-    int result = 0;
     DataSegment segment = {gHeaderType_None, 0};
 
     std::list<std::tuple<std::string, std::string, Component *>> m_componentTemp;
 
+    // texture
+    {}
+
+    // material
+    {}
+    
     // GameObject - Node
     {
-        result = WriteGameObject(stream, gameObject, m_componentTemp);
-        if (result != 0) {
+        if (WriteGameObject(stream, gameObject, m_componentTemp) != 0) {
             return 1;
         }
 
@@ -305,8 +309,7 @@ int Model3DHandler::WriteData(Stream *stream, const GameObject *gameObject) {
 
     // Scripts
     {
-        result = WriteScript(stream, m_componentTemp);
-        if (result != 0) {
+        if (WriteScript(stream, m_componentTemp) != 0) {
             return 3;
         }
 
@@ -322,7 +325,7 @@ int Model3DHandler::WriteData(Stream *stream, const GameObject *gameObject) {
         return 3;
     }
     
-    return result;
+    return 0;
 }
 
 int Model3DHandler::WriteGameObject(Stream *stream, const GameObject *gameObject, std::list<std::tuple<std::string, std::string, Component *>> &tempList) {
@@ -660,9 +663,8 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
             }
         }
 
-        // TODO: Falta arrumar aqui, nos materiais talvez esta dereferenciado o materia do objetos antes de seta a textura.
         for (auto &&[name, fbxMaterial] : m_materials) {
-            auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getColor());
+            auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getName(), fbxMaterial.getColor());
 
             int textureID = 0;
             for (auto &&[type, path] : fbxMaterial.getTextures()) {

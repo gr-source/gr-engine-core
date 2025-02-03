@@ -1,8 +1,9 @@
 #pragma once
 
-
 #include "gr-base/core/geometry/batching.hpp"
 #include "gr-base/core/geometry/material.hpp"
+
+#include "gr-base/core/assetsManager.hpp"
 
 #include "gr-base/ecs/entity.hpp"
 
@@ -17,7 +18,9 @@ public:
 
     void Destroy() override;
 
-    std::vector<std::shared_ptr<Material>> &getMaterials();
+    std::vector<Material *> getMaterials() const;
+
+    void removeMaterial(Material *material);
 
     template <typename ...Args>
     Material *addMaterial(Args &&...args);
@@ -35,7 +38,7 @@ public:
     bool Deserialize(Stream *stream) override;
 
 private:
-    std::vector<std::shared_ptr<Material>> m_materials;
+    std::vector<Material *> m_materials;
 
     Batching *m_batched;
 
@@ -46,7 +49,7 @@ private:
 
 template <typename... Args>
 inline Material *MeshRender::addMaterial(Args &&...args) {
-    return &(*m_materials.emplace_back(std::make_shared<Material>(std::forward<Args>(args)...)));
+    return m_materials.emplace_back(AssetsManager::CreateMaterial(std::forward<Args>(args)...));
 }
 
 REGISTER_COMPONENT(MeshRender);

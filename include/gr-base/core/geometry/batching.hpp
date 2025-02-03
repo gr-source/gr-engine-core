@@ -41,7 +41,7 @@ public:
 
     // ***** Class Method ***** //
 
-    Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, grr::gShader *shader, BatchingFlags_ flags = 0);
+    Batching(const std::string &name, std::vector<Material *> *materials, grr::gShader *shader, BatchingFlags_ flags = 0);
     ~Batching();
 
     void buildMeshe(Mesh *mesh);
@@ -61,7 +61,7 @@ private:
 
     static grr::gShader *s_shadowShader;
 
-    std::vector<std::shared_ptr<Material>> *m_materials;
+    std::vector<Material *> *m_materials;
 
     std::vector<Transform *> m_models;
 
