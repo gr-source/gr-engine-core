@@ -25,7 +25,7 @@
 std::mutex Model3DHandler::m_mutex;
 
 void Model3DHandler::ImportFBX(const std::string &path) {
-    Threadpool::AddTask(&Filmbox::Load, path, &Model3DHandler::SetupScene, true);
+    // Threadpool::AddTask(&Filmbox::Load, path, &Model3DHandler::SetupScene, true);
 }
 
 void Model3DHandler::ExportGRMX(const std::string &path, const GameObject *gameObject) {

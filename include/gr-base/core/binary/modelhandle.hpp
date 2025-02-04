@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <mutex>
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/filmbox/default.hpp"
@@ -18,7 +19,7 @@ public:
 
     static void Render();
 
-    ModelHandle(const std::string &name, std::shared_ptr<FbxScene> scene);
+    ModelHandle(const std::string &name, std::unique_ptr<FbxScene> scene);
 
     void run();
 
@@ -26,6 +27,8 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<ModelHandle>> taskListMap;
 
     static std::vector<ModelHandle *> taskList;
+
+    static std::mutex mutex;
 
     std::unordered_map<const GameObject *, std::tuple<Material *, grr::gTexture *>> m_textures;
 
@@ -39,21 +42,21 @@ private:
 
     std::vector<GameObject *> rootNode;
 
-    std::shared_ptr<FbxScene> m_scene;
-
     std::string name;
+
+    bool isCanRender;
 
     void render();
 
     void renderNode(const GameObject *go);
 
-    void convertToGameObject();
+    void convertToGameObject(FbxScene *scene);
 
     void enableNode(const GameObject *go);
 
-    GameObject *CreateGameObject(const FbxNode *node, Transform *parent = nullptr);
+    GameObject *CreateGameObject(const FbxScene *scene, const FbxNode *node, Transform *parent = nullptr);
 
-    void generateMesh(const FbxNode *node, GameObject *go);
+    void generateMesh(const FbxScene *scene, const FbxNode *node, GameObject *go);
 
     void generateScriptCache(const GameObject *go);
 
@@ -73,7 +76,7 @@ private:
 
     std::vector<std::tuple<std::string, Material *>> getMaterialOfRefGameObject(const GameObject *go) const;
 
-    static void SetupFBX(const std::string &path, std::shared_ptr<FbxScene> scene);
+    static void SetupFBX(const std::string &path, std::unique_ptr<FbxScene> scene);
 };
 
 

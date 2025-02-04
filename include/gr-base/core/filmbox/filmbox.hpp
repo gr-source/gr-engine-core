@@ -13,7 +13,7 @@ public:
     Filmbox() = delete;
     ~Filmbox() = delete;
 
-    static void Load(const std::string &path, std::function<void(std::shared_ptr<FbxScene>)> func, bool bCallInMainThread = true);
+    static void Load(const std::string &path, std::function<void(std::unique_ptr<FbxScene>)> func, bool bCallInMainThread = true);
 
 private:
     static void SceneLoader(const aiScene *scene, FbxScene *fbxScene);

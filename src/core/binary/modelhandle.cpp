@@ -3,6 +3,7 @@
 #include "gr-base/core/filmbox/filmbox.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/window.hpp"
 
@@ -28,8 +29,12 @@ std::unordered_map<std::string, std::unique_ptr<ModelHandle>> ModelHandle::taskL
 
 std::vector<ModelHandle *> ModelHandle::taskList;
 
+std::mutex ModelHandle::mutex;
+
 void ModelHandle::ImportFBX(const std::string &path) {
-    Filmbox::Load(path, std::bind(&ModelHandle::SetupFBX, path, std::placeholders::_1), true);
+    std::function<void (std::unique_ptr<FbxScene>)> func = std::bind(&ModelHandle::SetupFBX, path, std::placeholders::_1);
+    if (func)
+        Threadpool::AddTask(&Filmbox::Load, path, func, true);
 }
 
 void ModelHandle::Render() {
@@ -46,7 +51,8 @@ void ModelHandle::Render() {
     auto winsize = ImGui::GetContentRegionAvail();
 
     for (auto task : taskList) {
-        task->render();
+        if (task->isCanRender)
+            task->render();
     }
 
     auto spacing = ImGui::GetStyle().ItemSpacing;
@@ -72,7 +78,7 @@ void ModelHandle::Render() {
     ImGui::End();
 }
 
-void ModelHandle::SetupFBX(const std::string &path, std::shared_ptr<FbxScene> scene) {
+void ModelHandle::SetupFBX(const std::string &path, std::unique_ptr<FbxScene> scene) {
     auto filename = std::filesystem::path(path).filename();
 
     auto it = taskListMap.find(filename);
@@ -80,15 +86,15 @@ void ModelHandle::SetupFBX(const std::string &path, std::shared_ptr<FbxScene> sc
         return;
     }
 
-    taskListMap[filename] = std::make_unique<ModelHandle>(filename, scene);
+    taskListMap[filename] = std::make_unique<ModelHandle>(filename, std::move(scene));
 
     taskList.push_back(&(*taskListMap[filename]));
 }
 
-ModelHandle::ModelHandle(const std::string &name, std::shared_ptr<FbxScene> scene) : name(name), m_scene(scene) {
+ModelHandle::ModelHandle(const std::string &name, std::unique_ptr<FbxScene> scene) : name(name), isCanRender(true) {
     auto &root = scene->getRootNode();
 
-    convertToGameObject();
+    convertToGameObject(scene.get());
 }
 
 void ModelHandle::run() {
@@ -127,11 +133,11 @@ void ModelHandle::renderNode(const GameObject *go) {
     ImGui::TreePop();
 }
 
-void ModelHandle::convertToGameObject() {
-    auto &root = m_scene->getRootNode();
+void ModelHandle::convertToGameObject(FbxScene *scene) {
+    auto &root = scene->getRootNode();
 
     for (auto &node : root.getChildren()) {
-        auto go = CreateGameObject(&node);
+        auto go = CreateGameObject(scene, &node);
         if (go != nullptr)
             rootNode.push_back(go);
     }
@@ -155,7 +161,7 @@ void ModelHandle::enableNode(const GameObject *go) {
     }
 }
 
-GameObject *ModelHandle::CreateGameObject(const FbxNode *node, Transform *parent) {
+GameObject *ModelHandle::CreateGameObject(const FbxScene *scene, const FbxNode *node, Transform *parent) {
     gameObjects.push_back(std::make_unique<GameObject>(node->getName()));
 
     auto go = &(*gameObjects.back());
@@ -171,17 +177,17 @@ GameObject *ModelHandle::CreateGameObject(const FbxNode *node, Transform *parent
     }
 
     if (node->hasMeshe()) {
-        generateMesh(node, go);
+        generateMesh(scene, node, go);
     }
 
     for (auto &child : node->getChildren()) {
-        CreateGameObject(&child, transform);
+        CreateGameObject(scene, &child, transform);
     }
 
     return go;
 }
 
-void ModelHandle::generateMesh(const FbxNode *node, GameObject *go) {
+void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameObject *go) {
     std::unordered_map<std::string, FbxMaterial> materialList;
     std::unordered_map<std::string, FbxBone> m_bones;
     grm::u32 verticeCount = 0;
@@ -192,7 +198,7 @@ void ModelHandle::generateMesh(const FbxNode *node, GameObject *go) {
         meshName += fbxMesh.getName();
 
         for (auto &mIdx : fbxMesh.getMaterials()) {
-            auto fbxMaterial = m_scene->getMaterial(mIdx);
+            auto fbxMaterial = scene->getMaterial(mIdx);
             
             if (materialList.find(fbxMaterial.getName()) != materialList.end()) {
                 continue;

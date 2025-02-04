@@ -43,6 +43,7 @@ set(core
     src/core/console.cpp
     src/core/window.cpp
     src/core/string.cpp
+    src/core/status.cpp
     src/core/scene.cpp
     src/core/event.cpp
 )
