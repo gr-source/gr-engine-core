@@ -61,7 +61,7 @@ void ModelHandle::Render() {
     ImGui::SetCursorPos(ImVec2{(winsize.x / 2.0f) + spacing.x, winsize.y - spacing.y});
     if (ImGui::Button("Save", ImVec2{winsize.x / 2.0f, 0.0f})) {
         for (auto task : taskList) {
-            task->convertToGameObject();
+            task->run();
         }
 
         taskList.clear();
@@ -88,70 +88,74 @@ void ModelHandle::SetupFBX(const std::string &path, std::shared_ptr<FbxScene> sc
 ModelHandle::ModelHandle(const std::string &name, std::shared_ptr<FbxScene> scene) : name(name), m_scene(scene) {
     auto &root = scene->getRootNode();
 
-    for (auto &child : root.getChildren()) {
-        enableNode(&child);
+    convertToGameObject();
+}
+
+void ModelHandle::run() {
+    for (auto go : rootNode) {
+        gen(File::GetAsset("/model/" + go->getName() + ".gmdx"), go);
     }
 }
 
 void ModelHandle::render() {
     auto isOpen = ImGui::TreeNode(name.c_str());
+    if (!isOpen) { return; }
 
-    if (isOpen) {
-        auto &rootNode = m_scene->getRootNode();
-        for (auto &child : rootNode.getChildren()) {
-            renderNode(&child);
-        }
-
-        ImGui::TreePop();
+    for (auto go : rootNode) {
+        renderNode(go);
     }
+
+    ImGui::TreePop();
 }
 
-void ModelHandle::renderNode(const FbxNode *node) {
-    auto &children = node->getChildren();
+void ModelHandle::renderNode(const GameObject *go) {
+    auto transform = go->getTransform();
 
-    auto isOpen = ImGui::TreeNodeEx(node->getName().c_str(), children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
+    auto children = transform->getChildren();
+
+    auto isOpen = ImGui::TreeNodeEx(go->getName().c_str(), children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
 
     ImGui::SameLine();
-    ImGui::Checkbox("##import_checkbox_enable", &m_active[node]);
+    ImGui::Checkbox("##import_checkbox_enable", &mModelCanImport[go]);
     
-    if (isOpen) {
-        for (auto &child : children) {
-            renderNode(&child);
-        }
+    if (!isOpen) { return; }
 
-        ImGui::TreePop();
+    for (auto child : children) {
+        renderNode(child->getGameObject());
     }
-}
 
-void ModelHandle::enableNode(const FbxNode *node) {
-    m_active[node] = true;
-
-    for (auto &child : node->getChildren()) {
-        enableNode(&child);
-    }
+    ImGui::TreePop();
 }
 
 void ModelHandle::convertToGameObject() {
     auto &root = m_scene->getRootNode();
 
-    std::vector<GameObject *> rootGO;
-
     for (auto &node : root.getChildren()) {
         auto go = CreateGameObject(&node);
         if (go != nullptr)
-            rootGO.push_back(go);
+            rootNode.push_back(go);
     }
 
-    for (auto go : rootGO) {
+    for (auto root : rootNode) {
+        enableNode(root);
+    }
+
+    for (auto go : rootNode) {
         generateScriptCache(go);
     }
+}
 
-    build(rootGO);
+void ModelHandle::enableNode(const GameObject *go) {
+    mModelCanImport[go] = true;
+
+
+    auto transform = go->getTransform();
+    for (auto child : transform->getChildren()) {
+        enableNode(child->getGameObject());
+    }
 }
 
 GameObject *ModelHandle::CreateGameObject(const FbxNode *node, Transform *parent) {
-    if (!m_active[node]) { return nullptr; }
-
     gameObjects.push_back(std::make_unique<GameObject>(node->getName()));
 
     auto go = &(*gameObjects.back());
@@ -287,12 +291,6 @@ void ModelHandle::generateScriptCache(const GameObject *go) {
     }
 }
 
-void ModelHandle::build(std::vector<GameObject *> gos) {
-    for (auto go : gos) {
-        gen(File::GetAsset("/model/" + go->getName() + ".gmdx"), go);
-    }
-}
-
 void ModelHandle::gen(const std::string &path, const GameObject *go) const {
     Console::LogInfo("[ ModelHandle ] Initialize task for import: %s, %s", go->getName().c_str(), path.c_str());
 
@@ -375,14 +373,14 @@ int ModelHandle::writeData(Stream *stream, const GameObject *go) const {
 int ModelHandle::writeTexture(Stream *stream, const GameObject *go) const {
     auto materials = getMaterialOfRefGameObject(go);
 
-    auto name = go->getName();
+    auto goname = go->getName();
 
-    auto nsize = name.size();
+    auto nsize = goname.size();
     if (!stream->write(&nsize, sizeof(std::size_t))) {
         return 1;
     }
 
-    if (!stream->write(name.c_str(), nsize * sizeof(char))) {
+    if (!stream->write(goname.c_str(), nsize * sizeof(char))) {
         return 2;
     }
 
@@ -396,12 +394,10 @@ int ModelHandle::writeTexture(Stream *stream, const GameObject *go) const {
 
     auto tcount = textures.size();
 
-    std::cout << name << ", " << tcount << std::endl;
-
     if (!stream->write(&tcount, sizeof(std::size_t))) {
         return 3;
     }
-
+    
     for (auto texture : textures) {
         auto path = AssetsManager::GetRefTextureName(texture);
 
@@ -424,26 +420,26 @@ int ModelHandle::writeTexture(Stream *stream, const GameObject *go) const {
 
     int result = 0;
     for (auto child : children) {
-        result = writeMaterial(stream, child->getGameObject());
+        result = writeTexture(stream, child->getGameObject());
         if (result != 0) {
             break;
         }
     }
 
-    return 7 + result;
+    return result;
 }
 
 int ModelHandle::writeMaterial(Stream *stream, const GameObject *go) const {
     auto materials = getMaterialOfRefGameObject(go);
 
-    auto name = go->getName();
+    auto goname = go->getName();
 
-    auto nsize = name.size();
+    auto nsize = goname.size();
     if (!stream->write(&nsize, sizeof(std::size_t))) {
         return 1;
     }
 
-    if (!stream->write(name.c_str(), nsize * sizeof(char))) {
+    if (!stream->write(goname.c_str(), nsize * sizeof(char))) {
         return 2;
     }
 
@@ -453,13 +449,13 @@ int ModelHandle::writeMaterial(Stream *stream, const GameObject *go) const {
     }
 
     for (auto &&[name, material] : materials) {
-        size = name.size();
+        std::size_t mnsize = name.size();
 
-        if (!stream->write(&size, sizeof(std::size_t))) {
+        if (!stream->write(&mnsize, sizeof(std::size_t))) {
             return 4;
         }
 
-        if (!stream->write(name.data(), size * sizeof(char))) {
+        if (!stream->write(name.c_str(), mnsize * sizeof(char))) {
             return 5;
         }
 
@@ -480,9 +476,9 @@ int ModelHandle::writeMaterial(Stream *stream, const GameObject *go) const {
     }
 
     auto children = go->getTransform()->getChildren();
-    size = children.size();
+    std::size_t ccount = children.size();
 
-    if (!stream->write(&size, sizeof(std::size_t))) {
+    if (!stream->write(&ccount, sizeof(std::size_t))) {
         return 6;
     }
 
@@ -494,7 +490,7 @@ int ModelHandle::writeMaterial(Stream *stream, const GameObject *go) const {
         }
     }
 
-    return 7 + result;
+    return result;
 }
 
 int ModelHandle::writeScript(Stream *stream, const GameObject *go) const {

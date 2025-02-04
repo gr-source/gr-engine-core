@@ -486,7 +486,6 @@ void AssetsManager::ReadData(Stream *stream, GameObjectHandle handle) {
 
 int AssetsManager::ReadMaterial(Stream *stream, std::unordered_map<std::string, GameObject *> &gameObjectMap) {
     std::size_t sname = 0;
-
     if (!stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t))) {
         return 1;
     }
@@ -497,6 +496,7 @@ int AssetsManager::ReadMaterial(Stream *stream, std::unordered_map<std::string, 
     }
 
     if (gameObjectMap.find(name) == gameObjectMap.end()) {
+        std::cout << name << std::endl;
         return 3;
     }
 
@@ -507,14 +507,14 @@ int AssetsManager::ReadMaterial(Stream *stream, std::unordered_map<std::string, 
         return 4;
     }
 
-    sname = 0;
     for (std::size_t i=0;i<mcount;i++) {
-        if (!stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t))) {
+        std::size_t mnsize = 0;
+        if (!stream->read(reinterpret_cast<char *>(&mnsize), sizeof(std::size_t))) {
             return 5;
         }
 
-        std::string mname(sname, '\0');
-        if (!stream->read(mname.data(), sname * sizeof(char))) {
+        std::string mname(mnsize, '\0');
+        if (!stream->read(mname.data(), mnsize * sizeof(char))) {
             return 6;
         }
 
@@ -522,6 +522,7 @@ int AssetsManager::ReadMaterial(Stream *stream, std::unordered_map<std::string, 
         if (!stream->read(reinterpret_cast<char *>(&bufferSize), sizeof(std::size_t))) {
             return 7;
         }
+
         auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
         
         if (AssetsManager::FindMaterial(mname) == nullptr) {
@@ -547,7 +548,7 @@ int AssetsManager::ReadMaterial(Stream *stream, std::unordered_map<std::string, 
         }
     }
 
-    return result != 0 ? result : 0;
+    return result;
 }
 
 void AssetsManager::CreateComponent(GameObject *gameObject, std::string componentName) {
@@ -759,8 +760,6 @@ int AssetsManager::ReadTexture(Stream *stream, std::unordered_map<std::string, G
         return 3;
     }
 
-    std::cout << goname << ", " << tcount << std::endl;
-
     for (std::size_t i=0;i<tcount;i++) {
         std::size_t psize = 0;
         if (!stream->read(reinterpret_cast<char *>(&psize), sizeof(std::size_t))) {
@@ -772,7 +771,7 @@ int AssetsManager::ReadTexture(Stream *stream, std::unordered_map<std::string, G
             return 5;
         }
 
-        std::cout << "Texture: " << path << std::endl;
+        AssetsManager::LoadTexture(path);
     }
 
     std::size_t ccount = 0;

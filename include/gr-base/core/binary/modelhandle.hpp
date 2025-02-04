@@ -20,6 +20,8 @@ public:
 
     ModelHandle(const std::string &name, std::shared_ptr<FbxScene> scene);
 
+    void run();
+
 private:
     static std::unordered_map<std::string, std::unique_ptr<ModelHandle>> taskListMap;
 
@@ -31,9 +33,11 @@ private:
 
     std::unordered_map<const GameObject *, std::vector<std::tuple<std::string, Material *>>> m_materials;
 
+    std::unordered_map<const GameObject *, bool> mModelCanImport;
+
     std::vector<std::unique_ptr<GameObject>> gameObjects;
 
-    std::unordered_map<const FbxNode *, bool> m_active;
+    std::vector<GameObject *> rootNode;
 
     std::shared_ptr<FbxScene> m_scene;
 
@@ -41,19 +45,17 @@ private:
 
     void render();
 
-    void renderNode(const FbxNode *node);
-
-    void enableNode(const FbxNode *node);
+    void renderNode(const GameObject *go);
 
     void convertToGameObject();
+
+    void enableNode(const GameObject *go);
 
     GameObject *CreateGameObject(const FbxNode *node, Transform *parent = nullptr);
 
     void generateMesh(const FbxNode *node, GameObject *go);
 
     void generateScriptCache(const GameObject *go);
-
-    void build(std::vector<GameObject *> gos);
 
     void gen(const std::string &path, const GameObject *goGameObject) const;
 
