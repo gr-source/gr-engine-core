@@ -51,8 +51,6 @@ private:
     static void ConvertToGameObject(std::shared_ptr<FbxScene> scene, const FbxNode node);
 
     static void CreateObjects(const FbxScene *scene, const FbxNode *node, Transform *parent, GameObject **gameObject, std::vector<std::unique_ptr<GameObject>> &tempObject);
-
-    static void SetupTextureMaterial(Material *material, int id, grr::gTexture *texture);
 };
 
 

@@ -458,6 +458,7 @@ void AssetsManager::ReadData(Stream *stream, GameObjectHandle handle) {
             result = ReadGameObject(stream, nullptr, &gameObject, m_gameObjectTemp);
             break;
         case gHeaderType_Texture:
+            result = ReadTexture(stream, m_gameObjectTemp);
             break;
         case gHeaderType_Material:
             result = ReadMaterial(stream, m_gameObjectTemp);
@@ -470,11 +471,14 @@ void AssetsManager::ReadData(Stream *stream, GameObjectHandle handle) {
         }
 
         if (result != 0) {
-            Console::LogError("[ Model3DHandler ] Falied to load segment: %s code: %d", struct_name[segment.type], result);
+            Console::LogError("[ AssetsManager ] Falied to load segment: %s code: %d", struct_name[segment.type], result);
         }
 
-        if (stream->tellg() != next_position)
+        if (stream->tellg() != next_position) {
             stream->seekg(next_position, std::ios_base::beg);
+
+            Console::LogWarning("[ AssetsManager ] Block position is invalid");
+        }
     }
 
     Event::Add(handle.m_function, gameObject);
@@ -492,41 +496,58 @@ int AssetsManager::ReadMaterial(Stream *stream, std::unordered_map<std::string, 
         return 2;
     }
 
+    if (gameObjectMap.find(name) == gameObjectMap.end()) {
+        return 3;
+    }
+
     auto go = gameObjectMap[name];
 
     std::size_t mcount = 0;
     if (!stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t))) {
-        return 3;
+        return 4;
     }
 
+    sname = 0;
     for (std::size_t i=0;i<mcount;i++) {
         if (!stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t))) {
-            return 4;
-        }
-
-        std::string name(sname, '\0');
-        if (!stream->read(name.data(), sname * sizeof(char))) {
             return 5;
         }
 
-        auto material = AssetsManager::CreateMaterial(name, name);
-        material->deserialize(stream);
+        std::string mname(sname, '\0');
+        if (!stream->read(mname.data(), sname * sizeof(char))) {
+            return 6;
+        }
+
+        std::size_t bufferSize = 0;
+        if (!stream->read(reinterpret_cast<char *>(&bufferSize), sizeof(std::size_t))) {
+            return 7;
+        }
+        auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
+        
+        if (AssetsManager::FindMaterial(mname) == nullptr) {
+            auto material = AssetsManager::CreateMaterial(mname, mname);
+            material->deserialize(stream);
+        }
+
+        if (stream->tellg() != next) {
+            stream->seekg(next, std::ios_base::beg);
+        }
     }
 
     std::size_t ccount = 0;
     if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
-        return 6;
+        return 8;
     }
 
     int result = 0;
-    for (int i=0;i<ccount;i++) {
+    for (std::size_t i=0;i<ccount;i++) {
         result = ReadMaterial(stream, gameObjectMap);
         if (result != 0) {
             break;
         }
     }
 
-    return result != 0 ? 7 + result : 0;
+    return result != 0 ? result : 0;
 }
 
 void AssetsManager::CreateComponent(GameObject *gameObject, std::string componentName) {
@@ -722,11 +743,51 @@ void AssetsManager::ProcessBinary() {
     }
 }
 
-void AssetsManager::SetupTextureMaterial(Material *material, int id, grr::gTexture * texture) {
-    if (!material) {
-        return;
+int AssetsManager::ReadTexture(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList) {
+    std::size_t nsize = 0;
+    if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
+        return 1;
     }
-    material->setTexture(id, texture);
+
+    std::string goname(nsize, '\0');
+    if (!stream->read(goname.data(), nsize * sizeof(char))) {
+        return 2;
+    }
+
+    std::size_t tcount = 0;
+    if (!stream->read(reinterpret_cast<char *>(&tcount), sizeof(std::size_t))) {
+        return 3;
+    }
+
+    std::cout << goname << ", " << tcount << std::endl;
+
+    for (std::size_t i=0;i<tcount;i++) {
+        std::size_t psize = 0;
+        if (!stream->read(reinterpret_cast<char *>(&psize), sizeof(std::size_t))) {
+            return 4;
+        }
+
+        std::string path(psize, '\0');
+        if (!stream->read(path.data(), psize * sizeof(char))) {
+            return 5;
+        }
+
+        std::cout << "Texture: " << path << std::endl;
+    }
+
+    std::size_t ccount = 0;
+    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
+        return 6;
+    }
+
+    int result = 0;
+    for (std::size_t i=0;i<ccount;i++) {
+        result = ReadTexture(stream, tempList);
+        if (result != 0) {
+            break;
+        }
+    }
+    return result;
 }
 
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func) {

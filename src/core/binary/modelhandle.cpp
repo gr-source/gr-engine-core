@@ -4,6 +4,7 @@
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/window.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
@@ -20,23 +21,71 @@
 
 #include <imgui.h>
 
-std::vector<std::unique_ptr<ModelHandle>> ModelHandle::taskList;
+#include <functional>
+#include <filesystem>
+
+std::unordered_map<std::string, std::unique_ptr<ModelHandle>> ModelHandle::taskListMap;
+
+std::vector<ModelHandle *> ModelHandle::taskList;
 
 void ModelHandle::ImportFBX(const std::string &path) {
-    Filmbox::Load(path, &ModelHandle::SetupFBX, true);
+    Filmbox::Load(path, std::bind(&ModelHandle::SetupFBX, path, std::placeholders::_1), true);
 }
 
 void ModelHandle::Render() {
-    for (auto &task : taskList) {
+    if (taskList.empty()) { return; }
+
+    auto viewportsize = Window::GetWindowSize();
+
+    ImVec2 windowSize(300, 400);
+
+    ImGui::SetNextWindowPos(ImVec2{(viewportsize.x / 2) - (windowSize.x / 2), (viewportsize.y / 2) - (windowSize.y / 2)});
+    ImGui::SetNextWindowSize(windowSize);
+    ImGui::Begin("Import Menu", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+
+    auto winsize = ImGui::GetContentRegionAvail();
+
+    for (auto task : taskList) {
         task->render();
     }
+
+    auto spacing = ImGui::GetStyle().ItemSpacing;
+
+    ImGui::SetCursorPosY(winsize.y - spacing.y);
+    if (ImGui::Button("Cancel", ImVec2{winsize.x / 2.0f, 0.0f})) {
+        taskList.clear();
+
+        taskListMap.clear();
+    }
+
+    ImGui::SetCursorPos(ImVec2{(winsize.x / 2.0f) + spacing.x, winsize.y - spacing.y});
+    if (ImGui::Button("Save", ImVec2{winsize.x / 2.0f, 0.0f})) {
+        for (auto task : taskList) {
+            task->convertToGameObject();
+        }
+
+        taskList.clear();
+
+        taskListMap.clear();
+    }
+
+    ImGui::End();
 }
 
-void ModelHandle::SetupFBX(std::shared_ptr<FbxScene> scene) {
-    auto &pointer = taskList.emplace_back(std::make_unique<ModelHandle>(scene));
+void ModelHandle::SetupFBX(const std::string &path, std::shared_ptr<FbxScene> scene) {
+    auto filename = std::filesystem::path(path).filename();
+
+    auto it = taskListMap.find(filename);
+    if (it != taskListMap.end()) {
+        return;
+    }
+
+    taskListMap[filename] = std::make_unique<ModelHandle>(filename, scene);
+
+    taskList.push_back(&(*taskListMap[filename]));
 }
 
-ModelHandle::ModelHandle(std::shared_ptr<FbxScene> scene) : m_scene(scene) {
+ModelHandle::ModelHandle(const std::string &name, std::shared_ptr<FbxScene> scene) : name(name), m_scene(scene) {
     auto &root = scene->getRootNode();
 
     for (auto &child : root.getChildren()) {
@@ -45,27 +94,16 @@ ModelHandle::ModelHandle(std::shared_ptr<FbxScene> scene) : m_scene(scene) {
 }
 
 void ModelHandle::render() {
-    char buff[256];
-    sprintf(buff, "##%p", this);
+    auto isOpen = ImGui::TreeNode(name.c_str());
 
-    ImGui::Begin(buff, nullptr);
+    if (isOpen) {
+        auto &rootNode = m_scene->getRootNode();
+        for (auto &child : rootNode.getChildren()) {
+            renderNode(&child);
+        }
 
-    auto avail = ImGui::GetContentRegionAvail();
-
-    ImGui::SeparatorText("Models");
-
-    auto &rootNode = m_scene->getRootNode();
-    for (auto &child : rootNode.getChildren()) {
-        renderNode(&child);
+        ImGui::TreePop();
     }
-
-    ImGui::SetCursorPosY(avail.y - ImGui::GetStyle().ItemSpacing.y);
-
-    if (ImGui::Button("Save", ImVec2{avail.x, 0.0f}) && gameObjects.empty()) {
-        convertToGameObject();
-    }
-
-    ImGui::End();
 }
 
 void ModelHandle::renderNode(const FbxNode *node) {
@@ -216,18 +254,19 @@ void ModelHandle::generateMesh(const FbxNode *node, GameObject *go) {
     }
 
     for (auto &&[name, fbxMaterial] : materialList) {
-        auto material = m_materials[go].emplace_back(fbxMaterial.getName(), meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getName(), fbxMaterial.getColor()));
+        auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getName(), fbxMaterial.getColor());
 
-        /*
-        int textureID = 0;
+        m_materials[go].emplace_back(fbxMaterial.getName(), material);
+
         for (auto &&[type, path] : fbxMaterial.getTextures()) {
-            if (type != TextureType_Albedo) {
-                continue;
+            switch (type) {
+            case TextureType_Albedo:
+                AssetsManager::LoadTexture(path, &Material::setTexture, material, 0);
+                break;
+            default:
+                break;
             }
-            // AssetsManager::LoadTexture(path, &Model3DHandler::SetupTextureMaterial, material, textureID);
-            textureID++;
         }
-        */
     }
 }
 
@@ -289,7 +328,7 @@ int ModelHandle::writeData(Stream *stream, const GameObject *go) const {
 
     // write texture
     {
-        if (writeTexture(stream) == -1) {
+        if (writeTexture(stream, go) == -1) {
             return 1;
         }
         
@@ -333,8 +372,65 @@ int ModelHandle::writeData(Stream *stream, const GameObject *go) const {
     return 0;
 }
 
-int ModelHandle::writeTexture(Stream *stream) const {
-    return 0;
+int ModelHandle::writeTexture(Stream *stream, const GameObject *go) const {
+    auto materials = getMaterialOfRefGameObject(go);
+
+    auto name = go->getName();
+
+    auto nsize = name.size();
+    if (!stream->write(&nsize, sizeof(std::size_t))) {
+        return 1;
+    }
+
+    if (!stream->write(name.c_str(), nsize * sizeof(char))) {
+        return 2;
+    }
+
+    std::vector<grr::gTexture *> textures;
+    for (auto &&[name, material] : materials) {
+        auto texture0 = material->getTexture(0);
+        if (texture0 == nullptr) { continue; }
+
+        textures.push_back(texture0);
+    }
+
+    auto tcount = textures.size();
+
+    std::cout << name << ", " << tcount << std::endl;
+
+    if (!stream->write(&tcount, sizeof(std::size_t))) {
+        return 3;
+    }
+
+    for (auto texture : textures) {
+        auto path = AssetsManager::GetRefTextureName(texture);
+
+        auto psize = path.size();
+        if (!stream->write(&psize, sizeof(std::size_t))) {
+            return 4;
+        }
+
+        if (!stream->write(path.c_str(), psize * sizeof(char))) {
+            return 5;
+        }
+    }
+
+    auto children = go->getTransform()->getChildren();
+    auto ccount = children.size();
+
+    if (!stream->write(&ccount, sizeof(std::size_t))) {
+        return 6;
+    }
+
+    int result = 0;
+    for (auto child : children) {
+        result = writeMaterial(stream, child->getGameObject());
+        if (result != 0) {
+            break;
+        }
+    }
+
+    return 7 + result;
 }
 
 int ModelHandle::writeMaterial(Stream *stream, const GameObject *go) const {
@@ -365,6 +461,19 @@ int ModelHandle::writeMaterial(Stream *stream, const GameObject *go) const {
 
         if (!stream->write(name.data(), size * sizeof(char))) {
             return 5;
+        }
+
+        std::size_t bufferSize = 0;
+        {
+            Stream temp;
+            material->serialize(&temp);
+            bufferSize = temp.getDataSize();
+
+            temp.close();
+        }
+
+        if (!stream->write(&bufferSize, sizeof(std::size_t))) {
+            return 6;
         }
 
         material->serialize(stream);
@@ -496,11 +605,4 @@ std::vector<std::tuple<std::string, Material *>> ModelHandle::getMaterialOfRefGa
     }
     return it->second;
 }
-
-
-
-
-
-
-
 

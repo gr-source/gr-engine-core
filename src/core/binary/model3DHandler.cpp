@@ -671,7 +671,7 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
                 if (type != TextureType_Albedo) {
                     continue;
                 }
-                AssetsManager::LoadTexture(path, &Model3DHandler::SetupTextureMaterial, material, textureID);
+                AssetsManager::LoadTexture(path, &Material::setTexture, material, textureID);
                 textureID++;
             }
         }
@@ -681,14 +681,6 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
     for (const auto &child : node->getChildren()) {
         CreateObjects(scene, &child, transform, out, tempObject);
     }
-}
-
-void Model3DHandler::SetupTextureMaterial(Material *material, int id, grr::gTexture *texture) {
-    if (!material || !texture) {
-        return;
-    }
-
-    material->setTexture(id, texture);
 }
 
 

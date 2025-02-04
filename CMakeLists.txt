@@ -36,11 +36,12 @@ set(file
 )
 
 set(core
+    src/core/assetsManager.cpp
     src/core/nameManager.cpp
     src/core/threadpool.cpp
-    src/core/assetsManager.cpp
     src/core/display.cpp
     src/core/console.cpp
+    src/core/window.cpp
     src/core/string.cpp
     src/core/scene.cpp
     src/core/event.cpp

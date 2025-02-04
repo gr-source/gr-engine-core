@@ -193,7 +193,7 @@ private:
 
     static void ProcessBinary();
 
-    static void SetupTextureMaterial(Material *material, int id, grr::gTexture *texture);
+    static int ReadTexture(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList);
 };
 
 template <typename... Args>
