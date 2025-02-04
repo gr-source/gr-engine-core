@@ -110,30 +110,29 @@ private:
 
     int writeScene(Stream *stream);
 
-    int writeMaterial(Stream *stream);
-
     int writeTexture(Stream *stream);
+
+    int writeMaterial(Stream *stream);
 
     int writeMesh(Stream *stream);
 
     int writeObject(Stream *stream);
 
+    int writeGameObject(Stream *stream, GameObject *gameObject);
+
     int writeScript(Stream *stream);
 
-    int writeGameObject(Stream *stream, GameObject *gameObject);
+    static int readTexture(Stream *stream);
+
+    static int readMaterial(Stream *stream);
+
+    static int readMesh(Stream *stream);
 
     static int readMainListGameObject(Stream *stream, Scene *scene, std::unordered_map<std::string, GameObject *> &tempObject);
 
     static int readGameObject(Stream *stream, Scene *scene, Transform *parent, std::unordered_map<std::string, GameObject *> &tempObject);
 
-    static int readMaterial(Stream *stream);
-
-    static int readTexture(Stream *stream);
-
-    static int readMesh(Stream *stream);
-
     static int readScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempObject);
-
 
     static void SetupScene(Scene *scene);
 

@@ -375,6 +375,8 @@ void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void
         auto nextPosition = stream.tellg() + static_cast<std::streampos>(data.sizeData);
         auto block_name = struct_name[data.type];
 
+        std::cout << "segment: " << block_name << std::endl;
+
         if (data.sizeData <= 0) {
             stream.seekg(nextPosition, std::ios_base::beg);
             continue;
@@ -382,13 +384,13 @@ void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void
 
         int result = -1;
         switch (data.type) {
-        case gHeaderType_Material:
-            if (flags & LoadFlags_Mesh)
-                result = readMaterial(&stream);
-            break;
         case gHeaderType_Texture:
             if (flags & LoadFlags_Texture)
                 result = readTexture(&stream);
+            break;
+        case gHeaderType_Material:
+            if (flags & LoadFlags_Material)
+                result = readMaterial(&stream);
             break;
         case gHeaderType_Mesh:
             if (flags & LoadFlags_Mesh)
@@ -508,49 +510,47 @@ int Scene::writeScene(Stream *stream) {
     return 0;
 }
 
-int Scene::writeMaterial(Stream *stream) {
-    auto &materialMap = AssetsManager::GetMaterialMap();
-    auto size = materialMap.size();
+int Scene::writeTexture(Stream *stream) {
+    auto &textureMap = AssetsManager::GetTextureMap();
 
-    if (!stream->write(&size, sizeof(std::size_t))) {
-        return 1;
+    auto tcount = AssetsManager::GetTextureCount();
+    if (!stream->write(&tcount, sizeof(std::size_t))) {
+        return 2;
     }
 
-    for (auto &&[name, material] : materialMap) {
-        size = name.size();
-
-        if (!stream->write(&size, sizeof(std::size_t))) {
-            return 2;
-        }
-
-        if (!stream->write(name.data(), size * sizeof(char))) {
+    for (auto &&[path, ptr] : textureMap) {
+        std::size_t psize = path.size();
+        if (!stream->write(&psize, sizeof(std::size_t))) {
             return 3;
         }
 
-        material->serialize(stream);
+        if (!stream->write(path.c_str(), psize * sizeof(char))) {
+            return 4;
+        }
     }
 
     return 0;
 }
 
-int Scene::writeTexture(Stream *streaming) {
-    auto &textureMap = AssetsManager::GetTextureMap();
-    auto count = AssetsManager::GetTextureCount();
+int Scene::writeMaterial(Stream *stream) {
+    auto &materialMap = AssetsManager::GetMaterialMap();
 
-    if (!streaming->writeS(&count, 1)) {
-        return 2;
+    auto mcount = materialMap.size();
+    if (!stream->write(&mcount, sizeof(std::size_t))) {
+        return 1;
     }
 
-    for (auto &&[path, ptr] : textureMap) {
-        auto size = path.size();
+    for (auto &&[name, material] : materialMap) {
+        std::size_t nsize = name.size();
+        if (!stream->write(&nsize, sizeof(std::size_t))) {
+            return 2;
+        }
 
-        if (!streaming->writeS(&size, 1)) {
+        if (!stream->write(name.c_str(), nsize * sizeof(char))) {
             return 3;
         }
 
-        if (!streaming->writeS(path.data(), size)) {
-            return 4;
-        }
+        material->serialize(stream);
     }
 
     return 0;
@@ -582,18 +582,91 @@ int Scene::writeMesh(Stream *streaming) {
     return 0;
 }
 
-int Scene::writeObject(Stream *streaming) {
+int Scene::writeObject(Stream *stream) {
     auto objectCount = m_objects.size();
 
-    if (!streaming->writeS(&objectCount, 1)) {
+    if (!stream->write(&objectCount, sizeof(std::size_t))) {
         return 1;
     }
 
-    std::function<void(GameObject *)> func = std::bind(&Scene::writeGameObject, this, streaming, std::placeholders::_1);
+    std::function<void(GameObject *)> func = std::bind(&Scene::writeGameObject, this, stream, std::placeholders::_1);
 
     if (func)
         std::for_each(m_objects.begin(), m_objects.end(), func);
     return 0;
+}
+
+int Scene::writeGameObject(Stream *stream, GameObject *gameObject) {
+    // write name
+    {
+        auto goname = gameObject->getName();
+        auto gonsize = goname.size();
+
+        if (!stream->write(&gonsize, sizeof(std::size_t))) {
+            return 1;
+        }
+
+        if (!stream->write(goname.c_str(), gonsize * sizeof(char))) {
+            return 2;
+        }
+    }
+
+    // write tag
+    {
+        auto gotag = gameObject->getTag();
+        auto gotsize = gotag.size();
+
+        if (!stream->write(&gotsize, sizeof(std::size_t))) {
+            return 3;
+        }
+        
+        if (!stream->write(gotag.data(), gotsize * sizeof(char))) {
+            return 4;
+        }
+    }
+
+    // write status object
+    {
+        auto active = gameObject->getActive();
+        if (!stream->write(&active,  sizeof(bool))) {
+            return 5;
+        }
+
+        auto enable = gameObject->getEnable();
+        if (!stream->write(&enable, sizeof(bool))) {
+            return 6;
+        }
+    }
+
+    // Write Component
+    auto entity = gameObject->getEntity();
+
+    std::list<std::tuple<std::string, Component *>> m_list;
+    for (auto [name, ptr] : entity->getComponentMap()) {
+        m_list.emplace_front(name, &(*ptr));
+    }
+
+    for (auto &&[name, ptr] : m_list) {
+        m_componentCache.emplace_back(gameObject->getName(), name, ptr);
+    }
+
+    auto transform = gameObject->getTransform();
+    auto children = transform->getChildren();
+
+    auto ccount = children.size();
+    if (!stream->write(&ccount, sizeof(std::size_t))) {
+        return 7;
+    }
+
+
+    int result = 0;
+    for (auto &child : children) {
+        result = writeGameObject(stream, child->getGameObject());
+        if (result != 0) {
+            break;
+        }
+    }
+    return result;
 }
 
 int Scene::writeScript(Stream *streaming) {
@@ -628,52 +701,84 @@ int Scene::writeScript(Stream *streaming) {
     return 0;
 }
 
-int Scene::writeGameObject(Stream *streaming, GameObject *gameObject) {
-    auto name = gameObject->getName();
-    auto nSize = name.size();
-
-    auto tag = gameObject->getTag();
-    auto tSize = tag.size();
-
-    streaming->writeS(&nSize, 1);
-    streaming->writeS(name.data(), nSize);
-
-    streaming->writeS(&tSize, 1);
-    streaming->writeS(tag.data(),  tSize);
-
-    auto active = gameObject->getActive();
-    auto enable = gameObject->getEnable();
-    streaming->writeS(&active,  1);
-    streaming->writeS(&enable,  1);
-
-    // Write Component
-    auto entity = gameObject->getEntity();
-
-    std::list<std::tuple<std::string, Component *>> m_list;
-    for (auto [name, ptr] : entity->getComponentMap()) {
-        m_list.emplace_front(name, &(*ptr));
+int Scene::readTexture(Stream *stream) {
+    std::size_t tcount = 0;
+    if (!stream->read(reinterpret_cast<char *>(&tcount), sizeof(std::size_t))) {
+        return 1;
     }
 
-    for (auto &&[name, ptr] : m_list) {
-        m_componentCache.emplace_back(gameObject->getName(), name, ptr);
+    std::vector<std::string> pathList(tcount);
+    for (auto &path : pathList) {
+        std::size_t psize = 0;
+        if (!stream->read(reinterpret_cast<char *>(&psize), sizeof(std::size_t))) {
+            return 2;
+        }
+
+        path.resize(psize, '\0');
+        if (!stream->read(path.data(), psize * sizeof(char))) {
+            return 3;
+        }
+    }
+    
+    for (auto &path : pathList) {
+        // AssetsManager::LoadTexture(path);
+    }
+    return 0;
+}
+
+int Scene::readMaterial(Stream *stream) {
+    std::size_t mcount = 0;
+    if (!stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t))) {
+        return 1;
     }
 
-    auto transform = gameObject->getTransform();
-    auto children = transform->getChildren();
+    for (std::size_t i=0;i<mcount;i++) {
+        std::size_t nsize = 0;
+        if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
+            return 2;
+        }
 
-    auto cSize = children.size();
-    streaming->writeS(&cSize, 1);
+        std::string name(nsize, '\0');
+        if (!stream->read(name.data(), nsize * sizeof(char))) {
+            return 3;
+        }
 
-    for (auto &child : children) {
-        auto object = child->getGameObject();
+        auto material = AssetsManager::CreateMaterial(name);
+        material->deserialize(stream);
+    }
+    return 0;
+}
 
-        writeGameObject(streaming, object);
+// TODO: pode gerarr erro, por favor corrija
+int Scene::readMesh(Stream *streaming) {
+    grm::size meshCount = 0;
+    if (!streaming->readS(&meshCount, 1)) {
+        return 1;
+    }
+
+    for (auto i=0;i<meshCount;i++) {
+        std::size_t size = 0;
+        if (!streaming->readS(&size, 1)) {
+            return 2;
+        }
+
+        std::string name(size, '\0');
+        if (!streaming->readS(name.data(), size)) {
+            return 3;
+        }
+
+        auto mesh = AssetsManager::CreateMesh(name, name);
+        
+        auto result = mesh->deserialize(streaming);
+        if (result != 0) {
+            return 4 + result;
+        }
     }
     return 0;
 }
 
 int Scene::readMainListGameObject(Stream *stream, Scene *scene, std::unordered_map<std::string, GameObject *> &tempObject) {
-    std::size_t gocount;
+    std::size_t gocount = 0;
     if (!stream->read(reinterpret_cast<char *>(&gocount), sizeof(std::size_t))) {
         return 1;
     }
@@ -686,7 +791,7 @@ int Scene::readMainListGameObject(Stream *stream, Scene *scene, std::unordered_m
         }
     }
 
-    return result != 0 ? 2 + result : 0;
+    return result;
 }
 
 void CrateGameObject(Transform *&outTransform, GameObject *&outObject, std::condition_variable &cv, std::mutex &mutex, Scene *scene, Transform *parent, bool active, bool enable, std::string name, std::string tag, int &result) {
@@ -724,23 +829,23 @@ void CrateGameObject(Transform *&outTransform, GameObject *&outObject, std::cond
 }
 
 int Scene::readGameObject(Stream *stream, Scene *scene, Transform *parent, std::unordered_map<std::string, GameObject *> &tempObject) {
-    std::size_t nsize = 0;
-    if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
+    std::size_t gonsize = 0;
+    if (!stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t))) {
         return 1;
     }
 
-    std::string name(nsize, '\0');
-    if (!stream->read(name.data(), nsize * sizeof(char))) {
+    std::string goname(gonsize, '\0');
+    if (!stream->read(goname.data(), gonsize * sizeof(char))) {
         return 2;
     }
 
-    std::size_t tsize = 0;
-    if (!stream->read(reinterpret_cast<char *>(&tsize), sizeof(std::size_t))) {
+    std::size_t gotsize = 0;
+    if (!stream->read(reinterpret_cast<char *>(&gotsize), sizeof(std::size_t))) {
         return 3;
     }
 
-    std::string tag(tsize, '\0');
-    if (!stream->read(tag.data(), tsize * sizeof(char))) {
+    std::string gotag(gotsize, '\0');
+    if (!stream->read(gotag.data(), gotsize * sizeof(char))) {
         return 4;
     }
 
@@ -759,7 +864,7 @@ int Scene::readGameObject(Stream *stream, Scene *scene, Transform *parent, std::
 
     int presult = -1;
 
-    Event::Add(CrateGameObject, std::ref(transform), std::ref(gameObject), std::ref(cv), std::ref(m_mutex), std::ref(scene), parent, active, enable, name, tag, std::ref(presult));
+    Event::Add(CrateGameObject, std::ref(transform), std::ref(gameObject), std::ref(cv), std::ref(m_mutex), std::ref(scene), parent, active, enable, goname, gotag, std::ref(presult));
 
     std::unique_lock<std::mutex> lock(m_mutex);
     cv.wait(lock, [&transform, &presult] {
@@ -767,7 +872,7 @@ int Scene::readGameObject(Stream *stream, Scene *scene, Transform *parent, std::
     });
 
     if (gameObject)
-        tempObject.emplace(name, gameObject);
+        tempObject.emplace(goname, gameObject);
         
     if (presult != 0) {
         return 2;
@@ -778,14 +883,13 @@ int Scene::readGameObject(Stream *stream, Scene *scene, Transform *parent, std::
     }
     lock.unlock();
 
-    std::size_t csize = 0;
-    if (!stream->read(reinterpret_cast<char *>(&csize), sizeof(std::size_t))) {
+    std::size_t ccount = 0;
+    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
         return 8;
     }
 
-
     int result = 0;
-    for (std::size_t i=0;i<csize;i++) {
+    for (std::size_t i=0;i<ccount;i++) {
         result = readGameObject(stream, scene, transform, tempObject);
         if (result != 0) {
             break;
@@ -795,91 +899,7 @@ int Scene::readGameObject(Stream *stream, Scene *scene, Transform *parent, std::
     transform = nullptr;
     gameObject = nullptr;
 
-    return result != 0 ? 9 + result : 0;
-}
-
-int Scene::readMaterial(Stream *stream) {
-    std::size_t size = 0;
-    std::size_t nsize = 0;
-
-    if (!stream->read(reinterpret_cast<char *>(&size), sizeof(std::size_t))) {
-        return 1;
-    }
-
-    for (std::size_t i=0;i<size;i++) {
-        if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
-            return 2;
-        }
-
-        std::string name(nsize, '\0');
-        if (!stream->read(name.data(), nsize * sizeof(char))) {
-            return 3;
-        }
-
-        auto material = AssetsManager::CreateMaterial(name);
-        material->deserialize(stream);
-    }
-    return 0;
-}
-
-int Scene::readTexture(Stream *streaming) {
-    std::size_t size = 0;
-    int result = 0;
-
-    result = streaming->readS(&size, 1) ? 0 : 1;
-    if (result != 0) {
-        return result;
-    }
-
-    std::vector<std::string> pathList(size);
-    for (auto &path : pathList) {
-        std::size_t size;
-
-        result = streaming->readS(&size, 1) ? 0 : 2;
-        if (result != 0) {
-            break;
-        }
-
-        path.resize(size, '\0');
-
-        result = streaming->readS(path.data(), size) ? 0 : 3;
-        if (result != 0) {
-            break;
-        }
-    }
-    
-    for (auto &path : pathList) {
-        // AssetsManager::LoadTexture(path);
-    }
-    return 0;
-}
-
-// TODO: pode gerarr erro, por favor corrija
-int Scene::readMesh(Stream *streaming) {
-    grm::size meshCount = 0;
-    if (!streaming->readS(&meshCount, 1)) {
-        return 1;
-    }
-
-    for (auto i=0;i<meshCount;i++) {
-        std::size_t size = 0;
-        if (!streaming->readS(&size, 1)) {
-            return 2;
-        }
-
-        std::string name(size, '\0');
-        if (!streaming->readS(name.data(), size)) {
-            return 3;
-        }
-
-        auto mesh = AssetsManager::CreateMesh(name, name);
-        
-        auto result = mesh->deserialize(streaming);
-        if (result != 0) {
-            return 4 + result;
-        }
-    }
-    return 0;
+    return result;
 }
 
 int Scene::readScript(Stream *streaming, std::unordered_map<std::string, GameObject *> &tempObject) {
