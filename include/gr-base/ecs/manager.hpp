@@ -13,6 +13,8 @@ public:
 
     static Entity *CreateEntity(GameObject *go);
 
+    static Entity *GetEntityFromID(EntityID id);
+
     static void DestroyEntity(Entity *entity);
 
     static std::size_t GetEntityCount();

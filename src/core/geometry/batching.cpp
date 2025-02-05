@@ -115,12 +115,25 @@ Batching::~Batching() {
     }
 }
 
+struct VertexData {
+    Vector3 position;
+    Vector3 normal;
+    Vector2 texCoord;
+    int mIdx;
+    int entityID;
+};
+
 void Batching::buildMeshe(Mesh *mesh) {
+    auto entity = m_models[0]->getGameObject()->getEntity();
+
     m_vertexArray = m_vertexArray != nullptr ? m_vertexArray : grr::gVertexArray::Create();
 
     m_VBO = m_VBO != 0 ? m_VBO : grr::gVertexArray::CreateBuffer(BufferType::VBO);
     
-    auto vertices = mesh->getVertices();
+    std::vector<VertexData> vertices;
+    for (auto vertice : mesh->getVertices()) {
+        vertices.push_back(VertexData{vertice.position, vertice.normal, vertice.texCoord, vertice.mIdx, static_cast<int>(entity->getEntityID())});
+    }
 
     m_indexCount = vertices.size();
     
@@ -139,13 +152,14 @@ void Batching::buildMeshe(Mesh *mesh) {
     }
 
     grr::gVertexArray::Bind(m_VBO);
-    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex3D), BufferUsage::STATIC);
-    grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex3D), vertices.data());
+    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(VertexData), BufferUsage::STATIC);
+    grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(VertexData), vertices.data());
 
-    grr::gVertexArray::SetAttrib(0, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
-    grr::gVertexArray::SetAttrib(1, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
-    grr::gVertexArray::SetAttrib(2, 2, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
-    grr::gVertexArray::SetAttrib(3, 1, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
+    grr::gVertexArray::SetAttrib(0, 3,  sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, position)));
+    grr::gVertexArray::SetAttrib(1, 3,  sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, normal)));
+    grr::gVertexArray::SetAttrib(2, 2,  sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, texCoord)));
+    grr::gVertexArray::SetAttrib(3, 1,  sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, mIdx)));
+    grr::gVertexArray::SetAttribI(4, 1, sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, entityID)));
 
     m_vertexArray->unbind();
 

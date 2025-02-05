@@ -30,6 +30,14 @@ Entity *Manager::CreateEntity(GameObject *go) {
     return mEntities.emplace_back(&(*entity));
 }
 
+Entity *Manager::GetEntityFromID(EntityID id) {
+    auto it = mMapEntities.find(id);
+    if (it == mMapEntities.end()) {
+        return nullptr;
+    }
+    return &(*it->second);
+}
+
 void Manager::DestroyEntity(Entity *entity) {
     auto id = entity->getEntityID();
 
