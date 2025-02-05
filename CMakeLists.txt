@@ -82,6 +82,10 @@ set(physics
     src/physics/physicsScene.cpp
 )
 
+set(culling
+    src/core/culling/frustum.cpp
+)
+
 find_package(assimp QUIET)
 if(NOT assimp_FOUND)
     message(FATAL_ERROR "Please install libassimp-dev")
@@ -94,7 +98,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${filmbox} ${binary} ${animation} ${physics})
+add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core}  ${culling} ${filmbox} ${binary} ${animation} ${physics})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

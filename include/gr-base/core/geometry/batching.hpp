@@ -54,6 +54,8 @@ public:
 
     bool isValid() const;
 
+    bool isVisible() const;
+
 private:
     static std::unordered_map<std::string, std::unique_ptr<Batching>> s_batchedInstances;
 
@@ -86,6 +88,8 @@ private:
     grr::gShader *m_shader;
 
     void setupMaterial(grr::gShader *shader);
+
+    void calcboundbox(const Mesh *mesh);
 
     static void RegisterShaderShadow(grr::gShader *shader);
 };

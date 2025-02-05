@@ -85,10 +85,10 @@ void Batching::RenderBatches() {
     Status::BatchRenderCount = 0;
 
     for (auto &batching : s_batchedInstancesList) {
-        if (!batching->isValid()) {
+        if (!batching->isValid() || batching->isVisible()) {
             continue;
         }
-        
+
         batching->draw();
     
         Status::BatchRenderCount++;
@@ -148,6 +148,8 @@ void Batching::buildMeshe(Mesh *mesh) {
     grr::gVertexArray::SetAttrib(3, 1, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
 
     m_vertexArray->unbind();
+
+    calcboundbox(mesh);
 
     m_flags |= BatchingFlags_BuildMesh;
 }
@@ -241,6 +243,16 @@ void Batching::setupMaterial(grr::gShader *shader) {
     shader->setUniform("m_activate", 10, (const void *)idxEn);
 }
 
+void Batching::calcboundbox(const Mesh *mesh) {
+    m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
+    
+    for (auto vertex : mesh->getVertices()) {
+        m_boundbox.min = Math::min(m_boundbox.min, vertex.position);
+        m_boundbox.max = Math::max(m_boundbox.max, vertex.position);
+    }
+}
+
 void Batching::RegisterShaderShadow(grr::gShader *shader) {
     /*
     if (!shader) {
@@ -258,9 +270,7 @@ bool Batching::isValid() const {
     return !m_models.empty() && (m_flags & BatchingFlags_BuildMesh);
 }
 
-
-
-
-
-
-
+#include "gr-base/core/culling/frustum.hpp"
+bool Batching::isVisible() const {
+    return !Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, m_models[0]->getGlobalMatrix());
+}

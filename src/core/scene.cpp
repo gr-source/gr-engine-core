@@ -375,8 +375,6 @@ void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void
         auto nextPosition = stream.tellg() + static_cast<std::streampos>(data.sizeData);
         auto block_name = struct_name[data.type];
 
-        std::cout << "segment: " << block_name << std::endl;
-
         if (data.sizeData <= 0) {
             stream.seekg(nextPosition, std::ios_base::beg);
             continue;
