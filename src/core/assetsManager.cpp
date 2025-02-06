@@ -174,7 +174,7 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
     if (it != textureMap.end()) {
         return handle.invoke(&(*it->second));
     }
-    auto texture = grr::gTexture::Create();
+    auto texture = new grr::gTexture();
 
     grr::TextureFormat format;
 
@@ -195,8 +195,7 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
             break;
         }
 
-        grr::gTexture::Bind(texture);
-        grr::gTexture::UpdateTexture(width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Bilinear, format, pixels);
+        texture->updateBuffer(width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Bilinear, format, pixels);
 
         stbi_image_free(pixels);
     }

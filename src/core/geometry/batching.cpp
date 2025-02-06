@@ -215,7 +215,7 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
     }
 
     for (int i=0;i<10;i++) {
-        grr::gTexture::Bind(nullptr, i);
+        grr::gTexture::Unbind(i);
     }
 
     m_vertexArray->unbind();
@@ -238,7 +238,7 @@ void Batching::setupMaterial(grr::gShader *shader) {
         // 4 - Ao
         auto texture = material->getTexture(0);
         if (texture && texture->isValid()) {
-            grr::gTexture::Bind(texture, i);
+            texture->bind(i);
             idxEn[i] = 1;
         }
 
