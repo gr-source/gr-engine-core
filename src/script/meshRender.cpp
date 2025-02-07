@@ -62,9 +62,8 @@ void MeshRender::build() {
 
     auto shader = AssetsManager::FindShader("dynamic_one_model");
     if (!shader) {
-        return AssetsManager::LoadShader("dynamic_one_model",
-            File::GetAsset("/shader/model/dynamic_model.frag"),
-            File::GetAsset("/shader/model/dynamic_one_model.vert"),
+        return AssetsManager::LoadShader(
+            File::GetAsset("/shader/model/default_model.glsl"),
             &MeshRender::SetupShader, this, mesh
         );
     }

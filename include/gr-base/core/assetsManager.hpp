@@ -39,17 +39,13 @@ public:
 
 class ShaderHandle {
 public:
-    ShaderHandle(std::function<void(grr::gShader *)> function, std::string name, std::string frag, std::string vert);
+    ShaderHandle(std::function<void(grr::gShader *)> function, std::string path);
 
     void invoke(grr::gShader *shader);
 
     void add(std::function<void(grr::gShader *)> function);
 
-    std::string m_name;
-    
-    std::string m_frag;
-
-    std::string m_vert;
+    std::string m_path;
 
 private:
     std::vector<std::function<void(grr::gShader *)>> m_functions;
@@ -69,6 +65,12 @@ private:
     std::vector<std::function<void(grr::gTexture *)>> m_functions;
 };
 
+enum ShaderType {
+    ShaderType_None     = 1 << 0,
+    ShaderType_Fragment = 1 << 1,
+    ShaderType_Vertex   = 1 << 2,
+};
+
 class AssetsManager {
 public:
     static void Initialize();
@@ -81,7 +83,7 @@ public:
     static std::string GetRefTextureName(grr::gTexture *texture);
 
     template <typename ...Args>
-    static void LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args);
+    static void LoadShader(const std::string &path, Args &&...args);
 
     template <typename ...Args>
     static void LoadGameObject(const std::string &path, Args &&...args);
@@ -112,7 +114,7 @@ public:
 
     static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
 
-    static void SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func);
+    static void SetShaderList(const std::string &path, std::function<void(grr::gShader *)> func);
 
     static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
 
@@ -129,7 +131,7 @@ public:
 
 private:
     /***************** Shader *****************/
-    static std::unordered_map<grr::gShader *, std::tuple<std::string, std::string>> mShaderPathRef;
+    static std::unordered_map<grr::gShader *, std::string> mShaderPathRef;
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> mShaderList;
     static std::list<ShaderHandle> mShaderFromLoad;
     static std::mutex mShaderMutex;
@@ -195,6 +197,8 @@ private:
     static void ProcessBinary();
 
     static int ReadTexture(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList);
+
+    static std::map<ShaderType, std::string> ReadShaderOfType(const std::string &path);
 };
 
 template <typename... Args>
@@ -218,13 +222,13 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
 }
 
 template <typename... Args>
-inline void AssetsManager::LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args) {
+inline void AssetsManager::LoadShader(const std::string &path, Args &&...args) {
     std::function<void(grr::gShader *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0) {
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
     
-    SetShaderList(name, frag, vert, func);
+    SetShaderList(path, func);
 }
 
 template <typename... Args>

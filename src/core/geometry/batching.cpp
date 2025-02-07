@@ -23,9 +23,7 @@ std::vector<Batching *> Batching::s_batchedInstancesList;
 grr::gShader *Batching::s_shadowShader = nullptr;
 
 void Batching::Initialize() {
-    AssetsManager::LoadShader("shadow",
-        File::GetAsset("/shader/shadow/shadow.frag"),
-        File::GetAsset("/shader/shadow/shadow.vert"), &Batching::RegisterShaderShadow);
+    AssetsManager::LoadShader(File::GetAsset("/shader/shadow/shadow.glsl"), &Batching::RegisterShaderShadow);
 }
 
 // TODO: falta descarregar o shader

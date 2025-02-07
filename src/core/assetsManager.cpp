@@ -35,7 +35,7 @@
 grm::u32 AssetsManager::m_processCount = 0;
 
 /***************** Shader *****************/
-std::unordered_map<grr::gShader *, std::tuple<std::string, std::string>> AssetsManager::mShaderPathRef;
+std::unordered_map<grr::gShader *, std::string> AssetsManager::mShaderPathRef;
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::mShaderList;
 std::list<ShaderHandle> AssetsManager::mShaderFromLoad;
 std::mutex AssetsManager::mShaderMutex;
@@ -237,11 +237,13 @@ void AssetsManager::ProcessTexture() {
 
 /***************** Shader Process ****************/
 void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, const std::string &vert) {
-    auto it = mShaderList.find(handle.m_name);
+    auto it = mShaderList.find(handle.m_path);
     if (it != mShaderList.end()) {
         handle.invoke(&(*it->second));
         return;
     }
+
+    std::string name = std::filesystem::path(handle.m_path).filename().string();
 
     const char *fShader = frag.c_str();
     const char *vShader = vert.c_str();
@@ -250,18 +252,18 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
 
     shader->build(&fShader, 1, &vShader, 1);
     if (!shader->isValid()) {
-        Console::LogError("[ Shader ] Fail to build shader, %s, %s", handle.m_name.c_str(), grr::error());
+        Console::LogError("[ Shader ] Fail to build shader, %s, %s", name.c_str(), grr::error());
         delete shader;
         return;
     }
     
-    mShaderList[handle.m_name] = std::unique_ptr<grr::gShader>(shader);
+    mShaderList[handle.m_path] = std::unique_ptr<grr::gShader>(shader);
 
-    mShaderPathRef[&(*mShaderList[handle.m_name])] = std::make_tuple(handle.m_frag, handle.m_vert);
+    mShaderPathRef[&(*mShaderList[handle.m_path])] = handle.m_path;
 
     handle.invoke(shader);
 
-    Console::LogInfo("[ AssetsManager::Shader ] Shader loadedd sucessfull: %s", handle.m_name.c_str());
+    Console::LogInfo("[ AssetsManager::Shader ] Shader loadedd sucessfull: %s", name.c_str());
 }
 
 void AssetsManager::ProcessShader() {
@@ -271,7 +273,9 @@ void AssetsManager::ProcessShader() {
         mShaderFromLoad.pop_front();
         lock.unlock();
 
+        auto shader_map = ReadShaderOfType(handle.m_path);
         // Processing shader
+        /*
         auto fragSource = File::GetFileContent(handle.m_frag);
         if (fragSource.empty()) {
             Console::log(Log::ERROR, "Falied to shader: " + handle.m_name + " Fragment: " + handle.m_frag);
@@ -288,8 +292,9 @@ void AssetsManager::ProcessShader() {
             lock.lock();
             continue;
         }
+        */
 
-        Event::Add(AssetsManager::SetupShader, handle, fragSource, vertSource);
+        Event::Add(AssetsManager::SetupShader, handle, shader_map[ShaderType_Fragment], shader_map[ShaderType_Vertex]);
 
         lock.lock();
     }
@@ -790,7 +795,8 @@ int AssetsManager::ReadTexture(Stream *stream, std::unordered_map<std::string, G
     return result;
 }
 
-void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func) {
+void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func)
+{
     if (!File::Exists(path)) {
         func(nullptr);
         return Console::LogError("[ AssetsManager::GameObject ] File not found: " + path);
@@ -805,16 +811,12 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
 }
 
 // TODO: aicionar lista de callbacks a serem chamadas apos shader serem adicionado a thread
-void AssetsManager::SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func) {
-    if (!File::Exists(frag)) {
-        return Console::LogError("[ AssetsManager-Shader ] File do not exists: " + frag);
+void AssetsManager::SetShaderList(const std::string &path, std::function<void(grr::gShader *)> func) {
+    if (!File::Exists(path)) {
+        return Console::LogError("[ AssetsManager-Shader ] File do not exists: " + path);
     }
 
-    if (!File::Exists(vert)) {
-        return Console::LogError("[ AssetsManager-Shader ] File do not exists: " + vert);
-    }
-
-    auto it = mShaderList.find(name);
+    auto it = mShaderList.find(path);
     if (it != mShaderList.end()) {
         if (func)
             func(&(*it->second));
@@ -823,15 +825,15 @@ void AssetsManager::SetShaderList(const std::string &name, const std::string &fr
 
     {
         std::lock_guard<std::mutex> lock(mShaderMutex);
-        auto it = std::find_if(mShaderFromLoad.begin(), mShaderFromLoad.end(), [name](auto &handle) {
-            return handle.m_name == name;
+        auto it = std::find_if(mShaderFromLoad.begin(), mShaderFromLoad.end(), [path](auto &handle) {
+            return handle.m_path == path;
         });
         
         if (it != mShaderFromLoad.end()) {
             it->add(func);
             return;
         }
-        mShaderFromLoad.emplace_back(func, name, frag, vert);
+        mShaderFromLoad.emplace_back(func, path);
     }
 
     Threadpool::AddTask(&AssetsManager::ProcessShader);
@@ -909,7 +911,7 @@ void TextureHandle::add(std::function<void(grr::gTexture *)> function) {
     m_functions.push_back(function);
 }
 
-ShaderHandle::ShaderHandle(std::function<void(grr::gShader *)> function, std::string name, std::string frag, std::string vert) : m_name(name), m_frag(frag), m_vert(vert) {
+ShaderHandle::ShaderHandle(std::function<void(grr::gShader *)> function, std::string path) : m_path(path) {
     if (!function) {
         return;
     }
@@ -950,3 +952,36 @@ std::string AssetsManager::GetRefMaterialToName(Material *material) {
 std::unordered_map<std::string, std::unique_ptr<Material>> &AssetsManager::GetMaterialMap() {
     return materialsMap;
 }
+
+
+std::map<ShaderType, std::string> AssetsManager::ReadShaderOfType(const std::string &path) {
+    std::ifstream is(path);
+    if (!is.is_open()) {
+        throw std::runtime_error("file don't open.");
+    }
+    std::map<ShaderType, std::string> shader_map;
+
+    ShaderType type = ShaderType_None;
+    
+    std::string line;
+    while (std::getline(is, line)) {
+        if (line.find("shader_type") != std::string::npos) {
+            if (line.find("vert") != std::string::npos) {
+                type = ShaderType_Vertex;
+                continue;
+            } else if (line.find("frag") != std::string::npos) {
+                type = ShaderType_Fragment;
+                continue;
+            }
+        }
+        
+        shader_map[type] += line + '\n';
+    }
+    is.close();
+
+    return shader_map;
+}
+
+
+
+
