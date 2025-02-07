@@ -527,7 +527,7 @@ int AssetsManager::ReadMaterial(Stream *stream, std::unordered_map<std::string, 
         auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
         
         if (AssetsManager::FindMaterial(mname) == nullptr) {
-            auto material = AssetsManager::CreateMaterial(mname, mname);
+            auto material = AssetsManager::CreateMaterial(mname);
             material->deserialize(stream);
         }
 

@@ -8,11 +8,7 @@ class Stream;
 
 class Material {
 public:
-    Material(const std::string& name = "Material", const Color& albedo = Color::white, float metallic = 0.0f, float roughness = 0.0f, float ao = 0.5f);
-
-    std::string getName() const;
-
-    void setName(const std::string &name);
+    Material(const Color& albedo = Color::white, float metallic = 0.0f, float roughness = 0.0f, float ao = 0.5f);
 
     Color getAlbedo() const;
 
@@ -39,8 +35,6 @@ public:
     void deserialize(Stream *stream);
 
 private:
-    std::string m_name;
-
     Color m_albedo;
 
     float m_metallic;

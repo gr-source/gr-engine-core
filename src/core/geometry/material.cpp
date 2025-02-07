@@ -4,15 +4,7 @@
 
 #include "gr-base/core/assetsManager.hpp"
 
-Material::Material(const std::string &name, const Color &albedo, float metallic, float roughness, float ao) : m_name(name), m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr) {}
-
-std::string Material::getName() const {
-    return m_name;
-}
-
-void Material::setName(const std::string &name) {
-    m_name = name;
-}
+Material::Material(const Color &albedo, float metallic, float roughness, float ao) : m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr) {}
 
 Color Material::getAlbedo() const {
     return m_albedo;
@@ -55,11 +47,6 @@ grr::gTexture *Material::getTexture(int idx) const {
 }
 
 void Material::serialize(Stream *stream) const {
-    // serialize name
-    auto nSize = m_name.size();
-    stream->write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
-    stream->write(m_name.data(), nSize * sizeof(char));
-
     // serialize albedo
     stream->write(reinterpret_cast<const char *>(&m_albedo), sizeof(Vector4));
 
@@ -79,20 +66,13 @@ void Material::serialize(Stream *stream) const {
         stream->write(reinterpret_cast<const char *>(&i), sizeof(int));
         auto name = AssetsManager::GetRefTextureName(m_texture[i]);
 
-        nSize = name.size();
-        stream->write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
-        stream->write(name.data(), nSize * sizeof(char));
+        std::size_t psize = name.size();
+        stream->write(reinterpret_cast<const char *>(&psize), sizeof(std::size_t));
+        stream->write(name.data(), psize * sizeof(char));
     }
 }
 
 void Material::deserialize(Stream *stream) {
-    // deserialize name
-    std::size_t nSize;
-    stream->read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));
-
-    m_name.resize(nSize, '\0');
-    stream->read(m_name.data(), nSize * sizeof(char));
-
     // deserialize albedo
     stream->read(reinterpret_cast<char *>(&m_albedo), sizeof(Vector4));
 
@@ -111,10 +91,12 @@ void Material::deserialize(Stream *stream) {
     for (int i=0;i<tSize;i++) {
         int id = 0;
         stream->read(reinterpret_cast<char *>(&id), sizeof(int));
-        stream->read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));
+        
+        std::size_t psize = 0;
+        stream->read(reinterpret_cast<char *>(&psize), sizeof(std::size_t));
 
-        std::string name(nSize, '\0');
-        stream->read(name.data(), nSize * sizeof(char));
+        std::string name(psize, '\0');
+        stream->read(name.data(), psize * sizeof(char));
 
         if (name.empty()) {
             continue;

@@ -250,8 +250,6 @@ void Batching::setupMaterial(grr::gShader *shader) {
 
         sprintf(buff, "m_material[%d].params", i);
         shader->setUniform(buff, 1, &params);
-
-
     }
     shader->setUniform("m_texture", 10, (const void *)idx);
     shader->setUniform("m_activate", 10, (const void *)idxEn);

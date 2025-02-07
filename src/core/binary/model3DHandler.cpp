@@ -664,7 +664,7 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
         }
 
         for (auto &&[name, fbxMaterial] : m_materials) {
-            auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getName(), fbxMaterial.getColor());
+            auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getColor());
 
             int textureID = 0;
             for (auto &&[type, path] : fbxMaterial.getTextures()) {

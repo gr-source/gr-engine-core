@@ -264,7 +264,7 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
     }
 
     for (auto &&[name, fbxMaterial] : materialList) {
-        auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getName(), fbxMaterial.getColor());
+        auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getColor());
 
         m_materials[go].emplace_back(fbxMaterial.getName(), material);
 
