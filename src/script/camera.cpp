@@ -6,24 +6,32 @@
 
 #include "gr-base/ecs/gameObject.hpp"
 
+#include "gr-base/core/file/stream.hpp"
+
 #include <algorithm>
 
-std::vector<Camera *> Camera::s_camera;
+#include <gr-render/gTexture.h>
+
+std::vector<Camera *> Camera::m_cameraList;
 
 Camera *Camera::s_current = nullptr;
 
+std::vector<Camera *> Camera::GetCameras() {
+    return m_cameraList;
+}
+
 Camera *Camera::Main() {
-    if (s_camera.empty()) {
+    if (m_cameraList.empty()) {
         return s_current;
     }
-    return s_camera[0];
+    return m_cameraList[0];
 }
 
 Camera *Camera::Current() {
     return s_current;
 }
 
-Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix) {
+Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_texture(new grr::gTexture()), m_rect({0.0f, 0.0f, 1.0f, 1.0f}) {
     auto rect = Display::GetDisplayRect();
 
     m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
@@ -34,7 +42,7 @@ Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlan
 void Camera::Init() {
     m_transform = entity->getComponent<Transform>();
 
-    s_camera.push_back(this);
+    m_cameraList.push_back(this);
 
     if (!s_current) {
         s_current = this;
@@ -51,7 +59,96 @@ void Camera::Destroy() {
     if (this == s_current) {
         s_current = nullptr;
     }
-    s_camera.erase(std::remove(s_camera.begin(), s_camera.end(), this), s_camera.end());
+    m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
+}
+
+void Camera::Enable() {
+    m_cameraList.push_back(this);
+
+    if (!s_current) {
+        s_current = this;
+    }
+
+    auto rect = Display::GetDisplayRect();
+
+    m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
+
+    updateProjection();
+}
+
+void Camera::Disable() {
+    if (this == s_current) {
+        s_current = nullptr;
+    }
+    m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
+}
+
+bool Camera::Serialize(Stream *stream)
+{
+    if (!stream->write(&m_projection, sizeof(Matrix4x4)))
+    {
+        return false;
+    }
+
+    if (!stream->write(&m_nearPlane, sizeof(float)))
+    {
+        return false;
+    }
+
+    if (!stream->write(&m_farPlane, sizeof(float)))
+    {
+        return false;
+    }
+
+    if (!stream->write(&m_aspect, sizeof(float)))
+    {
+        return false;
+    }
+
+    if (!stream->write(&m_fov, sizeof(float)))
+    {
+        return false;
+    }
+
+    if (!stream->write(&m_rect, sizeof(Rect)))
+    {
+        return false;
+    }
+    return false;
+}
+
+bool Camera::Deserialize(Stream *stream)
+{
+    if (!stream->read(reinterpret_cast<char *>(&m_projection), sizeof(Matrix4x4)))
+    {
+        return false;
+    }
+
+    if (!stream->read(reinterpret_cast<char *>(&m_nearPlane), sizeof(float)))
+    {
+        return false;
+    }
+
+    if (!stream->read(reinterpret_cast<char *>(&m_farPlane), sizeof(float)))
+    {
+        return false;
+    }
+
+    if (!stream->read(reinterpret_cast<char *>(&m_aspect), sizeof(float)))
+    {
+        return false;
+    }
+
+    if (!stream->read(reinterpret_cast<char *>(&m_fov), sizeof(float)))
+    {
+        return false;
+    }
+
+    if (!stream->read(reinterpret_cast<char *>(&m_rect), sizeof(Rect)))
+    {
+        return false;
+    }
+    return false;
 }
 
 Matrix4x4 Camera::getPerspesctive() const {
@@ -89,30 +186,18 @@ void Camera::lookIt(const Vector3 &direction) {
     m_transform->setLocalRotation(Math::normalize(Math::lookRotation(direction, Vector3::up)));
 }
 
-void Camera::Enable() {
-    s_camera.push_back(this);
-
-    if (!s_current) {
-        s_current = this;
-    }
-
-    auto rect = Display::GetDisplayRect();
-
-    m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
-
-    updateProjection();
+grr::gTexture *Camera::getColorTexture() const {
+    return m_texture;
 }
 
-void Camera::Disable() {
-    if (this == s_current) {
-        s_current = nullptr;
-    }
-    s_camera.erase(std::remove(s_camera.begin(), s_camera.end(), this), s_camera.end());
+void Camera::setRect(const Rect &rect) {
+    m_rect = rect;
+}
+
+Rect Camera::getRect() const {
+    return m_rect;
 }
 
 void Camera::updateProjection() {
     m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_nearPlane, m_farPlane);
 }
-
-
-

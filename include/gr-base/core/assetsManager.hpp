@@ -129,9 +129,10 @@ public:
 
 private:
     /***************** Shader *****************/
-    static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_shaderList;
-    static std::list<ShaderHandle> s_shaderFromLoader;
-    static std::mutex s_shaderMutex;
+    static std::unordered_map<grr::gShader *, std::tuple<std::string, std::string>> mShaderPathRef;
+    static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> mShaderList;
+    static std::list<ShaderHandle> mShaderFromLoad;
+    static std::mutex mShaderMutex;
 
     /***************** Texture *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> textureMap;

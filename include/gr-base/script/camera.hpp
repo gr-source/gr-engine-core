@@ -4,10 +4,12 @@
 
 #include "gr-base/ecs/entity.hpp"
 
+#include <gr-render/gRender.h>
+
 class Camera : public Component {
 public:
-    static std::vector<Camera*> s_camera;
-    
+    static std::vector<Camera *> GetCameras();
+
     static Camera *Main();
 
     static Camera *Current();
@@ -17,6 +19,14 @@ public:
     void Init() override;
 
     void Destroy() override;
+
+    void Enable() override;
+
+    void Disable() override;
+
+    bool Serialize(Stream *stream) override;
+
+    bool Deserialize(Stream *stream) override;
 
     Matrix4x4 getPerspesctive() const;
 
@@ -29,12 +39,18 @@ public:
     Vector3 getPosition() const;
 
     void lookIt(const Vector3 &direction);
-
-    void Enable() override;
-
-    void Disable() override;
     
+    grr::gTexture *getColorTexture() const;
+
+    void setRect(const Rect &rect);
+
+    Rect getRect() const;
+
 private:
+    static std::vector<Camera *> m_cameraList;
+
+    grr::gTexture *m_texture;
+
     Transform *m_transform;
 
     Matrix4x4 m_projection;
@@ -46,6 +62,8 @@ private:
     float m_aspect;
 
     float m_fov;
+
+    Rect m_rect;
 
     static Camera *s_current;
 

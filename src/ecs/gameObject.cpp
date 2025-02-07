@@ -107,7 +107,7 @@ std::size_t GameObject::GetGameObjectCount() {
     return mGoCache.size();
 }
 
-GameObject::GameObject(const std::string &name, const std::string &tag) : name(name), tag(tag), entity(Manager::CreateEntity(this)) {}
+GameObject::GameObject(const std::string &name, const std::string &tag) : name(name), tag(tag), entity(Manager::CreateEntity(this)), active(true), enable(true) {}
 
 GameObject::~GameObject() {
     Manager::DestroyEntity(entity);

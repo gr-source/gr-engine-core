@@ -35,9 +35,10 @@
 grm::u32 AssetsManager::m_processCount = 0;
 
 /***************** Shader *****************/
-std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::s_shaderList;
-std::list<ShaderHandle> AssetsManager::s_shaderFromLoader;
-std::mutex AssetsManager::s_shaderMutex;
+std::unordered_map<grr::gShader *, std::tuple<std::string, std::string>> AssetsManager::mShaderPathRef;
+std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::mShaderList;
+std::list<ShaderHandle> AssetsManager::mShaderFromLoad;
+std::mutex AssetsManager::mShaderMutex;
 
 /***************** Texture *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::textureMap;
@@ -75,8 +76,8 @@ void AssetsManager::Shutdown() {
     m_processCount = 0;
 
     /***************** Shader *****************/
-    s_shaderList.clear();
-    s_shaderFromLoader.clear();
+    mShaderList.clear();
+    mShaderFromLoad.clear();
 
     /***************** Texture *****************/
     textureMap.clear();
@@ -136,8 +137,8 @@ Animation *AssetsManager::LoadAnimation(const std::string &path) {
 }
 
 grr::gShader *AssetsManager::FindShader(const std::string &name) {
-    auto it = s_shaderList.find(name);
-    if (it == s_shaderList.end()) {
+    auto it = mShaderList.find(name);
+    if (it == mShaderList.end()) {
         return nullptr;
     }
     return &(*it->second);
@@ -236,8 +237,8 @@ void AssetsManager::ProcessTexture() {
 
 /***************** Shader Process ****************/
 void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, const std::string &vert) {
-    auto it = s_shaderList.find(handle.m_name);
-    if (it != s_shaderList.end()) {
+    auto it = mShaderList.find(handle.m_name);
+    if (it != mShaderList.end()) {
         handle.invoke(&(*it->second));
         return;
     }
@@ -254,7 +255,9 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
         return;
     }
     
-    s_shaderList.emplace(handle.m_name, std::unique_ptr<grr::gShader>(shader));
+    mShaderList[handle.m_name] = std::unique_ptr<grr::gShader>(shader);
+
+    mShaderPathRef[&(*mShaderList[handle.m_name])] = std::make_tuple(handle.m_frag, handle.m_vert);
 
     handle.invoke(shader);
 
@@ -262,10 +265,10 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
 }
 
 void AssetsManager::ProcessShader() {
-    std::unique_lock<std::mutex> lock(s_shaderMutex);
-    while (!s_shaderFromLoader.empty()) {
-        auto handle = s_shaderFromLoader.front();
-        s_shaderFromLoader.pop_front();
+    std::unique_lock<std::mutex> lock(mShaderMutex);
+    while (!mShaderFromLoad.empty()) {
+        auto handle = mShaderFromLoad.front();
+        mShaderFromLoad.pop_front();
         lock.unlock();
 
         // Processing shader
@@ -286,7 +289,6 @@ void AssetsManager::ProcessShader() {
             continue;
         }
 
-        // lock.unlock();
         Event::Add(AssetsManager::SetupShader, handle, fragSource, vertSource);
 
         lock.lock();
@@ -812,24 +814,24 @@ void AssetsManager::SetShaderList(const std::string &name, const std::string &fr
         return Console::LogError("[ AssetsManager-Shader ] File do not exists: " + vert);
     }
 
-    auto it = s_shaderList.find(name);
-    if (it != s_shaderList.end()) {
+    auto it = mShaderList.find(name);
+    if (it != mShaderList.end()) {
         if (func)
             func(&(*it->second));
         return;
     }
 
     {
-        std::lock_guard<std::mutex> lock(s_shaderMutex);
-        auto it = std::find_if(s_shaderFromLoader.begin(), s_shaderFromLoader.end(), [name](auto &handle) {
+        std::lock_guard<std::mutex> lock(mShaderMutex);
+        auto it = std::find_if(mShaderFromLoad.begin(), mShaderFromLoad.end(), [name](auto &handle) {
             return handle.m_name == name;
         });
         
-        if (it != s_shaderFromLoader.end()) {
+        if (it != mShaderFromLoad.end()) {
             it->add(func);
             return;
         }
-        s_shaderFromLoader.emplace_back(func, name, frag, vert);
+        mShaderFromLoad.emplace_back(func, name, frag, vert);
     }
 
     Threadpool::AddTask(&AssetsManager::ProcessShader);
@@ -863,7 +865,7 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
 }
 
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::GetShaderList() {
-    return s_shaderList;
+    return mShaderList;
 }
 
 grm::size AssetsManager::GetTextureCount() {
@@ -871,7 +873,7 @@ grm::size AssetsManager::GetTextureCount() {
 }
 
 grm::size AssetsManager::GetShaderCount() {
-    return s_shaderList.size();
+    return mShaderList.size();
 }
 
 grm::size AssetsManager::GetMeshCount() {

@@ -1126,7 +1126,7 @@ void Scene::ProcessScript(Component *component, std::string path, std::streampos
     }
 }
 
-static std::vector<std::string> names = {"Light", "MeshRender", "MeshFilter"};
+static std::vector<std::string> names = {"Light", "Camera", "MeshRender", "MeshFilter"};
 void Scene::Initialize(GameObject *go) {
     auto entity = go->getEntity();
     
