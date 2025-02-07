@@ -71,6 +71,10 @@ public:
 
     void Clear();
 
+    GameObject *getCameraObject() const;
+
+    Camera *getCamera() const;
+
 private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;
 
@@ -90,25 +94,32 @@ private:
 
     std::string m_name;
 
-    std::string m_path;
+    GameObject *m_goCamera;
+
+    Camera *m_camera;
 
     bool m_enable;
 
     enum LoadFlags : std::uint8_t {
-        LoadFlags_Texture  = 1 << 1,
-        LoadFlags_Material = 1 << 2,
-        LoadFlags_Mesh     = 1 << 3,
-        LoadFlags_Script   = 1 << 4,
-        LoadFlags_Object   = 1 << 5,
+        LoadFlags_Metadata = 1 << 1,
+        LoadFlags_Texture  = 1 << 2,
+        LoadFlags_Material = 1 << 3,
+        LoadFlags_Mesh     = 1 << 4,
+        LoadFlags_Script   = 1 << 5,
+        LoadFlags_Object   = 1 << 6,
     };
 
-    static void Load(const std::string &path, std::uint8_t flags = LoadFlags_Material | LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, std::function<void(Scene *)> func = nullptr, Scene *scene = nullptr);
+    static void Load(const std::string &path, std::uint8_t flags = LoadFlags_Metadata | LoadFlags_Material | LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, std::function<void(Scene *)> func = nullptr, Scene *scene = nullptr);
+
+    GameObject *CreateEngineCamera();
 
     void setEnable(bool value);
 
     void setDisableEntity(Transform *transform, bool value);
 
     int writeScene(Stream *stream);
+
+    int writeMetadata(Stream *stream);
 
     int writeTexture(Stream *stream);
 
@@ -121,6 +132,8 @@ private:
     int writeGameObject(Stream *stream, GameObject *gameObject);
 
     int writeScript(Stream *stream);
+
+    static int readMetadata(Stream *stream, Scene *scene);
 
     static int readTexture(Stream *stream);
 

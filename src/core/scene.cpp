@@ -73,24 +73,27 @@ Scene *Scene::Create(const std::string &name) {
 
     Scene::Use(&(*it->second));
 
-    auto camera = it->second->CreateGameObject("MainCamera");
-    if (!camera) {
-        m_scenes.erase(it);
+    // camera for game
+    {
+        auto camera = it->second->CreateGameObject("MainCamera");
+        if (!camera) {
+            m_scenes.erase(it);
 
-        Scene::Use(nullptr);
-        Console::LogError("[ Scene ] Falied to create scene, Camera do not created.");
-        return nullptr;
+            Scene::Use(nullptr);
+            Console::LogError("[ Scene ] Falied to create scene, Camera do not created.");
+            return nullptr;
+        }
+
+        camera->addComponent<Camera>();
+
+        Scene::Init(camera);
     }
 
-    camera->addComponent<Camera>();
-
-    Scene::Init(camera);
-    
     return &(*it->second);
 }
 
 void Scene::LoadScene(const std::string &path, std::function<void(Scene *)> func) {
-    Threadpool::AddTask(&Scene::Load, path, LoadFlags_Material | LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, func, nullptr);
+    Threadpool::AddTask(&Scene::Load, path, LoadFlags_Metadata | LoadFlags_Material | LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, func, nullptr);
 }
 
 /*
@@ -208,7 +211,12 @@ void Scene::Init(GameObject *gameObject) {
     }
 }
 
-Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
+Scene::Scene(const std::string &name) : m_name(name), m_enable(true), m_goCamera(nullptr), m_camera(nullptr) {
+    m_goCamera = CreateEngineCamera();
+
+    if (m_goCamera)
+        m_camera = m_goCamera->getComponent<Camera>();
+}
 
 Scene::~Scene() {
     for (auto &gameObject : m_objects) {
@@ -237,6 +245,8 @@ void Scene::save(const std::string &path) {
     if (err != 0) {
         return Console::LogError("[ SCENE ] Failed to write scene segment: %d", err);
     }
+
+    m_componentCache.clear();
 
     DataSegment end{gHeaderType_None, 0};
     if (!stream.writeS(&end, 1, false)) {
@@ -270,6 +280,14 @@ void Scene::insert(GameObject *gameObject) {
 
 void Scene::Clear() {
     m_objects.clear();
+}
+
+GameObject *Scene::getCameraObject() const {
+    return m_goCamera;
+}
+
+Camera *Scene::getCamera() const {
+    return m_camera;
 }
 
 std::unordered_map<std::string, std::unique_ptr<Scene>> &Scene::GetScenes() {
@@ -375,6 +393,8 @@ void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void
         auto nextPosition = stream.tellg() + static_cast<std::streampos>(data.sizeData);
         auto block_name = struct_name[data.type];
 
+        std::cout << "Block: " << block_name << std::endl;
+
         if (data.sizeData <= 0) {
             stream.seekg(nextPosition, std::ios_base::beg);
             continue;
@@ -382,6 +402,11 @@ void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void
 
         int result = -1;
         switch (data.type) {
+        case gHeaderType_Metadata:
+            if (flags & LoadFlags_Metadata) {
+                readMetadata(&stream, scene);
+            }
+            break;
         case gHeaderType_Texture:
             if (flags & LoadFlags_Texture)
                 result = readTexture(&stream);
@@ -422,6 +447,21 @@ void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void
         Event::Add(func, scene);
 }
 
+GameObject *Scene::CreateEngineCamera() {
+    auto go = GameObject::Create("MainEngineCamera", "Engine");
+    if (!go) {
+        return nullptr;
+    }
+
+    auto camera = go->addComponent<Camera>();
+    if (!camera) {
+        return nullptr;
+    }
+
+    Scene::Init(go);
+    return go;
+}
+
 void Scene::setEnable(bool value) {
     for (auto &gameObject : m_objects) {
         setDisableEntity(gameObject->getTransform(), value);
@@ -440,15 +480,28 @@ void Scene::setDisableEntity(Transform *transform, bool value) {
 int Scene::writeScene(Stream *stream) {
     DataSegment segment = {gHeaderType_None, 0};
 
+    {
+        if (writeMetadata(stream) != 0) {
+            return 1;
+        }
+    
+        segment = {gHeaderType_Metadata, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&segment, 1, false)) {
+            return 2;
+        }
+    
+        stream->flush();
+    }
+
     // textures
     {
         if (writeTexture(stream) != 0) {
-            return 1;
+            return 3;
         }
     
         segment = {gHeaderType_Texture, static_cast<std::size_t>(stream->getDataSize())};
         if (!stream->writeS(&segment, 1, false)) {
-            return 2;
+            return 4;
         }
     
         stream->flush();
@@ -457,12 +510,12 @@ int Scene::writeScene(Stream *stream) {
     // material
     {
         if (writeMaterial(stream) != 0) {
-            return 1;
+            return 5;
         }
     
         segment = {gHeaderType_Material, static_cast<std::size_t>(stream->getDataSize())};
         if (!stream->writeS(&segment, 1, false)) {
-            return 2;
+            return 6;
         }
     
         stream->flush();
@@ -471,40 +524,59 @@ int Scene::writeScene(Stream *stream) {
     // Mesh
     {
         // if (writeMesh(streaming) != 0) {
-        //     return 3;
+        //     return 7;
         // }
 
         // segment = {gHeaderType_Mesh, static_cast<std::size_t>(streaming->getDataSize())};
         // if (!streaming->writeS(&segment, 1, false)) {
-        //     return 3;
+        //     return 8;
         // }
 
         // streaming->flush();
     }
     
     // Objects
-    if (writeObject(stream) != 0) {
-        return 4;
-    }
-    
-    segment = {gHeaderType_Object, static_cast<std::size_t>(stream->getDataSize())};
-    if (!stream->writeS(&segment, 1, false)) {
-        return 4;
-    }
+    {
+        if (writeObject(stream) != 0) {
+            return 9;
+        }
+        
+        segment = {gHeaderType_Object, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&segment, 1, false)) {
+            return 10;
+        }
 
-    stream->flush();
+        stream->flush();
+    }
 
     // script
-    if (writeScript(stream) != 0) {
-        return 4;
+    {
+        if (writeScript(stream) != 0) {
+            return 11;
+        }
+        
+        segment = {gHeaderType_Script, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&segment, 1, false)) {
+            return 12;
+        }
+
+        stream->flush();
     }
-    
-    segment = {gHeaderType_Script, static_cast<std::size_t>(stream->getDataSize())};
-    if (!stream->writeS(&segment, 1, false)) {
-        return 4;
+    return 0;
+}
+
+int Scene::writeMetadata(Stream *stream) {
+    auto snsize = m_name.size();
+    if (!stream->write(&snsize, sizeof(std::size_t))) {
+        return 1;
     }
 
-    stream->flush();
+    if (!stream->write(m_name.c_str(), snsize * sizeof(char))) {
+        return 2;
+    }
+
+    auto transform = m_goCamera->getTransform();
+    transform->Serialize(stream);
     return 0;
 }
 
@@ -656,7 +728,6 @@ int Scene::writeGameObject(Stream *stream, GameObject *gameObject) {
         return 7;
     }
 
-
     int result = 0;
     for (auto &child : children) {
         result = writeGameObject(stream, child->getGameObject());
@@ -664,6 +735,7 @@ int Scene::writeGameObject(Stream *stream, GameObject *gameObject) {
             break;
         }
     }
+    
     return result;
 }
 
@@ -696,6 +768,23 @@ int Scene::writeScript(Stream *streaming) {
         temp.close();
     }
     m_componentCache.clear();
+    return 0;
+}
+
+int Scene::readMetadata(Stream *stream, Scene *scene) {
+    std::size_t snsize = 0;
+    if (!stream->read(reinterpret_cast<char *>(&snsize), sizeof(std::size_t))) {
+        return 1;
+    }
+
+    std::string name(snsize, '\0');
+    if (!stream->read(name.data(), snsize * sizeof(char))) {
+        return 2;
+    }
+    scene->m_name = name;
+
+    auto transform = scene->m_goCamera->getTransform();
+    transform->Deserialize(stream);
     return 0;
 }
 
@@ -991,7 +1080,6 @@ void Scene::SetupScene(Scene *scene) {
 
     for (auto &go : scene->getObjectList()) {
         Initialize(go);
-        // object->initialize();
     }
 }
 

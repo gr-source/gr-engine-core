@@ -9,15 +9,17 @@ class Stream;
 
 enum gHeaderType : int {
     gHeaderType_None     = 0,
-    gHeaderType_Texture  = 1,
-    gHeaderType_Material = 2,
-    gHeaderType_Mesh     = 3,
-    gHeaderType_Object   = 4,
-    gHeaderType_Script   = 5,
+    gHeaderType_Metadata = 1,
+    gHeaderType_Texture  = 2,
+    gHeaderType_Material = 3,
+    gHeaderType_Mesh     = 4,
+    gHeaderType_Object   = 5,
+    gHeaderType_Script   = 6,
 };
 
-static const char *struct_name[6] = {
+static const char *struct_name[7] = {
     "None",
+    "Metadata",
     "Texture",
     "Material",
     "Mesh",
