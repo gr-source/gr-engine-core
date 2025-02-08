@@ -38,6 +38,10 @@ grm::u32 AssetsManager::m_processCount = 0;
 std::unordered_map<grr::gShader *, std::string> AssetsManager::mShaderPathRef;
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::mShaderList;
 std::list<ShaderHandle> AssetsManager::mShaderFromLoad;
+
+std::unordered_map<grr::gShader *, std::string> AssetsManager::mShaderFromUpdate;
+std::list<grr::gShader *> AssetsManager::mTaskList;
+
 std::mutex AssetsManager::mShaderMutex;
 
 /***************** Texture *****************/
@@ -144,8 +148,20 @@ grr::gShader *AssetsManager::FindShader(const std::string &name) {
     return &(*it->second);
 }
 
-// ********** Mesh ********** //
+void AssetsManager::UpdateShader(grr::gShader *shader, const std::string &path) {
+    {
+        std::lock_guard<std::mutex> lock(mShaderMutex);
+        auto it = mShaderFromUpdate.find(shader);
+        if (it != mShaderFromUpdate.end()) { return; }
 
+        mShaderFromUpdate[shader] = path;
+        mTaskList.push_back(shader);
+    }
+
+    Threadpool::AddTask(&AssetsManager::TaskUpdateShader);
+}
+
+// ********** Mesh ********** //
 Mesh *AssetsManager::FindMesh(const std::string &name) {
     std::lock_guard<std::mutex> lock(m_meshMutex);
     auto it = s_meshList.find(name);
@@ -166,6 +182,118 @@ void AssetsManager::DeleteMesh(Mesh *target) {
 
 std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshListMap() {
     return s_meshList;
+}
+
+#define PRINT_ERROR(func) \
+    if (func == -1) { \
+        Console::LogError("[ AssetsManager ] Shader.Regiter uniform: %s", grr::error()); \
+    }
+
+void AssetsManager::SetUpdateShader(grr::gShader * shader, ShaderData frag, ShaderData vert, std::string name) {
+    auto fragment_source = frag.source.c_str();
+    auto vertex_source = vert.source.c_str();
+
+    shader->cleanUniform();
+
+    shader->build(&fragment_source, 1, &vertex_source, 1);
+    if (!shader->isValid()) {
+        Console::LogError("[ AssetsManager ] Shader.Build Fail to build shader, %s, %s", name.c_str(), grr::error());
+        return;
+    }
+
+    grr::UniformType type = grr::UniformType_none;
+    for (auto uniform : frag.uniformList) {
+        switch (uniform.type) {
+        case UniformType_int:
+        case UniformType_bool:
+        case UniformType_sampler2D:
+            type = grr::UniformType_int;
+            break;
+        case UniformType_float:
+            type = grr::UniformType_float;
+            break;
+        case UniformType_mat3:
+            type = grr::UniformType_mat3;
+            break;
+        case UniformType_mat4:
+            type = grr::UniformType_mat4;
+            break;
+        case UniformType_vec2:
+            type = grr::UniformType_vec2;
+            break;
+        case UniformType_vec3:
+            type = grr::UniformType_vec3;
+            break;
+        case UniformType_vec4:
+            type = grr::UniformType_vec4;
+            break;
+        default:
+            Console::LogError("[ AssetsManager ] Shader.UniformType '%s %s', %s in fragment", uniform.type_name.c_str(), uniform.name.c_str(), name.c_str());
+            break;
+        }
+        std::cout << "Frag: " << uniform.name << std::endl;
+        PRINT_ERROR(shader->registry(uniform.name.c_str(), type));
+    }
+
+    for (auto uniform : vert.uniformList) {
+        switch (uniform.type) {
+        case UniformType_int:
+        case UniformType_bool:
+        case UniformType_sampler2D:
+            type = grr::UniformType_int;
+            break;
+        case UniformType_float:
+            type = grr::UniformType_float;
+            break;
+        case UniformType_mat3:
+            type = grr::UniformType_mat3;
+            break;
+        case UniformType_mat4:
+            type = grr::UniformType_mat4;
+            break;
+        case UniformType_vec2:
+            type = grr::UniformType_vec2;
+            break;
+        case UniformType_vec3:
+            type = grr::UniformType_vec3;
+            break;
+        case UniformType_vec4:
+            type = grr::UniformType_vec4;
+            break;
+        default:
+            Console::LogError("[ AssetsManager ] Shader.UniformType uniform '%s %s', %s in vertex", uniform.type_name.c_str(), uniform.name.c_str(), name.c_str());
+            break;
+        }
+        PRINT_ERROR(shader->registry(uniform.name.c_str(), type));
+
+        std::cout << "Vert: " << uniform.name << std::endl;
+    }
+
+    Console::LogInfo("[ AssetsManager ] Shader: update %s", name.c_str());
+}
+
+void AssetsManager::TaskUpdateShader() {
+    std::unique_lock<std::mutex> lock(mShaderMutex);
+    while (!mTaskList.empty()) {
+        auto shader = mTaskList.front();
+        auto it = mShaderFromUpdate.find(shader);
+        if (it == mShaderFromUpdate.end()) {
+            mTaskList.pop_front();
+            continue;
+        }
+        auto path = it->second;
+        lock.unlock();
+
+        auto shader_map = ReadShaderOfType(path);
+
+        auto name = std::filesystem::path(path).filename().string();
+        
+        Event::Add(&AssetsManager::SetUpdateShader, shader, shader_map[ShaderType_Fragment], shader_map[ShaderType_Vertex], name);
+
+        lock.lock();
+        mTaskList.pop_front();
+        mShaderFromUpdate.erase(it);
+    }
 }
 
 /***************** Texture Process ****************/
@@ -274,27 +402,8 @@ void AssetsManager::ProcessShader() {
         lock.unlock();
 
         auto shader_map = ReadShaderOfType(handle.m_path);
-        // Processing shader
-        /*
-        auto fragSource = File::GetFileContent(handle.m_frag);
-        if (fragSource.empty()) {
-            Console::log(Log::ERROR, "Falied to shader: " + handle.m_name + " Fragment: " + handle.m_frag);
 
-            lock.lock();
-            continue;
-        }
-
-        // Loading vertex shader
-        auto vertSource = File::GetFileContent(handle.m_vert);
-        if (vertSource.empty()) {
-            Console::log(Log::ERROR, "Falied to shader: " + handle.m_name + " Vertex: " + handle.m_vert);
-
-            lock.lock();
-            continue;
-        }
-        */
-
-        Event::Add(AssetsManager::SetupShader, handle, shader_map[ShaderType_Fragment], shader_map[ShaderType_Vertex]);
+        Event::Add(AssetsManager::SetupShader, handle, shader_map[ShaderType_Fragment].source, shader_map[ShaderType_Vertex].source);
 
         lock.lock();
     }
@@ -953,18 +1062,143 @@ std::unordered_map<std::string, std::unique_ptr<Material>> &AssetsManager::GetMa
     return materialsMap;
 }
 
+UniformStackInfo getGLSLStackInfo(const std::string &source) {
+    std::stringstream iss(source);
 
-std::map<ShaderType, std::string> AssetsManager::ReadShaderOfType(const std::string &path) {
+    std::string uniform, object, name;
+
+    if (source.find("uniform") != std::string::npos) {
+        if (!(iss >> uniform >> object >> name)) {
+            throw std::runtime_error("Fail to get stack info");
+        }
+    } else {
+        if (!(iss >> object >> name)) {
+            throw std::runtime_error("Fail to get stack info");
+        }
+    }
+
+    auto pstart = name.find('[');
+    auto pend = name.find(']');
+
+    UniformStackInfo info;
+    info.name = name.substr(0, pstart);
+
+    info.object = object;
+    info.count = std::atoi(name.substr(pstart + 1, name.length() - pend).c_str());
+
+    return info;
+}
+
+std::string getStructName(const std::string &source) {
+    std::stringstream iss(source);
+
+    std::string discart, name;
+
+    if (!(iss >> discart >> name >> discart)) {
+        throw std::runtime_error("Fail to inspect struct.");
+    }
+
+    return name;
+}
+
+void insert_field(const std::string &line, const std::string &type_name, const std::string &name, std::vector<Uniform> &vector, std::map<std::string, std::vector<Uniform>> &struct_map) {
+    UniformType type = UniformType_object;
+    if (type_name == "float") {
+        type = UniformType_float;
+    } else if (type_name == "int") {
+        type = UniformType_int;
+    } else if (type_name == "bool") {
+        type = UniformType_bool;
+    } else if (type_name == "sampler2D") {
+        type = UniformType_sampler2D;
+    } else if (type_name == "mat3") {
+        type = UniformType_mat3;
+    } else if (type_name == "mat4") {
+        type = UniformType_mat4;
+    } else if (type_name == "vec2") {
+        type = UniformType_vec2;
+    } else if (type_name == "vec3") {
+        type = UniformType_vec3;
+    } else if (type_name == "vec4") {
+        type = UniformType_vec4;
+    }
+
+    if (line.find('[') != std::string::npos && line.find(']') != std::string::npos) {
+        auto info = getGLSLStackInfo(line);
+        for (int i=0;i<info.count;i++) {
+            if (type == UniformType_object) {
+                for (auto un : struct_map[type_name]) {
+                    vector.push_back({info.name + "[" + std::to_string(i) + "]." + un.name, un.type_name, un.type});
+                }
+                continue;
+            }
+            vector.push_back({info.name + "[" + std::to_string(i) + "]", type_name, type});
+        }
+    } else {
+        vector.push_back({name, type_name, type});
+    }
+}
+
+std::map<ShaderType, ShaderData> AssetsManager::ReadShaderOfType(const std::string &path) {
     std::ifstream is(path);
     if (!is.is_open()) {
         throw std::runtime_error("file don't open.");
     }
-    std::map<ShaderType, std::string> shader_map;
+
+    auto tella = is.tellg();
+
+    std::map<std::string, std::vector<Uniform>> object_map;
+
+    bool isInNextLine = false;
+    std::string line, acumulate, acumulate_data;
+    while (std::getline(is, line)) {
+        std::stringstream iss(line);
+        if (line.find("struct") != std::string::npos || isInNextLine) {
+            if ((line.find('{') != std::string::npos)) {
+                if (!isInNextLine) {
+                    acumulate = line;
+                    // continue;
+                } else {
+                    acumulate += line + ' ';
+
+                }
+                isInNextLine = false;
+            } else {
+                isInNextLine = true;
+                acumulate += line + ' ';
+                continue;
+            }
+            object_map.emplace(getStructName(acumulate), std::vector<Uniform>());
+            continue;
+        }
+
+        if (!acumulate.empty()) {
+            if (line.find('}') == std::string::npos) {
+                std::string type_name, name;
+
+                if (!(iss >> type_name >> name)) {
+                    continue;
+                }
+
+                name.erase(std::remove(name.begin(), name.end(), ';'), name.end());
+
+                insert_field(line, type_name, name, object_map[getStructName(acumulate)], object_map);
+            } else {
+                acumulate.clear();
+            }
+        }
+    }
+
+    is.close();
+
+    is.open(path);
+
+    std::map<ShaderType, ShaderData> shader_map;
 
     ShaderType type = ShaderType_None;
     
-    std::string line;
     while (std::getline(is, line)) {
+        std::stringstream iss(line);
         if (line.find("shader_type") != std::string::npos) {
             if (line.find("vert") != std::string::npos) {
                 type = ShaderType_Vertex;
@@ -974,8 +1208,20 @@ std::map<ShaderType, std::string> AssetsManager::ReadShaderOfType(const std::str
                 continue;
             }
         }
-        
-        shader_map[type] += line + '\n';
+
+        auto &data = shader_map[type];
+        data.source += line + '\n';
+
+        if (line.find("uniform") != std::string::npos) {
+            std::string uniform, type_name, name;
+
+            if (!(iss >> uniform >> type_name >> name)) {
+                continue;
+            }
+            name.erase(std::remove(name.begin(), name.end(), ';'), name.end());
+
+            insert_field(line, type_name, name, data.uniformList, object_map);
+        }
     }
     is.close();
 

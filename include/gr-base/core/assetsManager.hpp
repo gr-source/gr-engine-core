@@ -71,6 +71,37 @@ enum ShaderType {
     ShaderType_Vertex   = 1 << 2,
 };
 
+enum UniformType {
+    UniformType_object    = 1 << 0,
+    UniformType_float     = 1 << 1,
+    UniformType_int       = 1 << 2,
+    UniformType_bool      = 1 << 3,
+    UniformType_mat3      = 1 << 4,
+    UniformType_mat4      = 1 << 5,
+    UniformType_vec2      = 1 << 6,
+    UniformType_vec3      = 1 << 7,
+    UniformType_vec4      = 1 << 8,
+    UniformType_sampler2D = 1 << 9,
+};
+
+struct Uniform {
+    std::string name;
+    std::string type_name;
+    UniformType type;
+};
+
+struct ShaderData {
+    std::string source;
+
+    std::vector<Uniform> uniformList;
+};
+
+struct UniformStackInfo {
+    std::string name;
+    std::string object;
+    int count;
+};
+
 class AssetsManager {
 public:
     static void Initialize();
@@ -91,6 +122,8 @@ public:
     static Animation *LoadAnimation(const std::string &path);
 
     static grr::gShader *FindShader(const std::string &name);
+
+    static void UpdateShader(grr::gShader *shader, const std::string &path);
 
     // ********** Mesh ********** //
     template <typename ...Args>
@@ -131,9 +164,13 @@ public:
 
 private:
     /***************** Shader *****************/
-    static std::unordered_map<grr::gShader *, std::string> mShaderPathRef;
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> mShaderList;
+    static std::unordered_map<grr::gShader *, std::string> mShaderPathRef;
     static std::list<ShaderHandle> mShaderFromLoad;
+
+    // Update Shader
+    static std::unordered_map<grr::gShader *, std::string> mShaderFromUpdate;
+    static std::list<grr::gShader *> mTaskList;
     static std::mutex mShaderMutex;
 
     /***************** Texture *****************/
@@ -163,6 +200,10 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<Material>> materialsMap;
     static std::unordered_map<Material *, std::string> materialRefToName;
     static std::mutex materialsMutex;
+
+    static void SetUpdateShader(grr::gShader *shader, ShaderData frag, ShaderData vert, std::string name);
+
+    static void TaskUpdateShader();
 
     static void SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels);
 
@@ -198,7 +239,7 @@ private:
 
     static int ReadTexture(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList);
 
-    static std::map<ShaderType, std::string> ReadShaderOfType(const std::string &path);
+    static std::map<ShaderType, ShaderData> ReadShaderOfType(const std::string &path);
 };
 
 template <typename... Args>
