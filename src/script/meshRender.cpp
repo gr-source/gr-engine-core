@@ -22,7 +22,7 @@ void MeshRender::Destroy() {
     if (!m_batched) {
         return;
     }
-    m_batched->remove(m_transform, true);
+    m_batched->remove(m_transform);
     m_batched = nullptr;
 }
 
@@ -82,7 +82,7 @@ void MeshRender::Disable() {
     if (!m_batched) {
         return;
     }
-    m_batched->remove(GetComponent<Transform>(), false);
+    m_batched->remove(GetComponent<Transform>());
 }
 
 bool MeshRender::Serialize(Stream *stream) {

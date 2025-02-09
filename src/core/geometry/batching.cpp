@@ -170,10 +170,10 @@ void Batching::insert(Transform *transform) {
     m_models.emplace_back(transform);
 }
 
-void Batching::remove(Transform *transform, bool bDelete) {
+void Batching::remove(Transform *transform) {
     m_models.erase(std::remove(m_models.begin(), m_models.end(), transform), m_models.end());
 
-    if (m_models.empty() && bDelete) {
+    if (m_models.empty()) {
         Batching::RemoveBatchByName(m_name);
     }
 }
@@ -182,13 +182,13 @@ void Batching::draw(grr::gShader *shader) {
     shader = shader != nullptr ? shader : m_shader;
 
     auto transform = m_models[0];
-    auto go = transform->getGameObject();
 
     auto model = transform->getGlobalMatrix();
 
     shader->setUniform("u_model", 1, &model);
 
     /*
+    auto go = transform->getGameObject();
     auto animator =  go->getComponent<Animator>();
         auto &metrices = animator->getBoneData();
     if (animator) {

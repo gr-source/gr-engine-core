@@ -1126,6 +1126,8 @@ void insert_field(const std::string &line, const std::string &type_name, const s
 
     if (line.find('[') != std::string::npos && line.find(']') != std::string::npos) {
         auto info = getGLSLStackInfo(line);
+        vector.push_back({info.name, type_name, type});
+
         for (int i=0;i<info.count;i++) {
             if (type == UniformType_object) {
                 for (auto un : struct_map[type_name]) {

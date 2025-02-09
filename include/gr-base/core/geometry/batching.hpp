@@ -49,7 +49,7 @@ public:
 
     void insert(Transform *transform);
 
-    void remove(Transform *transform, bool bDelete = true);
+    void remove(Transform *transform);
 
     void draw(grr::gShader *shader = nullptr);
 
