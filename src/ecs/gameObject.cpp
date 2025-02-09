@@ -5,8 +5,6 @@
 
 #include "gr-base/script/transform.hpp"
 
-#include <stdexcept>
-
 std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::mGoCache;
 
 GameObject *GameObject::Create(const std::string &name, const std::string &tag) {
@@ -68,7 +66,10 @@ GameObject *GameObject::Find(const std::string &name) {
     return it != mGoCache.end() ? &(*it->second) : nullptr;
 }
 
+#include "gr-base/core/scene.hpp"
 void GameObject::Destroy(GameObject *go) {
+    Scene::Remove(go);
+
     auto sname = go->getName();
 
     auto it = mGoCache.find(sname);

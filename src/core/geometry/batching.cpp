@@ -163,7 +163,7 @@ void Batching::buildMeshe(Mesh *mesh) {
 
     calcboundbox(mesh);
 
-    m_flags |= BatchingFlags_BuildMesh;
+    m_flags |= BatchingFlags_BuildMesh | BatchingFlags_UploadMaterial;
 }
 
 void Batching::insert(Transform *transform) {
@@ -178,7 +178,7 @@ void Batching::remove(Transform *transform, bool bDelete) {
     }
 }
 
-void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
+void Batching::draw(grr::gShader *shader) {
     shader = shader != nullptr ? shader : m_shader;
 
     auto transform = m_models[0];
@@ -197,7 +197,7 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
     }
     */
 
-    if (bSetMaterial)
+    if (m_flags & BatchingFlags_UploadMaterial)
         setupMaterial(shader);
 
     

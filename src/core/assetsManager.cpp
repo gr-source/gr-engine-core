@@ -207,6 +207,7 @@ void AssetsManager::SetUpdateShader(grr::gShader * shader, ShaderData frag, Shad
         case UniformType_int:
         case UniformType_bool:
         case UniformType_sampler2D:
+        case UniformType_samplerCube:
             type = grr::UniformType_int;
             break;
         case UniformType_float:
@@ -231,7 +232,6 @@ void AssetsManager::SetUpdateShader(grr::gShader * shader, ShaderData frag, Shad
             Console::LogError("[ AssetsManager ] Shader.UniformType '%s %s', %s in fragment", uniform.type_name.c_str(), uniform.name.c_str(), name.c_str());
             break;
         }
-        std::cout << "Frag: " << uniform.name << std::endl;
         PRINT_ERROR(shader->registry(uniform.name.c_str(), type));
     }
 
@@ -240,6 +240,7 @@ void AssetsManager::SetUpdateShader(grr::gShader * shader, ShaderData frag, Shad
         case UniformType_int:
         case UniformType_bool:
         case UniformType_sampler2D:
+        case UniformType_samplerCube:
             type = grr::UniformType_int;
             break;
         case UniformType_float:
@@ -265,8 +266,6 @@ void AssetsManager::SetUpdateShader(grr::gShader * shader, ShaderData frag, Shad
             break;
         }
         PRINT_ERROR(shader->registry(uniform.name.c_str(), type));
-
-        std::cout << "Vert: " << uniform.name << std::endl;
     }
 
     Console::LogInfo("[ AssetsManager ] Shader: update %s", name.c_str());
@@ -364,7 +363,7 @@ void AssetsManager::ProcessTexture() {
 }
 
 /***************** Shader Process ****************/
-void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, const std::string &vert) {
+void AssetsManager::SetupShader(ShaderHandle handle, ShaderData frag, ShaderData vert) {
     auto it = mShaderList.find(handle.m_path);
     if (it != mShaderList.end()) {
         handle.invoke(&(*it->second));
@@ -373,17 +372,17 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
 
     std::string name = std::filesystem::path(handle.m_path).filename().string();
 
-    const char *fShader = frag.c_str();
-    const char *vShader = vert.c_str();
-
     auto shader = new grr::gShader();
 
+    SetUpdateShader(shader, frag, vert, name);
+    /*
     shader->build(&fShader, 1, &vShader, 1);
     if (!shader->isValid()) {
         Console::LogError("[ Shader ] Fail to build shader, %s, %s", name.c_str(), grr::error());
         delete shader;
         return;
     }
+    */
     
     mShaderList[handle.m_path] = std::unique_ptr<grr::gShader>(shader);
 
@@ -403,7 +402,7 @@ void AssetsManager::ProcessShader() {
 
         auto shader_map = ReadShaderOfType(handle.m_path);
 
-        Event::Add(AssetsManager::SetupShader, handle, shader_map[ShaderType_Fragment].source, shader_map[ShaderType_Vertex].source);
+        Event::Add(AssetsManager::SetupShader, handle, shader_map[ShaderType_Fragment], shader_map[ShaderType_Vertex]);
 
         lock.lock();
     }
@@ -1109,6 +1108,8 @@ void insert_field(const std::string &line, const std::string &type_name, const s
         type = UniformType_int;
     } else if (type_name == "bool") {
         type = UniformType_bool;
+    } else if (type_name == "samplerCube") {
+        type = UniformType_samplerCube;
     } else if (type_name == "sampler2D") {
         type = UniformType_sampler2D;
     } else if (type_name == "mat3") {

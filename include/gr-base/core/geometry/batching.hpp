@@ -12,9 +12,10 @@
 #include <memory>
 
 enum BatchingFlags : uint32_t {
-    BatchingFlags_None       = 1 << 0,
-    BatchingFlags_HasIndices = 1 << 1,
-    BatchingFlags_BuildMesh  = 1 << 2,
+    BatchingFlags_None           = 1 << 0,
+    BatchingFlags_HasIndices     = 1 << 1,
+    BatchingFlags_BuildMesh      = 1 << 2,
+    BatchingFlags_UploadMaterial = 1 << 3,
 };
 
 using BatchingFlags_ = uint32_t;
@@ -50,7 +51,7 @@ public:
 
     void remove(Transform *transform, bool bDelete = true);
 
-    void draw(grr::gShader *shader = nullptr, bool bSetMaterial = true);
+    void draw(grr::gShader *shader = nullptr);
 
     bool isValid() const;
 

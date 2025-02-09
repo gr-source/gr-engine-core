@@ -82,6 +82,7 @@ enum UniformType {
     UniformType_vec3      = 1 << 7,
     UniformType_vec4      = 1 << 8,
     UniformType_sampler2D = 1 << 9,
+    UniformType_samplerCube = 1 << 10,
 };
 
 struct Uniform {
@@ -209,7 +210,7 @@ private:
 
     static void ProcessTexture();
 
-    static void SetupShader(ShaderHandle handle, const std::string &frag, const std::string &vert);
+    static void SetupShader(ShaderHandle handle, ShaderData frag, ShaderData vert);
     
     static void ProcessShader();
 

@@ -31,11 +31,7 @@ public:
 
     static void LoadScene(const std::string &path, std::function<void(Scene *)> func = nullptr);
 
-    static void UpdateScript();
-
     static void DestroyScript();
-
-    static void SetupEssential();
 
     static void CheckRequestReinstanceScript();
 
@@ -47,7 +43,9 @@ public:
 
     static void ReloadObjects(std::function<void(Scene *)> func);
 
-    static void InitializeObject();
+    static void InitializeEngineScript();
+
+    static void InitializeAllScript();
 
     static void Remove(GameObject *gameObject);
 
@@ -109,6 +107,8 @@ private:
         LoadFlags_Object   = 1 << 6,
     };
 
+    static void InitializeInternalScript(Transform *transorm);
+
     static void Load(const std::string &path, std::uint8_t flags = LoadFlags_Metadata | LoadFlags_Material | LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, std::function<void(Scene *)> func = nullptr, Scene *scene = nullptr);
 
     GameObject *CreateEngineCamera();
@@ -152,8 +152,6 @@ private:
     static void SetupScript(GameObject *gameObject, std::string name, std::condition_variable &cv, Component *&component, int &result);
 
     static void ProcessScript(Component *component, std::string path, std::streampos position);
-
-    static void Initialize(GameObject *go);
 
     bool remove(GameObject *gameObject);
 

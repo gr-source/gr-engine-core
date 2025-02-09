@@ -131,30 +131,11 @@ void Scene::DestroyScript() {
         return;
     }
 
-    for (auto gameObject : scene->getObjectList()) {
-        DestroyComponnet(gameObject->getTransform());
+    auto &vector = scene->getObjectList();
+    for (auto it = vector.cbegin(); it != vector.cend();it++) {
+        DestroyComponnet((*it)->getTransform());
     }
-}
-
-void Scene::SetupEssential() {
-    auto scene = GetCurrentScene();
-    if (!scene) { return; }
-    
-    
-    auto pool = ComponentRegistry::Find("MeshRender");
-    if (!pool) {
-        return;
-    }
-
-    scene->for_each([pool] (GameObject *go) {
-        if (go->hasComponent<MeshRender>()) {
-            auto meshRender = go->getComponent<MeshRender>();
-
-            pool->init(meshRender);
-
-            meshRender->build();
-        }
-    });
+    // scene->m_objects.erase(std::remove(scene->m_objects.begin(), scene->m_objects.end(), nullptr), scene->m_objects.end());
 }
 
 void Scene::CheckRequestReinstanceScript() {
@@ -338,17 +319,63 @@ void Scene::ReloadObjects(std::function<void(Scene *)> func) {
     Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, func, scene);
 }
 
-void Scene::InitializeObject() {
+void Scene::InitializeEngineScript() {
     auto scene = GetCurrentScene();
+    if (!scene)
+    {
+        return;
+    }
+
+    for (auto go : scene->getObjectList())
+    {
+        Scene::InitializeInternalScript(go->getTransform());
+    }
+}
+
+void Scene::InitializeAllScript()
+{
+    auto scene = Scene::GetCurrentScene();
     if (!scene) { return; }
 
-    for (auto go : scene->getObjectList()) {
+    for (auto go : scene->getObjectList())
+    {
         Scene::Init(go);
+    }
+}
+
+static std::array<std::string, 4> Scripts = {"MeshRender", "MeshFilter", "Light", "Camera"};
+
+void Scene::InitializeInternalScript(Transform *transform)
+{
+    auto go = transform->getGameObject();
+    
+    auto entity = go->getEntity();
+    for (auto script : Scripts)
+    {
+        auto pool = ComponentRegistry::Find(script);
+
+        if (entity->hasComponent(script))
+        {
+            auto component = entity->getComponent(script);
+
+            pool->init(component);
+
+            if (script == "MeshRender")
+            {
+                static_cast<MeshRender *>(component)->build();
+            }
+        }
+    }
+
+    for (auto child : transform->getChildren())
+    {
+        InitializeInternalScript(child);
     }
 }
 
 // TODO: Object, Script because thread dead lock
 void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void(Scene *)> func, Scene *scene) {
+
     if (!File::Exists(path)) {
         Console::LogError("[ Scene ] File not found: " + path);
         return;
@@ -1079,7 +1106,7 @@ void Scene::SetupScene(Scene *scene) {
         m_scenes.emplace(scene->getName(), std::unique_ptr<Scene>(scene));
 
     for (auto &go : scene->getObjectList()) {
-        Initialize(go);
+        Scene::Init(go);
     }
 }
 
@@ -1126,30 +1153,11 @@ void Scene::ProcessScript(Component *component, std::string path, std::streampos
     }
 }
 
-static std::vector<std::string> names = {"Light", "Camera", "MeshRender", "MeshFilter"};
-void Scene::Initialize(GameObject *go) {
-    auto entity = go->getEntity();
-    
-    for (auto cname : names) {
-        if (entity->hasComponent(cname)) {
-            entity->init();
-
-            if (cname == "MeshRender") {
-                static_cast<MeshRender *>(entity->getComponent(cname))->build();
-            }
-        }
-    }
-    
-    for (auto child : go->getTransform()->getChildren()) {
-        Scene::Initialize(child->getGameObject());
-    }
-}
-
 bool Scene::remove(GameObject *gameObject) {
-    auto it = std::remove(m_objects.begin(), m_objects.end(), gameObject);
-    if (it == m_objects.end()) { return false; }
-
-    m_objects.erase(it, m_objects.end());
+    // auto it = std::find(m_objects.begin(), m_objects.end(), gameObject);
+    // if (it != m_objects.end()) {
+    // }
+        m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObject), m_objects.end());
     return true;
 }
 
