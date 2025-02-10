@@ -32,14 +32,13 @@
 grm::u32 AssetsManager::m_processCount = 0;
 
 /***************** Shader *****************/
+std::unordered_map<std::string, std::unique_ptr<ShaderTask>> AssetsManager::mShaderTaskMap;
+std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::mShaderMap;
 std::unordered_map<grr::gShader *, std::string> AssetsManager::mShaderPathRef;
-std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::mShaderList;
-std::list<ShaderHandle> AssetsManager::mShaderFromLoad;
-
-std::unordered_map<grr::gShader *, std::string> AssetsManager::mShaderFromUpdate;
-std::list<grr::gShader *> AssetsManager::mTaskList;
-
 std::mutex AssetsManager::mShaderMutex;
+
+std::unordered_map<std::string, std::unique_ptr<ShaderTask>> AssetsManager::mShaderFromUpdate;
+
 
 /***************** Texture *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::mTextureMap;
@@ -66,8 +65,10 @@ std::unordered_map<std::string, std::unique_ptr<Material>> AssetsManager::materi
 std::unordered_map<Material *, std::string> AssetsManager::materialRefToName;
 std::mutex AssetsManager::materialsMutex;
 
+/***************** Scene *****************/
 std::unordered_map<std::string, std::unique_ptr<SceneTask>> AssetsManager::mSceneTaskMap;
 std::unordered_map<std::string, std::unique_ptr<Scene>> AssetsManager::mSceneMap;
+std::mutex AssetsManager::mSceneMutex;
 
 void AssetsManager::Initialize() {
     // stbi_set_flip_vertically_on_load(true);
@@ -79,8 +80,8 @@ void AssetsManager::Shutdown() {
     m_processCount = 0;
 
     /***************** Shader *****************/
-    mShaderList.clear();
-    mShaderFromLoad.clear();
+    // mShaderMap.clear();
+    // mShaderFromLoad.clear();
 
     /***************** Texture *****************/
     // /textureMap.clear();
@@ -112,7 +113,31 @@ std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
     return it->second;
 }
 
-Animation *AssetsManager::LoadAnimation(const std::string &path) {
+grr::gShader *AssetsManager::CreateShader(const std::string &name)
+{
+    std::lock_guard<std::mutex> lock(mShaderMutex);
+    mShaderMap.emplace(name, std::make_unique<grr::gShader>());
+
+    auto shader = &(*mShaderMap[name]);
+
+    mShaderPathRef.emplace(shader, name);
+    return shader;
+}
+
+void AssetsManager::RemoveShader(grr::gShader *shader)
+{
+    auto it = mShaderPathRef.find(shader);
+    if (it == mShaderPathRef.end())
+    {
+        return;
+    }
+    mShaderMap.erase(it->second);
+
+    mShaderPathRef.erase(it);
+}
+
+Animation *AssetsManager::LoadAnimation(const std::string &path)
+{
     if (!File::Exists(path)) {
         Console::log(Log::ERROR, "Falied to open animation: " + path);
         return nullptr;
@@ -144,24 +169,27 @@ Animation *AssetsManager::LoadAnimation(const std::string &path) {
 }
 
 grr::gShader *AssetsManager::FindShader(const std::string &name) {
-    auto it = mShaderList.find(name);
-    if (it == mShaderList.end()) {
+    std::lock_guard<std::mutex> lock(mShaderMutex);
+    auto it = mShaderMap.find(name);
+    if (it == mShaderMap.end()) {
         return nullptr;
     }
     return &(*it->second);
 }
 
-void AssetsManager::UpdateShader(grr::gShader *shader, const std::string &path) {
+void AssetsManager::UpdateShader(const std::string &path, grr::gShader *shader)
+{
+    std::lock_guard<std::mutex> lock(mShaderMutex);
+    // check in list pre update
     {
-        std::lock_guard<std::mutex> lock(mShaderMutex);
-        auto it = mShaderFromUpdate.find(shader);
-        if (it != mShaderFromUpdate.end()) { return; }
-
-        mShaderFromUpdate[shader] = path;
-        mTaskList.push_back(shader);
+        auto it = mShaderFromUpdate.find(path);
+        if (it != mShaderFromUpdate.end())
+        {
+            return;
+        }
     }
 
-    Threadpool::AddTask(&AssetsManager::TaskUpdateShader);
+    mShaderFromUpdate.emplace(path, std::make_unique<ShaderTask>(path, nullptr, shader));
 }
 
 grr::gTexture *AssetsManager::CreateTexture(const std::string &name) {
@@ -203,6 +231,7 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshLi
         Console::LogError("[ AssetsManager ] Shader.Regiter uniform: %s", grr::error()); \
     }
 
+/*
 void AssetsManager::SetUpdateShader(grr::gShader * shader, ShaderData frag, ShaderData vert, std::string name) {
     auto fragment_source = frag.source.c_str();
     auto vertex_source = vert.source.c_str();
@@ -308,80 +337,13 @@ void AssetsManager::TaskUpdateShader() {
         mShaderFromUpdate.erase(it);
     }
 }
-
-/***************** Texture Process ****************/
-/*
-void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels) {
-    std::unique_lock<std::mutex> lock(m_mutexTexture);
-    auto it = textureMap.find(handle.m_path);
-    if (it != textureMap.end()) {
-        return handle.invoke(&(*it->second));
-    }
-    auto texture = new grr::gTexture();
-
-    grr::TextureFormat format;
-
-    {
-
-        switch (ch) {
-        case 1:
-            // return Texture::eRED;
-        case 2:
-            // return Texture::eRG;
-        case 3:
-            format = grr::TextureFormat_SRGB;
-            break;
-        case 4:
-            format = grr::TextureFormat_SRGBA;
-            break;
-        default:
-            break;
-        }
-
-        texture->updateBuffer(width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Bilinear, format, pixels);
-
-        stbi_image_free(pixels);
-    }
-
-    auto &&[ita, added] = textureMap.emplace(handle.m_path, std::unique_ptr<grr::gTexture>(texture));
-    textureRefToName[&(*ita->second)] = handle.m_path;
-
-    handle.invoke(texture);
-
-    lock.unlock();
-
-    Console::LogInfo("[ AssetsManager::Texture ] Texture loaded: " + handle.m_path);
-}
-
-void AssetsManager::ProcessTexture() {
-    std::unique_lock<std::mutex> lock(m_mutexTexture);
-    while (!m_textureHandle.empty()) {
-        auto handle = m_textureHandle.front();
-        m_textureHandle.pop_front();
-
-        auto path = handle.m_path;
-        m_mapHandleTexture.erase(path);
-
-        int width, height, ch;
-        auto pixels = reinterpret_cast<void *>(stbi_load(path.c_str(), &width, &height, &ch, 0));
-        if (!pixels) {
-            Console::LogError("[ AssetsManager::Texture ] Failed to load texture: " + path);
-            handle.invoke(nullptr);
-            continue;
-        }
-        lock.unlock();
-
-        Event::Add(&AssetsManager::SetupTexture, handle, width, height, ch, pixels);
-
-        lock.lock();
-    }
-}
 */
 
 /***************** Shader Process ****************/
+/*
 void AssetsManager::SetupShader(ShaderHandle handle, ShaderData frag, ShaderData vert) {
-    auto it = mShaderList.find(handle.m_path);
-    if (it != mShaderList.end()) {
+    auto it = mShaderMap.find(handle.m_path);
+    if (it != mShaderMap.end()) {
         handle.invoke(&(*it->second));
         return;
     }
@@ -391,18 +353,10 @@ void AssetsManager::SetupShader(ShaderHandle handle, ShaderData frag, ShaderData
     auto shader = new grr::gShader();
 
     SetUpdateShader(shader, frag, vert, name);
-    /*
-    shader->build(&fShader, 1, &vShader, 1);
-    if (!shader->isValid()) {
-        Console::LogError("[ Shader ] Fail to build shader, %s, %s", name.c_str(), grr::error());
-        delete shader;
-        return;
-    }
-    */
     
-    mShaderList[handle.m_path] = std::unique_ptr<grr::gShader>(shader);
+    mShaderMap[handle.m_path] = std::unique_ptr<grr::gShader>(shader);
 
-    mShaderPathRef[&(*mShaderList[handle.m_path])] = handle.m_path;
+    mShaderPathRef[&(*mShaderMap[handle.m_path])] = handle.m_path;
 
     handle.invoke(shader);
 
@@ -423,6 +377,7 @@ void AssetsManager::ProcessShader() {
         lock.lock();
     }
 }
+*/
 
 void AssetsManager::SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *animation) {
     animation->setName(temp->getName());
@@ -935,41 +890,42 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
 }
 
 // TODO: aicionar lista de callbacks a serem chamadas apos shader serem adicionado a thread
-void AssetsManager::SetShaderList(const std::string &path, std::function<void(grr::gShader *)> func) {
-    if (!File::Exists(path)) {
+void AssetsManager::SetShaderList(const std::string &path, std::function<void(grr::gShader *)> func)
+{
+    std::lock_guard<std::mutex> lock(mShaderMutex);
+    // check if contains in main list
+    {
+        auto it = mShaderMap.find(path);
+        if (it != mShaderMap.end()) {
+            if (func == nullptr)
+                return;
+
+            return func(&(*it->second));
+        }
+    }
+
+    // check there loading
+    {
+        auto it = mShaderTaskMap.find(path);
+        if (it != mShaderTaskMap.end()) {
+            if (func == nullptr)
+                return;
+
+            return it->second->addFunction(func);
+        }
+    }
+
+    // check file exists
+    if (!File::Exists(path))
+    {
         return Console::LogError("[ AssetsManager-Shader ] File do not exists: " + path);
     }
 
-    auto it = mShaderList.find(path);
-    if (it != mShaderList.end()) {
-        if (func)
-            func(&(*it->second));
-        return;
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(mShaderMutex);
-        auto it = std::find_if(mShaderFromLoad.begin(), mShaderFromLoad.end(), [path](auto &handle) {
-            return handle.m_path == path;
-        });
-        
-        if (it != mShaderFromLoad.end()) {
-            it->add(func);
-            return;
-        }
-        mShaderFromLoad.emplace_back(func, path);
-    }
-
-    Threadpool::AddTask(&AssetsManager::ProcessShader);
+    mShaderTaskMap.emplace(path, std::make_unique<ShaderTask>(path, func));
 }
 
 void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func)
 {
-    if (!File::Exists(path))
-    {
-        return Console::LogError("[ AssetsManager::Texture ] File not found: %s", path.c_str());
-    }
-
     std::lock_guard<std::mutex> lock(mTextureMutex);
 
     // Check texture has in main list
@@ -994,12 +950,17 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
         }
     }
 
+    if (!File::Exists(path))
+    {
+        return Console::LogError("[ AssetsManager::Texture ] File not found: %s", path.c_str());
+    }
+    
     // Create task to load texture
     mTextureTaskMap.emplace(path, std::make_unique<TextureTask>(path, func));
 }
 
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::GetShaderList() {
-    return mShaderList;
+    return mShaderMap;
 }
 
 grm::size AssetsManager::GetTextureCount() {
@@ -1008,7 +969,7 @@ grm::size AssetsManager::GetTextureCount() {
 }
 
 grm::size AssetsManager::GetShaderCount() {
-    return mShaderList.size();
+    return mShaderMap.size();
 }
 
 grm::size AssetsManager::GetMeshCount() {
@@ -1091,6 +1052,7 @@ void AssetsManager::RemoveTask(const std::string &name)
 {
     // Check if task on the scene
     {
+        std::lock_guard<std::mutex> lock(mSceneMutex);
         auto it = mSceneTaskMap.find(name);
         if (it != mSceneTaskMap.end())
         {
@@ -1099,190 +1061,45 @@ void AssetsManager::RemoveTask(const std::string &name)
         }
     }
 
-    // Check if task on the scene
+    // Check if task on the texture
     {
         std::lock_guard<std::mutex> lock(mTextureMutex);
         auto it = mTextureTaskMap.find(name);
-        if (it != mTextureTaskMap.end()) {
+        if (it != mTextureTaskMap.end())
+        {
             mTextureTaskMap.erase(it);
             return;
         }
     }
-}
 
-UniformStackInfo getGLSLStackInfo(const std::string &source) {
-    std::stringstream iss(source);
-
-    std::string uniform, object, name;
-
-    if (source.find("uniform") != std::string::npos) {
-        if (!(iss >> uniform >> object >> name)) {
-            throw std::runtime_error("Fail to get stack info");
-        }
-    } else {
-        if (!(iss >> object >> name)) {
-            throw std::runtime_error("Fail to get stack info");
-        }
-    }
-
-    auto pstart = name.find('[');
-    auto pend = name.find(']');
-
-    UniformStackInfo info;
-    info.name = name.substr(0, pstart);
-
-    info.object = object;
-    info.count = std::atoi(name.substr(pstart + 1, name.length() - pend).c_str());
-
-    return info;
-}
-
-std::string getStructName(const std::string &source) {
-    std::stringstream iss(source);
-
-    std::string discart, name;
-
-    if (!(iss >> discart >> name >> discart)) {
-        throw std::runtime_error("Fail to inspect struct.");
-    }
-
-    return name;
-}
-
-void insert_field(const std::string &line, const std::string &type_name, const std::string &name, std::vector<Uniform> &vector, std::map<std::string, std::vector<Uniform>> &struct_map) {
-    UniformType type = UniformType_object;
-    if (type_name == "float") {
-        type = UniformType_float;
-    } else if (type_name == "int") {
-        type = UniformType_int;
-    } else if (type_name == "bool") {
-        type = UniformType_bool;
-    } else if (type_name == "samplerCube") {
-        type = UniformType_samplerCube;
-    } else if (type_name == "sampler2D") {
-        type = UniformType_sampler2D;
-    } else if (type_name == "mat3") {
-        type = UniformType_mat3;
-    } else if (type_name == "mat4") {
-        type = UniformType_mat4;
-    } else if (type_name == "vec2") {
-        type = UniformType_vec2;
-    } else if (type_name == "vec3") {
-        type = UniformType_vec3;
-    } else if (type_name == "vec4") {
-        type = UniformType_vec4;
-    }
-
-    if (line.find('[') != std::string::npos && line.find(']') != std::string::npos) {
-        auto info = getGLSLStackInfo(line);
-        vector.push_back({info.name, type_name, type});
-
-        for (int i=0;i<info.count;i++) {
-            if (type == UniformType_object) {
-                for (auto un : struct_map[type_name]) {
-                    vector.push_back({info.name + "[" + std::to_string(i) + "]." + un.name, un.type_name, un.type});
-                }
-                continue;
+    // Check in to shader task
+    {
+        std::lock_guard<std::mutex> lock(mShaderMutex);
+        // shader update
+        {
+            auto it = mShaderFromUpdate.find(name);
+            if (it != mShaderFromUpdate.end())
+            {
+                mShaderFromUpdate.erase(it);
+                return;
             }
-            vector.push_back({info.name + "[" + std::to_string(i) + "]", type_name, type});
         }
-    } else {
-        vector.push_back({name, type_name, type});
-    }
-}
-
-std::map<ShaderType, ShaderData> AssetsManager::ReadShaderOfType(const std::string &path) {
-    std::ifstream is(path);
-    if (!is.is_open()) {
-        throw std::runtime_error("file don't open.");
-    }
-
-    auto tella = is.tellg();
-
-    std::map<std::string, std::vector<Uniform>> object_map;
-
-    bool isInNextLine = false;
-    std::string line, acumulate, acumulate_data;
-    while (std::getline(is, line)) {
-        std::stringstream iss(line);
-        if (line.find("struct") != std::string::npos || isInNextLine) {
-            if ((line.find('{') != std::string::npos)) {
-                if (!isInNextLine) {
-                    acumulate = line;
-                    // continue;
-                } else {
-                    acumulate += line + ' ';
-
-                }
-                isInNextLine = false;
-            } else {
-                isInNextLine = true;
-                acumulate += line + ' ';
-                continue;
-            }
-            object_map.emplace(getStructName(acumulate), std::vector<Uniform>());
-            continue;
-        }
-
-        if (!acumulate.empty()) {
-            if (line.find('}') == std::string::npos) {
-                std::string type_name, name;
-
-                if (!(iss >> type_name >> name)) {
-                    continue;
-                }
-
-                name.erase(std::remove(name.begin(), name.end(), ';'), name.end());
-
-                insert_field(line, type_name, name, object_map[getStructName(acumulate)], object_map);
-            } else {
-                acumulate.clear();
+        
+        // shader from load
+        {
+            auto it = mShaderTaskMap.find(name);
+            if (it != mShaderTaskMap.end())
+            {
+                mShaderTaskMap.erase(it);
+                return;
             }
         }
     }
-
-    is.close();
-
-    is.open(path);
-
-    std::map<ShaderType, ShaderData> shader_map;
-
-    ShaderType type = ShaderType_None;
-    
-    while (std::getline(is, line)) {
-        std::stringstream iss(line);
-        if (line.find("shader_type") != std::string::npos) {
-            if (line.find("vert") != std::string::npos) {
-                type = ShaderType_Vertex;
-                continue;
-            } else if (line.find("frag") != std::string::npos) {
-                type = ShaderType_Fragment;
-                continue;
-            }
-        }
-
-        auto &data = shader_map[type];
-        data.source += line + '\n';
-
-        if (line.find("uniform") != std::string::npos) {
-            std::string uniform, type_name, name;
-
-            if (!(iss >> uniform >> type_name >> name)) {
-                continue;
-            }
-            name.erase(std::remove(name.begin(), name.end(), ';'), name.end());
-
-            insert_field(line, type_name, name, data.uniformList, object_map);
-        }
-    }
-    is.close();
-
-    return shader_map;
 }
 
 void AssetsManager::SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void(Scene *)> func)
 {
-    // std::lock_guard<std::mutex> lock(mSceneMutex);
+    std::lock_guard<std::mutex> lock(mSceneMutex);
     // Check in list has bee loaded
     {
         auto it = mSceneMap.find(path);
@@ -1295,12 +1112,14 @@ void AssetsManager::SetSceneList(const std::string &path, SceneLoadFlags flags, 
     }
 
     // Check in list of task
-    auto it = mSceneTaskMap.find(path);
-    if (it != mSceneTaskMap.end())
     {
-        if (func == nullptr)
-            return;
-        return it->second->addFunction(func);
+        auto it = mSceneTaskMap.find(path);
+        if (it != mSceneTaskMap.end())
+        {
+            if (func == nullptr)
+                return;
+            return it->second->addFunction(func);
+        }
     }
 
     if (!File::Exists(path))

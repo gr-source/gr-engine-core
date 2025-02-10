@@ -29,6 +29,7 @@
 #include "gr-base/core/default.hpp"
 
 #include "gr-base/core/task/textureTask.hpp"
+#include "gr-base/core/task/shaderTask.hpp"
 #include "gr-base/core/task/sceneTask.hpp"
 
 class GameObjectHandle {
@@ -70,44 +71,6 @@ private:
     std::vector<std::function<void(grr::gTexture *)>> m_functions;
 };
 
-enum ShaderType {
-    ShaderType_None     = 1 << 0,
-    ShaderType_Fragment = 1 << 1,
-    ShaderType_Vertex   = 1 << 2,
-};
-
-enum UniformType {
-    UniformType_object    = 1 << 0,
-    UniformType_float     = 1 << 1,
-    UniformType_int       = 1 << 2,
-    UniformType_bool      = 1 << 3,
-    UniformType_mat3      = 1 << 4,
-    UniformType_mat4      = 1 << 5,
-    UniformType_vec2      = 1 << 6,
-    UniformType_vec3      = 1 << 7,
-    UniformType_vec4      = 1 << 8,
-    UniformType_sampler2D = 1 << 9,
-    UniformType_samplerCube = 1 << 10,
-};
-
-struct Uniform {
-    std::string name;
-    std::string type_name;
-    UniformType type;
-};
-
-struct ShaderData {
-    std::string source;
-
-    std::vector<Uniform> uniformList;
-};
-
-struct UniformStackInfo {
-    std::string name;
-    std::string object;
-    int count;
-};
-
 class AssetsManager {
 public:
     static void Initialize();
@@ -124,6 +87,10 @@ public:
     template <typename ...Args>
     static void LoadShader(const std::string &path, Args &&...args);
 
+    static grr::gShader *CreateShader(const std::string &name);
+
+    static void RemoveShader(grr::gShader *shader);
+
     template <typename ...Args>
     static void LoadGameObject(const std::string &path, Args &&...args);
 
@@ -134,7 +101,7 @@ public:
 
     static grr::gShader *FindShader(const std::string &name);
 
-    static void UpdateShader(grr::gShader *shader, const std::string &path);
+    static void UpdateShader(const std::string &path, grr::gShader *shader);
 
     // ********** Texture ********** //
     static grr::gTexture *CreateTexture(const std::string &name);
@@ -180,14 +147,13 @@ public:
 
 private:
     /***************** Shader *****************/
-    static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> mShaderList;
+    static std::unordered_map<std::string, std::unique_ptr<ShaderTask>> mShaderTaskMap;
+    static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> mShaderMap;
     static std::unordered_map<grr::gShader *, std::string> mShaderPathRef;
-    static std::list<ShaderHandle> mShaderFromLoad;
+    static std::mutex mShaderMutex;
 
     // Update Shader
-    static std::unordered_map<grr::gShader *, std::string> mShaderFromUpdate;
-    static std::list<grr::gShader *> mTaskList;
-    static std::mutex mShaderMutex;
+    static std::unordered_map<std::string, std::unique_ptr<ShaderTask>> mShaderFromUpdate;
 
     /***************** Texture *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> mTextureMap;
@@ -224,10 +190,6 @@ private:
 
     static void TaskUpdateShader();
 
-    static void SetupShader(ShaderHandle handle, ShaderData frag, ShaderData vert);
-    
-    static void ProcessShader();
-
     static void SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *target);
 
     static void doAnimationInBackground(const std::string &path, Animation *target);
@@ -253,8 +215,6 @@ private:
     static void ProcessBinary();
 
     static int ReadTexture(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList);
-
-    static std::map<ShaderType, ShaderData> ReadShaderOfType(const std::string &path);
 
     static void SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void (Scene *)> func);
 };
