@@ -14,6 +14,8 @@
 
 MeshRender::MeshRender() : m_batched(nullptr), m_transform(nullptr) {}
 
+MeshRender::MeshRender(const MeshRender &other) : m_transform(nullptr), m_batched(nullptr), m_materials(other.m_materials) {}
+
 void MeshRender::Init() {
     m_transform = GetComponent<Transform>();
 }
@@ -22,7 +24,7 @@ void MeshRender::Destroy() {
     if (!m_batched) {
         return;
     }
-    m_batched->remove(m_transform);
+    m_batched->remove(GetComponent<Transform>());
     m_batched = nullptr;
 }
 

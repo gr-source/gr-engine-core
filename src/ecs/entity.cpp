@@ -17,9 +17,9 @@ Entity::Entity(GameObject *go, EntityID id) : m_gameObject(go), m_entityID(id) {
 Entity::~Entity() {
     destroy();
     
-    for (auto c : m_components) {
-        std::free(c);
-    }
+    // for (auto c : m_components) {
+    //     std::free(c);
+    // }
 }
 
 Component *Entity::addComponent(const std::string &name, const Component *component) {
@@ -135,13 +135,14 @@ void Entity::destroy() {
     }
 }
 
-void Entity::copy(const Entity *entity) {
-    for (const auto& [name, component] : entity->m_componentPtr) {
+void Entity::copy(const Entity *entity)
+{
+    for (auto &&[name, component] : entity->m_componentPtr) {
         if (hasComponent(name)) {
             continue;
         }
 
-        addComponent(name, &(*component));
+        addComponent(name, component);
     }
 
     auto go = entity->getGameObject();
@@ -156,12 +157,9 @@ void Entity::copy(const Entity *entity) {
 
         if (!targetTransform->hasParent()) {
             Scene::GetCurrentScene()->insert(getGameObject());
-        } else {
-            localTransform->setParent(targetTransform->getParent());
         }
 
         for (const auto& child : targetTransform->getChildren()) {
-
             auto childGameObject = child->getGameObject();
             auto clonedObject = GameObject::Instantiate(childGameObject);
             if (!clonedObject) {

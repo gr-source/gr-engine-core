@@ -76,7 +76,6 @@ public:
     void setCamera(GameObject *go);
 
     Camera *getCamera() const;
-    
 
 private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;
@@ -105,7 +104,7 @@ private:
 
     static void InitializeInternalScript(Transform *transorm);
 
-    GameObject *CreateEngineCamera();
+    static GameObject *CreateEngineCamera();
 
     void setEnable(bool value);
 

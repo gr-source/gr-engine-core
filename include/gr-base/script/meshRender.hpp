@@ -12,6 +12,7 @@
 class MeshRender : public Component {
     CLASS_FUNCTIONS
 public:
+    MeshRender(const MeshRender &other);
     MeshRender();
 
     void Init() override;
