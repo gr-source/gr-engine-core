@@ -53,8 +53,8 @@ std::list<std::tuple<std::string, Animation *>> AssetsManager::s_animationFromLo
 std::mutex AssetsManager::s_animatioMutex;
 
 /***************** GameObject *****************/
-std::list<GameObjectHandle> AssetsManager::s_gameObjectFromLoader;
-std::mutex AssetsManager::s_gameObjectMutex;
+std::unordered_map<std::string, std::unique_ptr<GameObjectTask>> AssetsManager::mGameObjectTaskMap;
+std::mutex AssetsManager::mGameObjectTaskMutex;
 
 /***************** Mesh *****************/
 std::unordered_map<std::string, std::unique_ptr<Mesh>> AssetsManager::s_meshList;
@@ -95,7 +95,7 @@ void AssetsManager::Shutdown() {
     s_animationFromLoader.clear();
 
     /***************** GameObject *****************/
-    s_gameObjectFromLoader.clear();
+    // s_gameObjectFromLoader.clear();
 
     /***************** Mesh *****************/
     s_meshList.clear();
@@ -497,396 +497,23 @@ void AssetsManager::ProcessAnimation() {
     }
 }
 
-void AssetsManager::doInBackgroundGameObject(GameObjectHandle handle) {
-    Stream stream(handle.m_path, std::ios_base::in | std::ios_base::binary);
-    if (!stream.is_open()) {
-        return Console::LogError("[ Model3DHandler ] Falied to open file: %s", handle.m_path.c_str());
-    }
-
-    FileHeader header;
-    if (!stream.readS(&header, 1)) {
-        return Console::LogError("[ Model3DHandler ] Falied to read header binary.");
-    }
-    
-    if (header.signature[0] != 'g' && header.signature[1] != 'r' && header.signature[2] != 'm' && header.signature[3] != 'x') {
-        return Console::LogError("[ Model3DHandler ] Invalid binary type.");
-    }
-
-    Console::LogInfo("[ Model3DHandler ] GRMX loading model.");
-
-    ReadData(&stream, handle);
-
-    Console::LogInfo("[ Model3DHandler ] Scene loaded sucess full.");
-}
-
-void AssetsManager::ReadData(Stream *stream, GameObjectHandle handle) {
-    GameObject *gameObject = nullptr;
-    std::unordered_map<std::string, GameObject *> m_gameObjectTemp;
-
-    while (true) {
-        DataSegment segment;
-        if (!stream->readS(&segment, 1)) {
-            break;
-        }
-
-        if (segment.type == gHeaderType_None && segment.sizeData == 0) {
-            break;
-        }
-
-        auto segment_name = struct_name[segment.type];
-
-        auto next_position = stream->tellg() + static_cast<std::streampos>(segment.sizeData);
-
-        auto result = -1;
-        switch (segment.type) {
-        case gHeaderType_Object:
-            result = ReadGameObject(stream, nullptr, &gameObject, m_gameObjectTemp);
-            break;
-        case gHeaderType_Texture:
-            result = ReadTexture(stream, m_gameObjectTemp);
-            break;
-        case gHeaderType_Material:
-            result = ReadMaterial(stream, m_gameObjectTemp);
-            break;
-        case gHeaderType_Script:
-            result = ReadScript(stream, m_gameObjectTemp);
-            break;
-        default:
-            break;
-        }
-
-        if (result != 0) {
-            Console::LogError("[ AssetsManager ] Falied to load segment: %s code: %d", struct_name[segment.type], result);
-        }
-
-        if (stream->tellg() != next_position) {
-            stream->seekg(next_position, std::ios_base::beg);
-
-            Console::LogWarning("[ AssetsManager ] Block position is invalid");
-        }
-    }
-
-    Event::Add(handle.m_function, gameObject);
-}
-
-int AssetsManager::ReadMaterial(Stream *stream, std::unordered_map<std::string, GameObject *> &gameObjectMap) {
-    std::size_t sname = 0;
-    if (!stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t))) {
-        return 1;
-    }
-
-    std::string name(sname, '\0');
-    if (!stream->read(name.data(), sname * sizeof(char))) {
-        return 2;
-    }
-
-    if (gameObjectMap.find(name) == gameObjectMap.end()) {
-        std::cout << name << std::endl;
-        return 3;
-    }
-
-    auto go = gameObjectMap[name];
-
-    std::size_t mcount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t))) {
-        return 4;
-    }
-
-    for (std::size_t i=0;i<mcount;i++) {
-        std::size_t mnsize = 0;
-        if (!stream->read(reinterpret_cast<char *>(&mnsize), sizeof(std::size_t))) {
-            return 5;
-        }
-
-        std::string mname(mnsize, '\0');
-        if (!stream->read(mname.data(), mnsize * sizeof(char))) {
-            return 6;
-        }
-
-        std::size_t bufferSize = 0;
-        if (!stream->read(reinterpret_cast<char *>(&bufferSize), sizeof(std::size_t))) {
-            return 7;
-        }
-
-        auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
-        
-        if (AssetsManager::FindMaterial(mname) == nullptr) {
-            auto material = AssetsManager::CreateMaterial(mname);
-            material->deserialize(stream);
-        }
-
-        if (stream->tellg() != next) {
-            stream->seekg(next, std::ios_base::beg);
-        }
-    }
-
-    std::size_t ccount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
-        return 8;
-    }
-
-    int result = 0;
-    for (std::size_t i=0;i<ccount;i++) {
-        result = ReadMaterial(stream, gameObjectMap);
-        if (result != 0) {
-            break;
-        }
-    }
-
-    return result;
-}
-
-void AssetsManager::CreateComponent(GameObject *gameObject, std::string componentName) {
-    auto entt = gameObject->getEntity();
-
-    auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
-    if (!component) {
-        return Console::LogError("[ Assetsmanager.GameObject ] Falied to serialize component: %s, %s - Invalid componnet.", gameObject->getName().c_str(), componentName.c_str());
-    }
-}
-
-void AssetsManager::SetupScript(GameObject *gameObject, std::string path, std::streampos position, std::string componentName) {
-    auto entt = gameObject->getEntity();
-
-    auto pool = ComponentRegistry::Find(componentName);
-    if (!pool) {
-        return Console::LogError("[ AssetsManager ] Falied to addcomponent %s, component not found.", componentName.c_str());
-    }
-
-    auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
-    if (!component) {
-        return Console::LogError("[ Assetsmanager.GameObject ] Falied to serialize component: %s, %s - Invalid componnet.", gameObject->getName().c_str(), componentName.c_str());
-    }
-
-    Stream stream(path, std::ios_base::in | std::ios_base::out);
-    stream.seekg(position, std::ios_base::beg);
-
-    pool->deserialize(component, &stream);
-}
-
-int AssetsManager::ReadScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList) {
-    std::size_t gnsize = 0;
-
-    if (!stream->read(reinterpret_cast<char *>(&gnsize), sizeof(std::size_t))) {
-        return 1;
-    }
-
-    std::string gname(gnsize, '\0');
-    if (!stream->read(gname.data(), gnsize * sizeof(char))) {
-        return 2;
-    }
-
-    auto go = tempList[gname];
-
-    std::size_t ccount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
-        return 3;
-    }
-
-
-    std::size_t nsize = 0;
-    for (std::size_t i=0;i<ccount;i++) {
-        if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
-            return 4;
-        }
-
-        std::string cname(nsize, '\0');
-        if (!stream->read(cname.data(), nsize * sizeof(char))) {
-            return 5;
-        }
-
-        std::size_t stream_size = 0;
-        if (!stream->readS(&stream_size, 1)) {
-            return 6;
-        }
-        
-        auto nextPosition = stream->tellg() + static_cast<std::streampos>(stream_size);
-
-        Event::Add(&AssetsManager::SetupScript, go, stream->getPath(), stream->tellg(), cname);
-
-        stream->seekg(nextPosition, std::ios_base::beg);
-    }
-
-
-    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
-        return 7;
-    }
-
-    int result =0;
-    for (std::size_t i=0;i<ccount;i++) {
-        result = ReadScript(stream, tempList);
-        if (result != 0) {
-            break;
-        }
-    }
-
-    return result != 0 ? 8 + result : 0;
-}
-
-void AssetsManager::CreateGameObject(std::string name, std::string tag, bool enable, bool active, Transform *parent, Transform *&out, std::condition_variable &cv, std::mutex &mutex, GameObject **gameOut) {
-    auto gameObject = GameObject::Create(name, tag);
-    if (!gameObject) {
-        return;
-    }
-    
-    if (!(*gameOut)) {
-        *gameOut = gameObject;
-    }
-
-    gameObject->setEnable(active);
-    gameObject->setActive(active);
-
-    auto transform = gameObject->getTransform();
-    if (parent) {
-        transform->setParent(parent);
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        out = transform;
-    }
-    cv.notify_one();
-}
-
-int AssetsManager::ReadGameObject(Stream *stream, Transform *parent, GameObject **out, std::unordered_map<std::string, GameObject *> &tempList) {
-    std::size_t nsize = 0;
-
-    // write-name
-    if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
-        return 1;
-    }
-
-    std::string name(nsize, '\0');
-    if (!stream->read(name.data(), nsize * sizeof(char))) {
-        return 2;
-    }
-
-    // write-tag
-    if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
-        return 3;
-    }
-
-    std::string tag(nsize, '\0');
-    if (!stream->read(tag.data(), nsize * sizeof(char))) {
-        return 4;
-    }
-
-    auto bActive = false;
-    auto bEnable = false;
-
-    // write-status
-    {
-        if (!stream->read(reinterpret_cast<char *>(&bActive), sizeof(bool))) {
-            return 5;
-        }
-
-        if (!stream->read(reinterpret_cast<char *>(&bEnable), sizeof(bool))) {
-            return 6;
-        }
-    }
-
-    Transform *transform = nullptr;
-    std::condition_variable cv;
-
-    Event::Add(&AssetsManager::CreateGameObject, name, tag, bEnable, bActive, parent, std::ref(transform), std::ref(cv), std::ref(s_gameObjectMutex), out);
-
-    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
-    cv.wait(lock, [&transform] {
-        return transform != nullptr;
-    });
-    if (transform)
-        tempList.emplace(name, transform->getGameObject());
-        
-    lock.unlock();
-
-    std::size_t children_size = 0;
-    if (!stream->read(reinterpret_cast<char *>(&children_size), sizeof(std::size_t))) {
-        return 7;
-    }
-    
-    int result = 0;
-    for (int i=0;i<children_size;i++) {
-        result = ReadGameObject(stream, transform, out, tempList);
-        if (result != 0) {
-            break;
-        }
-    }
-    transform = nullptr;
-
-    return result != 0 ? (7 + result) : 0;
-}
-
-void AssetsManager::ProcessBinary() {
-    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
-    while (!s_gameObjectFromLoader.empty()) {
-        auto handle = s_gameObjectFromLoader.front();
-        s_gameObjectFromLoader.pop_front();
-        lock.unlock();
-
-        doInBackgroundGameObject(handle);
-
-        lock.lock();
-    }
-}
-
-int AssetsManager::ReadTexture(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList) {
-    std::size_t nsize = 0;
-    if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
-        return 1;
-    }
-
-    std::string goname(nsize, '\0');
-    if (!stream->read(goname.data(), nsize * sizeof(char))) {
-        return 2;
-    }
-
-    std::size_t tcount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&tcount), sizeof(std::size_t))) {
-        return 3;
-    }
-
-    for (std::size_t i=0;i<tcount;i++) {
-        std::size_t psize = 0;
-        if (!stream->read(reinterpret_cast<char *>(&psize), sizeof(std::size_t))) {
-            return 4;
-        }
-
-        std::string path(psize, '\0');
-        if (!stream->read(path.data(), psize * sizeof(char))) {
-            return 5;
-        }
-
-        AssetsManager::LoadTexture(path);
-    }
-
-    std::size_t ccount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
-        return 6;
-    }
-
-    int result = 0;
-    for (std::size_t i=0;i<ccount;i++) {
-        result = ReadTexture(stream, tempList);
-        if (result != 0) {
-            break;
-        }
-    }
-    return result;
-}
-
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func)
 {
-    if (!File::Exists(path)) {
-        func(nullptr);
-        return Console::LogError("[ AssetsManager::GameObject ] File not found: " + path);
-    }
-
+    if (!File::Exists(path))
     {
-        std::lock_guard<std::mutex> lock(s_gameObjectMutex);
-        s_gameObjectFromLoader.emplace_back(func, path);
+        return Console::LogError("[ AssetsManager::GameObject ] File not found: %s", path.c_str());
     }
 
-    Threadpool::AddTask(&AssetsManager::ProcessBinary);
+    std::lock_guard<std::mutex> lock(mGameObjectTaskMutex);
+    // check has be loading
+    {
+        auto it = mGameObjectTaskMap.find(path);
+        if (it != mGameObjectTaskMap.end()) {
+            return;
+        }
+    }
+
+    mGameObjectTaskMap.emplace(path, std::make_unique<GameObjectTask>(path, func));
 }
 
 // TODO: aicionar lista de callbacks a serem chamadas apos shader serem adicionado a thread
@@ -1093,6 +720,16 @@ void AssetsManager::RemoveTask(const std::string &name)
                 mShaderTaskMap.erase(it);
                 return;
             }
+        }
+    }
+
+    // Check in task of gameobject
+    {
+        std::lock_guard<std::mutex> lock(mGameObjectTaskMutex);
+        auto it = mGameObjectTaskMap.find(name);
+        if (it != mGameObjectTaskMap.end()) {
+            mGameObjectTaskMap.erase(it);
+            return;
         }
     }
 }

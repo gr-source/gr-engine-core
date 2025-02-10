@@ -28,6 +28,7 @@
 
 #include "gr-base/core/default.hpp"
 
+#include "gr-base/core/task/gameObjectTask.hpp"
 #include "gr-base/core/task/textureTask.hpp"
 #include "gr-base/core/task/shaderTask.hpp"
 #include "gr-base/core/task/sceneTask.hpp"
@@ -169,8 +170,8 @@ private:
     static std::mutex s_animatioMutex;
 
     /***************** GameObject *****************/
-    static std::list<GameObjectHandle> s_gameObjectFromLoader;
-    static std::mutex s_gameObjectMutex;
+    static std::unordered_map<std::string, std::unique_ptr<GameObjectTask>> mGameObjectTaskMap;
+    static std::mutex mGameObjectTaskMutex;
 
     /***************** Mesh *****************/
     static std::unordered_map<std::string, std::unique_ptr<Mesh>> s_meshList;
@@ -186,35 +187,11 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> mSceneMap;
     static std::mutex mSceneMutex;
 
-    static void SetUpdateShader(grr::gShader *shader, ShaderData frag, ShaderData vert, std::string name);
-
-    static void TaskUpdateShader();
-
     static void SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *target);
 
     static void doAnimationInBackground(const std::string &path, Animation *target);
 
     static void ProcessAnimation();
-
-    static void doInBackgroundGameObject(GameObjectHandle handle);
-
-    static void ReadData(Stream *stream, GameObjectHandle handle);
-
-    static int ReadMaterial(Stream *stream, std::unordered_map<std::string, GameObject *> &gameObjectMap);
-
-    static void CreateComponent(GameObject *gameObject, std::string componentName);
-
-    static void SetupScript(GameObject *gameObject, std::string path, std::streampos position, std::string componentName);
-
-    static int ReadScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList);
-
-    static void CreateGameObject(std::string name, std::string tag, bool enable, bool active, Transform *parent, Transform *&out, std::condition_variable &cv, std::mutex &mutex, GameObject **gameOut);
-
-    static int ReadGameObject(Stream *stream, Transform *parent, GameObject **out, std::unordered_map<std::string, GameObject *> &tempList);
-
-    static void ProcessBinary();
-
-    static int ReadTexture(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList);
 
     static void SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void (Scene *)> func);
 };

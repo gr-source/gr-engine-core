@@ -91,7 +91,8 @@ void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
     if (!stream->is_open())
     {
         setStatus(TaskStatus::FAIL);
-        return Console::LogError("[ SceneTask ] Faleid to open scene: ", path.c_str());
+        Console::LogError("[ SceneTask ] Faleid to open scene: ", path.c_str());
+        return AssetsManager::RemoveTask(path);
     }
 
     // read header data
@@ -100,7 +101,8 @@ void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
         if (!stream->read(reinterpret_cast<char *>(&header), sizeof(FileHeader)))
         {
             setStatus(TaskStatus::FAIL);
-            return Console::LogError("[ SceneTask ] Failed to read binary header: %s", path.c_str());
+            Console::LogError("[ SceneTask ] Failed to read binary header: %s", path.c_str());
+            return AssetsManager::RemoveTask(path);
         }
 
         Console::LogInfo("[ SceneTask ] loading scene version: %f", header.version);
@@ -115,7 +117,8 @@ void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
         if (!stream->read(reinterpret_cast<char *>(&data), sizeof(DataSegment)))
         {
             setStatus(TaskStatus::FAIL);
-            return Console::LogError("[ SceneTask ] Scene file corrumped.");
+            Console::LogError("[ SceneTask ] Scene file corrumped.");
+            return AssetsManager::RemoveTask(path);
         }
         
         if (data.type == gHeaderType_None && data.sizeData == 0)
@@ -408,18 +411,6 @@ int SceneTask::readScript()
             stream->seekg(next, std::ios_base::beg);
             continue;
         }
-        /*
-        Event::Add(&Scene::SetupScript, it->second, componentName, std::ref(cv), std::ref(component), std::ref(result));
-
-        std::unique_lock<std::mutex> lock(m_mutex);
-        cv.wait(lock, [&component, &result] {
-            return component || bQuit || result >= 0;
-        });
-        if (bQuit) {
-            break;
-        }
-        lock.unlock();
-        */
 
         if (data_size <= 0)
         {

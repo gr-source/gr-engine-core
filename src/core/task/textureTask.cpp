@@ -49,7 +49,8 @@ void TextureTask::doInBackground(std::string path)
     m_pixels = std::unique_ptr<char>((char *)stbi_load(path.c_str(), &width, &height, &ch, 0));
     if (!m_pixels)
     {
-        return Console::LogError("[ TextureTask ] Fail to load texture '%s'", path.c_str());
+        Console::LogError("[ TextureTask ] Fail to load texture '%s'", path.c_str());
+        return AssetsManager::RemoveTask(path);
     }
 
     grr::TextureFormat format;
