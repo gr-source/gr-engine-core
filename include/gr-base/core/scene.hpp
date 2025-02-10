@@ -29,8 +29,6 @@ public:
 
     static Scene *Create(const std::string &name);
 
-    static void LoadScene(const std::string &path, std::function<void(Scene *)> func = nullptr);
-
     static void DestroyScript();
 
     static void CheckRequestReinstanceScript();
@@ -53,9 +51,13 @@ public:
 
     static void Init(GameObject *gameObject);
 
+    static Scene *AddScene(const std::string &name, std::unique_ptr<Scene> scene);
+
     Scene(const std::string &name);
     
     ~Scene();
+
+    void setName(const std::string &name);
 
     std::string getName() const;
     
@@ -71,7 +73,10 @@ public:
 
     GameObject *getCameraObject() const;
 
+    void setCamera(GameObject *go);
+
     Camera *getCamera() const;
+    
 
 private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;
@@ -98,18 +103,7 @@ private:
 
     bool m_enable;
 
-    enum LoadFlags : std::uint8_t {
-        LoadFlags_Metadata = 1 << 1,
-        LoadFlags_Texture  = 1 << 2,
-        LoadFlags_Material = 1 << 3,
-        LoadFlags_Mesh     = 1 << 4,
-        LoadFlags_Script   = 1 << 5,
-        LoadFlags_Object   = 1 << 6,
-    };
-
     static void InitializeInternalScript(Transform *transorm);
-
-    static void Load(const std::string &path, std::uint8_t flags = LoadFlags_Metadata | LoadFlags_Material | LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, std::function<void(Scene *)> func = nullptr, Scene *scene = nullptr);
 
     GameObject *CreateEngineCamera();
 
@@ -133,20 +127,6 @@ private:
 
     int writeScript(Stream *stream);
 
-    static int readMetadata(Stream *stream, Scene *scene);
-
-    static int readTexture(Stream *stream);
-
-    static int readMaterial(Stream *stream);
-
-    static int readMesh(Stream *stream);
-
-    static int readMainListGameObject(Stream *stream, Scene *scene, std::unordered_map<std::string, GameObject *> &tempObject);
-
-    static int readGameObject(Stream *stream, Scene *scene, Transform *parent, std::unordered_map<std::string, GameObject *> &tempObject);
-
-    static int readScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempObject);
-
     static void SetupScene(Scene *scene);
 
     static void SetupScript(GameObject *gameObject, std::string name, std::condition_variable &cv, Component *&component, int &result);
@@ -164,3 +144,4 @@ private:
     void reinstanceScript(const std::string &name);
 
 };
+

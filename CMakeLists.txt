@@ -87,6 +87,10 @@ set(culling
     src/core/culling/frustum.cpp
 )
 
+set(task
+    src/core/task/sceneTask.cpp
+)
+
 find_package(assimp QUIET)
 if(NOT assimp_FOUND)
     message(FATAL_ERROR "Please install libassimp-dev")
@@ -99,7 +103,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core}  ${culling} ${filmbox} ${binary} ${animation} ${physics})
+add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${culling} ${filmbox} ${task} ${binary} ${animation} ${physics})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

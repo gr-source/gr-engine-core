@@ -70,6 +70,9 @@ std::unordered_map<std::string, std::unique_ptr<Material>> AssetsManager::materi
 std::unordered_map<Material *, std::string> AssetsManager::materialRefToName;
 std::mutex AssetsManager::materialsMutex;
 
+std::unordered_map<std::string, std::unique_ptr<SceneTask>> AssetsManager::mSceneTaskMap;
+std::unordered_map<std::string, std::unique_ptr<Scene>> AssetsManager::mSceneMap;
+
 void AssetsManager::Initialize() {
     stbi_set_flip_vertically_on_load(true);
 }
@@ -99,6 +102,9 @@ void AssetsManager::Shutdown() {
 
     /***************** Mesh *****************/
     s_meshList.clear();
+}
+
+void AssetsManager::Render() {
 }
 
 std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
@@ -1061,6 +1067,15 @@ std::unordered_map<std::string, std::unique_ptr<Material>> &AssetsManager::GetMa
     return materialsMap;
 }
 
+void AssetsManager::RemoveTask(const std::string &name) {
+    auto it = mSceneTaskMap.find(name);
+    if (it == mSceneTaskMap.end()) {
+        return;
+    }
+
+    mSceneTaskMap.erase(it);
+}
+
 UniformStackInfo getGLSLStackInfo(const std::string &source) {
     std::stringstream iss(source);
 
@@ -1230,6 +1245,42 @@ std::map<ShaderType, ShaderData> AssetsManager::ReadShaderOfType(const std::stri
 
     return shader_map;
 }
+
+void AssetsManager::SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void(Scene *)> func)
+{
+    // std::lock_guard<std::mutex> lock(mSceneMutex);
+    // Check in list has bee loaded
+    {
+        auto it = mSceneMap.find(path);
+        if (it != mSceneMap.end())
+        {
+            if (func == nullptr)
+                return;
+            return func(&(*it->second));
+        }
+    }
+
+    // Check in list of task
+    auto it = mSceneTaskMap.find(path);
+    if (it != mSceneTaskMap.end())
+    {
+        if (func == nullptr)
+            return;
+        return it->second->addFunction(func);
+    }
+
+    if (!File::Exists(path))
+    {
+        return Console::LogError("[ AssetsManager ] Scene.LoadScene: file '%s' do not found.", path.c_str());
+    }
+
+    mSceneTaskMap.emplace(path, std::make_unique<SceneTask>(path, flags, func));
+}
+
+
+
+
+
 
 
 

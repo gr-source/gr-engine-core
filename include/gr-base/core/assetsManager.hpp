@@ -19,12 +19,16 @@
 
 #include "gr-base/core/filmbox/default.hpp"
 
-#include "geometry/material.hpp"
+#include "gr-base/core/geometry/default.hpp"
+#include "gr-base/core/geometry/mesh.hpp"
 
 #include "gr-base/script/default.hpp"
+
 #include "gr-base/ecs/default.hpp"
 
-#include "gr-base/core/geometry/mesh.hpp"
+#include "gr-base/core/default.hpp"
+
+#include "gr-base/core/task/sceneTask.hpp"
 
 class GameObjectHandle {
 public:
@@ -109,6 +113,8 @@ public:
 
     static void Shutdown();
 
+    static void Render();
+
     template <typename ...Args>
     static void LoadTexture(const std::string &path, Args &&...args);
 
@@ -119,6 +125,9 @@ public:
 
     template <typename ...Args>
     static void LoadGameObject(const std::string &path, Args &&...args);
+
+    template <typename ...Args>
+    static void LoadScene(const std::string &path, Args &&...args);
 
     static Animation *LoadAnimation(const std::string &path);
 
@@ -163,6 +172,8 @@ public:
 
     static std::unordered_map<std::string, std::unique_ptr<Material>> &GetMaterialMap();
 
+    static void RemoveTask(const std::string &name);
+
 private:
     /***************** Shader *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> mShaderList;
@@ -201,6 +212,10 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<Material>> materialsMap;
     static std::unordered_map<Material *, std::string> materialRefToName;
     static std::mutex materialsMutex;
+
+    /***************** Scene *****************/
+    static std::unordered_map<std::string, std::unique_ptr<SceneTask>> mSceneTaskMap;
+    static std::unordered_map<std::string, std::unique_ptr<Scene>> mSceneMap;
 
     static void SetUpdateShader(grr::gShader *shader, ShaderData frag, ShaderData vert, std::string name);
 
@@ -241,6 +256,8 @@ private:
     static int ReadTexture(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList);
 
     static std::map<ShaderType, ShaderData> ReadShaderOfType(const std::string &path);
+
+    static void SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void (Scene *)> func);
 };
 
 template <typename... Args>
@@ -251,6 +268,15 @@ inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...arg
     }
 
     SetGameObjectList(path, func);
+}
+
+template <typename... Args>
+inline void AssetsManager::LoadScene(const std::string &path, Args &&...args) {
+    std::function<void (Scene *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0) {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
+    SetSceneList(path, SceneLoadFlags_Load, func);
 }
 
 template <typename ...Args>

@@ -92,10 +92,6 @@ Scene *Scene::Create(const std::string &name) {
     return &(*it->second);
 }
 
-void Scene::LoadScene(const std::string &path, std::function<void(Scene *)> func) {
-    Threadpool::AddTask(&Scene::Load, path, LoadFlags_Metadata | LoadFlags_Material | LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, func, nullptr);
-}
-
 /*
 void UpdateComponent(Transform *transform) {
     transform->entity->reintantiate();
@@ -192,11 +188,19 @@ void Scene::Init(GameObject *gameObject) {
     }
 }
 
-Scene::Scene(const std::string &name) : m_name(name), m_enable(true), m_goCamera(nullptr), m_camera(nullptr) {
-    m_goCamera = CreateEngineCamera();
+Scene *Scene::AddScene(const std::string &name, std::unique_ptr<Scene> scene)
+{
+    m_scenes[name] = std::move(scene);
 
-    if (m_goCamera)
-        m_camera = m_goCamera->getComponent<Camera>();
+    return &(*m_scenes[name]);
+}
+
+// TODO: Create engine camera nao te suporte para multithread.
+Scene::Scene(const std::string &name) : m_name(name), m_enable(true), m_goCamera(nullptr), m_camera(nullptr) {
+    // m_goCamera = CreateEngineCamera();
+
+    // if (m_goCamera)
+    //     m_camera = m_goCamera->getComponent<Camera>();
 }
 
 Scene::~Scene() {
@@ -205,7 +209,13 @@ Scene::~Scene() {
     }
 }
 
-std::string Scene::getName() const {
+void Scene::setName(const std::string &name)
+{
+    m_name = name;
+}
+
+std::string Scene::getName() const
+{
     return m_name;
 }
 
@@ -267,6 +277,12 @@ GameObject *Scene::getCameraObject() const {
     return m_goCamera;
 }
 
+void Scene::setCamera(GameObject *go) {
+    m_goCamera = go;
+
+    m_camera = go->getComponent<Camera>();
+}
+
 Camera *Scene::getCamera() const {
     return m_camera;
 }
@@ -316,7 +332,7 @@ void Scene::ReloadObjects(std::function<void(Scene *)> func) {
 
     // GameObject::Clear();
     
-    Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, func, scene);
+    // Threadpool::AddTask(&Scene::SetLoadScene, temp_dir + scene->getName() + ".scn.tmp", SceneLoadFlags_Object | SceneLoadFlags_Script, func, scene);
 }
 
 void Scene::InitializeEngineScript() {
@@ -371,107 +387,6 @@ void Scene::InitializeInternalScript(Transform *transform)
     {
         InitializeInternalScript(child);
     }
-}
-
-// TODO: Object, Script because thread dead lock
-void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void(Scene *)> func, Scene *scene) {
-
-    if (!File::Exists(path)) {
-        Console::LogError("[ Scene ] File not found: " + path);
-        return;
-    }
-
-    Stream stream(path, std::ios_base::in | std::ios_base::binary);
-    if (!stream.is_open()) {
-        Console::LogError("[ Scene ] Faleid to open scene: " + path);
-        return;
-    }
-
-    std::string name;
-
-    // read header data
-    {
-        FileHeader header;
-        if (!stream.readS(&header, 1)) {
-            return Console::LogError("[ Scene ] Failed to read binary header: %s", path.c_str());
-        }
-        name = header.name;
-
-        Console::LogInfo("[ Scene ] loading scene: %s - Version: %.2f", name.c_str(), header.version);
-    }
-
-    auto hasScene = scene != nullptr;
-
-    scene = (hasScene ? scene : new Scene(name));
-
-    std::unordered_map<std::string, GameObject *> m_tempObject;
-
-    // read segment
-    while (true) {
-        DataSegment data;
-        if (!stream.readS(&data, 1)) {
-            break;
-        }
-        
-        if (data.type == gHeaderType_None && data.sizeData == 0) {
-            break;
-        }
-        
-        auto nextPosition = stream.tellg() + static_cast<std::streampos>(data.sizeData);
-        auto block_name = struct_name[data.type];
-
-        std::cout << "Block: " << block_name << std::endl;
-
-        if (data.sizeData <= 0) {
-            stream.seekg(nextPosition, std::ios_base::beg);
-            continue;
-        }
-
-        int result = -1;
-        switch (data.type) {
-        case gHeaderType_Metadata:
-            if (flags & LoadFlags_Metadata) {
-                readMetadata(&stream, scene);
-            }
-            break;
-        case gHeaderType_Texture:
-            if (flags & LoadFlags_Texture)
-                result = readTexture(&stream);
-            break;
-        case gHeaderType_Material:
-            if (flags & LoadFlags_Material)
-                result = readMaterial(&stream);
-            break;
-        case gHeaderType_Mesh:
-            if (flags & LoadFlags_Mesh)
-                result = readMesh(&stream);
-            break;
-        case gHeaderType_Object:
-            if (flags & LoadFlags_Object)
-                result = readMainListGameObject(&stream, &(*scene), m_tempObject);
-            break;
-        case gHeaderType_Script:
-            if (flags & LoadFlags_Script)
-                result = readScript(&stream, m_tempObject);
-            break;
-        default:
-            break;
-        }
-
-        if (result != 0 && result != -1) {
-            Console::LogError("[ Scene ] Falied to read segment data: " + std::string(block_name) + " Code: " + std::to_string(result));
-        }
-        
-        if (stream.tellg() != nextPosition) {
-            Console::LogWarning("[ Scene ] Data segment: %s is not fully loaded.", block_name);
-        }
-        stream.seekg(nextPosition, std::ios_base::beg);
-    }
-
-    Event::Add(&Scene::SetupScene, scene);
-    
-    if (func)
-        Event::Add(func, scene);
 }
 
 GameObject *Scene::CreateEngineCamera() {
@@ -798,224 +713,7 @@ int Scene::writeScript(Stream *streaming) {
     return 0;
 }
 
-int Scene::readMetadata(Stream *stream, Scene *scene) {
-    std::size_t snsize = 0;
-    if (!stream->read(reinterpret_cast<char *>(&snsize), sizeof(std::size_t))) {
-        return 1;
-    }
-
-    std::string name(snsize, '\0');
-    if (!stream->read(name.data(), snsize * sizeof(char))) {
-        return 2;
-    }
-    scene->m_name = name;
-
-    auto transform = scene->m_goCamera->getTransform();
-    transform->Deserialize(stream);
-    return 0;
-}
-
-int Scene::readTexture(Stream *stream) {
-    std::size_t tcount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&tcount), sizeof(std::size_t))) {
-        return 1;
-    }
-
-    std::vector<std::string> pathList(tcount);
-    for (auto &path : pathList) {
-        std::size_t psize = 0;
-        if (!stream->read(reinterpret_cast<char *>(&psize), sizeof(std::size_t))) {
-            return 2;
-        }
-
-        path.resize(psize, '\0');
-        if (!stream->read(path.data(), psize * sizeof(char))) {
-            return 3;
-        }
-    }
-    
-    for (auto &path : pathList) {
-        // AssetsManager::LoadTexture(path);
-    }
-    return 0;
-}
-
-int Scene::readMaterial(Stream *stream) {
-    std::size_t mcount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t))) {
-        return 1;
-    }
-
-    for (std::size_t i=0;i<mcount;i++) {
-        std::size_t nsize = 0;
-        if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
-            return 2;
-        }
-
-        std::string name(nsize, '\0');
-        if (!stream->read(name.data(), nsize * sizeof(char))) {
-            return 3;
-        }
-
-        auto material = AssetsManager::CreateMaterial(name);
-        material->deserialize(stream);
-    }
-    return 0;
-}
-
-// TODO: pode gerarr erro, por favor corrija
-int Scene::readMesh(Stream *streaming) {
-    grm::size meshCount = 0;
-    if (!streaming->readS(&meshCount, 1)) {
-        return 1;
-    }
-
-    for (auto i=0;i<meshCount;i++) {
-        std::size_t size = 0;
-        if (!streaming->readS(&size, 1)) {
-            return 2;
-        }
-
-        std::string name(size, '\0');
-        if (!streaming->readS(name.data(), size)) {
-            return 3;
-        }
-
-        auto mesh = AssetsManager::CreateMesh(name, name);
-        
-        auto result = mesh->deserialize(streaming);
-        if (result != 0) {
-            return 4 + result;
-        }
-    }
-    return 0;
-}
-
-int Scene::readMainListGameObject(Stream *stream, Scene *scene, std::unordered_map<std::string, GameObject *> &tempObject) {
-    std::size_t gocount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&gocount), sizeof(std::size_t))) {
-        return 1;
-    }
-
-    int result = 0;
-    for (std::size_t i=0;i<gocount;i++) {
-        result = readGameObject(stream, scene, nullptr, tempObject);
-        if (result != 0) {
-            break;
-        }
-    }
-
-    return result;
-}
-
-void CrateGameObject(Transform *&outTransform, GameObject *&outObject, std::condition_variable &cv, std::mutex &mutex, Scene *scene, Transform *parent, bool active, bool enable, std::string name, std::string tag, int &result) {
-    GameObject *gameObject = nullptr;
-    {
-        gameObject = parent == nullptr ? scene->CreateGameObject(name, tag) : GameObject::Create(name, tag);
-        if (!gameObject) {
-            std::lock_guard<std::mutex> lock(mutex);
-            result = 1;
-            cv.notify_one();
-            return;
-        }
-
-        if (gameObject->hasComponent<Transform>())
-            gameObject->destroy<Transform>();
-
-        gameObject->setTransform(gameObject->addComponent<Transform>());
-    }
-    
-    gameObject->setActive(active);
-    gameObject->setEnable(enable);
-
-    auto transform = gameObject->getTransform();
-    transform->setParent(parent);
-
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        outTransform = transform;
-        outObject = gameObject;
-
-        result = 0;
-    }
-
-    cv.notify_one();
-}
-
-int Scene::readGameObject(Stream *stream, Scene *scene, Transform *parent, std::unordered_map<std::string, GameObject *> &tempObject) {
-    std::size_t gonsize = 0;
-    if (!stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t))) {
-        return 1;
-    }
-
-    std::string goname(gonsize, '\0');
-    if (!stream->read(goname.data(), gonsize * sizeof(char))) {
-        return 2;
-    }
-
-    std::size_t gotsize = 0;
-    if (!stream->read(reinterpret_cast<char *>(&gotsize), sizeof(std::size_t))) {
-        return 3;
-    }
-
-    std::string gotag(gotsize, '\0');
-    if (!stream->read(gotag.data(), gotsize * sizeof(char))) {
-        return 4;
-    }
-
-    bool active = true;
-    if (!stream->read(reinterpret_cast<char *>(&active), sizeof(bool))) {
-        return 5;
-    }
-
-    bool enable = true;
-    if (!stream->read(reinterpret_cast<char *>(&enable), sizeof(bool))) {
-        return 6;
-    }
-
-    GameObject *gameObject = nullptr;
-    Transform *transform = nullptr;
-
-    int presult = -1;
-
-    Event::Add(CrateGameObject, std::ref(transform), std::ref(gameObject), std::ref(cv), std::ref(m_mutex), std::ref(scene), parent, active, enable, goname, gotag, std::ref(presult));
-
-    std::unique_lock<std::mutex> lock(m_mutex);
-    cv.wait(lock, [&transform, &presult] {
-        return transform || bQuit || presult >= 0;
-    });
-
-    if (gameObject)
-        tempObject.emplace(goname, gameObject);
-        
-    if (presult != 0) {
-        return 2;
-    }
-    
-    if (bQuit) {
-        return 1;
-    }
-    lock.unlock();
-
-    std::size_t ccount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
-        return 8;
-    }
-
-    int result = 0;
-    for (std::size_t i=0;i<ccount;i++) {
-        result = readGameObject(stream, scene, transform, tempObject);
-        if (result != 0) {
-            break;
-        }
-    }
-
-    transform = nullptr;
-    gameObject = nullptr;
-
-    return result;
-}
-
+/*
 int Scene::readScript(Stream *streaming, std::unordered_map<std::string, GameObject *> &tempObject) {
     std::size_t nsize = 0;
     std::size_t size = 0;
@@ -1099,6 +797,7 @@ int Scene::readScript(Stream *streaming, std::unordered_map<std::string, GameObj
     }
     return result;
 }
+*/
 
 void Scene::SetupScene(Scene *scene) {
     auto it = m_scenes.find(scene->getName());

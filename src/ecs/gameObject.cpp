@@ -21,12 +21,6 @@ GameObject *GameObject::Create(const std::string &name, const std::string &tag) 
 
     auto &gameObject = it->second;
 
-    gameObject->transform = gameObject->addComponent<Transform>();
-    if (!gameObject->transform) {
-        mGoCache.erase(it);
-        return nullptr;
-    }
-
     return &(*gameObject);
 }
 
@@ -108,7 +102,9 @@ std::size_t GameObject::GetGameObjectCount() {
     return mGoCache.size();
 }
 
-GameObject::GameObject(const std::string &name, const std::string &tag) : name(name), tag(tag), entity(Manager::CreateEntity(this)), active(true), enable(true) {}
+GameObject::GameObject(const std::string &name, const std::string &tag) : name(name), tag(tag), entity(Manager::CreateEntity(this)), active(true), enable(true) {
+    transform = addComponent<Transform>();
+}
 
 GameObject::~GameObject() {
     Manager::DestroyEntity(entity);
