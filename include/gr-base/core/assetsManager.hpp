@@ -28,6 +28,7 @@
 
 #include "gr-base/core/default.hpp"
 
+#include "gr-base/core/task/textureTask.hpp"
 #include "gr-base/core/task/sceneTask.hpp"
 
 class GameObjectHandle {
@@ -135,6 +136,9 @@ public:
 
     static void UpdateShader(grr::gShader *shader, const std::string &path);
 
+    // ********** Texture ********** //
+    static grr::gTexture *CreateTexture(const std::string &name);
+
     // ********** Mesh ********** //
     template <typename ...Args>
     static Mesh *CreateMesh(const std::string &key, Args &&...args);
@@ -186,14 +190,12 @@ private:
     static std::mutex mShaderMutex;
 
     /***************** Texture *****************/
-    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> textureMap;
-    static std::unordered_map<grr::gTexture *, std::string> textureRefToName;
-
+    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> mTextureMap;
+    static std::unordered_map<grr::gTexture *, std::string> mTextureRefToName;
 
     // multithread
-    static std::unordered_map<std::string, TextureHandle *> m_mapHandleTexture;
-    static std::list<TextureHandle> m_textureHandle;
-    static std::mutex m_mutexTexture;
+    static std::unordered_map<std::string, std::unique_ptr<TextureTask>> mTextureTaskMap;
+    static std::mutex mTextureMutex;
 
     /***************** Animation *****************/
     static std::unordered_map<std::string, std::unique_ptr<Animation>> s_animationList;
@@ -216,14 +218,11 @@ private:
     /***************** Scene *****************/
     static std::unordered_map<std::string, std::unique_ptr<SceneTask>> mSceneTaskMap;
     static std::unordered_map<std::string, std::unique_ptr<Scene>> mSceneMap;
+    static std::mutex mSceneMutex;
 
     static void SetUpdateShader(grr::gShader *shader, ShaderData frag, ShaderData vert, std::string name);
 
     static void TaskUpdateShader();
-
-    static void SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels);
-
-    static void ProcessTexture();
 
     static void SetupShader(ShaderHandle handle, ShaderData frag, ShaderData vert);
     

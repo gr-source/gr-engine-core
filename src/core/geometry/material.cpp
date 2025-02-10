@@ -3,6 +3,7 @@
 #include "gr-base/core/file/stream.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/console.hpp"
 
 Material::Material(const Color &albedo, float metallic, float roughness, float ao) : m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr) {}
 
@@ -64,8 +65,15 @@ void Material::serialize(Stream *stream) const {
 
     for (int i = 0;i<m_texture.size();i++) {
         stream->write(reinterpret_cast<const char *>(&i), sizeof(int));
-        auto name = AssetsManager::GetRefTextureName(m_texture[i]);
-
+        std::string name;
+        if (m_texture[i] != nullptr) {
+            try {
+                name = AssetsManager::GetRefTextureName(m_texture[i]);
+            } catch (const std::exception &e) {
+                Console::LogError("[ Material ] %s", e.what());
+            }
+        }
+        
         std::size_t psize = name.size();
         stream->write(reinterpret_cast<const char *>(&psize), sizeof(std::size_t));
         stream->write(name.data(), psize * sizeof(char));

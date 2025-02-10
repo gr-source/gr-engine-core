@@ -88,6 +88,7 @@ set(culling
 )
 
 set(task
+    src/core/task/textureTask.cpp
     src/core/task/sceneTask.cpp
 )
 

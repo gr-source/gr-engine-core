@@ -29,9 +29,6 @@
 #include <gr-render/gShader.h>
 #include <gr-render/gError.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "gr-base/core/stb/stb_image.h"
-
 grm::u32 AssetsManager::m_processCount = 0;
 
 /***************** Shader *****************/
@@ -45,12 +42,11 @@ std::list<grr::gShader *> AssetsManager::mTaskList;
 std::mutex AssetsManager::mShaderMutex;
 
 /***************** Texture *****************/
-std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::textureMap;
-std::unordered_map<grr::gTexture *, std::string> AssetsManager::textureRefToName;
+std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::mTextureMap;
+std::unordered_map<grr::gTexture *, std::string> AssetsManager::mTextureRefToName;
 
-std::unordered_map<std::string, TextureHandle *> AssetsManager::m_mapHandleTexture;
-std::list<TextureHandle> AssetsManager::m_textureHandle;
-std::mutex AssetsManager::m_mutexTexture;
+std::unordered_map<std::string, std::unique_ptr<TextureTask>> AssetsManager::mTextureTaskMap;
+std::mutex AssetsManager::mTextureMutex;
 
 /***************** Animation *****************/
 std::unordered_map<std::string, std::unique_ptr<Animation>> AssetsManager::s_animationList;
@@ -74,7 +70,7 @@ std::unordered_map<std::string, std::unique_ptr<SceneTask>> AssetsManager::mScen
 std::unordered_map<std::string, std::unique_ptr<Scene>> AssetsManager::mSceneMap;
 
 void AssetsManager::Initialize() {
-    stbi_set_flip_vertically_on_load(true);
+    // stbi_set_flip_vertically_on_load(true);
 }
 
 // TODO: Falta corrigir
@@ -87,11 +83,11 @@ void AssetsManager::Shutdown() {
     mShaderFromLoad.clear();
 
     /***************** Texture *****************/
-    textureMap.clear();
+    // /textureMap.clear();
 
     // multithread
-    m_mapHandleTexture.clear();
-    m_textureHandle.clear();
+    // m_mapHandleTexture.clear();
+    // m_textureHandle.clear();
 
     /***************** Animation *****************/
     s_animationList.clear();
@@ -108,9 +104,10 @@ void AssetsManager::Render() {
 }
 
 std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
-    auto it = textureRefToName.find(texture);
-    if (it == textureRefToName.end()) {
-        return "";
+    std::lock_guard<std::mutex> lock(mTextureMutex);
+    auto it = mTextureRefToName.find(texture);
+    if (it == mTextureRefToName.end()) {
+        throw std::runtime_error("texture has not reference.");
     }
     return it->second;
 }
@@ -165,6 +162,17 @@ void AssetsManager::UpdateShader(grr::gShader *shader, const std::string &path) 
     }
 
     Threadpool::AddTask(&AssetsManager::TaskUpdateShader);
+}
+
+grr::gTexture *AssetsManager::CreateTexture(const std::string &name) {
+    std::lock_guard<std::mutex> lock(mTextureMutex);
+    mTextureMap.emplace(name, std::make_unique<grr::gTexture>());
+
+    auto texture = &(*mTextureMap[name]);
+
+    mTextureRefToName.emplace(texture, name);
+
+    return texture;
 }
 
 // ********** Mesh ********** //
@@ -302,6 +310,7 @@ void AssetsManager::TaskUpdateShader() {
 }
 
 /***************** Texture Process ****************/
+/*
 void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels) {
     std::unique_lock<std::mutex> lock(m_mutexTexture);
     auto it = textureMap.find(handle.m_path);
@@ -367,6 +376,7 @@ void AssetsManager::ProcessTexture() {
         lock.lock();
     }
 }
+*/
 
 /***************** Shader Process ****************/
 void AssetsManager::SetupShader(ShaderHandle handle, ShaderData frag, ShaderData vert) {
@@ -953,31 +963,39 @@ void AssetsManager::SetShaderList(const std::string &path, std::function<void(gr
     Threadpool::AddTask(&AssetsManager::ProcessShader);
 }
 
-void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func) {
-    if (!File::Exists(path)) {
-        return Console::LogError("[ AssetsManager::Texture ] File not found: " + path);
-    }
-
+void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func)
+{
+    if (!File::Exists(path))
     {
-        std::lock_guard<std::mutex> lock(m_mutexTexture);
-        auto map = textureMap.find(path);
-        if (map != textureMap.end()) {
-            if (func) {
-                func(&(*map->second));
-            }
-            return;
-        }
-
-        auto it = m_mapHandleTexture.find(path);
-        if (it != m_mapHandleTexture.end()) {
-            it->second->add(func);
-            return;
-        }
-        auto &handle = m_textureHandle.emplace_back(func, path);
-        m_mapHandleTexture.emplace(path, &handle);
+        return Console::LogError("[ AssetsManager::Texture ] File not found: %s", path.c_str());
     }
 
-    Threadpool::AddTask(&AssetsManager::ProcessTexture);
+    std::lock_guard<std::mutex> lock(mTextureMutex);
+
+    // Check texture has in main list
+    {
+        auto it = mTextureMap.find(path);
+        if (it != mTextureMap.end())
+        {
+            if (func == nullptr)
+                return;
+            return func(&(*it->second));
+        }
+    }
+
+    // Check texture is loading
+    {
+        auto it = mTextureTaskMap.find(path);
+        if (it != mTextureTaskMap.end())
+        {
+            if (func == nullptr)
+                return;
+            return it->second->addFunction(func);
+        }
+    }
+
+    // Create task to load texture
+    mTextureTaskMap.emplace(path, std::make_unique<TextureTask>(path, func));
 }
 
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::GetShaderList() {
@@ -985,7 +1003,8 @@ std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::G
 }
 
 grm::size AssetsManager::GetTextureCount() {
-    return textureMap.size();
+    std::lock_guard<std::mutex> lock(mTextureMutex);
+    return mTextureMap.size();
 }
 
 grm::size AssetsManager::GetShaderCount() {
@@ -1002,7 +1021,8 @@ grm::size AssetsManager::GetMeshCount() {
 }
 
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &AssetsManager::GetTextureMap() {
-    return textureMap;
+    std::lock_guard<std::mutex> lock(mTextureMutex);
+    return mTextureMap;
 }
 
 TextureHandle::TextureHandle(std::function<void(grr::gTexture *)> function, std::string path) : m_path(path) {
@@ -1067,13 +1087,27 @@ std::unordered_map<std::string, std::unique_ptr<Material>> &AssetsManager::GetMa
     return materialsMap;
 }
 
-void AssetsManager::RemoveTask(const std::string &name) {
-    auto it = mSceneTaskMap.find(name);
-    if (it == mSceneTaskMap.end()) {
-        return;
+void AssetsManager::RemoveTask(const std::string &name)
+{
+    // Check if task on the scene
+    {
+        auto it = mSceneTaskMap.find(name);
+        if (it != mSceneTaskMap.end())
+        {
+            mSceneTaskMap.erase(it);
+            return;
+        }
     }
 
-    mSceneTaskMap.erase(it);
+    // Check if task on the scene
+    {
+        std::lock_guard<std::mutex> lock(mTextureMutex);
+        auto it = mTextureTaskMap.find(name);
+        if (it != mTextureTaskMap.end()) {
+            mTextureTaskMap.erase(it);
+            return;
+        }
+    }
 }
 
 UniformStackInfo getGLSLStackInfo(const std::string &source) {
