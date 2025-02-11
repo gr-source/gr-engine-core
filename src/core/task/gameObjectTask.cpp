@@ -83,8 +83,6 @@ int GameObjectTask::readData() {
 
         auto segment_name = struct_name[segment.type];
 
-        std::cout << "Segment: " << segment_name << std::endl;
-
         auto next_position = m_stream->tellg() + static_cast<std::streampos>(segment.sizeData);
 
         int result = -1;
@@ -256,13 +254,6 @@ int GameObjectTask::readMaterial()
     {
         return 2;
     }
-
-    // if (gameObjectMap.find(name) == gameObjectMap.end()) {
-    //     std::cout << name << std::endl;
-    //     return 3;
-    // }
-
-    // auto go = gameObjectMap[name];
 
     std::size_t mcount = 0;
     if (!m_stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t)))

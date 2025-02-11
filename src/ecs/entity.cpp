@@ -183,12 +183,4 @@ void Entity::copy(const Entity *entity)
     } else {
         Console::LogError("[ Entity ] Target game object does not have a transform.");
     }
-
-    // /*
-    init();
-
-    if (hasComponent<MeshRender>()) {
-        getComponent<MeshRender>()->build();
-    }
-    // */
 }

@@ -24,7 +24,7 @@ void MeshRender::Destroy() {
     if (!m_batched) {
         return;
     }
-    m_batched->remove(GetComponent<Transform>());
+    Batching::RemoveBatch(m_batched);
     m_batched = nullptr;
 }
 
@@ -57,12 +57,10 @@ void MeshRender::build() {
         return Console::LogError("[ MeshRender ] Object do not has mesh.");
     }
 
-    if (m_batched) {
-        m_batched->remove(m_transform);
-        m_batched = nullptr;
+    if (m_batched == nullptr) {
+        SetupShader(mesh);
     }
 
-    SetupShader(mesh);
 }
 
 void MeshRender::Enable() {
@@ -137,8 +135,9 @@ bool MeshRender::Deserialize(Stream *stream) {
 
 bool MeshRender::SetupShader(std::vector<Mesh> *meshList) {
     m_batched = Batching::FindBatchByName(getGameObject()->getName());
+
     if (!m_batched) {
-        m_batched = Batching::AddBatch(getGameObject()->getName(), &m_materials, 0);
+        m_batched = Batching::CreateBatch(getGameObject()->getName(), &m_materials, 0);
         m_batched->insert(m_transform);
         m_batched->buildMeshe(meshList);
     }

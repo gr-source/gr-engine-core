@@ -56,16 +56,16 @@ public:
 
     static Batching *FindBatchByName(const std::string &name);
 
-    static void RemoveBatchByName(const std::string &name);
-
     template <typename... Args>
-    static Batching *AddBatch(const std::string &key, Args &&...args);
+    static Batching *CreateBatch(const std::string &key, Args &&...args);
+
+    static void RemoveBatch(Batching *batching);
 
     static void RenderBatches();
 
     // ***** Class Method ***** //
 
-    Batching(const std::string &name, std::vector<Material *> *materials, BatchingFlags_ flags = 0);
+    Batching(std::vector<Material *> *materials, BatchingFlags_ flags = 0);
     ~Batching();
 
     void buildMeshe(std::vector<Mesh> *meshList);
@@ -81,9 +81,11 @@ public:
     bool isVisible() const;
 
 private:
-    static std::unordered_map<std::string, std::unique_ptr<Batching>> s_batchedInstances;
+    static std::unordered_map<std::string, std::unique_ptr<Batching>> mBatchInstanceMap;
 
-    static std::vector<Batching *> s_batchedInstancesList;
+    static std::unordered_map<Batching *, std::string> mBatchRefToNameMap;
+
+    static std::vector<Batching *> mBatchRefList;
 
     static grr::gShader *s_shadowShader;
 
@@ -92,8 +94,6 @@ private:
     std::vector<Material *> *m_materials;
 
     std::vector<Transform *> m_models;
-
-    std::string m_name;
 
     Boundbox m_boundbox;
 
@@ -105,12 +105,14 @@ private:
 };
 
 template <typename... Args>
-inline Batching *Batching::AddBatch(const std::string &key, Args &&...args) {
-    auto &&[it, added] = s_batchedInstances.emplace(key, std::make_unique<Batching>(key, std::forward<Args>(args)...));
+inline Batching *Batching::CreateBatch(const std::string &key, Args &&...args) {
+    auto &&[it, added] = mBatchInstanceMap.emplace(key, std::make_unique<Batching>(std::forward<Args>(args)...));
 
     auto ptr = &(*it->second);
     
-    s_batchedInstancesList.push_back(ptr);
+    mBatchRefList.push_back(ptr);
+
+    mBatchRefToNameMap.emplace(ptr, key);
 
     return &(*ptr);
 }

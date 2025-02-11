@@ -2,6 +2,7 @@
 #include "gr-base/ecs/manager.hpp"
 
 #include "gr-base/core/nameManager.hpp"
+#include "gr-base/core/scene.hpp"
 
 #include "gr-base/script/transform.hpp"
 
@@ -34,6 +35,8 @@ GameObject *GameObject::Instantiate(GameObject *go) {
     gameObject->active = go->active;
 
     gameObject->getEntity()->copy(go->getEntity());
+
+    Scene::Init(gameObject);
 
     return gameObject;
 }

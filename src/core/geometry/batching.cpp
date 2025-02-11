@@ -16,9 +16,11 @@
 
 #include "gr-base/core/geometry/mesh.hpp"
 
-std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::s_batchedInstances;
+std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::mBatchInstanceMap;
 
-std::vector<Batching *> Batching::s_batchedInstancesList;
+std::unordered_map<Batching *, std::string> Batching::mBatchRefToNameMap;
+
+std::vector<Batching *> Batching::mBatchRefList;
 
 grr::gShader *Batching::s_shadowShader = nullptr;
 
@@ -57,34 +59,38 @@ void Batching::RenderShadowPass() {
 }
 
 grm::size Batching::GetBatchCount() {
-    return s_batchedInstancesList.size();
+    return mBatchRefList.size();
 }
 
 Batching *Batching::FindBatchByName(const std::string &name) {
-    auto it = s_batchedInstances.find(name);
-    if (it == s_batchedInstances.end()) {
+    auto it = mBatchInstanceMap.find(name);
+    if (it == mBatchInstanceMap.end()) {
         return nullptr;
     }
     return &(*it->second);
 }
 
-void Batching::RemoveBatchByName(const std::string &name) {
-    auto it = s_batchedInstances.find(name);
-    if (it == s_batchedInstances.end()) {
+void Batching::RemoveBatch(Batching * batching)
+{
+    auto it = mBatchRefToNameMap.find(batching);
+    if (it == mBatchRefToNameMap.end())
+    {
         return;
     }
 
-    s_batchedInstancesList.erase(std::remove(s_batchedInstancesList.begin(), s_batchedInstancesList.end(), &(*it->second)), s_batchedInstancesList.end());
+    mBatchInstanceMap.erase(it->second);
 
-    s_batchedInstances.erase(it);
+    mBatchRefList.erase(std::remove(mBatchRefList.begin(), mBatchRefList.end(), it->first), mBatchRefList.end());
+
+    mBatchRefToNameMap.erase(it);
 }
 
 void Batching::RenderBatches() {
     Status::BatchDrawCallRender = 0;
     Status::BatchRenderCount = 0;
 
-    for (auto &batching : s_batchedInstancesList) {
-        if (!batching->isValid() || batching->isVisible()) {
+    for (auto &batching : mBatchRefList) {
+        if (!batching->isValid() || !batching->isVisible()) {
             continue;
         }
 
@@ -94,7 +100,7 @@ void Batching::RenderBatches() {
     }
 }
 
-Batching::Batching(const std::string &name, std::vector<Material *> *materials, BatchingFlags_ flags) : m_flags(flags), m_name(name), m_materials(materials), meshCount(0)
+Batching::Batching(std::vector<Material *> *materials, BatchingFlags_ flags) : m_flags(flags), m_materials(materials), meshCount(0)
 {
     m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
     m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
@@ -138,10 +144,6 @@ void Batching::insert(Transform *transform) {
 
 void Batching::remove(Transform *transform) {
     m_models.erase(std::remove(m_models.begin(), m_models.end(), transform), m_models.end());
-
-    if (m_models.empty()) {
-        Batching::RemoveBatchByName(m_name);
-    }
 }
 
 void Batching::draw() {
@@ -154,7 +156,7 @@ void Batching::draw() {
 
         int idxEn[10] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         
-        auto &draw = m_drawList[i];
+        auto draw = &(*m_drawList[i]);
 
         auto material = (*m_materials)[i];
         
@@ -209,7 +211,7 @@ bool Batching::isValid() const {
 
 #include "gr-base/core/culling/frustum.hpp"
 bool Batching::isVisible() const {
-    return !Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, m_models[0]->getGlobalMatrix());
+    return Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, m_models[0]->getGlobalMatrix());
 }
 
 BatchingDraw::BatchingDraw() : m_vertexArray(grr::gVertexArray::Create()), m_instanceCount(0),m_indexCount(0), m_VBO(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_EBO(grr::gVertexArray::CreateBuffer(BufferType::EBO)),m_PBO(0)
