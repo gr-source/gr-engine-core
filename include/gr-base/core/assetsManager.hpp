@@ -110,14 +110,15 @@ public:
     static grr::gTexture *CreateTexture(const std::string &name);
 
     // ********** Mesh ********** //
-    template <typename ...Args>
-    static Mesh *CreateMesh(const std::string &key, Args &&...args);
+    static std::vector<Mesh> *CreateMesh(const std::string &name);
 
-    static Mesh *FindMesh(const std::string &name);
+    static std::vector<Mesh> *FindMesh(const std::string &name);
 
-    static void DeleteMesh(Mesh *target);
+    static std::string GetMeshListRefToName(std::vector<Mesh> *meshList);
 
-    static std::unordered_map<std::string, std::unique_ptr<Mesh>> &GetMeshListMap();
+    static void RemoveMesh(const std::string &name);
+
+    static std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> &GetMeshListMap();
 
     static grm::u32 m_processCount;
 
@@ -176,7 +177,8 @@ private:
     static std::mutex mGameObjectTaskMutex;
 
     /***************** Mesh *****************/
-    static std::unordered_map<std::string, std::unique_ptr<Mesh>> s_meshList;
+    static std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> mMeshMapList;
+    static std::unordered_map<std::vector<Mesh> *, std::string> mMeshListRefToName;
     static std::mutex m_meshMutex;
     
     /***************** Material *****************/
@@ -235,18 +237,6 @@ inline void AssetsManager::LoadShader(const std::string &path, Args &&...args) {
     }
     
     SetShaderList(path, func);
-}
-
-template <typename... Args>
-inline Mesh *AssetsManager::CreateMesh(const std::string &key, Args &&...args) {
-    std::lock_guard<std::mutex> lock(m_meshMutex);
-    auto it = s_meshList.find(key);
-    if (it != s_meshList.end()) {
-        return &(*it->second);
-    }
-    s_meshList.emplace(key, std::make_unique<Mesh>(std::forward<Args>(args)...));
-
-    return &(*s_meshList[key]);
 }
 
 // ***** Material ***** //

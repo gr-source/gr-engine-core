@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-FbxMesh::FbxMesh(const std::string &name) : m_name(name) {}
+FbxMesh::FbxMesh(const std::string &name) : m_name(name), m_materialIndex(0) {}
 
 const std::string &FbxMesh::getName() const {
     return m_name;
@@ -30,13 +30,12 @@ const std::vector<int> &FbxMesh::getIndices() const {
     return m_indices;
 }
 
-grm::size FbxMesh::addMaterial(int idx) {
-    m_materials.push_back(idx);
-    return m_materials.size() - 1;
+uint32_t FbxMesh::getMaterialIndex() const {
+    return m_materialIndex;
 }
 
-const std::vector<int> &FbxMesh::getMaterials() const {
-    return m_materials;
+void FbxMesh::setMaterialIndex(uint32_t index) {
+    m_materialIndex = index;
 }
 
 FbxBone *FbxMesh::findBone(const std::string &name) {

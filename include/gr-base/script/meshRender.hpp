@@ -45,7 +45,7 @@ private:
 
     Transform *m_transform;
 
-    bool SetupShader(Mesh *mesh);
+    bool SetupShader(std::vector<Mesh> *meshList);
 };
 
 template <typename... Args>

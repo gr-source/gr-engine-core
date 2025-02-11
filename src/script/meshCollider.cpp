@@ -20,7 +20,7 @@ void MeshCollider::Init() {
     auto meshFilter = GetComponent<MeshFilter>();
     
     try {
-        build(meshFilter->getMesh());
+        // build(meshFilter->getMesh());
     } catch (const std::exception &e) {
         Console::LogError("[ MeshCollider ] %s",e.what());
     }

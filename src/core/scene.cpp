@@ -547,27 +547,38 @@ int Scene::writeMaterial(Stream *stream) {
     return 0;
 }
 
-int Scene::writeMesh(Stream *streaming) {
+int Scene::writeMesh(Stream *stream)
+{
     auto meshCount = AssetsManager::GetMeshCount();
 
-    if (!streaming->writeS(&meshCount, 1)) {
+    if (!stream->write(&meshCount, sizeof(std::size_t)))
+    {
         return 1;
     }
 
-    for (auto &&[name, mesh] : AssetsManager::GetMeshListMap()) {
-        auto size = name.size();
+    for (auto &&[name, meshList] : AssetsManager::GetMeshListMap())
+    {
+        auto nsize = name.size();
 
-        if (!streaming->writeS(&size, 1)) {
+        if (!stream->write(&nsize, sizeof(std::size_t)))
+        {
             return 2;
         }
 
-        if (!streaming->writeS(name.data(), size)) {
+        if (!stream->write(name.c_str(), nsize * sizeof(char)))
+        {
             return 3;
         }
 
-        auto result = mesh->serialize(streaming);
-        if (result != 0) {
-            return 4 + result;
+        auto mlcount = meshList->size();
+        if (!stream->write(&mlcount, sizeof(std::size_t)))
+        {
+            return 4;
+        }
+
+        for (auto &mesh : *meshList)
+        {
+            mesh.deserialize(stream);
         }
     }
     return 0;

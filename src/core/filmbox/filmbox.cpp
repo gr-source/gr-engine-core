@@ -94,15 +94,9 @@ void Filmbox::ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, Fb
     newNode.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
 
     for (auto i=0;i<mNode->mNumMeshes;++i) {
-        auto name = scene->mMeshes[mNode->mMeshes[i]]->mName.C_Str();
+        auto id = mNode->mMeshes[i];
 
-        auto mesh = fbxScene->findMesh(name);
-        if (!mesh) {
-            std::cout << "Mesh do not found: " << name << std::endl;
-            continue;
-        }
-
-        newNode.addMesh(*mesh);
+        newNode.addMesh(fbxScene->getMesh(id));
     }
 
     for (auto i=0;i<mNode->mNumChildren;++i) {
@@ -161,10 +155,7 @@ void Filmbox::LoadMesh(const aiScene *scene, FbxScene *fbxScene) {
 void Filmbox::ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene) {
     auto name = std::string(mMesh->mName.C_Str());
 
-    auto mesh = fbxScene->findMesh(name);
-    if (!mesh) {
-        mesh = &fbxScene->addMesh(name, name);
-    }
+    auto mesh = fbxScene->addMesh(name);
 
     InserMesh(mesh, mMesh);
 }
@@ -174,11 +165,10 @@ void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh) {
     auto bHasNormal = mMesh->HasNormals();
     auto bHasTexCoord = mMesh->HasTextureCoords(0);
 
-
-    auto id = fbxMesh->addMaterial(mMesh->mMaterialIndex);
+    fbxMesh->setMaterialIndex(mMesh->mMaterialIndex);
 
     for (auto i=0;i<mMesh->mNumVertices;++i) {
-        auto& vertice = fbxMesh->addVertice(Vector3::zero, Vector3::zero, Vector2::zero, id);
+        auto& vertice = fbxMesh->addVertice(Vector3::zero, Vector3::zero, Vector2::zero, 0);
 
         if (bHasPosition) {
             auto &mVertice = mMesh->mVertices[i];

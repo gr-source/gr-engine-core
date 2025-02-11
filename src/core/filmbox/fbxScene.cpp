@@ -21,15 +21,12 @@ const std::size_t FbxScene::getMaterialCount() const {
     return m_materials.size();
 }
 
-FbxMesh *FbxScene::findMesh(const std::string &name) {
-    auto it = m_meshes.find(name);
-    if (it == m_meshes.end()) {
-        return nullptr;
-    }
-    return &it->second;
+FbxMesh *FbxScene::getMesh(int index) const {
+    return &(*m_meshes[index]);
 }
 
 const std::size_t FbxScene::getMeshCount() const {
+
     return m_meshes.size();
 }
 

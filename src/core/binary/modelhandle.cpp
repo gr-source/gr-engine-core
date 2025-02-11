@@ -188,33 +188,27 @@ GameObject *ModelHandle::CreateGameObject(const FbxScene *scene, const FbxNode *
 }
 
 void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameObject *go) {
-    std::unordered_map<std::string, FbxMaterial> materialList;
     std::unordered_map<std::string, FbxBone> m_bones;
-    grm::u32 verticeCount = 0;
-    std::string meshName;
-    Mesh m_tempMesh;
+    std::vector<FbxMaterial> materialList;
+    std::vector<Mesh> meshMap;
+    std::string mesh_name;
 
-    for (auto &fbxMesh : node->getMeshes()) {
-        meshName += fbxMesh.getName();
+    for (auto fbxMesh : node->getMeshes()) {
+        auto &mesh = meshMap.emplace_back(fbxMesh->getName());
 
-        for (auto &mIdx : fbxMesh.getMaterials()) {
-            auto fbxMaterial = scene->getMaterial(mIdx);
-            
-            if (materialList.find(fbxMaterial.getName()) != materialList.end()) {
-                continue;
-            }
-            materialList.emplace(fbxMaterial.getName(), fbxMaterial);
-        }
-        
-        auto &vertices = fbxMesh.getVertices();
+        if (mesh_name.empty())
+            mesh_name = fbxMesh->getName();
 
-        for (auto &vertice : vertices) {
-            m_tempMesh.addVertex(vertice.position, vertice.normal, vertice.texCoord, vertice.index);
+        materialList.push_back(scene->getMaterials()[fbxMesh->getMaterialIndex()]);
 
-            if (!fbxMesh.hasBone()) {
+        for (auto &vertice : fbxMesh->getVertices()) {
+            mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord, materialList.size() - 1);
+
+            if (!fbxMesh->hasBone()) {
                 continue;
             }
 
+            /*
             auto& boneWeight = m_tempMesh.addBoneWeight();
 
             float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
@@ -223,12 +217,14 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
                 boneWeight.insert<int>(k, vertice.boneIndex[k]);
                 boneWeight.insert<float>(k, norm > 0.0f ? vertice.weight[k] / norm : vertice.weight[k]);
             }
+            */
         }
 
-        for (auto &indice : fbxMesh.getIndices()) {
-            m_tempMesh.addIndice(verticeCount + indice);
+        for (auto &indice : fbxMesh->getIndices()) {
+            mesh.addIndice(indice);
         }
 
+        /*
         if (fbxMesh.hasBone()) {
             for (auto &bone : fbxMesh.getBones()) {
                 if (m_bones.find(bone.getName()) != m_bones.end()) { continue; }
@@ -237,13 +233,16 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
             }
         }
         verticeCount += vertices.size();
+        */
     }
+    // */
 
-    auto m_mesh = AssetsManager::FindMesh(meshName);
+    auto m_mesh = AssetsManager::FindMesh(mesh_name);
     if (!m_mesh) {
-        m_tempMesh.setName(meshName);
-
-        m_mesh = AssetsManager::CreateMesh(meshName, m_tempMesh);
+        m_mesh = AssetsManager::CreateMesh(mesh_name);
+        for (auto &mesh : meshMap) {
+            m_mesh->emplace_back(mesh);
+        }
     }
 
     auto meshFilter = go->addComponent<MeshFilter>();
@@ -263,7 +262,7 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
         }
     }
 
-    for (auto &&[name, fbxMaterial] : materialList) {
+    for (auto &fbxMaterial : materialList) {
         auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getColor());
 
         m_materials[go].emplace_back(fbxMaterial.getName(), material);
@@ -325,7 +324,7 @@ int ModelHandle::writeData(Stream *stream, const GameObject *go) const {
 
         DataSegment segment = {gHeaderType_Object, static_cast<std::size_t>(stream->getDataSize())};
         if (!stream->writeS(&segment, 1, false)) {
-            return 4;
+            return 2;
         }
         stream->flush();
     }
@@ -333,12 +332,12 @@ int ModelHandle::writeData(Stream *stream, const GameObject *go) const {
     // write texture
     {
         if (writeTexture(stream, go) == -1) {
-            return 1;
+            return 3;
         }
         
         DataSegment segment = {gHeaderType_Texture, static_cast<std::size_t>(stream->getDataSize())};
         if (!stream->writeS(&segment, 1, false)) {
-            return 1;
+            return 4;
         }
         stream->flush(); 
     }
@@ -346,12 +345,12 @@ int ModelHandle::writeData(Stream *stream, const GameObject *go) const {
     // write material
     {
         if (writeMaterial(stream, go) == -1) {
-            return 1;
+            return 5;
         }
 
         DataSegment segment = {gHeaderType_Material, static_cast<std::size_t>(stream->getDataSize())};
         if (!stream->writeS(&segment, 1, false)) {
-            return 2;
+            return 6;
         }
         stream->flush();
     }
@@ -359,19 +358,19 @@ int ModelHandle::writeData(Stream *stream, const GameObject *go) const {
     // write script
     {
         if (writeScript(stream, go) == -1) {
-            return 1;
+            return 7;
         }
 
         DataSegment segment = {gHeaderType_Script, static_cast<std::size_t>(stream->getDataSize())};
         if (!stream->writeS(&segment, 1, false)) {
-            return 3;
+            return 8;
         }
         stream->flush();
     }
 
     DataSegment segment = {gHeaderType_None, 0};
     if (!stream->writeS(&segment, 1, false)) {
-        return 5;
+        return 9;
     }
     return 0;
 }

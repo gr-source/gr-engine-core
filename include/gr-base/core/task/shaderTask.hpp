@@ -73,6 +73,8 @@ public:
 
     static void insert_field(const std::string &line, const std::string &type_name, const std::string &name, std::vector<Uniform> &vector, std::map<std::string, std::vector<Uniform>> &struct_map);
 
+    static std::vector<std::string> GetMoreFieldInLine(const std::string &line);
+    
     static std::map<ShaderType, ShaderData> ReadShaderOfType(const std::string &path);
 
     static grr::UniformType ConvertToGType(UniformType type);

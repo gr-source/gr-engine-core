@@ -123,20 +123,67 @@ void ShaderTask::insert_field(const std::string &line, const std::string &type_n
 
     if (line.find('[') != std::string::npos && line.find(']') != std::string::npos) {
         auto info = getGLSLStackInfo(line);
-        vector.push_back({info.name, type_name, type});
-
         for (int i=0;i<info.count;i++) {
             if (type == UniformType_object) {
-                for (auto un : struct_map[type_name]) {
-                    vector.push_back({info.name + "[" + std::to_string(i) + "]." + un.name, un.type_name, un.type});
+                for (auto field : struct_map[type_name])
+                {
+                    vector.push_back({info.name + "[" + std::to_string(i) + "]." + field.name, field.type_name, field.type});
                 }
                 continue;
             }
             vector.push_back({info.name + "[" + std::to_string(i) + "]", type_name, type});
         }
-    } else {
+    } else if (type == UniformType_object)
+    {
+        for (auto field : struct_map[type_name])
+        {
+            vector.push_back({name + "." + field.name, field.type_name, field.type});
+        }
+    } else
+    {
         vector.push_back({name, type_name, type});
     }
+}
+
+std::vector<std::string> ShaderTask::GetMoreFieldInLine(const std::string &line)
+{
+    std::vector<std::string> fieldList;
+
+    std::size_t lastPos = 0;
+    while (true)
+    {
+        auto start_pos = line.find(';', lastPos);
+        if (start_pos == std::string::npos)
+        {
+            break;
+        }
+
+        auto field = line.substr(lastPos, start_pos - lastPos);
+        if (field.find('/') != std::string::npos)
+        {
+            break;
+        }
+
+        std::stringstream iss(field);
+
+        std::size_t key_count = 0;
+        std::string key;
+        while (iss >> key)
+        {
+            key_count++;
+        }
+
+        if (key_count > 3)
+        {
+            lastPos = start_pos + 1;
+            continue;
+        }
+
+        fieldList.push_back(field);
+
+        lastPos = start_pos + 1;
+    }
+    return fieldList;
 }
 
 std::map<ShaderType, ShaderData> ShaderTask::ReadShaderOfType(const std::string &path) {
@@ -213,14 +260,16 @@ std::map<ShaderType, ShaderData> ShaderTask::ReadShaderOfType(const std::string 
         data.source += line + '\n';
 
         if (line.find("uniform") != std::string::npos) {
-            std::string uniform, type_name, name;
-
-            if (!(iss >> uniform >> type_name >> name)) {
-                continue;
+            for (auto field : GetMoreFieldInLine(line)) {
+                std::stringstream iss(field);
+    
+                std::string uniform, type_name, name;
+    
+                if (!(iss >> uniform >> type_name >> name)) {
+                    continue;
+                }
+                insert_field(line, type_name, name, data.uniformList, object_map);
             }
-            name.erase(std::remove(name.begin(), name.end(), ';'), name.end());
-
-            insert_field(line, type_name, name, data.uniformList, object_map);
         }
     }
     is.close();

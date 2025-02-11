@@ -15,10 +15,33 @@ enum BatchingFlags : uint32_t {
     BatchingFlags_None           = 1 << 0,
     BatchingFlags_HasIndices     = 1 << 1,
     BatchingFlags_BuildMesh      = 1 << 2,
-    BatchingFlags_UploadMaterial = 1 << 3,
 };
 
 using BatchingFlags_ = uint32_t;
+
+class BatchingDraw {
+public:
+    BatchingDraw();
+    ~BatchingDraw();
+
+    void build(Mesh *mesh, int entityID);
+
+    void draw();
+
+    grr::gVertexArray *m_vertexArray;
+
+    grm::u32 m_instanceCount;
+
+    grm::u32 m_indexCount;
+
+    grm::u32 m_VBO;
+
+    grm::u32 m_EBO;
+
+    grm::u32 m_PBO;
+
+};
+
 
 class Batching {
 public:
@@ -45,7 +68,7 @@ public:
     Batching(const std::string &name, std::vector<Material *> *materials, BatchingFlags_ flags = 0);
     ~Batching();
 
-    void buildMeshe(Mesh *mesh);
+    void buildMeshe(std::vector<Mesh> *meshList);
 
     void insert(Transform *transform);
 
@@ -64,33 +87,21 @@ private:
 
     static grr::gShader *s_shadowShader;
 
+    std::vector<std::unique_ptr<BatchingDraw>> m_drawList;
+
     std::vector<Material *> *m_materials;
 
     std::vector<Transform *> m_models;
-
-    grr::gVertexArray *m_vertexArray;
-
-    grm::u32 m_instanceCount;
-
-    grm::u32 m_indexCount;
 
     std::string m_name;
 
     Boundbox m_boundbox;
 
-    grm::u32 m_VBO;
-
-    grm::u32 m_EBO;
-
-    grm::u32 m_PBO;
+    int meshCount;
 
     BatchingFlags_ m_flags;
 
-    void setupMaterial(grr::gShader *shader);
-
     void calcboundbox(const Mesh *mesh);
-
-    static void RegisterShaderShadow(grr::gShader *shader);
 };
 
 template <typename... Args>

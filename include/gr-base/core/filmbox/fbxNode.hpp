@@ -11,10 +11,9 @@ public:
 
     std::string getName() const;
 
-    template <typename ...Args>
-    void addMesh(Args &&...args);
+    void addMesh(FbxMesh *mesh);
 
-    std::vector<FbxMesh> getMeshes() const;
+    std::vector<FbxMesh *> getMeshes() const;
 
     bool hasMeshe() const;
 
@@ -40,7 +39,7 @@ private:
 
     std::vector<FbxNode> m_children;
 
-    std::vector<FbxMesh> m_meshes;
+    std::vector<FbxMesh *> m_meshes;
 
     FbxNode *m_parent;
 
@@ -50,11 +49,6 @@ private:
     
     Quaternion m_rotation;
 };
-
-template <typename... Args>
-inline void FbxNode::addMesh(Args &&...args) {
-    m_meshes.emplace_back(std::forward<Args>(args)...);
-}
 
 template <typename... Args>
 inline FbxNode &FbxNode::addNode(Args &&...args) {

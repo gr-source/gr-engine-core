@@ -57,7 +57,8 @@ std::unordered_map<std::string, std::unique_ptr<GameObjectTask>> AssetsManager::
 std::mutex AssetsManager::mGameObjectTaskMutex;
 
 /***************** Mesh *****************/
-std::unordered_map<std::string, std::unique_ptr<Mesh>> AssetsManager::s_meshList;
+std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> AssetsManager::mMeshMapList;
+std::unordered_map<std::vector<Mesh> *, std::string> AssetsManager::mMeshListRefToName;
 std::mutex AssetsManager::m_meshMutex;
 
 /***************** Material *****************/
@@ -70,8 +71,10 @@ std::unordered_map<std::string, std::unique_ptr<SceneTask>> AssetsManager::mScen
 std::unordered_map<std::string, std::unique_ptr<Scene>> AssetsManager::mSceneMap;
 std::mutex AssetsManager::mSceneMutex;
 
+#include "gr-base/core/stb/stb_image.h"
+
 void AssetsManager::Initialize() {
-    // stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(true);
 }
 
 // TODO: Falta corrigir
@@ -98,7 +101,7 @@ void AssetsManager::Shutdown() {
     // s_gameObjectFromLoader.clear();
 
     /***************** Mesh *****************/
-    s_meshList.clear();
+    // s_meshList.clear();
 }
 
 void AssetsManager::Render() {
@@ -213,26 +216,48 @@ grr::gTexture *AssetsManager::CreateTexture(const std::string &name) {
 }
 
 // ********** Mesh ********** //
-Mesh *AssetsManager::FindMesh(const std::string &name) {
+std::vector<Mesh> *AssetsManager::CreateMesh(const std::string &name) {
     std::lock_guard<std::mutex> lock(m_meshMutex);
-    auto it = s_meshList.find(name);
-    if (it == s_meshList.end()) {
+    mMeshMapList.emplace(name, std::make_unique<std::vector<Mesh>>());
+    
+    auto ptr = &(*mMeshMapList[name]);
+
+    mMeshListRefToName.emplace(ptr, name);
+    return ptr;
+}
+
+std::vector<Mesh> *AssetsManager::FindMesh(const std::string &name) {
+    std::lock_guard<std::mutex> lock(m_meshMutex);
+    auto it = mMeshMapList.find(name);
+    if (it == mMeshMapList.end()) {
         return nullptr;
     }
     return &(*it->second);
 }
 
-void AssetsManager::DeleteMesh(Mesh *target) {
-    std::lock_guard<std::mutex> lock(m_meshMutex);
-    auto it = s_meshList.find(target->getName());
-    if (it == s_meshList.end()) {
-        return;
+std::string AssetsManager::GetMeshListRefToName(std::vector<Mesh> *meshList)
+{
+    auto it = mMeshListRefToName.find(meshList);
+    if (it == mMeshListRefToName.end())
+    {
+        throw std::runtime_error("MeshList do not register.");
     }
-    s_meshList.erase(it);
+    return it->second;
 }
 
-std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshListMap() {
-    return s_meshList;
+void AssetsManager::RemoveMesh(const std::string &name)
+{
+    std::lock_guard<std::mutex> lock(m_meshMutex);
+    auto it = mMeshMapList.find(name);
+    if (it == mMeshMapList.end()) {
+        return;
+    }
+    mMeshListRefToName.erase(&(*it->second));
+    mMeshMapList.erase(it);
+}
+
+std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> &AssetsManager::GetMeshListMap() {
+    return mMeshMapList;
 }
 
 #define PRINT_ERROR(func) \
@@ -609,12 +634,8 @@ grm::size AssetsManager::GetShaderCount() {
 }
 
 grm::size AssetsManager::GetMeshCount() {
-    auto count = 0;
-    {
-        std::lock_guard<std::mutex> lock(m_meshMutex);
-        count = s_meshList.size();
-    }
-    return count;
+    std::lock_guard<std::mutex> lock(m_meshMutex);
+    return mMeshMapList.size();
 }
 
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &AssetsManager::GetTextureMap() {

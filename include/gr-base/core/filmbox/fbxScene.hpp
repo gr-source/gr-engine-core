@@ -26,11 +26,9 @@ public:
     const std::size_t getMaterialCount() const;
 
     template <typename ...Args>
-    FbxMesh &addMesh(const std::string &name, Args &&...args);
+    FbxMesh *addMesh(Args &&...args);
 
-    // const FbxMesh &findMesh(const std::string &name) const;
-
-    FbxMesh *findMesh(const std::string &name);
+    FbxMesh *getMesh(int index) const;
 
     const std::size_t getMeshCount() const;
 
@@ -47,7 +45,7 @@ private:
 
     std::vector<FbxMaterial> m_materials;
 
-    std::unordered_map<std::string, FbxMesh> m_meshes;
+    std::vector<std::unique_ptr<FbxMesh>> m_meshes;
 
     FbxNode m_rootNode;
 
@@ -67,12 +65,8 @@ inline FbxMaterial &FbxScene::addMaterial(Args &&...args) {
 }
 
 template <typename... Args>
-inline FbxMesh &FbxScene::addMesh(const std::string &name, Args &&...args) {
-    auto &&[it, added] = m_meshes.emplace(name, std::forward<Args>(args)...);
-    if (!added) {
-        throw std::runtime_error("Mesh replaced: " + name);
-    }
-    return it->second;
+inline FbxMesh *FbxScene::addMesh(Args &&...args) {
+    return &(*m_meshes.emplace_back(std::make_unique<FbxMesh>(std::forward<Args>(args)...)));
 }
 
 

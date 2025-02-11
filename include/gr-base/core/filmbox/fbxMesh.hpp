@@ -5,6 +5,7 @@
 #include "fbxBone.hpp"
 
 #include <vector>
+#include <memory>
 
 class FbxMesh {
 public:
@@ -25,9 +26,9 @@ public:
 
     const std::vector<int> &getIndices() const;
 
-    grm::size addMaterial(int idx);
+    uint32_t getMaterialIndex() const;
 
-    const std::vector<int> &getMaterials() const;
+    void setMaterialIndex(uint32_t index);
 
     template <typename ...Args>
     FbxBone &addBone(Args &&...args);
@@ -39,9 +40,9 @@ public:
     bool hasBone() const;
     
 private:
-    std::string m_name;
+    uint32_t m_materialIndex;
 
-    std::vector<int> m_materials;
+    std::string m_name;
 
     std::vector<FbxVertex> m_vertices;
 

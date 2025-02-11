@@ -62,7 +62,6 @@ set(filmbox
 )
 
 set(binary
-    src/core/binary/model3DHandler.cpp
     src/core/binary/modelhandle.cpp
     src/core/binary/gHeader.cpp
 )
