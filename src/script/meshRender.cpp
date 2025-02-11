@@ -62,7 +62,7 @@ void MeshRender::build() {
         m_batched = nullptr;
     }
 
-    auto shader = AssetsManager::FindShader("dynamic_one_model");
+    auto shader = AssetsManager::FindShader(File::GetAsset("/shader/model/default_model.glsl"));
     if (!shader) {
         return AssetsManager::LoadShader(
             File::GetAsset("/shader/model/default_model.glsl"),

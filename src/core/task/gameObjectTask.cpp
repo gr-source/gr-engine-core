@@ -18,10 +18,21 @@ GameObjectTask::GameObjectTask(const std::string &path, GameObjectFunc func) : m
 
 void GameObjectTask::upload(std::string path)
 {
-    GameObject::Instantiate(m_rootNode);
-    
-    Console::LogInfo("[ GameObjectTask ] Model loaded sucessfuly %s.", path.c_str());
+    auto scene = Scene::GetCurrentScene();
+    if (scene != nullptr) {
+        Scene::Use(nullptr);
+    }
 
+    auto go = GameObject::Instantiate(m_rootNode);
+    // if (go->hasComponent<MeshRender>())
+    
+    Scene::Use(scene);
+    
+    Console::LogInfo("[ GameObjectTask ] Model loaded sucessfuly %s.", go->getName().c_str());
+
+    if (m_function) {
+        m_function(go);
+    }
     AssetsManager::RemoveTask(path);
 }
 

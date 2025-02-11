@@ -30,11 +30,17 @@ public:
 
     grr::gTexture *getTexture(int idx) const;
 
+    grr::gShader *getShader() const;
+
+    void setShader(grr::gShader *shader);
+
     void serialize(Stream *stream) const;
 
     void deserialize(Stream *stream);
 
 private:
+    grr::gShader *m_shader;
+    
     Color m_albedo;
 
     float m_metallic;

@@ -40,7 +40,9 @@ void ShaderTask::upload(std::string path, ShaderData frag, ShaderData vert)
     auto shader = m_shader != nullptr ? m_shader : AssetsManager::CreateShader(path);
 
     auto name = std::filesystem::path(path).filename().string();
-    if (!buildShader(name, shader, frag, vert));
+    if (!buildShader(name, shader, frag, vert)) {
+        return AssetsManager::RemoveTask(path);
+    }
 
     invoke(shader);
 
@@ -263,7 +265,7 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader, Shad
     if (!shader->isValid())
     {
         Console::LogError("[ ShaderTask ] Shader.Build Fail to build shader, %s, %s", name.c_str(), grr::error());
-        AssetsManager::RemoveShader(shader);
+        // AssetsManager::RemoveShader(shader);
         return false;
     }
 

@@ -150,19 +150,27 @@ void Entity::copy(const Entity *entity)
     auto targetTransform = go->getTransform();
     auto localTransform = m_gameObject->getTransform();
 
-    if (targetTransform) {
+    if (targetTransform)
+    {
         localTransform->setLocalScale(targetTransform->getLocalScale());
         localTransform->setLocalRotation(targetTransform->getLocalRotation());
         localTransform->setLocalPosition(targetTransform->getLocalPosition());
 
-        if (!targetTransform->hasParent()) {
-            Scene::GetCurrentScene()->insert(getGameObject());
+        if (!targetTransform->hasParent())
+        {
+            auto scene = Scene::GetCurrentScene();
+            if (scene != nullptr)
+            {
+                scene->insert(getGameObject());
+            }
         }
 
-        for (const auto& child : targetTransform->getChildren()) {
+        for (const auto& child : targetTransform->getChildren())
+        {
             auto childGameObject = child->getGameObject();
             auto clonedObject = GameObject::Instantiate(childGameObject);
-            if (!clonedObject) {
+            if (!clonedObject)
+            {
                 Console::LogError("[ Entity ] Failed to create child object %s->%s.", go->getName().c_str(), childGameObject->getName().c_str());
                 continue;
             }
