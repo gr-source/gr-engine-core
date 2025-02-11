@@ -93,7 +93,7 @@ void Batching::RenderBatches() {
     }
 }
 
-Batching::Batching(const std::string &name, std::vector<Material *> *materials, grr::gShader *shader, BatchingFlags_ flags) : m_shader(shader), m_flags(flags), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indexCount(0), m_instanceCount(0), m_VBO(0), m_EBO(0), m_PBO(0) {}
+Batching::Batching(const std::string &name, std::vector<Material *> *materials, BatchingFlags_ flags) : m_flags(flags), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indexCount(0), m_instanceCount(0), m_VBO(0), m_EBO(0), m_PBO(0) {}
 
 Batching::~Batching() {
     if (m_vertexArray) {
@@ -178,38 +178,55 @@ void Batching::remove(Transform *transform) {
     }
 }
 
-void Batching::draw(grr::gShader *shader) {
-    shader = shader != nullptr ? shader : m_shader;
+void Batching::draw() {
+    auto model = m_models[0]->getGlobalMatrix();
 
-    auto transform = m_models[0];
+    int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    int idxEn[10] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    auto model = transform->getGlobalMatrix();
+    char buff[256] = {0};
 
-    shader->setUniform("u_model", 1, &model);
-
-    /*
-    auto go = transform->getGameObject();
-    auto animator =  go->getComponent<Animator>();
-        auto &metrices = animator->getBoneData();
-    if (animator) {
-        
-        grr::gShader::SetUniform<Matrix4x4>("u_boneMatrices", metrices.data());
-    }
-    */
-
-    if (m_flags & BatchingFlags_UploadMaterial)
-        setupMaterial(shader);
-
-    
     m_vertexArray->bind();
+    for (int i=0;i<m_materials->size();i++) {
+        auto &material = (*m_materials)[i];
 
-    shader->bind();
-    shader->flush();
+        auto shader = material->getShader();
 
-    if (m_flags & BatchingFlags_HasIndices) {
-        grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
-    } else {
-        grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
+        shader->setUniform("u_model", 1, &model);
+        // 0 - Albedo
+        // 1 - Normal
+        // 2 - Roughness
+        // 3 - Metallic
+        // 4 - Ao
+        auto texture = material->getTexture(0);
+        if (texture && texture->isValid()) {
+            texture->bind(i);
+            idxEn[i] = 1;
+        }
+
+        auto params = Vector3{material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()};
+        auto albedo = material->getAlbedo();
+
+        sprintf(buff, "m_material[%d].albedo", i);
+        shader->setUniform(buff, 1, &albedo);
+
+        sprintf(buff, "m_material[%d].params", i);
+        shader->setUniform(buff, 1, &params);
+        
+        shader->setUniform("m_texture", 10, (const void *)idx);
+        shader->setUniform("m_activate", 10, (const void *)idxEn);
+
+
+        shader->bind();
+        shader->flush();
+
+        if (m_flags & BatchingFlags_HasIndices) {
+            grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
+        } else {
+            grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
+        }
+
+        shader->unbind();
     }
 
     for (int i=0;i<10;i++) {
@@ -217,7 +234,6 @@ void Batching::draw(grr::gShader *shader) {
     }
 
     m_vertexArray->unbind();
-    shader->unbind();
 }
 
 void Batching::setupMaterial(grr::gShader *shader) {

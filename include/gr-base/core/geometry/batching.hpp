@@ -42,7 +42,7 @@ public:
 
     // ***** Class Method ***** //
 
-    Batching(const std::string &name, std::vector<Material *> *materials, grr::gShader *shader, BatchingFlags_ flags = 0);
+    Batching(const std::string &name, std::vector<Material *> *materials, BatchingFlags_ flags = 0);
     ~Batching();
 
     void buildMeshe(Mesh *mesh);
@@ -51,7 +51,7 @@ public:
 
     void remove(Transform *transform);
 
-    void draw(grr::gShader *shader = nullptr);
+    void draw();
 
     bool isValid() const;
 
@@ -85,8 +85,6 @@ private:
     grm::u32 m_PBO;
 
     BatchingFlags_ m_flags;
-
-    grr::gShader *m_shader;
 
     void setupMaterial(grr::gShader *shader);
 

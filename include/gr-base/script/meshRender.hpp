@@ -45,7 +45,7 @@ private:
 
     Transform *m_transform;
 
-    bool SetupShader(Mesh *mesh, grr::gShader *shader);
+    bool SetupShader(Mesh *mesh);
 };
 
 template <typename... Args>

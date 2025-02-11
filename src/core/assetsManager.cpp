@@ -124,6 +124,15 @@ grr::gShader *AssetsManager::CreateShader(const std::string &name)
     return shader;
 }
 
+std::string AssetsManager::GetShaderRefToName(grr::gShader *shader)
+{
+    auto it = mShaderPathRef.find(shader);
+    if (it == mShaderPathRef.end()) {
+        throw std::runtime_error("Shader do reference undefined.");
+    }
+    return it->second;
+}
+
 void AssetsManager::RemoveShader(grr::gShader *shader)
 {
     auto it = mShaderPathRef.find(shader);

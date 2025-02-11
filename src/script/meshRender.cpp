@@ -62,15 +62,7 @@ void MeshRender::build() {
         m_batched = nullptr;
     }
 
-    auto shader = AssetsManager::FindShader(File::GetAsset("/shader/model/default_model.glsl"));
-    if (!shader) {
-        return AssetsManager::LoadShader(
-            File::GetAsset("/shader/model/default_model.glsl"),
-            &MeshRender::SetupShader, this, mesh
-        );
-    }
-
-    SetupShader(mesh, shader);
+    SetupShader(mesh);
 }
 
 void MeshRender::Enable() {
@@ -143,10 +135,10 @@ bool MeshRender::Deserialize(Stream *stream) {
     return true;
 }
 
-bool MeshRender::SetupShader(Mesh *mesh, grr::gShader *shader) {
+bool MeshRender::SetupShader(Mesh *mesh) {
     m_batched = Batching::FindBatchByName(getGameObject()->getName());
     if (!m_batched) {
-        m_batched = Batching::AddBatch(getGameObject()->getName(), &m_materials, shader, mesh->hasIndices() ? BatchingFlags_HasIndices : 0);
+        m_batched = Batching::AddBatch(getGameObject()->getName(), &m_materials, mesh->hasIndices() ? BatchingFlags_HasIndices : 0);
         m_batched->insert(m_transform);
         m_batched->buildMeshe(mesh);
     }

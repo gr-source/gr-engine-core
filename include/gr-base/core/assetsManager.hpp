@@ -90,6 +90,8 @@ public:
 
     static grr::gShader *CreateShader(const std::string &name);
 
+    static std::string GetShaderRefToName(grr::gShader *shader);
+
     static void RemoveShader(grr::gShader *shader);
 
     template <typename ...Args>
