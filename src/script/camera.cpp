@@ -42,8 +42,7 @@ Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlan
 void Camera::Init() {
     m_transform = entity->getComponent<Transform>();
 
-    
-    m_cameraList.push_back(this);
+    addInGlobalCam();
     
     if (!s_current) {
         s_current = this;
@@ -64,7 +63,7 @@ void Camera::Destroy() {
 }
 
 void Camera::Enable() {
-    m_cameraList.push_back(this);
+    addInGlobalCam();
 
     if (!s_current) {
         s_current = this;
@@ -201,4 +200,14 @@ Rect Camera::getRect() const {
 
 void Camera::updateProjection() {
     m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_nearPlane, m_farPlane);
+}
+
+void Camera::addInGlobalCam()
+{
+    auto it = std::find(m_cameraList.begin(), m_cameraList.end(), this);
+    if (it != m_cameraList.end())
+    {
+        return;
+    }
+    m_cameraList.push_back(this);
 }

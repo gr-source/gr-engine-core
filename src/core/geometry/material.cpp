@@ -6,7 +6,7 @@
 #include "gr-base/core/console.hpp"
 
 Material::Material(const Color &albedo, float metallic, float roughness, float ao) : m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr), m_shader(nullptr) {
-    AssetsManager::LoadShader(File::GetAsset("/shader/model/default_model.glsl"), &Material::setShader, this);
+    AssetsManager::LoadShader(File::GetAsset("/shader/model/default_instancing_model.glsl"), &Material::setShader, this);
 }
 
 Color Material::getAlbedo() const {

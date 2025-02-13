@@ -90,7 +90,7 @@ void Batching::RenderBatches() {
     Status::BatchRenderCount = 0;
 
     for (auto &batching : mBatchRefList) {
-        if (!batching->isValid() || !batching->isVisible()) {
+        if (!batching->isValid()) {
             continue;
         }
 
@@ -147,10 +147,16 @@ void Batching::remove(Transform *transform) {
 }
 
 void Batching::draw() {
-    auto model = m_models[0]->getGlobalMatrix();
+    // auto model = m_models[0]->getGlobalMatrix();
 
     int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    
+
+    std::vector<Matrix4x4> models;
+
+    for (auto transform : m_models) {
+        models.push_back(transform->getGlobalMatrix());
+    }
+
     for (int i=0;i<m_materials->size();i++) {
         if (i >= m_drawList.size()) { continue; }
 
@@ -162,8 +168,9 @@ void Batching::draw() {
         
         auto shader = material->getShader();
         if (!shader) { continue; }
-        
-        shader->setUniform("u_model", 1, &model);
+
+        draw->updatePBO(models.data(), models.size());
+        // shader->setUniform("u_model", 1, &model);
         // 0 - Albedo
         // 1 - Normal
         // 2 - Roughness
@@ -214,7 +221,7 @@ bool Batching::isVisible() const {
     return Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, m_models[0]->getGlobalMatrix());
 }
 
-BatchingDraw::BatchingDraw() : m_vertexArray(grr::gVertexArray::Create()), m_instanceCount(0),m_indexCount(0), m_VBO(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_EBO(grr::gVertexArray::CreateBuffer(BufferType::EBO)),m_PBO(0)
+BatchingDraw::BatchingDraw() : m_vertexArray(grr::gVertexArray::Create()), m_instanceCount(0),m_indexCount(0), m_VBO(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_EBO(grr::gVertexArray::CreateBuffer(BufferType::EBO)), m_PBO(grr::gVertexArray::CreateBuffer(BufferType::PBO))
 {
 }
 
@@ -261,6 +268,7 @@ void BatchingDraw::build(Mesh *mesh, int entityID) {
     }
     */
     
+    
     grr::gVertexArray::Bind(m_VBO);
     grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(VertexData), BufferUsage::STATIC);
     grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(VertexData), vertices.data());
@@ -271,6 +279,12 @@ void BatchingDraw::build(Mesh *mesh, int entityID) {
     grr::gVertexArray::SetAttrib(3, 1,  sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, mIdx)));
     grr::gVertexArray::SetAttribI(4, 1, sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, entityID)));
 
+    grr::gVertexArray::Bind(m_PBO);
+    for (int i=0;i<4;i++) {
+        grr::gVertexArray::SetAttrib(5 + i, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(i * sizeof(Vector4)));
+        grr::gVertexArray::SetAttribDivisor(5 + i, 1);
+    }
+
     m_vertexArray->unbind();
 }
 
@@ -279,13 +293,22 @@ void BatchingDraw::draw()
     // if (m_flags & BatchingFlags_HasIndices) {
     //     grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
     // } else {
+
+    if (m_instanceCount > 0)
+        grr::gVertexArray::DrawArraysInstanced(PrimitiveType::TRIANGLES, m_indexCount, m_instanceCount);
+    else
         grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
 
         Status::BatchDrawCallRender++;
     // }
 }
 
+void BatchingDraw::updatePBO(const Matrix4x4 *matrix, std::size_t count)
+{
+    m_vertexArray->bind();
+    grr::gVertexArray::Bind(m_PBO);
+    grr::gVertexArray::UpdateResizeBuffer(count * sizeof(Matrix4x4), BufferUsage::DYNAMIC);
+    grr::gVertexArray::SetBufferUpdate(0, count * sizeof(Matrix4x4), matrix);
 
-
-
-
+    m_instanceCount = count;
+}

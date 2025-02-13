@@ -134,13 +134,14 @@ bool MeshRender::Deserialize(Stream *stream) {
 }
 
 bool MeshRender::SetupShader(std::vector<Mesh> *meshList) {
-    m_batched = Batching::FindBatchByName(getGameObject()->getName());
+    m_batched = Batching::FindBatchByName(std::to_string(*reinterpret_cast<int *>(meshList)));
 
     if (!m_batched) {
-        m_batched = Batching::CreateBatch(getGameObject()->getName(), &m_materials, 0);
+        m_batched = Batching::CreateBatch(std::to_string(*reinterpret_cast<int *>(meshList)), &m_materials, 0);
         m_batched->insert(m_transform);
         m_batched->buildMeshe(meshList);
     }
+    m_batched->insert(m_transform);
     return true;
 }
 

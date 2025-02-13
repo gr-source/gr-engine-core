@@ -109,11 +109,10 @@ void Scene::DestroyScript() {
         return;
     }
 
-    auto &vector = scene->getObjectList();
-    for (auto it = vector.cbegin(); it != vector.cend();it++) {
-        DestroyComponnet((*it)->getTransform());
+    for (auto go : scene->m_tempInitObjects) {
+        DestroyComponnet(go->getTransform());
     }
-    // scene->m_objects.erase(std::remove(scene->m_objects.begin(), scene->m_objects.end(), nullptr), scene->m_objects.end());
+    scene->m_tempInitObjects.clear();
 }
 
 void Scene::CheckRequestReinstanceScript() {
@@ -235,7 +234,7 @@ GameObject *Scene::CreateGameObject(const std::string &name, const std::string &
     return gameObject;
 }
 
-std::vector<GameObject *> &Scene::getObjectList() {
+std::vector<GameObject *> Scene::getObjectList() {
     return m_objects;
 }
 
@@ -268,50 +267,6 @@ std::unordered_map<std::string, std::unique_ptr<Scene>> &Scene::GetScenes() {
     return m_scenes;
 }
 
-void Scene::CleanCurrentScene() {
-    auto scene = GetCurrentScene();
-    if (!scene) { return; }
-
-    auto temp_dir = File::GetTempFile("gr-engine/");
-    if (!File::Exists(temp_dir)) {
-        File::CreateDirectory(temp_dir);
-    }
-
-    scene->save(temp_dir + scene->getName() + ".scn.tmp");
-
-    auto &objectList = scene->getObjectList();
-    for (auto it = objectList.begin();it != objectList.end();) {
-        GameObject::Destroy(*it);
-
-        it = objectList.erase(it);
-    }
-
-    // GameObject::Clear();
-}
-
-void Scene::ReloadObjects(std::function<void(Scene *)> func) {
-    auto scene = GetCurrentScene();
-    if (!scene) {
-        return;
-    }
-
-    auto temp_dir = File::GetTempFile("gr-engine/");
-    if (!File::Exists(temp_dir)) {
-        return;
-    }
-
-    auto &objectList = scene->getObjectList();
-    for (auto it = objectList.begin();it != objectList.end();) {
-        GameObject::Destroy(*it);
-
-        it = objectList.erase(it);
-    }
-
-    // GameObject::Clear();
-    
-    // Threadpool::AddTask(&Scene::SetLoadScene, temp_dir + scene->getName() + ".scn.tmp", SceneLoadFlags_Object | SceneLoadFlags_Script, func, scene);
-}
-
 void Scene::InitializeEngineScript() {
     auto scene = GetCurrentScene();
     if (!scene)
@@ -330,9 +285,11 @@ void Scene::InitializeAllScript()
     auto scene = Scene::GetCurrentScene();
     if (!scene) { return; }
 
+    
     for (auto go : scene->getObjectList())
     {
         Scene::Init(go);
+        scene->m_tempInitObjects.push_back(go);
     }
 }
 
@@ -675,6 +632,12 @@ int Scene::writeScript(Stream *streaming) {
     streaming->writeS(&size, 1);
 
     for (auto &&[objectName, componentName, ptr] : m_componentCache) {
+
+        auto pool = ComponentRegistry::Find(componentName);
+        if (!pool)
+        {
+            return 2;
+        }
         
         // ObjectName
         size = objectName.size();
@@ -689,11 +652,11 @@ int Scene::writeScript(Stream *streaming) {
         streaming->writeS(componentName.data(), size);
 
         Stream temp;
-        ptr->Serialize(&temp);
+        pool->serialize(ptr, &temp);
         std::size_t data_size = temp.getDataSize();
 
         streaming->writeS(&data_size, 1);
-        ptr->Serialize(streaming);
+        pool->serialize(ptr, streaming);
 
         temp.close();
     }

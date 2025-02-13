@@ -37,10 +37,6 @@ public:
 
     static std::unordered_map<std::string, std::unique_ptr<Scene>> &GetScenes();
 
-    static void CleanCurrentScene();
-
-    static void ReloadObjects(std::function<void(Scene *)> func);
-
     static void InitializeEngineScript();
 
     static void InitializeAllScript();
@@ -65,7 +61,7 @@ public:
 
     GameObject *CreateGameObject(const std::string &name, const std::string &tag = "untagged");
 
-    std::vector<GameObject *> &getObjectList();
+    std::vector<GameObject *> getObjectList();
 
     void insert(GameObject *gameObject);
 
@@ -91,6 +87,8 @@ private:
     static bool bQuit;
 
     std::vector<std::tuple<std::string, std::string, Component *>> m_componentCache; 
+
+    std::vector<GameObject *> m_tempInitObjects;
 
     std::vector<GameObject *> m_objects;
 

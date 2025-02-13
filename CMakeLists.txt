@@ -47,6 +47,7 @@ set(core
     src/core/scene.cpp
     src/core/event.cpp
     src/core/clock.cpp
+    src/core/input.cpp
 )
 
 set(filmbox

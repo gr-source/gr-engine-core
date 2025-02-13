@@ -28,6 +28,8 @@ public:
 
     void draw();
 
+    void updatePBO(const Matrix4x4 *matrix, std::size_t count);
+
     grr::gVertexArray *m_vertexArray;
 
     grm::u32 m_instanceCount;

@@ -63,7 +63,7 @@ void Entity::destroy(const std::string &name) {
         return;
     }
 
-    pool->destroy(it->second);
+    // pool->destroy(it->second);
     
     m_components.erase(std::remove(m_components.begin(), m_components.end(), it->second), m_components.end());
 

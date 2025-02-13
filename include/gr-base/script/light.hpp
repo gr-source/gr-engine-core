@@ -83,6 +83,8 @@ private:
     float m_angleInnerCone;
 
     float m_angleOuterCone;
+
+    void addInGlobalLight();
 };
 
 REGISTER_COMPONENT(Light)

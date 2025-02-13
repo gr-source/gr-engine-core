@@ -16,8 +16,8 @@ Light::Light(std::uint8_t type, const Color& color, float aConstant, float aLine
 
 void Light::Init() {
     m_transform = entity->getComponent<Transform>();
-    
-    m_lights.push_back(this);
+
+    addInGlobalLight();
 }
 
 void Light::Destroy() {
@@ -25,7 +25,7 @@ void Light::Destroy() {
 }
 
 void Light::Enable() {
-    m_lights.push_back(this);
+    addInGlobalLight();
 }
 
 void Light::Disable() {
@@ -122,8 +122,12 @@ Matrix4x4 Light::getProjetion() const {
     return mProjection * Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getForward(), m_transform->getUp());
 }
 
-
-
-
-
-
+void Light::addInGlobalLight()
+{
+    auto it = std::find(m_lights.begin(), m_lights.end(), this);
+    if (it != m_lights.end())
+    {
+        return;
+    }
+    m_lights.push_back(this);
+}
