@@ -32,24 +32,25 @@ Camera *Camera::Current() {
 }
 
 Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_texture(new grr::gTexture()), m_rect({0.0f, 0.0f, 1.0f, 1.0f}) {
-    auto rect = Display::GetDisplayRect();
+    // auto rect = Display::GetDisplayRect();
 
-    m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
+    // m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
     
-    updateProjection();
+    // updateProjection();
 }
 
 void Camera::Init() {
     m_transform = entity->getComponent<Transform>();
 
+    
     m_cameraList.push_back(this);
-
+    
     if (!s_current) {
         s_current = this;
     }
-
+    
     auto rect = Display::GetDisplayRect();
-
+    
     m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
 
     updateProjection();

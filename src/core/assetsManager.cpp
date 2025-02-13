@@ -37,8 +37,11 @@ std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::mS
 std::unordered_map<grr::gShader *, std::string> AssetsManager::mShaderPathRef;
 std::mutex AssetsManager::mShaderMutex;
 
+// shader update
 std::unordered_map<std::string, std::unique_ptr<ShaderTask>> AssetsManager::mShaderFromUpdate;
 
+// sshader property
+std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> AssetsManager::mShaderPropertyMap;
 
 /***************** Texture *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::mTextureMap;
@@ -256,7 +259,25 @@ void AssetsManager::RemoveMesh(const std::string &name)
     mMeshMapList.erase(it);
 }
 
-std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> &AssetsManager::GetMeshListMap() {
+ShaderProperty *AssetsManager::CreateShaderProperty(grr::gShader *shader)
+{
+    mShaderPropertyMap.emplace(shader, std::make_unique<ShaderProperty>());
+    
+    return &(*mShaderPropertyMap[shader]);
+}
+
+ShaderProperty *AssetsManager::GetShaderProperty(grr::gShader *shader)
+{
+    auto it = mShaderPropertyMap.find(shader);
+    if (it == mShaderPropertyMap.end())
+    {
+        return nullptr;
+    }
+    return &(*it->second);
+}
+
+std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> &AssetsManager::GetMeshListMap()
+{
     return mMeshMapList;
 }
 
@@ -641,46 +662,6 @@ grm::size AssetsManager::GetMeshCount() {
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &AssetsManager::GetTextureMap() {
     std::lock_guard<std::mutex> lock(mTextureMutex);
     return mTextureMap;
-}
-
-TextureHandle::TextureHandle(std::function<void(grr::gTexture *)> function, std::string path) : m_path(path) {
-    if (!function) {
-        return;
-    }
-    m_functions.push_back(function);
-}
-
-void TextureHandle::invoke(grr::gTexture *texture) {
-    for (auto it = m_functions.begin(); it != m_functions.end();) {
-        if (*it) {
-            (*it)(texture);
-        }
-        it = m_functions.erase(it);
-    }
-}
-
-void TextureHandle::add(std::function<void(grr::gTexture *)> function) {
-    m_functions.push_back(function);
-}
-
-ShaderHandle::ShaderHandle(std::function<void(grr::gShader *)> function, std::string path) : m_path(path) {
-    if (!function) {
-        return;
-    }
-    m_functions.push_back(function);
-}
-
-void ShaderHandle::invoke(grr::gShader *shader) {
-    for (auto it = m_functions.begin(); it != m_functions.end();) {
-        if (*it) {
-            (*it)(shader);
-        }
-        it = m_functions.erase(it);
-    }
-}
-
-void ShaderHandle::add(std::function<void(grr::gShader *)> function) {
-    m_functions.push_back(function);
 }
 
 Material *AssetsManager::FindMaterial(const std::string &key) {

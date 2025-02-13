@@ -11,7 +11,7 @@ class GameObject {
 public:
     static GameObject *Create(const std::string &name, const std::string &tag = "unttaged");
 
-    static GameObject *Instantiate(GameObject *go);
+    static GameObject *Instantiate(const GameObject *go);
 
     static void Rename(GameObject *go, std::string name);
 

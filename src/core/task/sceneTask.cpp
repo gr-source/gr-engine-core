@@ -54,7 +54,6 @@ void SceneTask::upload(std::string path)
     auto current = Scene::AddScene(scene_name, std::move(scene));
     current->setName(scene_name);
 
-
     auto gocamera = GameObject::Create("MainEngineCamera", "Engine");
     if (gocamera) {
         gocamera->addComponent<Camera>();

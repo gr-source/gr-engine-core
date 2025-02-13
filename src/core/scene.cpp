@@ -90,8 +90,6 @@ Scene *Scene::Create(const std::string &name) {
         }
 
         camera->addComponent<Camera>();
-
-        Scene::Init(camera);
     }
 
     return &(*it->second);

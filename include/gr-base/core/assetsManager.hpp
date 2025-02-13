@@ -33,45 +33,6 @@
 #include "gr-base/core/task/shaderTask.hpp"
 #include "gr-base/core/task/sceneTask.hpp"
 
-class GameObjectHandle {
-public:
-    GameObjectHandle(std::function<void(GameObject *)> &function, const std::string &path) : m_function(function), m_gameObject(nullptr), m_path(path) {}
-
-    std::function<void(GameObject *)> m_function;
-
-    GameObject *m_gameObject;
-
-    std::string m_path;
-};
-
-class ShaderHandle {
-public:
-    ShaderHandle(std::function<void(grr::gShader *)> function, std::string path);
-
-    void invoke(grr::gShader *shader);
-
-    void add(std::function<void(grr::gShader *)> function);
-
-    std::string m_path;
-
-private:
-    std::vector<std::function<void(grr::gShader *)>> m_functions;
-};
-
-class TextureHandle {
-public:
-    std::string m_path;
-
-    TextureHandle(std::function<void(grr::gTexture *)> function, std::string path);
-
-    void invoke(grr::gTexture *texture);
-
-    void add(std::function<void(grr::gTexture *)> function);
-
-private:
-    std::vector<std::function<void(grr::gTexture *)>> m_functions;
-};
-
 class AssetsManager {
 public:
     static void Initialize();
@@ -117,6 +78,11 @@ public:
     static std::string GetMeshListRefToName(std::vector<Mesh> *meshList);
 
     static void RemoveMesh(const std::string &name);
+    
+    // shader property
+    static ShaderProperty *CreateShaderProperty(grr::gShader *shader);
+
+    static ShaderProperty *GetShaderProperty(grr::gShader *shader);
 
     static std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> &GetMeshListMap();
 
@@ -158,6 +124,9 @@ private:
 
     // Update Shader
     static std::unordered_map<std::string, std::unique_ptr<ShaderTask>> mShaderFromUpdate;
+
+    // sshader property
+    static std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> mShaderPropertyMap;
 
     /***************** Texture *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> mTextureMap;

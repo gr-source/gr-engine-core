@@ -25,7 +25,7 @@ GameObject *GameObject::Create(const std::string &name, const std::string &tag) 
     return &(*gameObject);
 }
 
-GameObject *GameObject::Instantiate(GameObject *go) {
+GameObject *GameObject::Instantiate(const GameObject *go) {
     auto gameObject = GameObject::Create(go->name, go->tag);
     if (!gameObject) {
         return nullptr;

@@ -45,8 +45,17 @@ void TextureTask::upload(std::string path, int width, int height, grr::TextureFo
 
 void TextureTask::doInBackground(std::string path)
 {
+    bool isHDR = stbi_is_hdr(path.c_str());
+
     int width, height, ch;
-    m_pixels = std::unique_ptr<char>((char *)stbi_load(path.c_str(), &width, &height, &ch, 0));
+
+    if (isHDR)
+    {
+        m_pixels = std::unique_ptr<char>((char *)stbi_loadf(path.c_str(), &width, &height, &ch, 0));
+    } else {
+        m_pixels = std::unique_ptr<char>((char *)stbi_load(path.c_str(), &width, &height, &ch, 0));
+    }
+
     if (!m_pixels)
     {
         Console::LogError("[ TextureTask ] Fail to load texture '%s'", path.c_str());
@@ -57,16 +66,19 @@ void TextureTask::doInBackground(std::string path)
     switch (ch)
     {
     case 1:
-        // return Texture::eRED;
+        format = grr::TextureFormat_RED;
+        break;
     case 2:
-        // return Texture::eRG;
+        format = isHDR ? grr::TextureFormat_RG16F : grr::TextureFormat_RG;
+        break;
     case 3:
-        format = grr::TextureFormat_SRGB;
+        format = isHDR ? grr::TextureFormat_RGB16F : grr::TextureFormat_RGB;
         break;
     case 4:
-        format = grr::TextureFormat_SRGBA;
+        format = isHDR ? grr::TextureFormat_RGBA16F : grr::TextureFormat_RGBA;
         break;
     default:
+        std::cout << "Errr: " << ch << std::endl;
         break;
     }
 

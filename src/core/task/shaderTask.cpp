@@ -329,7 +329,7 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader, Shad
 
         PRINT_ERROR(shader->registry(uniform.name.c_str(), type));
     }
-
+    
     for (auto uniform : vert.uniformList) {
         type = ConvertToGType(uniform.type);
         if (type == grr::UniformType_none)
@@ -337,7 +337,7 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader, Shad
             Console::LogError("[ ShaderTask ] Shader.UniformType uniform '%s %s', %s in vertex", uniform.type_name.c_str(), uniform.name.c_str(), name.c_str());
             continue;
         }
-
+        
         PRINT_ERROR(shader->registry(uniform.name.c_str(), type));
     }
     return true;
