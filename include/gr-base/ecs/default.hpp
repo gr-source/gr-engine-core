@@ -9,3 +9,4 @@
 class GameObject;
 class Component;
 class Entity;
+class Pool;

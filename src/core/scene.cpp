@@ -195,32 +195,9 @@ std::string Scene::getName() const
     return m_name;
 }
 
+#include "gr-base/core/task/saveSceneTask.hpp"
 void Scene::save(const std::string &path) {
-    Stream stream(path, std::ios_base::out | std::ios_base::binary);
-
-    // header data
-    {
-        FileHeader header{{'g', 'r', 's', 'c'}, 1.0f, static_cast<std::size_t>(stream.getDataSize())};
-        std::strncpy(header.name, m_name.data(), 256);
-
-        if (!stream.writeS(&header, 1, false)) {
-            return Console::LogError("[ Scene ] Failed to write scene: 0");
-        }
-    }
-
-    auto err = writeScene(&stream);
-    if (err != 0) {
-        return Console::LogError("[ SCENE ] Failed to write scene segment: %d", err);
-    }
-
-    m_componentCache.clear();
-
-    DataSegment end{gHeaderType_None, 0};
-    if (!stream.writeS(&end, 1, false)) {
-        return Console::LogError("[ Scene ] Failed to write scene: 1");
-    }
-
-    Console::LogInfo("[ Scene ] Scene saved: %s", m_name.c_str());
+    SaveSceneTask saveSceneTask(this);
 }
 
 GameObject *Scene::CreateGameObject(const std::string &name, const std::string &tag) {
@@ -234,7 +211,7 @@ GameObject *Scene::CreateGameObject(const std::string &name, const std::string &
     return gameObject;
 }
 
-std::vector<GameObject *> Scene::getObjectList() {
+std::vector<GameObject *> Scene::getObjectList() const {
     return m_objects;
 }
 
@@ -353,279 +330,7 @@ void Scene::setDisableEntity(Transform *transform, bool value) {
     }
 }
 
-int Scene::writeScene(Stream *stream) {
-    DataSegment segment = {gHeaderType_None, 0};
-
-    {
-        if (writeMetadata(stream) != 0) {
-            return 1;
-        }
-    
-        segment = {gHeaderType_Metadata, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&segment, 1, false)) {
-            return 2;
-        }
-    
-        stream->flush();
-    }
-
-    // textures
-    {
-        if (writeTexture(stream) != 0) {
-            return 3;
-        }
-    
-        segment = {gHeaderType_Texture, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&segment, 1, false)) {
-            return 4;
-        }
-    
-        stream->flush();
-    }
-
-    // material
-    {
-        if (writeMaterial(stream) != 0) {
-            return 5;
-        }
-    
-        segment = {gHeaderType_Material, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&segment, 1, false)) {
-            return 6;
-        }
-    
-        stream->flush();
-    }
-
-    // Mesh
-    {
-        // if (writeMesh(streaming) != 0) {
-        //     return 7;
-        // }
-
-        // segment = {gHeaderType_Mesh, static_cast<std::size_t>(streaming->getDataSize())};
-        // if (!streaming->writeS(&segment, 1, false)) {
-        //     return 8;
-        // }
-
-        // streaming->flush();
-    }
-    
-    // Objects
-    {
-        if (writeObject(stream) != 0) {
-            return 9;
-        }
-        
-        segment = {gHeaderType_Object, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&segment, 1, false)) {
-            return 10;
-        }
-
-        stream->flush();
-    }
-
-    // script
-    {
-        if (writeScript(stream) != 0) {
-            return 11;
-        }
-        
-        segment = {gHeaderType_Script, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&segment, 1, false)) {
-            return 12;
-        }
-
-        stream->flush();
-    }
-    return 0;
-}
-
-int Scene::writeMetadata(Stream *stream) {
-    auto snsize = m_name.size();
-    if (!stream->write(&snsize, sizeof(std::size_t))) {
-        return 1;
-    }
-
-    if (!stream->write(m_name.c_str(), snsize * sizeof(char))) {
-        return 2;
-    }
-
-    auto transform = m_goCamera->getTransform();
-    transform->Serialize(stream);
-    return 0;
-}
-
-int Scene::writeTexture(Stream *stream) {
-    auto &textureMap = AssetsManager::GetTextureMap();
-
-    auto tcount = AssetsManager::GetTextureCount();
-    if (!stream->write(&tcount, sizeof(std::size_t))) {
-        return 2;
-    }
-
-    for (auto &&[path, ptr] : textureMap) {
-        std::size_t psize = path.size();
-        if (!stream->write(&psize, sizeof(std::size_t))) {
-            return 3;
-        }
-
-        if (!stream->write(path.c_str(), psize * sizeof(char))) {
-            return 4;
-        }
-    }
-
-    return 0;
-}
-
-int Scene::writeMaterial(Stream *stream) {
-    auto &materialMap = AssetsManager::GetMaterialMap();
-
-    auto mcount = materialMap.size();
-    if (!stream->write(&mcount, sizeof(std::size_t))) {
-        return 1;
-    }
-
-    for (auto &&[name, material] : materialMap) {
-        std::size_t nsize = name.size();
-        if (!stream->write(&nsize, sizeof(std::size_t))) {
-            return 2;
-        }
-
-        if (!stream->write(name.c_str(), nsize * sizeof(char))) {
-            return 3;
-        }
-
-        material->serialize(stream);
-    }
-
-    return 0;
-}
-
-int Scene::writeMesh(Stream *stream)
-{
-    auto meshCount = AssetsManager::GetMeshCount();
-
-    if (!stream->write(&meshCount, sizeof(std::size_t)))
-    {
-        return 1;
-    }
-
-    for (auto &&[name, meshList] : AssetsManager::GetMeshListMap())
-    {
-        auto nsize = name.size();
-
-        if (!stream->write(&nsize, sizeof(std::size_t)))
-        {
-            return 2;
-        }
-
-        if (!stream->write(name.c_str(), nsize * sizeof(char)))
-        {
-            return 3;
-        }
-
-        auto mlcount = meshList->size();
-        if (!stream->write(&mlcount, sizeof(std::size_t)))
-        {
-            return 4;
-        }
-
-        for (auto &mesh : *meshList)
-        {
-            mesh.deserialize(stream);
-        }
-    }
-    return 0;
-}
-
-int Scene::writeObject(Stream *stream) {
-    auto objectCount = m_objects.size();
-
-    if (!stream->write(&objectCount, sizeof(std::size_t))) {
-        return 1;
-    }
-
-    std::function<void(GameObject *)> func = std::bind(&Scene::writeGameObject, this, stream, std::placeholders::_1);
-
-    if (func)
-        std::for_each(m_objects.begin(), m_objects.end(), func);
-    return 0;
-}
-
-int Scene::writeGameObject(Stream *stream, GameObject *gameObject) {
-    // write name
-    {
-        auto goname = gameObject->getName();
-        auto gonsize = goname.size();
-
-        if (!stream->write(&gonsize, sizeof(std::size_t))) {
-            return 1;
-        }
-
-        if (!stream->write(goname.c_str(), gonsize * sizeof(char))) {
-            return 2;
-        }
-    }
-
-    // write tag
-    {
-        auto gotag = gameObject->getTag();
-        auto gotsize = gotag.size();
-
-        if (!stream->write(&gotsize, sizeof(std::size_t))) {
-            return 3;
-        }
-        
-        if (!stream->write(gotag.data(), gotsize * sizeof(char))) {
-            return 4;
-        }
-    }
-
-    // write status object
-    {
-        auto active = gameObject->getActive();
-        if (!stream->write(&active,  sizeof(bool))) {
-            return 5;
-        }
-
-        auto enable = gameObject->getEnable();
-        if (!stream->write(&enable, sizeof(bool))) {
-            return 6;
-        }
-    }
-
-    // Write Component
-    auto entity = gameObject->getEntity();
-
-    std::list<std::tuple<std::string, Component *>> m_list;
-    for (auto [name, ptr] : entity->getComponentMap()) {
-        m_list.emplace_front(name, &(*ptr));
-    }
-
-    for (auto &&[name, ptr] : m_list) {
-        m_componentCache.emplace_back(gameObject->getName(), name, ptr);
-    }
-
-    auto transform = gameObject->getTransform();
-    auto children = transform->getChildren();
-
-    auto ccount = children.size();
-    if (!stream->write(&ccount, sizeof(std::size_t))) {
-        return 7;
-    }
-
-    int result = 0;
-    for (auto &child : children) {
-        result = writeGameObject(stream, child->getGameObject());
-        if (result != 0) {
-            break;
-        }
-    }
-    
-    return result;
-}
-
+/*
 int Scene::writeScript(Stream *streaming) {
     auto size = m_componentCache.size();
 
@@ -663,6 +368,7 @@ int Scene::writeScript(Stream *streaming) {
     m_componentCache.clear();
     return 0;
 }
+*/
 
 void Scene::SetupScene(Scene *scene) {
     auto it = m_scenes.find(scene->getName());
@@ -672,33 +378,6 @@ void Scene::SetupScene(Scene *scene) {
     for (auto &go : scene->getObjectList()) {
         Scene::Init(go);
     }
-}
-
-void Scene::SetupScript(GameObject *gameObject, std::string name, std::condition_variable &cv, Component *&component, int &result) {
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        result = 0;
-    }
-
-    auto entt = gameObject->getEntity();
-    if (!entt) {
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            result = 2;
-        }
-        cv.notify_one();
-        return;
-    }
-
-    try {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        component = entt->hasComponent(name) ? entt->getComponent(name) : entt->addComponent(name);
-    } catch (const std::exception &e) {
-        Console::LogError("[ Scene ] %s", e.what());
-        std::lock_guard<std::mutex> lock(m_mutex);
-        result = 3;
-    }
-    cv.notify_one();
 }
 
 void Scene::ProcessScript(Component *component, std::string path, std::streampos position) {

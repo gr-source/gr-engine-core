@@ -94,7 +94,7 @@ public:
     
     static grm::size GetMeshCount();
 
-    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &GetTextureMap();
+    static std::unordered_map<grr::gTexture *, std::string> GetTextureRefMap();
 
     static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
 
@@ -111,7 +111,7 @@ public:
 
     static std::string GetRefMaterialToName(Material *material);
 
-    static std::unordered_map<std::string, std::unique_ptr<Material>> &GetMaterialMap();
+    static std::unordered_map<Material *, std::string> GetMaterialRefMap();
 
     static void RemoveTask(const std::string &name);
 
@@ -151,9 +151,9 @@ private:
     static std::mutex m_meshMutex;
     
     /***************** Material *****************/
-    static std::unordered_map<std::string, std::unique_ptr<Material>> materialsMap;
-    static std::unordered_map<Material *, std::string> materialRefToName;
-    static std::mutex materialsMutex;
+    static std::unordered_map<std::string, std::unique_ptr<Material>> mMaterialMap;
+    static std::unordered_map<Material *, std::string> mMaterialRefToName;
+    static std::mutex mMaterialMutex;
 
     /***************** Scene *****************/
     static std::unordered_map<std::string, std::unique_ptr<SceneTask>> mSceneTaskMap;
@@ -211,16 +211,16 @@ inline void AssetsManager::LoadShader(const std::string &path, Args &&...args) {
 // ***** Material ***** //
 template <typename... Args>
 inline Material *AssetsManager::CreateMaterial(const std::string &key, Args && ...args) {
-    std::lock_guard<std::mutex> lock(materialsMutex);
-    auto it = materialsMap.find(key);
-    if (it != materialsMap.end()) {
+    std::lock_guard<std::mutex> lock(mMaterialMutex);
+    auto it = mMaterialMap.find(key);
+    if (it != mMaterialMap.end()) {
         return &(*it->second);
     }
-    materialsMap[key] = std::make_unique<Material>(std::forward<Args>(args)...);
+    mMaterialMap[key] = std::make_unique<Material>(std::forward<Args>(args)...);
 
-    materialRefToName[&(*materialsMap[key])] = key;
+    mMaterialRefToName[&(*mMaterialMap[key])] = key;
 
-    return &(*materialsMap[key]);
+    return &(*mMaterialMap[key]);
 }
 
 

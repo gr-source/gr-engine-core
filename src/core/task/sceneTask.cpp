@@ -135,34 +135,39 @@ void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
         }
 
         int result = -1;
-        switch (data.type)
+        try {
+            switch (data.type)
+            {
+            case gHeaderType_Metadata:
+                if (flags & SceneLoadFlags_Metadata)
+                    result = readMetadata();
+                break;
+            case gHeaderType_Texture:
+                if (flags & SceneLoadFlags_Texture)
+                    result = readTexture();
+                break;
+            case gHeaderType_Material:
+                if (flags & SceneLoadFlags_Material)
+                    result = readMaterial();
+                break;
+            case gHeaderType_Mesh:
+                if (flags & SceneLoadFlags_Mesh)
+                    result = readMesh();
+                break;
+            case gHeaderType_Object:
+                if (flags & SceneLoadFlags_Object)
+                    result = readObject();
+                break;
+            case gHeaderType_Script:
+                if (flags & SceneLoadFlags_Script)
+                    result = readScript();
+                break;
+            default:
+                break;
+            }
+        } catch (const std::exception &e)
         {
-        case gHeaderType_Metadata:
-            if (flags & SceneLoadFlags_Metadata)
-                result = readMetadata();
-            break;
-        case gHeaderType_Texture:
-            if (flags & SceneLoadFlags_Texture)
-                result = readTexture();
-            break;
-        case gHeaderType_Material:
-            if (flags & SceneLoadFlags_Material)
-                result = readMaterial();
-            break;
-        case gHeaderType_Mesh:
-            if (flags & SceneLoadFlags_Mesh)
-                result = readMesh();
-            break;
-        case gHeaderType_Object:
-            if (flags & SceneLoadFlags_Object)
-                result = readObject();
-            break;
-        case gHeaderType_Script:
-            if (flags & SceneLoadFlags_Script)
-                result = readScript();
-            break;
-        default:
-            break;
+            Console::LogError("[ SceneTask ] %s - %s", block_name, e.what());
         }
 
         if (result != 0)

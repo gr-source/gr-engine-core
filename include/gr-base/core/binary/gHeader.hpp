@@ -31,7 +31,6 @@ struct FileHeader {
     char signature[4];
     float version;
     size_t sizeData;
-    char name[256];
 };
 
 struct DataSegment {

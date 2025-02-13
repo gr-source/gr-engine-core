@@ -65,7 +65,7 @@ void Manager::Update() {
             //     continue;
             // }
 
-            // mEntities[j]->update();
+            mEntities[j]->update();
         }
     }
 }

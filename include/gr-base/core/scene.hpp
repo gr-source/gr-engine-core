@@ -61,7 +61,7 @@ public:
 
     GameObject *CreateGameObject(const std::string &name, const std::string &tag = "untagged");
 
-    std::vector<GameObject *> getObjectList();
+    std::vector<GameObject *> getObjectList() const;
 
     void insert(GameObject *gameObject);
 
@@ -108,25 +108,7 @@ private:
 
     void setDisableEntity(Transform *transform, bool value);
 
-    int writeScene(Stream *stream);
-
-    int writeMetadata(Stream *stream);
-
-    int writeTexture(Stream *stream);
-
-    int writeMaterial(Stream *stream);
-
-    int writeMesh(Stream *stream);
-
-    int writeObject(Stream *stream);
-
-    int writeGameObject(Stream *stream, GameObject *gameObject);
-
-    int writeScript(Stream *stream);
-
     static void SetupScene(Scene *scene);
-
-    static void SetupScript(GameObject *gameObject, std::string name, std::condition_variable &cv, Component *&component, int &result);
 
     static void ProcessScript(Component *component, std::string path, std::streampos position);
 

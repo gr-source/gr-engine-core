@@ -65,9 +65,9 @@ std::unordered_map<std::vector<Mesh> *, std::string> AssetsManager::mMeshListRef
 std::mutex AssetsManager::m_meshMutex;
 
 /***************** Material *****************/
-std::unordered_map<std::string, std::unique_ptr<Material>> AssetsManager::materialsMap;
-std::unordered_map<Material *, std::string> AssetsManager::materialRefToName;
-std::mutex AssetsManager::materialsMutex;
+std::unordered_map<std::string, std::unique_ptr<Material>> AssetsManager::mMaterialMap;
+std::unordered_map<Material *, std::string> AssetsManager::mMaterialRefToName;
+std::mutex AssetsManager::mMaterialMutex;
 
 /***************** Scene *****************/
 std::unordered_map<std::string, std::unique_ptr<SceneTask>> AssetsManager::mSceneTaskMap;
@@ -659,31 +659,32 @@ grm::size AssetsManager::GetMeshCount() {
     return mMeshMapList.size();
 }
 
-std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &AssetsManager::GetTextureMap() {
+std::unordered_map<grr::gTexture *, std::string> AssetsManager::GetTextureRefMap()
+{
     std::lock_guard<std::mutex> lock(mTextureMutex);
-    return mTextureMap;
+    return mTextureRefToName;
 }
 
 Material *AssetsManager::FindMaterial(const std::string &key) {
-    std::lock_guard<std::mutex> lock(materialsMutex);
-    auto it = materialsMap.find(key);
-    if (it == materialsMap.end()) {
+    std::lock_guard<std::mutex> lock(mMaterialMutex);
+    auto it = mMaterialMap.find(key);
+    if (it == mMaterialMap.end()) {
         return nullptr;
     }
     return &(*it->second);
 }
 
 std::string AssetsManager::GetRefMaterialToName(Material *material) {
-    std::lock_guard<std::mutex> lock(materialsMutex);
-    auto it = materialRefToName.find(material);
-    if (it == materialRefToName.end()) {
+    std::lock_guard<std::mutex> lock(mMaterialMutex);
+    auto it = mMaterialRefToName.find(material);
+    if (it == mMaterialRefToName.end()) {
         return "";
     }
     return it->second;
 }
 
-std::unordered_map<std::string, std::unique_ptr<Material>> &AssetsManager::GetMaterialMap() {
-    return materialsMap;
+std::unordered_map<Material *, std::string> AssetsManager::GetMaterialRefMap() {
+    return mMaterialRefToName;
 }
 
 void AssetsManager::RemoveTask(const std::string &name)
