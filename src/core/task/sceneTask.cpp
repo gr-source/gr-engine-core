@@ -402,24 +402,19 @@ int SceneTask::readScript()
             return 6;
         }
 
+        
         auto next = stream->tellg() + static_cast<std::streampos>(data_size);
-    
+        
         auto it = tempGameObjectMap.find(goname);
         if (it == tempGameObjectMap.end())
         {
             stream->seekg(next, std::ios_base::beg);
             continue;
         }
-
-        if (data_size <= 0)
-        {
-            continue;
-        }
-
         auto entity = it->second->getEntity();
-
+        
         auto component = entity->hasComponent(componentName) ? entity->getComponent(componentName) : entity->addComponent(componentName);
-        if (component != nullptr)
+        if (data_size > 0 && component != nullptr)
         {
             component->Deserialize(stream.get());
         }
@@ -429,7 +424,6 @@ int SceneTask::readScript()
             Console::LogWarning("[ SceneTask ] %s script %s read data imcompleted!", goname.c_str(), componentName.c_str());
             
             stream->seekg(next, std::ios_base::beg);
-            continue;
         }
     }
     return 0;
