@@ -21,7 +21,7 @@ private:
     std::shared_ptr<Stream> m_stream;
 
 protected:
-    std::vector<std::tuple<std::string, std::string, Component *, Pool *>> m_scriptCache;
+    std::vector<std::tuple<std::string, std::string, Component *, BaseChunk *>> m_scriptCache;
 
     void doInBackground(std::string path);
 

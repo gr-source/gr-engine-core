@@ -54,14 +54,16 @@ std::size_t Manager::GetEntityCount() {
     return mEntities.size();
 }
 
+// #include "compo"
 void Manager::Update() {
-    auto pages = (mEntities.size() + MAX_PAGES - 1) / MAX_PAGES;
-    for (auto i=0;i<pages;i++) {
-        auto start = i * MAX_PAGES;
-        auto end = std::min(start + MAX_PAGES, static_cast<int>(mEntities.size()));
+    ComponentRegistry::getInstance().update();
+    // auto pages = (mEntities.size() + MAX_PAGES - 1) / MAX_PAGES;
+    // for (auto i=0;i<pages;i++) {
+    //     auto start = i * MAX_PAGES;
+    //     auto end = std::min(start + MAX_PAGES, static_cast<int>(mEntities.size()));
 
-        for (auto j=start;j<end;j++) {
-            mEntities[j]->update();
-        }
-    }
+    //     for (auto j=start;j<end;j++) {
+    //         mEntities[j]->update();
+    //     }
+    // }
 }

@@ -4,6 +4,8 @@
 
 #include "gr-base/core/file/stream.hpp"
 
+#include <algorithm>
+
 std::vector<Light *> Light::m_lights;
 
 Matrix4x4 Light::mProjection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);

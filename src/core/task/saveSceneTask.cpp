@@ -305,15 +305,16 @@ int SaveSceneTask::writeScript()
         }
 
         Stream temp;
-        pool->serialize(component, &temp);
+        component->Serialize(&temp);
+        // pool->serialize(component, &temp);
 
         std::size_t data_size = temp.getDataSize();
         if (!m_stream->write(&data_size, sizeof(std::size_t)))
         {
             return 6;
         }
-
-        pool->serialize(component, m_stream.get());
+        component->Serialize(m_stream.get());
+        // pool->serialize(component, m_stream.get());
 
         temp.close();
     }

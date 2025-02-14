@@ -54,11 +54,13 @@ public:
 
 #define REGISTER_COMPONENT(cls) \
     static bool is_register_##cls = \
-        ComponentRegistry::Registry<cls>(); \
+        ComponentRegistry::getInstance().registry<cls>(false); \
 
 #define REGISTER_FIELD(cls, type, field) \
-    static bool is_register_##cls##_##type##_##field = \
-        ComponentRegistry::GetPool<cls>() != nullptr ? ComponentRegistry::GetPool<cls>()->RegisterField(#field, FieldType_ ##type, reinterpret_cast<std::size_t>(&reinterpret_cast<cls *>(0)->field)) : false;
+static bool is_register_##cls##_##type##_##field = \
+    ComponentRegistry::Find<cls>() != nullptr ? ComponentRegistry::Find<cls>()->registerField(#field, FieldType_ ##type, reinterpret_cast<std::size_t>(&reinterpret_cast<cls *>(0)->field)) : false;
+
+
         
 #endif
 
@@ -67,7 +69,7 @@ public:
 
 #define REGISTER_COMPONENT(cls) \
     static bool is_register_##cls = \
-        ComponentRegistry::Registry<cls>(true); \
+        ComponentRegistry::getInstance().registry<cls>(true); \
 
 #endif
 

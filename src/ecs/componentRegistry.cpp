@@ -1,56 +1,69 @@
 #include "gr-base/ecs/componentRegistry.hpp"
 
-ComponentRegistry &ComponentRegistry::getInstance() {
-    static ComponentRegistry m_instance;
-    return m_instance;
+#include <algorithm>
+
+ComponentRegistry &ComponentRegistry::getInstance()
+{
+    static ComponentRegistry instance;
+    return instance;
 }
 
-Pool *ComponentRegistry::Find(const std::string &name) {
-    auto it = getInstance().m_poolMap.find(name);
-    if (it == getInstance().m_poolMap.end()) {
-        return nullptr;
+BaseChunk *ComponentRegistry::Find(const std::string &name)
+{
+    return getInstance().findScript(name.c_str());
+}
+
+void ComponentRegistry::Clear()
+{
+    getInstance().clear();
+}
+
+std::unordered_map<std::string, std::tuple<std::unique_ptr<BaseChunk>, bool>> &ComponentRegistry::GetAllChunkComponent()
+{
+    return getInstance().m_scriptChunk;
+}
+
+BaseChunk *ComponentRegistry::findScript(const char *name) const
+{
+    auto it = m_scriptChunk.find(name);
+    if (it != m_scriptChunk.end())
+    {
+        return &(*std::get<0>(it->second));
     }
-    return it->second.pointer;
+    return nullptr;
 }
 
-std::unordered_map<std::string, PoolData> ComponentRegistry::GetPoolList() {
-    return getInstance().m_poolMap;
-}
-
-std::vector<std::string> ComponentRegistry::GetRequestScriptUpdate() {
-    auto &instance = getInstance();
-
-    auto temp = instance.m_script;
-    instance.m_script.clear();
-
-    return temp;
-}
-
-void ComponentRegistry::clear() {
-    for (auto [name, pool] : m_poolMap) {
-        m_sizeKlass[name] = pool.pointer->getSize();
+void ComponentRegistry::init()
+{
+    for (auto chunk : chunkList)
+    {
+        chunk->init();
     }
+}
 
-    for (auto it = m_poolMap.begin(); it != m_poolMap.end();) {
-        if (!it->second.system) {
-            delete it->second.pointer;
+void ComponentRegistry::update()
+{
+    for (auto chunk : chunkList)
+    {
+        chunk->update();
+    }
+}
 
-            it = m_poolMap.erase(it);
+void ComponentRegistry::clear()
+{
+    for (auto it = m_scriptChunk.begin(); it != m_scriptChunk.end();)
+    {
+        auto &&[pointer, engine] = it->second;
+
+        if (!engine)
+        {
+            std::cout << "Clean: " << it->first << std::endl;
             
-            continue;
+            chunkList.erase(std::remove(chunkList.begin(), chunkList.end(), &(*pointer)), chunkList.end());
+            it = m_scriptChunk.erase(it);
+        } else
+        {
+            it++;
         }
-        it++;
-    } 
-    
-    // m_poolMap.clear();
-
-    // m_pool.clear();
-}
-
-ComponentRegistry::ComponentRegistry() { }
-
-ComponentRegistry::~ComponentRegistry() {
-    for (auto [name, data] : m_poolMap) {
-        delete data.pointer;
     }
 }

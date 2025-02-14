@@ -116,6 +116,7 @@ void Scene::DestroyScript() {
 }
 
 void Scene::CheckRequestReinstanceScript() {
+    /*
     auto script = ComponentRegistry::GetRequestScriptUpdate();
     if (script.empty()) { return; }
 
@@ -124,6 +125,7 @@ void Scene::CheckRequestReinstanceScript() {
             scene->reinstanceScript(name);
         }
     }
+    */
 }
 
 void Scene::Remove(GameObject *gameObject) {
@@ -261,18 +263,21 @@ static std::array<std::string, 4> Scripts = {"MeshRender", "MeshFilter", "Light"
 
 void Scene::InitializeInternalScript(Transform *transform)
 {
+    // /*
     auto go = transform->getGameObject();
     
     auto entity = go->getEntity();
     for (auto script : Scripts)
     {
-        auto pool = ComponentRegistry::Find(script);
+        // auto pool = ComponentRegistry::Find(script);
 
         if (entity->hasComponent(script))
         {
             auto component = entity->getComponent(script);
 
-            pool->init(component);
+            component->Init();
+
+            // pool->init(component);
 
             if (script == "MeshRender")
             {
@@ -285,6 +290,7 @@ void Scene::InitializeInternalScript(Transform *transform)
     {
         InitializeInternalScript(child);
     }
+    // */
 }
 
 GameObject *Scene::CreateEngineCamera() {

@@ -6,6 +6,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 set(ecs
     src/ecs/componentRegistry.cpp
+    src/ecs/chunkManager.cpp
     src/ecs/gameObject.cpp
     src/ecs/component.cpp
     src/ecs/manager.cpp

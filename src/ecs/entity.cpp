@@ -27,8 +27,8 @@ Component *Entity::addComponent(const std::string &name, const Component *compon
     if (!pool) {
         throw std::runtime_error("Fail to add component, " + name + " do not registry.");
     }
-    
-    auto instance = pool->CreateInstance(component, this);
+
+    auto instance = pool->allocateComponent(component);
     if (!instance) {
         throw std::runtime_error("Fail to add component, " + name + " invalid instance.");
     }
@@ -88,18 +88,23 @@ void Entity::setEnable(bool value) {
     for (auto [name, component] : m_componentPtr) {
         auto pool = ComponentRegistry::Find(name);
         if (pool) {
-            value ? pool->enable(component) : pool->disable(component);
+            value ? component->Enable() : component->Disable();
+
+            // value ? pool->enable(component) : pool->disable(component);
         }
     }
 }
 
 void Entity::init() {
+    // /*
     std::list<std::tuple<std::string, Component *>> temp;
     for (auto &&[name, component] : m_componentPtr) {
         temp.emplace_front(name, &(*component));
     }
 
     for (auto [name, component] : temp) {
+        component->Init();
+        /*
         auto pool = ComponentRegistry::Find(name);
         if (!pool) {
             continue;
@@ -110,7 +115,9 @@ void Entity::init() {
         } catch (const std::exception &e) {
             throw std::runtime_error("Fail to initialize " + name + ", " + e.what());
         }
+        */
     }
+    // */
 }
 
 void Entity::update() {
@@ -125,17 +132,22 @@ void Entity::update() {
 }
 
 void Entity::destroy() {
+    // /*
     std::list<std::tuple<std::string, Component *>> temp;
     for (auto &&[name, component] : m_componentPtr) {
         temp.emplace_front(name, &(*component));
     }
 
     for (auto [name, component] : temp) {
+        component->Destroy();
+        /*
         auto pool = ComponentRegistry::Find(name);
         if (pool) {
             pool->destroy(component);
         }
+        */
     }
+    // */
 }
 
 void Entity::copy(const Entity *entity)
