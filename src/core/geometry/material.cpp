@@ -5,8 +5,13 @@
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
 
-Material::Material(const Color &albedo, float metallic, float roughness, float ao) : m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr), m_shader(nullptr) {
+Material::Material(const Color &albedo, float metallic, float roughness, float ao) : m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_shader(nullptr) {
     AssetsManager::LoadShader(File::GetAsset("/shader/model/default_instancing_model.glsl"), &Material::setShader, this);
+
+    for (int i=0;i<10;i++)
+    {
+        m_texture[i] = nullptr;
+    }
 }
 
 Color Material::getAlbedo() const {
@@ -47,6 +52,11 @@ void Material::setTexture(int idx, grr::gTexture *texture) {
 
 grr::gTexture *Material::getTexture(int idx) const {
     return m_texture[idx >= m_texture.size() ? 0 : idx];
+}
+
+std::array<grr::gTexture *, 10> Material::getTextures() const
+{
+    return m_texture;
 }
 
 grr::gShader *Material::getShader() const

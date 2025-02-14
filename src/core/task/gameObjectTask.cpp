@@ -7,6 +7,7 @@
 
 #include "gr-base/core/file/stream.hpp"
 
+#include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
@@ -18,13 +19,17 @@ GameObjectTask::GameObjectTask(const std::string &path, GameObjectFunc func) : m
 
 void GameObjectTask::upload(std::string path)
 {
+    if (m_rootNode == nullptr)
+    {
+        return Console::LogError("[ GameObjectTask ] Fail object loaded is invalid.");
+    }
+
     auto scene = Scene::GetCurrentScene();
     if (scene != nullptr) {
         Scene::Use(nullptr);
     }
 
     auto go = GameObject::Instantiate(m_rootNode);
-    // if (go->hasComponent<MeshRender>())
     
     Scene::Use(scene);
     
@@ -84,20 +89,25 @@ int GameObjectTask::readData() {
         auto segment_name = struct_name[segment.type];
 
         auto next_position = m_stream->tellg() + static_cast<std::streampos>(segment.sizeData);
+        if (segment.sizeData <= 0)
+        {
+            m_stream->seekg(next_position, std::ios_base::beg);
+            continue;
+        }
 
         int result = -1;
         switch (segment.type) {
         case gHeaderType_Object:
             result = readGameObject();
             break;
-        case gHeaderType_Texture:
-            result = readTexture();
+        case gHeaderType_Script:
+            result = readScript();
             break;
         case gHeaderType_Material:
             result = readMaterial();
             break;
-        case gHeaderType_Script:
-            result = readScript();
+        case gHeaderType_Texture:
+            result = readTexture();
             break;
         default:
             break;
@@ -191,54 +201,56 @@ int GameObjectTask::readGameObject(Transform *parent)
 
 int GameObjectTask::readTexture()
 {
-    std::size_t nsize = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t)))
+    std::size_t textureCount = 0;
+    if (!m_stream->read(reinterpret_cast<char *>(&textureCount), sizeof(std::size_t)))
     {
         return 1;
     }
 
-    std::string goname(nsize, '\0');
-    if (!m_stream->read(goname.data(), nsize * sizeof(char)))
+    for (std::size_t i=0;i<textureCount;i++)
     {
-        return 2;
-    }
+        // read game object name
+        std::size_t gonsize = 0;
+        if (!m_stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
+        {
+            return 2;
+        }
 
-    std::size_t tcount = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&tcount), sizeof(std::size_t)))
-    {
-        return 3;
-    }
+        std::string goname(gonsize, '\0');
+        if (!m_stream->read(goname.data(), gonsize * sizeof(char)))
+        {
+            return 3;
+        }
 
-    for (std::size_t i={};i<tcount;i++)
-    {
-        std::size_t psize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&psize), sizeof(std::size_t)))
+        // read material name
+        std::size_t mnsize = 0;
+        if (!m_stream->read(reinterpret_cast<char *>(&mnsize), sizeof(std::size_t)))
         {
             return 4;
         }
 
-        std::string path(psize, '\0');
-        if (!m_stream->read(path.data(), psize * sizeof(char)))
+        std::string mname(mnsize, '\0');
+        if (!m_stream->read(mname.data(), mnsize * sizeof(char)))
         {
             return 5;
         }
 
-        AssetsManager::LoadTexture(path);
-    }
-
-    std::size_t ccount = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
-        return 6;
-    }
-
-    int result = 0;
-    for (std::size_t i=0;i<ccount;i++) {
-        result = readTexture();
-        if (result != 0) {
-            break;
+        // read texture path
+        std::size_t tpsize = 0;
+        if (!m_stream->read(reinterpret_cast<char *>(&tpsize), sizeof(std::size_t)))
+        {
+            return 4;
         }
+
+        std::string tpath(tpsize, '\0');
+        if (!m_stream->read(tpath.data(), tpsize * sizeof(char)))
+        {
+            return 5;
+        }
+
+        // std::cout << "SetMaterial: " << goname << " " << mname << " " << tpath << std::endl;
     }
-    return result;
+    return 0;
 }
 
 int GameObjectTask::readMaterial()
@@ -249,44 +261,57 @@ int GameObjectTask::readMaterial()
         return 1;
     }
 
-    std::string name(sname, '\0');
-    if (!m_stream->read(name.data(), sname * sizeof(char)))
+    for (std::size_t i={};i<sname;i++)
     {
-        return 2;
-    }
+        // read game object name
+        std::size_t gonsize = 0;
+        if (!m_stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
+        {
+            return 2;
+        }
 
-    std::size_t mcount = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t)))
-    {
-        return 4;
-    }
+        std::string goname(gonsize, '\0');
+        if (!m_stream->read(goname.data(), gonsize * sizeof(char)))
+        {
+            return 3;
+        }
 
-    for (std::size_t i={};i<mcount;i++)
-    {
+        // read material name
         std::size_t mnsize = 0;
         if (!m_stream->read(reinterpret_cast<char *>(&mnsize), sizeof(std::size_t)))
         {
-            return 5;
+            return 4;
         }
 
         std::string mname(mnsize, '\0');
         if (!m_stream->read(mname.data(), mnsize * sizeof(char)))
         {
+            return 5;
+        }
+
+        // deserialize material
+        std::size_t bufferSize = 0;
+        if (!m_stream->read(reinterpret_cast<char *>(&bufferSize), sizeof(std::size_t))) {
             return 6;
         }
 
-        std::size_t bufferSize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&bufferSize), sizeof(std::size_t)))
+        auto next = m_stream->tellg() + static_cast<std::streampos>(bufferSize);
+
+        auto material = AssetsManager::FindMaterial(mname);
+        if (material == nullptr)
         {
-            return 7;
+            material = AssetsManager::CreateMaterial(mname);
+            material->deserialize(m_stream.get());
         }
 
-        auto next = m_stream->tellg() + static_cast<std::streampos>(bufferSize);
-        
-        if (AssetsManager::FindMaterial(mname) == nullptr)
+        auto it = m_tempGameObjectMap.find(goname);
+        if (it != m_tempGameObjectMap.end())
         {
-            auto material = AssetsManager::CreateMaterial(mname);
-            material->deserialize(m_stream.get());
+            auto go = it->second;
+            if (go->hasComponent<MeshRender>())
+            {
+                go->getComponent<MeshRender>()->insertMaterial(material);
+            }
         }
 
         if (m_stream->tellg() != next)
@@ -294,24 +319,7 @@ int GameObjectTask::readMaterial()
             m_stream->seekg(next, std::ios_base::beg);
         }
     }
-
-    std::size_t ccount = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t)))
-    {
-        return 8;
-    }
-
-    int result = 0;
-    for (std::size_t i=0;i<ccount;i++)
-    {
-        result = readMaterial();
-        if (result != 0)
-        {
-            break;
-        }
-    }
-
-    return result;
+    return 0;
 }
 
 int GameObjectTask::readScript()
@@ -322,40 +330,39 @@ int GameObjectTask::readScript()
         return 1;
     }
 
-    std::string goname(gonsize, '\0');
-    if (!m_stream->read(goname.data(), gonsize * sizeof(char)))
+    for (std::size_t i={};i<gonsize;i++)
     {
-        return 2;
-    }
+        std::size_t gonsize = 0;
+        if (!m_stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
+        {
+            return 2;
+        }
 
-    std::size_t ccount = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t)))
-    {
-        return 3;
-    }
+        std::string goname(gonsize, '\0');
+        if (!m_stream->read(goname.data(), gonsize * sizeof(char)))
+        {
+            return 3;
+        }
 
-
-    for (std::size_t i={};i<ccount;i++)
-    {
-        std::size_t nsize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t)))
+        // read material name
+        std::size_t cnsize = 0;
+        if (!m_stream->read(reinterpret_cast<char *>(&cnsize), sizeof(std::size_t)))
         {
             return 4;
         }
 
-        std::string cname(nsize, '\0');
-        if (!m_stream->read(cname.data(), nsize * sizeof(char)))
+        std::string scriptname(cnsize, '\0');
+        if (!m_stream->read(scriptname.data(), cnsize * sizeof(char)))
         {
             return 5;
         }
 
-        std::size_t stream_size = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&stream_size), sizeof(std::size_t)))
-        {
+        std::size_t data_size = 0;
+        if (!m_stream->read(reinterpret_cast<char *>(&data_size), sizeof(std::size_t))) {
             return 6;
         }
-        
-        auto next = m_stream->tellg() + static_cast<std::streampos>(stream_size);
+
+        auto next = m_stream->tellg() + static_cast<std::streampos>(data_size);
 
         auto it = m_tempGameObjectMap.find(goname);
         if (it == m_tempGameObjectMap.end())
@@ -363,41 +370,30 @@ int GameObjectTask::readScript()
             m_stream->seekg(next, std::ios_base::beg);
             continue;
         }
-
-        if (stream_size <= 0)
-            continue;
-
+        
         auto entity = it->second->getEntity();
 
-        auto component = entity->hasComponent(cname) ? entity->getComponent(cname) : entity->addComponent(cname);
+        auto component = entity->hasComponent(scriptname) ? entity->getComponent(scriptname) : entity->addComponent(scriptname);
         if (component != nullptr)
         {
             component->Deserialize(m_stream.get());
         }
 
+        if (data_size <= 0)
+        {
+            continue;
+        }
+
         if (m_stream->tellg() != next)
         {
-            Console::LogWarning("[ SceneTask ] %s script %s read data imcompleted!", goname.c_str(), cname.c_str());
+            Console::LogWarning("[ SceneTask ] %s script %s read data imcompleted!", goname.c_str(), scriptname.c_str());
             
             m_stream->seekg(next, std::ios_base::beg);
             continue;
         }
     }
 
-
-    if (!m_stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
-        return 7;
-    }
-
-    int result =0;
-    for (std::size_t i=0;i<ccount;i++) {
-        result = readScript();
-        if (result != 0) {
-            break;
-        }
-    }
-
-    return result;
+    return 0;
 }
 
 

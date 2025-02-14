@@ -20,11 +20,13 @@ public:
     void Destroy() override;
 
     std::vector<Material *> getMaterials() const;
-
-    void removeMaterial(Material *material);
-
+    
     template <typename ...Args>
     Material *addMaterial(Args &&...args);
+    
+    void insertMaterial(Material *material);
+    
+    void removeMaterial(Material *material);
 
     Batching *getBatchGroup();
 

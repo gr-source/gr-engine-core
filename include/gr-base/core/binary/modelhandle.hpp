@@ -30,12 +30,6 @@ private:
 
     static std::mutex mutex;
 
-    std::unordered_map<const GameObject *, std::tuple<Material *, grr::gTexture *>> m_textures;
-
-    std::unordered_map<const GameObject *, std::vector<std::tuple<std::string, Component *>>> m_components;
-
-    std::unordered_map<const GameObject *, std::vector<std::tuple<std::string, Material *>>> m_materials;
-
     std::unordered_map<const GameObject *, bool> mModelCanImport;
 
     std::vector<std::unique_ptr<GameObject>> gameObjects;
@@ -57,24 +51,6 @@ private:
     GameObject *CreateGameObject(const FbxScene *scene, const FbxNode *node, Transform *parent = nullptr);
 
     void generateMesh(const FbxScene *scene, const FbxNode *node, GameObject *go);
-
-    void generateScriptCache(const GameObject *go);
-
-    void gen(const std::string &path, const GameObject *goGameObject) const;
-
-    int writeData(Stream *stream, const GameObject *go) const;
-
-    int writeTexture(Stream *stream, const GameObject *go) const;
-
-    int writeMaterial(Stream *stream, const GameObject *go) const;
-
-    int writeScript(Stream *stream, const GameObject *go) const;
-
-    int writeGameObject(Stream *stream, const GameObject *go) const;
-
-    std::vector<std::tuple<std::string, Component *>> getScriptOfRefGameObject(const GameObject *go) const;
-
-    std::vector<std::tuple<std::string, Material *>> getMaterialOfRefGameObject(const GameObject *go) const;
 
     static void SetupFBX(const std::string &path, std::unique_ptr<FbxScene> scene);
 };

@@ -55,7 +55,7 @@ protected:
 
     std::vector<GameObject *> tempRootNode;
 
-    std::shared_ptr<GameObject> camera;
+    std::shared_ptr<GameObject> m_camera;
 
     std::shared_ptr<Stream> stream;
 
@@ -75,7 +75,7 @@ protected:
 
     int readObject();
 
-    int readObjectNode(Transform *parent = nullptr);
+    int readObjectNode(Transform *parent = nullptr, bool main = false);
 
     int readScript();
 };

@@ -107,7 +107,32 @@ void AssetsManager::Shutdown() {
     // s_meshList.clear();
 }
 
+#include "gr-base/core/window.hpp"
+#include <imgui.h>
+
 void AssetsManager::Render() {
+    auto bCreatMenu = !mSceneTaskMap.empty();
+    if (!bCreatMenu)
+    {
+        return;
+    }
+    std::cout << "ee" << std::endl;
+
+
+    auto mainWindowSize = Window::GetWindowSize() / 2;
+    auto beginSize = ImVec2{400, 300};
+
+    ImGui::SetNextWindowSize(beginSize);
+    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(mainWindowSize.x), static_cast<float>(mainWindowSize.y)} - (beginSize / 2.0f));
+
+    ImGui::Begin("TaskList", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings);
+
+    for (auto &&[name, sceneTask] : mSceneTaskMap)
+    {
+        sceneTask->render();
+    }
+
+    ImGui::End();
 }
 
 std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {

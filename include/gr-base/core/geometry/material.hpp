@@ -30,6 +30,8 @@ public:
 
     grr::gTexture *getTexture(int idx) const;
 
+    std::array<grr::gTexture *, 10> getTextures() const;
+
     grr::gShader *getShader() const;
 
     void setShader(grr::gShader *shader);
@@ -49,7 +51,7 @@ private:
 
     float m_ao;
 
-    std::vector<grr::gTexture *> m_texture;
+    std::array<grr::gTexture *, 10> m_texture;
 
     bool setupTexture(int id, grr::gTexture *texture);
 };

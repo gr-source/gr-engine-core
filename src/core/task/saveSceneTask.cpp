@@ -22,9 +22,6 @@ SaveSceneTask::SaveSceneTask(const Scene *scene) : m_scene(scene), m_stream(null
     auto temp_file = std::filesystem::temp_directory_path() / filename;
 
     doInBackground(temp_file);
-    // Stream stream(temp_file, std::ios_base::out | std::ios_base::binary);
-
-    // stream.close();
 
     auto to_scene_file = File::GetAsset("/scene/" + filename);
     if (File::Exists(to_scene_file))
@@ -176,8 +173,17 @@ int SaveSceneTask::writeMetadata()
         return 2;
     }
 
-    // auto transform = m_goCamera->getTransform();
-    // transform->Serialize(m_stream);
+    if (writeGameObject(m_scene->getCameraObject()) != 0)
+    {
+        return 3;
+    }
+
+    if (writeScript() != 0)
+    {
+        return 4;
+    }
+    m_scriptCache.clear();
+    
     return 0;
 }
 

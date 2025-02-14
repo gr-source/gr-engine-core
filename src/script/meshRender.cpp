@@ -32,6 +32,10 @@ std::vector<Material *> MeshRender::getMaterials() const {
     return m_materials;
 }
 
+void MeshRender::insertMaterial(Material *material) {
+    m_materials.push_back(material);
+}
+
 void MeshRender::removeMaterial(Material *material) {
     m_materials.erase(std::remove(m_materials.begin(), m_materials.end(), material), m_materials.end());
 }

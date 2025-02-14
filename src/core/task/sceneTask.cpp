@@ -20,7 +20,7 @@
 
 std::mutex SceneTask::m_mutex;
 
-SceneTask::SceneTask(const std::string &path, SceneLoadFlags_ flags, SceneFunc func) : stream(nullptr), scene(nullptr), status(TaskStatus::NONE)
+SceneTask::SceneTask(const std::string &path, SceneLoadFlags_ flags, SceneFunc func) : stream(nullptr), scene(nullptr), status(TaskStatus::NONE), m_camera(nullptr)
 {
     if (func)
         function_list.push_back(func);
@@ -54,12 +54,20 @@ void SceneTask::upload(std::string path)
     auto current = Scene::AddScene(scene_name, std::move(scene));
     current->setName(scene_name);
 
-    auto gocamera = GameObject::Create("MainEngineCamera", "Engine");
-    if (gocamera) {
-        gocamera->addComponent<Camera>();
-        
-        Scene::Init(gocamera);
-        current->setCamera(gocamera);
+    Scene::Use(nullptr);
+
+    if (m_camera != nullptr)
+    {
+        current->setCamera(GameObject::Instantiate(m_camera.get()));
+    } else
+    {
+        auto gocamera = GameObject::Create("MainEngineCamera", "Engine");
+        if (gocamera) {
+            gocamera->addComponent<Camera>();
+            
+            Scene::Init(gocamera);
+            current->setCamera(gocamera);
+        }
     }
 
     Scene::Use(current);
@@ -206,12 +214,25 @@ int SceneTask::readMetadata()
 
     scene_name = name;
 
+    if (readObjectNode(nullptr, true) != 0)
+    {
+        return 3;
+    }
 
-    // camera = std::make_shared<GameObject>("MainEngineCamera", "Engine");
-    // camera->addComponent<Camera>();
+    if (tempGameObject.empty())
+    {
+        return 4;
+    }
 
-    // auto transform = camera->getTransform();
-    // transform->Deserialize(stream.get());
+    if (readScript() != 0)
+    {
+        return 5;
+    }
+
+    m_camera = std::move(tempGameObject.back());
+
+    tempGameObject.pop_back();
+
     return 0;
 }
 
@@ -297,7 +318,7 @@ int SceneTask::readObject()
     return result;
 }
 
-int SceneTask::readObjectNode(Transform *parent)
+int SceneTask::readObjectNode(Transform *parent, bool main)
 {
     std::size_t gonsize = 0;
     if (!stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
@@ -339,7 +360,8 @@ int SceneTask::readObjectNode(Transform *parent)
     if (parent != nullptr) {
         gameObject->getTransform()->setParent(parent);
     } else {
-        tempRootNode.push_back(gameObject);
+        if (!main)
+            tempRootNode.push_back(gameObject);
     }
     gameObject->setActive(active);
     gameObject->setEnable(enable);
@@ -407,7 +429,6 @@ int SceneTask::readScript()
             return 6;
         }
 
-        
         auto next = stream->tellg() + static_cast<std::streampos>(data_size);
         
         auto it = tempGameObjectMap.find(goname);
