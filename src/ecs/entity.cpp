@@ -27,10 +27,12 @@ Component *Entity::addComponent(const std::string &name, const Component *compon
     if (!pool) {
         throw std::runtime_error("Fail to add component, " + name + " do not registry.");
     }
+    
     auto instance = pool->CreateInstance(component, this);
     if (!instance) {
         throw std::runtime_error("Fail to add component, " + name + " invalid instance.");
     }
+    
     instance->entity = this;
 
     m_componentPtr[name] = instance;

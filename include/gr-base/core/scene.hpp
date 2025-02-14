@@ -33,8 +33,6 @@ public:
 
     static void CheckRequestReinstanceScript();
 
-    static void CleanTemp();
-
     static std::unordered_map<std::string, std::unique_ptr<Scene>> &GetScenes();
 
     static void InitializeEngineScript();

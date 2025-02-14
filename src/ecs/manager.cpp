@@ -61,10 +61,6 @@ void Manager::Update() {
         auto end = std::min(start + MAX_PAGES, static_cast<int>(mEntities.size()));
 
         for (auto j=start;j<end;j++) {
-            // if (!mEntities[j]->isActive()) {
-            //     continue;
-            // }
-
             mEntities[j]->update();
         }
     }

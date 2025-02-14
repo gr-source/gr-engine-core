@@ -126,19 +126,6 @@ void Scene::CheckRequestReinstanceScript() {
     }
 }
 
-void Scene::CleanTemp() {
-    /*
-    auto gos = GameObject::m_temp;
-    if (gos.empty()) { return; }
-
-    for (auto &&[name, scene] : m_scenes) {
-        for (auto go : gos) {
-            scene->destroy(go);
-        }
-    }
-    */
-}
-
 void Scene::Remove(GameObject *gameObject) {
     auto scene = GetCurrentScene();
     if (!scene) { return; }
@@ -330,46 +317,6 @@ void Scene::setDisableEntity(Transform *transform, bool value) {
     }
 }
 
-/*
-int Scene::writeScript(Stream *streaming) {
-    auto size = m_componentCache.size();
-
-    streaming->writeS(&size, 1);
-
-    for (auto &&[objectName, componentName, ptr] : m_componentCache) {
-
-        auto pool = ComponentRegistry::Find(componentName);
-        if (!pool)
-        {
-            return 2;
-        }
-        
-        // ObjectName
-        size = objectName.size();
-
-        streaming->writeS(&size, 1);
-        streaming->writeS(objectName.data(), size);
-
-        // ComponentName
-        size = componentName.size();
-
-        streaming->writeS(&size, 1);
-        streaming->writeS(componentName.data(), size);
-
-        Stream temp;
-        pool->serialize(ptr, &temp);
-        std::size_t data_size = temp.getDataSize();
-
-        streaming->writeS(&data_size, 1);
-        pool->serialize(ptr, streaming);
-
-        temp.close();
-    }
-    m_componentCache.clear();
-    return 0;
-}
-*/
-
 void Scene::SetupScene(Scene *scene) {
     auto it = m_scenes.find(scene->getName());
     if (it == m_scenes.end())
@@ -397,10 +344,7 @@ void Scene::ProcessScript(Component *component, std::string path, std::streampos
 }
 
 bool Scene::remove(GameObject *gameObject) {
-    // auto it = std::find(m_objects.begin(), m_objects.end(), gameObject);
-    // if (it != m_objects.end()) {
-    // }
-        m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObject), m_objects.end());
+    m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObject), m_objects.end());
     return true;
 }
 
