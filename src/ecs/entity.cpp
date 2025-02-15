@@ -60,10 +60,10 @@ void Entity::destroy(const std::string &name) {
         return;
     }
 
-    auto pool = ComponentRegistry::Find(name);
-    if (!pool) {
-        return;
-    }
+    // auto pool = ComponentRegistry::Find(name);
+    // if (!pool) {
+    //     return;
+    // }
 
     // pool->destroy(it->second);
     
@@ -88,9 +88,7 @@ void Entity::setEnable(bool value) {
     for (auto [name, component] : m_componentPtr) {
         auto pool = ComponentRegistry::Find(name);
         if (pool) {
-            value ? component->Enable() : component->Disable();
-
-            // value ? pool->enable(component) : pool->disable(component);
+            value ? pool->enable(component) : pool->disable(component);
         }
     }
 }
@@ -103,8 +101,8 @@ void Entity::init() {
     }
 
     for (auto [name, component] : temp) {
-        component->Init();
-        /*
+        // component->Init();
+        // /*
         auto pool = ComponentRegistry::Find(name);
         if (!pool) {
             continue;
@@ -115,7 +113,7 @@ void Entity::init() {
         } catch (const std::exception &e) {
             throw std::runtime_error("Fail to initialize " + name + ", " + e.what());
         }
-        */
+        // */
     }
     // */
 }
@@ -139,13 +137,10 @@ void Entity::destroy() {
     }
 
     for (auto [name, component] : temp) {
-        component->Destroy();
-        /*
         auto pool = ComponentRegistry::Find(name);
         if (pool) {
             pool->destroy(component);
         }
-        */
     }
     // */
 }

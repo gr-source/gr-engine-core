@@ -4,6 +4,10 @@
 
 #include "field.hpp"
 
+#include <memory>
+
+class Stream;
+
 const int CHUNK_SIZE = 500;
 
 template <typename T>
@@ -15,18 +19,38 @@ struct ComponentChunk {
 class BaseChunk
 {
 public:
+    BaseChunk();
+    
     virtual Component *allocateComponent(const Component *) = 0;
 
     virtual void deallocate(Component *component) = 0;
 
-    virtual void init() = 0;
+    virtual void allinit() = 0;
 
-    virtual void update() = 0;
+    virtual void allupdate() = 0;
 
     template <typename ...Args>
     bool registerField(const std::string &name, Args &&...args);
 
     std::vector<Field> getFields() const;
+
+    void (*init)(Component *component);
+
+    void (*start)(Component *component);
+
+    void (*update)(Component *component);
+
+    void (*enable)(Component *component);
+
+    void (*disable)(Component *component);
+
+    bool (*serialize)(Component *component, Stream *stream);
+
+    bool (*deserialize)(Component *component, Stream *stream);
+
+    void (*destroy)(Component *component);
+
+    void (*updateall)(BaseChunk *);
 
 private:
     std::unordered_map<std::string, grm::size> m_fieldID;
@@ -50,46 +74,29 @@ inline bool BaseChunk::registerField(const std::string &name, Args &&...args) {
 template <typename T>
 class ChunkManager : public BaseChunk {
 public:
-    ChunkManager();
-    ~ChunkManager();
-
     ComponentChunk<T>* allocateChunk();
     
     Component* allocateComponent(const Component *) override;
     
     void deallocate(Component *component) override;
     
-    void init() override;
+    void allinit() override;
     
-    void update() override;
+    void allupdate() override;
 
 private:
-    std::vector<ComponentChunk<T> *> chunks;
+    std::vector<std::unique_ptr<ComponentChunk<T>>> chunks;
 };
 
 template <typename T>
-inline ChunkManager<T>::ChunkManager()
-{}
-
-template <typename T>
-inline ChunkManager<T>::~ChunkManager()
-{
-    for (auto chunk : chunks) {
-        delete chunk;
-    }
-}
-
-template <typename T>
 ComponentChunk<T>* ChunkManager<T>::allocateChunk() {
-    ComponentChunk<T>* newChunk = new ComponentChunk<T>();
-    chunks.push_back(newChunk);
-    return newChunk;
+    return &(*chunks.emplace_back(std::make_unique<ComponentChunk<T>>()));
 }
 
 template <typename T>
 Component* ChunkManager<T>::allocateComponent(const Component *other) {
     Component *component = nullptr;
-    for (auto chunk : chunks) {
+    for (auto &chunk : chunks) {
         for (int i = 0; i < CHUNK_SIZE; ++i) {
             if (!chunk->used[i]) {
                 chunk->used[i] = true;
@@ -121,7 +128,7 @@ Component* ChunkManager<T>::allocateComponent(const Component *other) {
 
 template <typename T>
 void ChunkManager<T>::deallocate(Component *component) {
-    for (auto chunk : chunks) {
+    for (auto &chunk : chunks) {
         for (int i = 0; i < CHUNK_SIZE; ++i) {
             if (&chunk->components[i] == component) {
                 chunk->used[i] = false;
@@ -133,24 +140,24 @@ void ChunkManager<T>::deallocate(Component *component) {
 }
 
 template <typename T>
-void ChunkManager<T>::init()
+void ChunkManager<T>::allinit()
 {
-    for (auto chunk : chunks) {
+    for (auto &chunk : chunks) {
         for (int i = 0; i < CHUNK_SIZE; ++i) {
             if (chunk->used[i]) {
-                chunk->components[i].Init();
+                init(reinterpret_cast<Component *>(&chunk->components[i]));
             }
         }
     }
 }
 
 template <typename T>
-void ChunkManager<T>::update()
+void ChunkManager<T>::allupdate()
 {
-    for (auto chunk : chunks) {
+    for (auto &chunk : chunks) {
         for (int i = 0; i < CHUNK_SIZE; ++i) {
-            if (chunk->used[i] /*&& chunk->components[i].activeUpdate*/) {
-                chunk->components[i].Update();
+            if (chunk->used[i] /*&& reinterpret_cast<Component *>(&chunk->components[i]).activeUpdate*/) {
+                update(reinterpret_cast<Component *>(&chunk->components[i]));
             }
         }
     }
