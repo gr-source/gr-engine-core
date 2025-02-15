@@ -37,7 +37,7 @@ void ComponentRegistry::init()
 {
     for (auto chunk : chunkList)
     {
-        chunk->allinit();
+        chunk->initall(chunk);
     }
 }
 

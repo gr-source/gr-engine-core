@@ -109,6 +109,9 @@ inline void ComponentRegistry::SetupMethod(BaseChunk *baseChunk)
     baseChunk->deserialize = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::Deserialize);
     baseChunk->destroy     = reinterpret_cast<void (*) (Component *)>((void *) &T::Destroy);
 
+    baseChunk->initall = reinterpret_cast<void (*)(BaseChunk *)>((void *) &ChunkManager<T>::allinit);
     baseChunk->updateall = reinterpret_cast<void (*)(BaseChunk *)>((void *) &ChunkManager<T>::allupdate);
+
+    baseChunk->deallocatein = reinterpret_cast<void (*)(BaseChunk *, Component *)>((void *) &ChunkManager<T>::deallocate);
 }
 #pragma GCC diagnostic pop

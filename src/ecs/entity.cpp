@@ -15,11 +15,15 @@
 Entity::Entity(GameObject *go, EntityID id) : m_gameObject(go), m_entityID(id) { }
 
 Entity::~Entity() {
-    destroy();
-    
-    // for (auto c : m_components) {
-    //     std::free(c);
-    // }
+    std::vector<std::string> scriptnames;
+    for (auto [name, script] : m_componentPtr) {
+        scriptnames.push_back(name);
+    }
+
+    for (auto name : scriptnames)
+    {
+        destroy(name);
+    }
 }
 
 Component *Entity::addComponent(const std::string &name, const Component *component) {
@@ -60,13 +64,13 @@ void Entity::destroy(const std::string &name) {
         return;
     }
 
-    // auto pool = ComponentRegistry::Find(name);
-    // if (!pool) {
-    //     return;
-    // }
+    auto pool = ComponentRegistry::Find(name);
+    if (pool != nullptr) {
+        pool->deallocatein(pool, it->second);
+    }
 
-    // pool->destroy(it->second);
-    
+    pool->destroy(it->second);
+
     m_components.erase(std::remove(m_components.begin(), m_components.end(), it->second), m_components.end());
 
     m_componentPtr.erase(it);

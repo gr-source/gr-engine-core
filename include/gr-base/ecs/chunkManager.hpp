@@ -52,6 +52,10 @@ public:
 
     void (*updateall)(BaseChunk *);
 
+    void (*initall)(BaseChunk *);
+
+    void (*deallocatein)(BaseChunk *, Component *component);
+
 private:
     std::unordered_map<std::string, grm::size> m_fieldID;
 
