@@ -72,7 +72,7 @@ private:
     void addInGlobalCam();
 };
 
-REGISTER_COMPONENT(Camera);
+REGISTER_COMPONENT(Camera, false)
 
 
 

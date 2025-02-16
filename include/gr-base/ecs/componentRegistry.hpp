@@ -23,7 +23,7 @@ public:
     static std::unordered_map<std::string, std::tuple<std::unique_ptr<BaseChunk>, bool>> &GetAllChunkComponent();
 
     template<typename T>
-    bool registry(bool engine = false);
+    bool registry(bool bInternal = false, bool bEnableUpdate = false);
     
     BaseChunk *findScript(const std::string &name) const;
     
@@ -59,7 +59,7 @@ private:
     BaseChunk *registryScript(const std::string &name, std::unique_ptr<BaseChunk> ptr, std::size_t stride, bool isInternal);
 
     template <typename T>
-    static void SetupMethod(BaseChunk *baseChunk);
+    static void SetupMethod(BaseChunk *baseChunk, bool bEnableUpdate);
 };
 
 #include "gr-base/core/string.hpp"
@@ -71,7 +71,7 @@ inline BaseChunk *ComponentRegistry::Find()
 }
 
 template <typename T>
-inline bool ComponentRegistry::registry(bool engine)
+inline bool ComponentRegistry::registry(bool bInternal, bool bEnableUpdate)
 {
     auto name = String::RemoveNumber(typeid(T).name());
 
@@ -80,7 +80,7 @@ inline bool ComponentRegistry::registry(bool engine)
     auto baseChunk = Find<T>();
     if (baseChunk != nullptr)
     {
-        SetupMethod<T>(baseChunk);
+        SetupMethod<T>(baseChunk, bEnableUpdate);
     }
     
     if (!isCanRegister(name))
@@ -88,18 +88,19 @@ inline bool ComponentRegistry::registry(bool engine)
         return true;
     }
     
-    baseChunk = registryScript(name, std::make_unique<ChunkManager<T>>(), sizeof(T), engine);
+    baseChunk = registryScript(name, std::make_unique<ChunkManager<T>>(), sizeof(T), bInternal);
     
-    SetupMethod<T>(baseChunk);
+    SetupMethod<T>(baseChunk, bEnableUpdate);
     return true;
 }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpmf-conversions"
 template <typename T>
-inline void ComponentRegistry::SetupMethod(BaseChunk *baseChunk)
+inline void ComponentRegistry::SetupMethod(BaseChunk *baseChunk, bool bEnableUpdate)
 {
-        
+    baseChunk->bCanEnableUpdate = bEnableUpdate;
+
     baseChunk->init        = reinterpret_cast<void (*) (Component *)>((void *) &T::Init);
     baseChunk->start       = reinterpret_cast<void (*) (Component *)>((void *) &T::Start);
     baseChunk->update      = reinterpret_cast<void (*) (Component *)>((void *) &T::Update);
@@ -112,6 +113,7 @@ inline void ComponentRegistry::SetupMethod(BaseChunk *baseChunk)
     baseChunk->initall = reinterpret_cast<void (*)(BaseChunk *)>((void *) &ChunkManager<T>::allinit);
     baseChunk->updateall = reinterpret_cast<void (*)(BaseChunk *)>((void *) &ChunkManager<T>::allupdate);
 
+    baseChunk->allocatein = reinterpret_cast<Component *(*)(BaseChunk *, const Component *)>((void *) &ChunkManager<T>::allocateComponent);
     baseChunk->deallocatein = reinterpret_cast<void (*)(BaseChunk *, Component *)>((void *) &ChunkManager<T>::deallocate);
 }
 #pragma GCC diagnostic pop

@@ -11,6 +11,12 @@ class Stream;
 
 class Component {
 public:
+    Entity* entity;
+
+    bool bCanUseUpdate;
+
+    Component();
+
     virtual void Init() {}
 
     virtual void Start() {}
@@ -28,8 +34,6 @@ public:
     virtual void Destroy() {}
 
     GameObject *getGameObject() const;
-    
-    Entity* entity;
 };
 
 #define CLASS_FUNCTIONS \
@@ -52,13 +56,13 @@ public:
 #ifdef REGISTRY
 #include "gr-base/ecs/componentRegistry.hpp"
 
-#define REGISTER_COMPONENT(cls) \
-    static bool is_register_##cls = \
-        ComponentRegistry::getInstance().registry<cls>(false); \
+#define REGISTER_COMPONENT(klass, enableUpdate) \
+    static bool is_register_##klass = \
+        ComponentRegistry::getInstance().registry<klass>(false, enableUpdate); \
 
-#define REGISTER_FIELD(cls, type, field) \
-static bool is_register_##cls##_##type##_##field = \
-    ComponentRegistry::Find<cls>() != nullptr ? ComponentRegistry::Find<cls>()->registerField(#field, FieldType_ ##type, reinterpret_cast<std::size_t>(&reinterpret_cast<cls *>(0)->field)) : false;
+#define REGISTER_FIELD(klass, type, field) \
+static bool is_register_##klass##_##type##_##field = \
+    ComponentRegistry::Find<klass>() != nullptr ? ComponentRegistry::Find<klass>()->registerField(#field, FieldType_ ##type, reinterpret_cast<std::size_t>(&reinterpret_cast<klass *>(0)->field)) : false;
 
 
         
@@ -67,9 +71,9 @@ static bool is_register_##cls##_##type##_##field = \
 #ifdef INTERNAL_REGISTER_SCRIPT
 #include "gr-base/ecs/componentRegistry.hpp"
 
-#define REGISTER_COMPONENT(cls) \
-    static bool is_register_##cls = \
-        ComponentRegistry::getInstance().registry<cls>(true); \
+#define REGISTER_COMPONENT(klass, enableUpdate) \
+    static bool is_register_##klass = \
+        ComponentRegistry::getInstance().registry<klass>(true, enableUpdate); \
 
 #endif
 

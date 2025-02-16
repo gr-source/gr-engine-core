@@ -29,5 +29,5 @@ private:
     Vector3 boxSize;
 };
 
-REGISTER_COMPONENT(BoxCollider)
+REGISTER_COMPONENT(BoxCollider, false)
 

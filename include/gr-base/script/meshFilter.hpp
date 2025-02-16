@@ -27,4 +27,4 @@ private:
     Boundbox m_boundbox;
 };
 
-REGISTER_COMPONENT(MeshFilter)
+REGISTER_COMPONENT(MeshFilter, false)

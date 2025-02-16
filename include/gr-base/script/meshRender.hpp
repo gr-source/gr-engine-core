@@ -55,5 +55,7 @@ inline Material *MeshRender::addMaterial(Args &&...args) {
     return m_materials.emplace_back(AssetsManager::CreateMaterial(std::forward<Args>(args)...));
 }
 
-REGISTER_COMPONENT(MeshRender);
+REGISTER_COMPONENT(MeshRender, false)
+
+
 

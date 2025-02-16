@@ -330,7 +330,7 @@ int SaveGameObjectTask::writeScript()
             }
         }
 
-        // write material name
+        // write script data
         {
             auto cnsize = scriptname.size();
             if (!m_stream->write(&cnsize, sizeof(std::size_t)))
@@ -343,8 +343,10 @@ int SaveGameObjectTask::writeScript()
                 return 5;
             }
 
+            auto pool = ComponentRegistry::Find(scriptname);
+
             Stream temp;
-            script->Serialize(&temp);
+            pool->serialize(script, &temp);
             std::size_t data_size = temp.getDataSize();
             temp.close();
 
@@ -352,7 +354,7 @@ int SaveGameObjectTask::writeScript()
                 return 6;
             }
             
-            script->Serialize(m_stream.get());
+            pool->serialize(script, m_stream.get());
         }
     }
     return 0;

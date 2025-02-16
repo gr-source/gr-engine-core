@@ -20,6 +20,8 @@ class BaseChunk
 {
 public:
     BaseChunk();
+
+    bool bCanEnableUpdate;
     
     virtual Component *allocateComponent(const Component *) = 0;
 
@@ -55,6 +57,8 @@ public:
     void (*initall)(BaseChunk *);
 
     void (*deallocatein)(BaseChunk *, Component *component);
+
+    Component *(*allocatein)(BaseChunk *, const Component *component);
 
 private:
     std::unordered_map<std::string, grm::size> m_fieldID;
@@ -158,9 +162,14 @@ void ChunkManager<T>::allinit()
 template <typename T>
 void ChunkManager<T>::allupdate()
 {
+    if (!bCanEnableUpdate)
+    {
+        return;
+    }
+    
     for (auto &chunk : chunks) {
         for (int i = 0; i < CHUNK_SIZE; ++i) {
-            if (chunk->used[i] /*&& reinterpret_cast<Component *>(&chunk->components[i]).activeUpdate*/) {
+            if (chunk->used[i] && chunk->components[i].bCanUseUpdate) {
                 update(reinterpret_cast<Component *>(&chunk->components[i]));
             }
         }

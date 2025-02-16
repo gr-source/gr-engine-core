@@ -45,8 +45,6 @@ public:
 
     void init();
 
-    void update();
-
     void destroy();
 
     void copy(const Entity *entity);

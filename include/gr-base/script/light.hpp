@@ -87,4 +87,4 @@ private:
     void addInGlobalLight();
 };
 
-REGISTER_COMPONENT(Light)
+REGISTER_COMPONENT(Light, false)

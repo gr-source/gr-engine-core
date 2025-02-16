@@ -80,7 +80,7 @@ private:
     Transform *findChildrenComponent(const std::string &name) const;
 };
 
-REGISTER_COMPONENT(Transform)
+REGISTER_COMPONENT(Transform, false)
 
 
 

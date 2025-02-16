@@ -32,7 +32,7 @@ Component *Entity::addComponent(const std::string &name, const Component *compon
         throw std::runtime_error("Fail to add component, " + name + " do not registry.");
     }
 
-    auto instance = pool->allocateComponent(component);
+    auto instance = pool->allocatein(pool, component);
     if (!instance) {
         throw std::runtime_error("Fail to add component, " + name + " invalid instance.");
     }
@@ -120,17 +120,6 @@ void Entity::init() {
         // */
     }
     // */
-}
-
-void Entity::update() {
-    for (auto &component : m_components) {
-        component->Update();
-        // auto pool = ComponentRegistry::Find(name);
-        // if (!pool) {
-        //     continue;
-        // }
-        // pool->update(&(*component));
-    }
 }
 
 void Entity::destroy() {

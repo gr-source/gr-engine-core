@@ -92,8 +92,6 @@ void ComponentRegistry::clear()
 
         if (!engine)
         {
-            std::cout << "Clean: " << it->first << std::endl;
-            
             chunkList.erase(std::remove(chunkList.begin(), chunkList.end(), &(*pointer)), chunkList.end());
             it = m_scriptChunk.erase(it);
         } else
@@ -127,7 +125,6 @@ void ComponentRegistry::checkScriptStride(const std::string &name, std::size_t s
     {
         if (stride != it->second)
         {
-            std::cout << "Resize: " << name << std::endl;
             m_scriptToRestart.push_back(name);
 
             auto &&[chunkBase, isinternal] = m_scriptChunk[name];
@@ -145,8 +142,6 @@ void ComponentRegistry::checkScriptStride(const std::string &name, std::size_t s
 
 BaseChunk * ComponentRegistry::registryScript(const std::string &name, std::unique_ptr<BaseChunk> ptr, std::size_t stride, bool isInternal)
 {
-    std::cout << "Registry: " << name << std::endl;
-
     m_scriptChunk.emplace(name, std::make_tuple(std::move(ptr), isInternal));
 
     auto baseChunk = &(*std::get<0>(m_scriptChunk[name]));
