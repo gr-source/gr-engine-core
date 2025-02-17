@@ -364,7 +364,7 @@ int SceneTask::readObjectNode(Transform *parent, bool main)
             tempRootNode.push_back(gameObject);
     }
     gameObject->setActive(active);
-    gameObject->setEnable(enable);
+    gameObject->setStatic(enable);
 
     tempGameObjectMap[goname] = gameObject;
 

@@ -151,10 +151,12 @@ void Batching::draw() {
 
     int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-    std::vector<Matrix4x4> models;
+    std::vector<InstancedData> models;
 
     for (auto transform : m_models) {
-        models.push_back(transform->getGlobalMatrix());
+        auto entityID = transform->entity->getEntityID();
+
+        models.emplace_back(InstancedData{static_cast<int>(entityID), transform->getGlobalMatrix()});
     }
 
     for (int i=0;i<m_materials->size();i++) {
@@ -245,10 +247,10 @@ BatchingDraw::~BatchingDraw()
 }
 
 void BatchingDraw::build(Mesh *mesh, int entityID) {
-    std::vector<VertexData> vertices;
-    for (auto vertice : mesh->getVertices()) {
-        vertices.push_back(VertexData{vertice.position, vertice.normal, vertice.texCoord, vertice.mIdx, entityID});
-    }
+    auto vertices = mesh->getVertices();
+    // for (auto vertice : mesh->getVertices()) {
+    //     vertices.push_back(VertexData{vertice.position, vertice.normal, vertice.texCoord, vertice.mIdx, entityID});
+    // }
 
     m_indexCount = vertices.size();
     
@@ -270,18 +272,20 @@ void BatchingDraw::build(Mesh *mesh, int entityID) {
     
     
     grr::gVertexArray::Bind(m_VBO);
-    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(VertexData), BufferUsage::STATIC);
-    grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(VertexData), vertices.data());
+    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex3D), BufferUsage::STATIC);
+    grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex3D), vertices.data());
 
-    grr::gVertexArray::SetAttrib(0, 3,  sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, position)));
-    grr::gVertexArray::SetAttrib(1, 3,  sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, normal)));
-    grr::gVertexArray::SetAttrib(2, 2,  sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, texCoord)));
-    grr::gVertexArray::SetAttrib(3, 1,  sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, mIdx)));
-    grr::gVertexArray::SetAttribI(4, 1, sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, entityID)));
-
+    grr::gVertexArray::SetAttrib(0, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
+    grr::gVertexArray::SetAttrib(1, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
+    grr::gVertexArray::SetAttrib(2, 2,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
+    grr::gVertexArray::SetAttrib(3, 1,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
+    
     grr::gVertexArray::Bind(m_PBO);
+    grr::gVertexArray::SetAttribI(4, 1, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, entityID)));
+    grr::gVertexArray::SetAttribDivisor(4, 1);
+    
     for (int i=0;i<4;i++) {
-        grr::gVertexArray::SetAttrib(5 + i, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(i * sizeof(Vector4)));
+        grr::gVertexArray::SetAttrib(5 + i, 4, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, model) + i * sizeof(Vector4)));
         grr::gVertexArray::SetAttribDivisor(5 + i, 1);
     }
 
@@ -303,12 +307,12 @@ void BatchingDraw::draw()
     // }
 }
 
-void BatchingDraw::updatePBO(const Matrix4x4 *matrix, std::size_t count)
+void BatchingDraw::updatePBO(const InstancedData *data, std::size_t count)
 {
     m_vertexArray->bind();
     grr::gVertexArray::Bind(m_PBO);
-    grr::gVertexArray::UpdateResizeBuffer(count * sizeof(Matrix4x4), BufferUsage::DYNAMIC);
-    grr::gVertexArray::SetBufferUpdate(0, count * sizeof(Matrix4x4), matrix);
+    grr::gVertexArray::UpdateResizeBuffer(count * sizeof(InstancedData), BufferUsage::DYNAMIC);
+    grr::gVertexArray::SetBufferUpdate(0, count * sizeof(InstancedData), data);
 
     m_instanceCount = count;
 }

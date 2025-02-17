@@ -26,13 +26,13 @@ GameObject *GameObject::Create(const std::string &name, const std::string &tag) 
 }
 
 GameObject *GameObject::Instantiate(const GameObject *go) {
-    auto gameObject = GameObject::Create(go->name, go->tag);
+    auto gameObject = GameObject::Create(go->m_name, go->m_tag);
     if (!gameObject) {
         return nullptr;
     }
     
-    gameObject->enable = go->enable;
-    gameObject->active = go->active;
+    gameObject->m_static = go->m_static;
+    gameObject->m_active = go->m_active;
 
     gameObject->getEntity()->copy(go->getEntity());
 
@@ -105,54 +105,54 @@ std::size_t GameObject::GetGameObjectCount() {
     return mGoCache.size();
 }
 
-GameObject::GameObject(const std::string &name, const std::string &tag) : name(name), tag(tag), entity(Manager::CreateEntity(this)), active(true), enable(true) {
-    transform = addComponent<Transform>();
+GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(Manager::CreateEntity(this)), m_active(true), m_static(true) {
+    m_transform = addComponent<Transform>();
 }
 
 GameObject::~GameObject() {
-    Manager::DestroyEntity(entity);
+    Manager::DestroyEntity(m_entity);
 }
 
 void GameObject::setName(const std::string &str) {
-    name = str;
+    m_name = str;
 }
 
 std::string GameObject::getName() const {
-    return name;
+    return m_name;
 }
 
 void GameObject::setTag(const std::string &str) {
-    tag = str;
+    m_tag = str;
 }
 
 std::string GameObject::getTag() const {
-    return tag;
+    return m_tag;
 }
 
 void GameObject::setTransform(Transform *t) {
-    transform = t;
+    m_transform = t;
 }
 
 Transform *GameObject::getTransform() const {
-    return transform;
+    return m_transform;
 }
 
 Entity *GameObject::getEntity() const {
-    return entity;
+    return m_entity;
 }
 
 void GameObject::setActive(bool b) {
-    active = b;
+    m_active = b;
 }
 
 bool GameObject::getActive() const {
-    return active;
+    return m_active;
 }
 
-void GameObject::setEnable(bool b) {
-    enable = b;
+void GameObject::setStatic(bool b) {
+    m_static = b;
 }
 
-bool GameObject::getEnable() const {
-    return enable;
+bool GameObject::getStatic() const {
+    return m_static;
 }

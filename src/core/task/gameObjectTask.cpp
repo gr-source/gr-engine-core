@@ -171,7 +171,7 @@ int GameObjectTask::readGameObject(Transform *parent)
 
     auto gameObject = &(*m_tempGameObject.emplace_back(std::make_shared<GameObject>(goname, gotag)));
     gameObject->setActive(bActive);
-    gameObject->setEnable(bEnable);
+    gameObject->setStatic(bEnable);
 
     m_tempGameObjectMap.emplace(goname, gameObject);
     

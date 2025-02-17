@@ -361,7 +361,7 @@ int SaveSceneTask::writeGameObject(const GameObject *go)
             return 5;
         }
 
-        auto enable = go->getEnable();
+        auto enable = go->getStatic();
         if (!m_stream->write(&enable, sizeof(bool)))
         {
             return 6;

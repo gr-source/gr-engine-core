@@ -19,6 +19,12 @@ enum BatchingFlags : uint32_t {
 
 using BatchingFlags_ = uint32_t;
 
+struct InstancedData
+{
+    int entityID;
+    Matrix4x4 model;
+};
+
 class BatchingDraw {
 public:
     BatchingDraw();
@@ -28,7 +34,7 @@ public:
 
     void draw();
 
-    void updatePBO(const Matrix4x4 *matrix, std::size_t count);
+    void updatePBO(const InstancedData *data, std::size_t count);
 
     grr::gVertexArray *m_vertexArray;
 

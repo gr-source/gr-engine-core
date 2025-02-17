@@ -45,9 +45,9 @@ public:
 
     bool getActive() const;
 
-    void setEnable(bool b);
+    void setStatic(bool b);
 
-    bool getEnable() const;
+    bool getStatic() const;
 
     template <typename T>
     T *addComponent();
@@ -62,17 +62,17 @@ public:
     void destroy();
     
 private:
-    Transform *transform;
+    Transform *m_transform;
 
-    std::string name;
+    std::string m_name;
 
-    std::string tag;
+    std::string m_tag;
 
-    Entity *entity;
+    Entity *m_entity;
 
-    bool active;
+    bool m_active;
 
-    bool enable;
+    bool m_static;
 
 protected:
     static std::unordered_map<std::string, std::unique_ptr<GameObject>> mGoCache;
@@ -82,20 +82,20 @@ protected:
 
 template <typename T>
 inline T *GameObject::addComponent() {
-    return entity->addComponent<T>();
+    return m_entity->addComponent<T>();
 }
 
 template <typename T>
 inline T *GameObject::getComponent() const {
-    return entity->getComponent<T>();
+    return m_entity->getComponent<T>();
 }
 
 template <typename T>
 inline bool GameObject::hasComponent() const {
-    return entity->hasComponent<T>();
+    return m_entity->hasComponent<T>();
 }
 
 template <typename T>
 inline void GameObject::destroy() {
-    return entity->destroy<T>();
+    return m_entity->destroy<T>();
 }
