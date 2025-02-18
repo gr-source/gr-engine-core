@@ -16,7 +16,7 @@ public:
 
     void Init() override;
 
-    void build(Mesh *mesh);
+    void buildMesh(Mesh *meshList);
 
     btCollisionShape *getShape();
 

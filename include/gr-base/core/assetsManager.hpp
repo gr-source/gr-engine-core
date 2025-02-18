@@ -102,7 +102,9 @@ public:
 
     static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
 
-    static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &GetShaderList();
+    static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &GetShaderMap();
+
+    static std::vector<grr::gShader *> GetShaderList();
 
     template <typename ...Args>
     static Material *CreateMaterial(const std::string &key, Args &&...args);
@@ -120,6 +122,7 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<ShaderTask>> mShaderTaskMap;
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> mShaderMap;
     static std::unordered_map<grr::gShader *, std::string> mShaderPathRef;
+    static std::vector<grr::gShader *> mShaderList;
     static std::mutex mShaderMutex;
 
     // Update Shader

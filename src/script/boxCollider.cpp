@@ -4,11 +4,20 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-BoxCollider::BoxCollider() : m_CollisionShape(nullptr), boxSize(Vector3::one) {
-    build(boxSize);
+#include "gr-base/script/transform.hpp"
+
+BoxCollider::BoxCollider() : m_CollisionShape(nullptr), boxSize(Vector3::one)
+{}
+
+void BoxCollider::Init()
+{
+    auto transform = GetComponent<Transform>();
+
+    build(transform->getLocalScale());
 }
 
-bool BoxCollider::Serialize(Stream *stream) {
+bool BoxCollider::Serialize(Stream *stream)
+{
     stream->write(&boxSize, sizeof(Vector3));
     return true;
 }

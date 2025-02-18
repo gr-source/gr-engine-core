@@ -40,7 +40,13 @@ void MeshRender::removeMaterial(Material *material) {
     m_materials.erase(std::remove(m_materials.begin(), m_materials.end(), material), m_materials.end());
 }
 
-Batching *MeshRender::getBatchGroup() {
+bool MeshRender::hasMaterial(Material *material) const
+{
+    return std::find(m_materials.begin(), m_materials.end(), material) != m_materials.end();
+}
+
+Batching *MeshRender::getBatchGroup()
+{
     return m_batched;
 }
 
@@ -130,7 +136,8 @@ bool MeshRender::Deserialize(Stream *stream) {
 
         auto material = AssetsManager::FindMaterial(name);
         if (material) {
-            m_materials.push_back(material);
+            if (!this->hasMaterial(material))
+                m_materials.push_back(material);
         }
     }
 

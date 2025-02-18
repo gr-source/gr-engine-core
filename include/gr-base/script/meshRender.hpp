@@ -28,6 +28,8 @@ public:
     
     void removeMaterial(Material *material);
 
+    bool hasMaterial(Material *material) const;
+
     Batching *getBatchGroup();
 
     void build();

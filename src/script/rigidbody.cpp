@@ -12,9 +12,14 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f) {}
+Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_lastTransform(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f)
+{}
 
 void Rigidbody::Init() {
+    bCanUseUpdate = true;
+
+    m_transform = GetComponent<Transform>();
+
     if (entity->hasComponent<MeshCollider>()) {
         m_collisionShape = entity->getComponent<MeshCollider>()->getShape();
     } else if (entity->hasComponent<BoxCollider>()) {
@@ -24,6 +29,11 @@ void Rigidbody::Init() {
     if (!m_collisionShape) {
         return Console::LogError("[ Rigidbody ] Shape not found.");
     }
+
+    m_lastTransform = std::make_shared<Transform>();
+    m_lastTransform->setLocalPosition(m_transform->getPosition());
+    m_lastTransform->setLocalRotation(m_transform->getRotation());
+    m_lastTransform->setLocalScale(m_transform->getLocalScale());
 
     m_DefaultMotionState = std::make_shared<btDefaultMotionState>(
 		btTransform(
@@ -62,15 +72,18 @@ void Rigidbody::Destroy() {
         return;
     }
 
+    if (m_transform != nullptr && m_lastTransform != nullptr)
+    {
+        m_transform->setLocalPosition(m_lastTransform->getPosition());
+        m_transform->setLocalRotation(m_lastTransform->getRotation());
+        m_transform->setLocalScale(m_lastTransform->getLocalScale());
+    }
+
     PhysicsScene::RemoveRigidbody(&(*m_body));
 }
 
 void Rigidbody::Update() {
-    if (!m_body || !m_transform) {
-        return;
-    }
-
-    if (getGameObject()->getActive()) {
+    if (!getGameObject()->getStatic()) {
         if (m_body->getLinearVelocity().length() < 0.01 && m_body->getAngularVelocity().length() < 0.01) {
             m_body->setActivationState(DISABLE_DEACTIVATION);
         } else {

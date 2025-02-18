@@ -20,14 +20,31 @@ void MeshCollider::Init() {
     auto meshFilter = GetComponent<MeshFilter>();
     
     try {
-        // build(meshFilter->getMesh());
+        Mesh mesh_out;
+
+        std::size_t nextIndice = 0;
+        for (auto mesh : (*meshFilter->getMesh()))
+        {
+            for (auto vertice : mesh.getVertices())
+            {
+                mesh_out.addVertex(vertice);
+            }
+
+            for (auto indice : mesh.getIndices())
+            {
+                mesh_out.addIndice(nextIndice + indice);
+            }
+            nextIndice += mesh.getVertices().size();
+        }
+         
+        buildMesh(&mesh_out);
     } catch (const std::exception &e) {
         Console::LogError("[ MeshCollider ] %s",e.what());
     }
 }
 
 
-void MeshCollider::build(Mesh *mesh) {
+void MeshCollider::buildMesh(Mesh *mesh) {
     if (!mesh) {
         return Console::LogError("[ MeshCollider ] Gameobject %s, don't has mesh.", getGameObject()->getName().c_str());
     }

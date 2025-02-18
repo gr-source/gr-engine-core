@@ -11,6 +11,8 @@ class BoxCollider : public Component {
 public:
     BoxCollider();
 
+    void Init() override;
+
     bool Serialize(Stream *stream) override;
 
     bool Deserialize(Stream *stream) override;

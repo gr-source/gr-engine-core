@@ -310,7 +310,9 @@ int GameObjectTask::readMaterial()
             auto go = it->second;
             if (go->hasComponent<MeshRender>())
             {
-                go->getComponent<MeshRender>()->insertMaterial(material);
+                auto meshRender = go->getComponent<MeshRender>();
+                if (!meshRender->hasMaterial(material))
+                    meshRender->insertMaterial(material);
             }
         }
 

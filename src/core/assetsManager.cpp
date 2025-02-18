@@ -35,6 +35,7 @@ grm::u32 AssetsManager::m_processCount = 0;
 std::unordered_map<std::string, std::unique_ptr<ShaderTask>> AssetsManager::mShaderTaskMap;
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::mShaderMap;
 std::unordered_map<grr::gShader *, std::string> AssetsManager::mShaderPathRef;
+std::vector<grr::gShader *> AssetsManager::mShaderList;
 std::mutex AssetsManager::mShaderMutex;
 
 // shader update
@@ -151,6 +152,8 @@ grr::gShader *AssetsManager::CreateShader(const std::string &name)
 
     auto shader = &(*mShaderMap[name]);
 
+    mShaderList.push_back(shader);
+
     mShaderPathRef.emplace(shader, name);
     return shader;
 }
@@ -172,6 +175,8 @@ void AssetsManager::RemoveShader(grr::gShader *shader)
         return;
     }
     mShaderMap.erase(it->second);
+
+    mShaderList.erase(std::remove(mShaderList.begin(), mShaderList.end(), it->first), mShaderList.end());
 
     mShaderPathRef.erase(it);
 }
@@ -305,159 +310,6 @@ std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> &AssetsManag
 {
     return mMeshMapList;
 }
-
-#define PRINT_ERROR(func) \
-    if (func == -1) { \
-        Console::LogError("[ AssetsManager ] Shader.Regiter uniform: %s", grr::error()); \
-    }
-
-/*
-void AssetsManager::SetUpdateShader(grr::gShader * shader, ShaderData frag, ShaderData vert, std::string name) {
-    auto fragment_source = frag.source.c_str();
-    auto vertex_source = vert.source.c_str();
-
-    shader->cleanUniform();
-
-    shader->build(&fragment_source, 1, &vertex_source, 1);
-    if (!shader->isValid()) {
-        Console::LogError("[ AssetsManager ] Shader.Build Fail to build shader, %s, %s", name.c_str(), grr::error());
-        return;
-    }
-
-    grr::UniformType type = grr::UniformType_none;
-    for (auto uniform : frag.uniformList) {
-        switch (uniform.type) {
-        case UniformType_int:
-        case UniformType_bool:
-        case UniformType_sampler2D:
-        case UniformType_samplerCube:
-            type = grr::UniformType_int;
-            break;
-        case UniformType_float:
-            type = grr::UniformType_float;
-            break;
-        case UniformType_mat3:
-            type = grr::UniformType_mat3;
-            break;
-        case UniformType_mat4:
-            type = grr::UniformType_mat4;
-            break;
-        case UniformType_vec2:
-            type = grr::UniformType_vec2;
-            break;
-        case UniformType_vec3:
-            type = grr::UniformType_vec3;
-            break;
-        case UniformType_vec4:
-            type = grr::UniformType_vec4;
-            break;
-        default:
-            Console::LogError("[ AssetsManager ] Shader.UniformType '%s %s', %s in fragment", uniform.type_name.c_str(), uniform.name.c_str(), name.c_str());
-            break;
-        }
-        PRINT_ERROR(shader->registry(uniform.name.c_str(), type));
-    }
-
-    for (auto uniform : vert.uniformList) {
-        switch (uniform.type) {
-        case UniformType_int:
-        case UniformType_bool:
-        case UniformType_sampler2D:
-        case UniformType_samplerCube:
-            type = grr::UniformType_int;
-            break;
-        case UniformType_float:
-            type = grr::UniformType_float;
-            break;
-        case UniformType_mat3:
-            type = grr::UniformType_mat3;
-            break;
-        case UniformType_mat4:
-            type = grr::UniformType_mat4;
-            break;
-        case UniformType_vec2:
-            type = grr::UniformType_vec2;
-            break;
-        case UniformType_vec3:
-            type = grr::UniformType_vec3;
-            break;
-        case UniformType_vec4:
-            type = grr::UniformType_vec4;
-            break;
-        default:
-            Console::LogError("[ AssetsManager ] Shader.UniformType uniform '%s %s', %s in vertex", uniform.type_name.c_str(), uniform.name.c_str(), name.c_str());
-            break;
-        }
-        PRINT_ERROR(shader->registry(uniform.name.c_str(), type));
-    }
-
-    Console::LogInfo("[ AssetsManager ] Shader: update %s", name.c_str());
-}
-
-void AssetsManager::TaskUpdateShader() {
-    std::unique_lock<std::mutex> lock(mShaderMutex);
-    while (!mTaskList.empty()) {
-        auto shader = mTaskList.front();
-        auto it = mShaderFromUpdate.find(shader);
-        if (it == mShaderFromUpdate.end()) {
-            mTaskList.pop_front();
-            continue;
-        }
-        auto path = it->second;
-        lock.unlock();
-
-        auto shader_map = ReadShaderOfType(path);
-
-        auto name = std::filesystem::path(path).filename().string();
-        
-        Event::Add(&AssetsManager::SetUpdateShader, shader, shader_map[ShaderType_Fragment], shader_map[ShaderType_Vertex], name);
-
-        lock.lock();
-        mTaskList.pop_front();
-        mShaderFromUpdate.erase(it);
-    }
-}
-*/
-
-/***************** Shader Process ****************/
-/*
-void AssetsManager::SetupShader(ShaderHandle handle, ShaderData frag, ShaderData vert) {
-    auto it = mShaderMap.find(handle.m_path);
-    if (it != mShaderMap.end()) {
-        handle.invoke(&(*it->second));
-        return;
-    }
-
-    std::string name = std::filesystem::path(handle.m_path).filename().string();
-
-    auto shader = new grr::gShader();
-
-    SetUpdateShader(shader, frag, vert, name);
-    
-    mShaderMap[handle.m_path] = std::unique_ptr<grr::gShader>(shader);
-
-    mShaderPathRef[&(*mShaderMap[handle.m_path])] = handle.m_path;
-
-    handle.invoke(shader);
-
-    Console::LogInfo("[ AssetsManager::Shader ] Shader loadedd sucessfull: %s", name.c_str());
-}
-
-void AssetsManager::ProcessShader() {
-    std::unique_lock<std::mutex> lock(mShaderMutex);
-    while (!mShaderFromLoad.empty()) {
-        auto handle = mShaderFromLoad.front();
-        mShaderFromLoad.pop_front();
-        lock.unlock();
-
-        auto shader_map = ReadShaderOfType(handle.m_path);
-
-        Event::Add(AssetsManager::SetupShader, handle, shader_map[ShaderType_Fragment], shader_map[ShaderType_Vertex]);
-
-        lock.lock();
-    }
-}
-*/
 
 void AssetsManager::SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *animation) {
     animation->setName(temp->getName());
@@ -666,8 +518,13 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
     mTextureTaskMap.emplace(path, std::make_unique<TextureTask>(path, func));
 }
 
-std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::GetShaderList() {
+std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::GetShaderMap() {
     return mShaderMap;
+}
+
+std::vector<grr::gShader *> AssetsManager::GetShaderList()
+{
+    return mShaderList;
 }
 
 grm::size AssetsManager::GetTextureCount() {

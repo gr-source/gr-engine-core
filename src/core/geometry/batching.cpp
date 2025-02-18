@@ -1,5 +1,7 @@
 #include "gr-base/core/geometry/batching.hpp"
 
+#include "gr-base/core/culling/frustum.hpp"
+
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/status.hpp"
 #include "gr-base/core/event.hpp"
@@ -218,7 +220,6 @@ bool Batching::isValid() const {
     return !m_models.empty() && (m_flags & BatchingFlags_BuildMesh);
 }
 
-#include "gr-base/core/culling/frustum.hpp"
 bool Batching::isVisible() const {
     return Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, m_models[0]->getGlobalMatrix());
 }
@@ -283,7 +284,7 @@ void BatchingDraw::build(Mesh *mesh, int entityID) {
     grr::gVertexArray::Bind(m_PBO);
     grr::gVertexArray::SetAttribI(4, 1, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, entityID)));
     grr::gVertexArray::SetAttribDivisor(4, 1);
-    
+
     for (int i=0;i<4;i++) {
         grr::gVertexArray::SetAttrib(5 + i, 4, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, model) + i * sizeof(Vector4)));
         grr::gVertexArray::SetAttribDivisor(5 + i, 1);

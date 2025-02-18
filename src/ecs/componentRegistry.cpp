@@ -72,8 +72,6 @@ void ComponentRegistry::CheckScriptRemoved()
 
             chunkList.erase(std::remove(chunkList.begin(), chunkList.end(), chunkBase), chunkList.end());
 
-            std::cout << "Unregistry: " << it->first << std::endl;
-
             it = m_scriptChunk.erase(it);
         } else
         {

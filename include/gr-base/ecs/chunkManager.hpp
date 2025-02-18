@@ -8,7 +8,7 @@
 
 class Stream;
 
-const int CHUNK_SIZE = 500;
+const int CHUNK_SIZE = 1024;
 
 template <typename T>
 struct ComponentChunk {

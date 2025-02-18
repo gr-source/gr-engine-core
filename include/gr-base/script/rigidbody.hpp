@@ -40,8 +40,10 @@ public:
 private:
     std::shared_ptr<btDefaultMotionState> m_DefaultMotionState;
 
+    std::shared_ptr<Transform> m_lastTransform;
+    
     std::shared_ptr<btRigidBody> m_body;
-
+    
     btCollisionShape *m_collisionShape;
 
     Transform *m_transform;
@@ -55,7 +57,7 @@ private:
     float fSweptSphereRadius;
 };
 
-REGISTER_COMPONENT(Rigidbody, false)
+REGISTER_COMPONENT(Rigidbody, true)
 
 
 
