@@ -282,10 +282,13 @@ grr::UniformType ShaderTask::ConvertToGType(UniformType type)
     switch (type)
     {
     case UniformType_int:
-    case UniformType_bool:
-    case UniformType_sampler2D:
-    case UniformType_samplerCube:
         return grr::UniformType_int;
+    case UniformType_bool:
+        return grr::UniformType_bool;
+    case UniformType_sampler2D:
+        return grr::UniformType_sampler2D;
+    case UniformType_samplerCube:
+        return grr::UniformType_samplerCube;
     case UniformType_float:
         return grr::UniformType_float;
     case UniformType_mat3:
