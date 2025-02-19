@@ -67,6 +67,8 @@ grr::gShader *Material::getShader() const
 void Material::setShader(grr::gShader *shader)
 {
     m_shader = shader;
+
+    updateUniform();
 }
 
 void Material::serialize(Stream *stream) const
@@ -136,7 +138,50 @@ void Material::deserialize(Stream *stream) {
     }
 }
 
-bool Material::setupTexture(int id, grr::gTexture *texture) {
-    m_texture[id] = texture;
+void Material::flush() const
+{
+    /*
+    for (std::size_t i={};i<100;i++)
+    {
+        auto &params = m_paramsList[i];
+
+        if (params.name == nullptr)
+        {
+            continue;
+        }
+        m_shader->setUniform(params.name, 1, params.data);
+    }
+    */
+}
+
+bool Material::setupTexture(int id, grr::gTexture *texture)
+{
+    m_texture[id > 10 ? 0 : id] = texture;
     return true;
+}
+
+void Material::updateUniform()
+{
+    /*
+    for (std::size_t i={};i<200;i++)
+    {
+        auto &uniform = m_shader->getUniform()[i];
+
+        auto &params = m_paramsList[i];
+        params.type = uniform.type;
+    }
+    */
+}
+
+void Material::internal_set_value(const char *name, grm::u8 count, const void *data)
+{
+    auto id = m_shader->findUniform(name);
+    if (id == -1)
+    {
+        return;
+    }
+    auto &params = m_paramsList[id];
+
+    params.id = id;
+    // params.data = 
 }

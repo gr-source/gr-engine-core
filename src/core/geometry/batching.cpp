@@ -174,6 +174,7 @@ void Batching::draw() {
         if (!shader) { continue; }
 
         draw->updatePBO(models.data(), models.size());
+        
         // shader->setUniform("u_model", 1, &model);
         // 0 - Albedo
         // 1 - Normal
@@ -189,11 +190,13 @@ void Batching::draw() {
         auto params = Vector3{material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()};
         auto albedo = material->getAlbedo();
         
-        shader->setUniform("m_material.albedo", 1, &albedo);
-        shader->setUniform("m_material.params", 1, &params);
+        shader->setUniform("m_material.albedo", &albedo);
+        shader->setUniform("m_material.params", &params);
         
-        shader->setUniform("m_texture[0]", 1, &idx[0]);
-        shader->setUniform("m_activate[0]", 1, &idxEn[0]);
+        shader->setUniform("m_texture[0]", &idx[0]);
+        shader->setUniform("m_activate[0]", &idxEn[0]);
+
+        // material->flush();
         
         draw->m_vertexArray->bind();
         shader->bind();
@@ -279,15 +282,15 @@ void BatchingDraw::build(Mesh *mesh, int entityID) {
     grr::gVertexArray::SetAttrib(0, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
     grr::gVertexArray::SetAttrib(1, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
     grr::gVertexArray::SetAttrib(2, 2,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
-    grr::gVertexArray::SetAttrib(3, 1,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
+    // grr::gVertexArray::SetAttrib(3, 1,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
     
     grr::gVertexArray::Bind(m_PBO);
-    grr::gVertexArray::SetAttribI(4, 1, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, entityID)));
-    grr::gVertexArray::SetAttribDivisor(4, 1);
+    grr::gVertexArray::SetAttribI(3, 1, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, entityID)));
+    grr::gVertexArray::SetAttribDivisor(3, 1);
 
     for (int i=0;i<4;i++) {
-        grr::gVertexArray::SetAttrib(5 + i, 4, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, model) + i * sizeof(Vector4)));
-        grr::gVertexArray::SetAttribDivisor(5 + i, 1);
+        grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, model) + i * sizeof(Vector4)));
+        grr::gVertexArray::SetAttribDivisor(4 + i, 1);
     }
 
     m_vertexArray->unbind();

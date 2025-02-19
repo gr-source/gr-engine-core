@@ -6,6 +6,12 @@
 
 class Stream;
 
+typedef struct
+{
+    void *data;
+    grm::u32 id;
+} Params;
+
 class Material {
 public:
     Material(const Color& albedo = Color::white, float metallic = 0.0f, float roughness = 0.0f, float ao = 0.5f);
@@ -40,8 +46,18 @@ public:
 
     void deserialize(Stream *stream);
 
+    template <typename T>
+    void setValue(const std::string &name, const T &value);
+
+    template <typename T>
+    void setValue(const std::string &name, grm::u8 count, const T &value);
+
+    void flush() const;
+
 private:
     grr::gShader *m_shader;
+
+    std::array<Params, 100> m_paramsList;
     
     Color m_albedo;
 
@@ -54,5 +70,20 @@ private:
     std::array<grr::gTexture *, 10> m_texture;
 
     bool setupTexture(int id, grr::gTexture *texture);
+
+    void updateUniform();
+
+    void internal_set_value(const char *name, grm::u8 count, const void *data);
 };
 
+template <typename T>
+inline void Material::setValue(const std::string &name, const T &value)
+{
+    return setValue(name, 1, value);
+}
+
+template <typename T>
+inline void Material::setValue(const std::string &name, grm::u8 count, const T &value)
+{
+    return internal_set_value(name.c_str(), count, &value);
+}

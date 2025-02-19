@@ -17,31 +17,47 @@ public:
     void addFunction(ShaderFunc func);
 
 private:
+    std::map<ShaderType, std::vector<std::tuple<std::string, std::string>>> m_uniformList;
+
+    std::map<ShaderType, std::string> m_shaderSource;
+
     std::vector<ShaderFunc> m_functions;
 
     grr::gShader *m_shader;
 
     void invoke(grr::gShader *shader);
     
-    void upload(std::string path, ShaderData frag, ShaderData vert);
+    void upload(std::string path);
 
 protected:
     void doInBackground(std::string path);
 
 public:
-    static UniformStackInfo getGLSLStackInfo(const std::string &source);
+    static std::unordered_map<std::string, grr::UniformType> mUniformNameToType;
 
-    static std::string getStructName(const std::string &source);
+    static std::map<ShaderType, std::string> LoadShaderBase(ShaderUser type);
 
-    static void insert_field(const std::string &line, const std::string &type_name, const std::string &name, std::vector<Uniform> &vector, std::map<std::string, std::vector<Uniform>> &struct_map);
+    static bool ValidStr(const std::string &str, std::string *data, int count);
 
-    static std::vector<std::string> GetMoreFieldInLine(const std::string &line);
-    
-    static std::map<ShaderType, ShaderData> ReadShaderOfType(const std::string &path);
+    static std::vector<std::tuple<std::string, std::string>> ReadStructField(const std::string &content);
 
-    static grr::UniformType ConvertToGType(UniformType type);
+    static std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> ReadStuct(const std::string &content);
 
-    bool buildShader(const std::string &name, grr::gShader *shader, ShaderData frag, ShaderData vert);
+    static bool IsArray(const std::string &content);
+
+    static std::size_t GetArrayCount(const std::string &content, std::string &name);
+
+    static void SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, const std::string &name, const std::string &type, std::vector<std::tuple<std::string, std::string>> &vector, bool makeArray = false);
+
+    static std::vector<std::tuple<std::string, std::string>> GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, std::unordered_map<std::string, std::string> &fieldMap);
+
+    static std::unordered_map<std::string, std::string> ReadUniform(const std::string &content);
+
+    static std::string RemoveCommenter(const std::string &source);
+
+    void bindShader(const std::string &path);
+
+    bool buildShader(const std::string &name, grr::gShader *shader);
 };
 
 
