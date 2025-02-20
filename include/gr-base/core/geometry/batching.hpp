@@ -11,13 +11,21 @@
 #include <vector>
 #include <memory>
 
-enum BatchingFlags : uint32_t {
+#include "batchingRender.hpp"
+
+enum OptimizeFlags : uint8_t
+{
+    OptimizeFlags_NoOptimize   = 1 << 0,
+    OptimizeFlags_InstanceMesh = 1 << 1,
+    OptimizeFlags_SaticMesh    = 1 << 2,
+};
+
+enum BatchingFlags : uint16_t {
     BatchingFlags_None           = 1 << 0,
-    BatchingFlags_HasIndices     = 1 << 1,
     BatchingFlags_BuildMesh      = 1 << 2,
 };
 
-using BatchingFlags_ = uint32_t;
+using BatchingFlags_ = uint16_t;
 
 struct InstancedData
 {
@@ -25,31 +33,24 @@ struct InstancedData
     Matrix4x4 model;
 };
 
-class BatchingDraw {
-public:
-    BatchingDraw();
-    ~BatchingDraw();
+struct BatchedModel
+{
+    std::vector<Material *> *materialList;
 
-    void build(Mesh *mesh, int entityID);
+    Transform *transform;
 
-    void draw();
+    BatchedModel(std::vector<Material *> *_materialList, Transform *_transform) : materialList(_materialList), transform(_transform)
+    {}
 
-    void updatePBO(const InstancedData *data, std::size_t count);
-
-    grr::gVertexArray *m_vertexArray;
-
-    grm::u32 m_instanceCount;
-
-    grm::u32 m_indexCount;
-
-    grm::u32 m_VBO;
-
-    grm::u32 m_EBO;
-
-    grm::u32 m_PBO;
-
+    ~BatchedModel()
+    {
+    }
+    
+    bool operator ==(const Transform *other) const
+    {
+        return transform == other;
+    }
 };
-
 
 class Batching {
 public:
@@ -73,12 +74,12 @@ public:
 
     // ***** Class Method ***** //
 
-    Batching(std::vector<Material *> *materials, BatchingFlags_ flags = 0);
+    Batching(std::vector<Mesh> *meshList);
     ~Batching();
 
-    void buildMeshe(std::vector<Mesh> *meshList);
+    void buildMeshe();
 
-    void insert(Transform *transform);
+    void insert(Transform *transform, std::vector<Material *> *materialList);
 
     void remove(Transform *transform);
 
@@ -88,6 +89,7 @@ public:
 
     bool isVisible() const;
 
+    OptimizeFlags optimizeFlags;
 private:
     static std::unordered_map<std::string, std::unique_ptr<Batching>> mBatchInstanceMap;
 
@@ -95,13 +97,13 @@ private:
 
     static std::vector<Batching *> mBatchRefList;
 
-    static grr::gShader *s_shadowShader;
+    std::vector<Mesh> *m_meshList;
 
-    std::vector<std::unique_ptr<BatchingDraw>> m_drawList;
+    std::vector<std::unique_ptr<BatchingRender>> m_batchingRenderList;
 
-    std::vector<Material *> *m_materials;
+    std::vector<BatchedModel> m_batchedModelList;
 
-    std::vector<Transform *> m_models;
+    std::vector<InstancedData> m_instanceList;
 
     Boundbox m_boundbox;
 

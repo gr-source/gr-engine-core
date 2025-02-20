@@ -24,40 +24,16 @@ std::unordered_map<Batching *, std::string> Batching::mBatchRefToNameMap;
 
 std::vector<Batching *> Batching::mBatchRefList;
 
-grr::gShader *Batching::s_shadowShader = nullptr;
-
 void Batching::Initialize() {
     // AssetsManager::LoadShader(File::GetAsset("/shader/shadow/shadow.glsl"));
 }
 
 // TODO: falta descarregar o shader
-void Batching::Shutdown() {
-    if (s_shadowShader) {
-        s_shadowShader = nullptr;
-    }
+void Batching::Shutdown()
+{
 }
 
 void Batching::RenderShadowPass() {
-    /*
-    if (!s_shadowShader) {
-        return;
-    }
-
-    auto lights = Light::GetListLight();
-    if (lights.empty()) { return; }
-
-    grr::gShader::SetUniform("u_light", lights[0]->getProjetion());
-
-    for (auto &batch : s_batchedInstancesList) {
-        if (!batch || !batch->isValid()) {
-            continue;
-        }
-        
-        batch->draw(s_shadowShader, false);
-    }
-
-    grr::gShader::Unbind();
-    */
 }
 
 grm::size Batching::GetBatchCount() {
@@ -102,7 +78,7 @@ void Batching::RenderBatches() {
     }
 }
 
-Batching::Batching(std::vector<Material *> *materials, BatchingFlags_ flags) : m_flags(flags), m_materials(materials), meshCount(0)
+Batching::Batching(std::vector<Mesh> *meshList) : m_meshList(meshList), meshCount(0), optimizeFlags(OptimizeFlags_NoOptimize)
 {
     m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
     m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
@@ -121,18 +97,15 @@ struct VertexData {
     int entityID;
 };
 
-void Batching::buildMeshe(std::vector<Mesh> *meshList) {
-    auto entity = m_models[0]->getGameObject()->getEntity();
-    auto id = static_cast<int>(entity->getEntityID());
-
-    meshCount = meshList->size();
+void Batching::buildMeshe() {
+    meshCount = m_meshList->size();
 
     Status::BatchDrawCallCount += meshCount;
 
-    for (auto &mesh : *meshList) {
-        auto draw = &(*m_drawList.emplace_back(std::make_unique<BatchingDraw>()));
+    for (auto &mesh : *m_meshList) {
+        auto draw = &(*m_batchingRenderList.emplace_back(std::make_unique<BatchingRender>(BatchingRenderFlags_Default)));
         
-        draw->build(&mesh, id);
+        draw->build(&mesh);
         
         calcboundbox(&mesh);
     }
@@ -140,32 +113,56 @@ void Batching::buildMeshe(std::vector<Mesh> *meshList) {
     m_flags |= BatchingFlags_BuildMesh;
 }
 
-void Batching::insert(Transform *transform) {
-    m_models.emplace_back(transform);
+void Batching::insert(Transform *transform, std::vector<Material *> *materialList) {
+    m_batchedModelList.emplace_back(materialList, transform);
 }
 
 void Batching::remove(Transform *transform) {
-    m_models.erase(std::remove(m_models.begin(), m_models.end(), transform), m_models.end());
+    m_batchedModelList.erase(std::remove(m_batchedModelList.begin(), m_batchedModelList.end(), transform), m_batchedModelList.end());
 }
 
 void Batching::draw() {
-    // auto model = m_models[0]->getGlobalMatrix();
+    for (auto &&[materialList, transform] : m_batchedModelList)
+    {
+        auto matrix = transform->getGlobalMatrix();
+        
+        for (std::size_t i={};i<materialList->size();i++) {
+            if (i >= m_batchingRenderList.size()) { continue; }
+    
+            auto material = (*materialList)[i];
+            
+            auto shader = material->getShader();
+            if (!shader) { continue; }
+    
+            shader->setUniform("u_model", &matrix);
+    
+            material->flush();
+            
+            shader->bind();
+            shader->flush();
+    
+            m_batchingRenderList[i]->render();
 
-    int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-
-    std::vector<InstancedData> models;
-
-    for (auto transform : m_models) {
-        auto entityID = transform->entity->getEntityID();
-
-        models.emplace_back(InstancedData{static_cast<int>(entityID), transform->getGlobalMatrix()});
+            shader->unbind();
+        }
     }
+    /*
+    const InstancedData *instancedData = nullptr;
+    std::size_t size = 0;
+
+    // if (optimizeFlags == OptimizeFlags_InstanceMesh)
+    // {
+            auto entityID = transform->entity->getEntityID();
+    
+            m_instanceList.emplace_back(InstancedData{static_cast<int>(entityID), transform->getGlobalMatrix()});
+        }
+        instancedData = m_instanceList.data();
+        size = m_instanceList.size();
+    // }
 
     for (int i=0;i<m_materials->size();i++) {
         if (i >= m_drawList.size()) { continue; }
 
-        int idxEn[10] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        
         auto draw = &(*m_drawList[i]);
 
         auto material = (*m_materials)[i];
@@ -173,30 +170,22 @@ void Batching::draw() {
         auto shader = material->getShader();
         if (!shader) { continue; }
 
-        draw->updatePBO(models.data(), models.size());
-        
-        // shader->setUniform("u_model", 1, &model);
-        // 0 - Albedo
-        // 1 - Normal
-        // 2 - Roughness
-        // 3 - Metallic
-        // 4 - Ao
-        auto texture = material->getTexture(0);
-        if (texture && texture->isValid()) {
-            texture->bind(0);
-            idxEn[0] = 1;
+        if (instancedData != nullptr)
+        {
+            switch (optimizeFlags)
+            {
+            case OptimizeFlags_InstanceMesh:
+                draw->updatePBO(instancedData, size);
+                break;
+            case OptimizeFlags_NoOptimize:
+                shader->setUniform("u_model", &instancedData->model);
+                break;
+            default:
+                break;
+            }
         }
-        
-        auto params = Vector3{material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()};
-        auto albedo = material->getAlbedo();
-        
-        shader->setUniform("m_material.albedo", &albedo);
-        shader->setUniform("m_material.params", &params);
-        
-        shader->setUniform("m_texture[0]", &idx[0]);
-        shader->setUniform("m_activate[0]", &idxEn[0]);
 
-        // material->flush();
+        material->flush();
         
         draw->m_vertexArray->bind();
         shader->bind();
@@ -207,9 +196,11 @@ void Batching::draw() {
         shader->unbind();
     }
 
-    for (int i=0;i<10;i++) {
-        grr::gTexture::Unbind(i);
+    if (optimizeFlags == OptimizeFlags_InstanceMesh)
+    {
+        m_instanceList.clear();
     }
+    */
 }
 
 void Batching::calcboundbox(const Mesh *mesh) {
@@ -220,103 +211,10 @@ void Batching::calcboundbox(const Mesh *mesh) {
 }
 
 bool Batching::isValid() const {
-    return !m_models.empty() && (m_flags & BatchingFlags_BuildMesh);
+    return !m_batchedModelList.empty() && (m_flags & BatchingFlags_BuildMesh);
 }
 
 bool Batching::isVisible() const {
-    return Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, m_models[0]->getGlobalMatrix());
-}
-
-BatchingDraw::BatchingDraw() : m_vertexArray(grr::gVertexArray::Create()), m_instanceCount(0),m_indexCount(0), m_VBO(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_EBO(grr::gVertexArray::CreateBuffer(BufferType::EBO)), m_PBO(grr::gVertexArray::CreateBuffer(BufferType::PBO))
-{
-}
-
-BatchingDraw::~BatchingDraw()
-{
-    if (m_vertexArray) {
-        grr::gVertexArray::Destroy(m_vertexArray);
-    }
-
-    if (m_VBO) {
-        grr::gVertexArray::DeleteBuffer(m_VBO);
-    }
-
-    if (m_EBO) {
-        grr::gVertexArray::DeleteBuffer(m_EBO);
-    }
-
-    if (m_PBO) {
-        grr::gVertexArray::DeleteBuffer(m_PBO);
-    }
-}
-
-void BatchingDraw::build(Mesh *mesh, int entityID) {
-    auto vertices = mesh->getVertices();
-    // for (auto vertice : mesh->getVertices()) {
-    //     vertices.push_back(VertexData{vertice.position, vertice.normal, vertice.texCoord, vertice.mIdx, entityID});
-    // }
-
-    m_indexCount = vertices.size();
-    
-    m_vertexArray->bind();
-
-    /*
-    if (m_flags & BatchingFlags_HasIndices) {
-        m_EBO = m_EBO != 0 ? m_EBO : grr::gVertexArray::CreateBuffer(BufferType::EBO);
-
-        auto indices = mesh->getIndices();
-
-        m_indexCount = indices.size();
-
-        grr::gVertexArray::Bind(m_EBO);
-        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::u32), BufferUsage::STATIC);
-        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::u32), indices.data());
-    }
-    */
-    
-    
-    grr::gVertexArray::Bind(m_VBO);
-    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex3D), BufferUsage::STATIC);
-    grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex3D), vertices.data());
-
-    grr::gVertexArray::SetAttrib(0, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
-    grr::gVertexArray::SetAttrib(1, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
-    grr::gVertexArray::SetAttrib(2, 2,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
-    // grr::gVertexArray::SetAttrib(3, 1,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
-    
-    grr::gVertexArray::Bind(m_PBO);
-    grr::gVertexArray::SetAttribI(3, 1, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, entityID)));
-    grr::gVertexArray::SetAttribDivisor(3, 1);
-
-    for (int i=0;i<4;i++) {
-        grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, model) + i * sizeof(Vector4)));
-        grr::gVertexArray::SetAttribDivisor(4 + i, 1);
-    }
-
-    m_vertexArray->unbind();
-}
-
-void BatchingDraw::draw()
-{
-    // if (m_flags & BatchingFlags_HasIndices) {
-    //     grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
-    // } else {
-
-    if (m_instanceCount > 0)
-        grr::gVertexArray::DrawArraysInstanced(PrimitiveType::TRIANGLES, m_indexCount, m_instanceCount);
-    else
-        grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
-
-        Status::BatchDrawCallRender++;
-    // }
-}
-
-void BatchingDraw::updatePBO(const InstancedData *data, std::size_t count)
-{
-    m_vertexArray->bind();
-    grr::gVertexArray::Bind(m_PBO);
-    grr::gVertexArray::UpdateResizeBuffer(count * sizeof(InstancedData), BufferUsage::DYNAMIC);
-    grr::gVertexArray::SetBufferUpdate(0, count * sizeof(InstancedData), data);
-
-    m_instanceCount = count;
+    return false;
+    // return Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, m_models[0]->getGlobalMatrix());
 }

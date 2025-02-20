@@ -51,14 +51,12 @@ void ShaderTask::invoke(grr::gShader *shader)
 
 void ShaderTask::upload(std::string path)
 {
-    auto shader = m_shader != nullptr ? m_shader : AssetsManager::CreateShader(path);
-
     auto name = std::filesystem::path(path).filename().string();
-    if (!buildShader(name, shader)) {
+    if (!buildShader(name, m_shader)) {
         return AssetsManager::RemoveTask(path);
     }
 
-    invoke(shader);
+    invoke(m_shader);
 
     Console::LogInfo("[ ShaderTask ] Shader loaded sucessfuly %s.", name.c_str());
 
@@ -67,6 +65,8 @@ void ShaderTask::upload(std::string path)
 
 void ShaderTask::doInBackground(std::string path)
 {
+    m_shader = m_shader != nullptr ? m_shader : AssetsManager::CreateShader(path);
+
     try {
         bindShader(path);
     } catch (const std::exception &e)
@@ -428,6 +428,46 @@ void ShaderTask::bindShader(const std::string &path)
     if (shaderUser == ShaderUser_none)
     {
         throw std::runtime_error("Shader do not define, please user '#define shader2D' or '#define shader3D'");
+    }
+
+    // Create User property
+    {
+        auto property = AssetsManager::GetShaderProperty(m_shader);
+        if (property == nullptr)
+        {
+            property = AssetsManager::CreateShaderProperty(m_shader);
+        }
+        grr::UniformType type = grr::UniformType_none;
+
+        // fragment
+        {
+            for (auto &&[name, type_name] : ReadUniform(RemoveCommenter(mSourceMap[ShaderType_Fragment])))
+            {
+                auto it = mUniformNameToType.find(type_name);
+                if (it != mUniformNameToType.end())
+                {
+                    type = it->second;
+                }
+
+                property->addProperty(type_name, name, type);
+            }
+        }
+
+        // vertex
+        {
+            for (auto &&[name, type_name] : ReadUniform(RemoveCommenter(mSourceMap[ShaderType_Vertex])))
+            {
+                auto it = mUniformNameToType.find(type_name);
+                if (it != mUniformNameToType.end())
+                {
+                    type = it->second;
+                }
+
+                property->addProperty(type_name, name, type);
+            }
+        }
+        // if (mUniformNameToType.find)
+        // property->addProperty()
     }
 
     {

@@ -285,8 +285,25 @@ int SceneTask::readMaterial()
             return 3;
         }
 
-        auto material = AssetsManager::CreateMaterial(name);
-        material->deserialize(stream.get());
+        std::size_t stream_size = {};
+        if (!stream->read(reinterpret_cast<char *>(&stream_size), sizeof(std::size_t)))
+        {
+            return 4;
+        }
+
+        auto next = stream->tellg() + static_cast<std::streampos>(stream_size);
+
+        auto material = AssetsManager::FindMaterial(name);
+        if (material == nullptr)
+        {
+            material = AssetsManager::CreateMaterial(name);
+            material->deserialize(stream.get());
+        }
+
+        if (stream->tellg() != next)
+        {
+            stream->seekg(next, std::ios_base::beg);
+        }
     }
     return 0;
 }

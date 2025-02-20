@@ -291,6 +291,7 @@ void AssetsManager::RemoveMesh(const std::string &name)
 
 ShaderProperty *AssetsManager::CreateShaderProperty(grr::gShader *shader)
 {
+    std::lock_guard<std::mutex> lock(mShaderMutex);
     mShaderPropertyMap.emplace(shader, std::make_unique<ShaderProperty>());
     
     return &(*mShaderPropertyMap[shader]);
@@ -298,6 +299,7 @@ ShaderProperty *AssetsManager::CreateShaderProperty(grr::gShader *shader)
 
 ShaderProperty *AssetsManager::GetShaderProperty(grr::gShader *shader)
 {
+    std::lock_guard<std::mutex> lock(mShaderMutex);
     auto it = mShaderPropertyMap.find(shader);
     if (it == mShaderPropertyMap.end())
     {

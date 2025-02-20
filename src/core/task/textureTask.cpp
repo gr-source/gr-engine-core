@@ -34,7 +34,7 @@ void TextureTask::invoke(grr::gTexture *texture)
 void TextureTask::upload(std::string path, int width, int height, grr::TextureFormat format)
 {
     auto texture = AssetsManager::CreateTexture(path);
-    texture->updateBuffer(width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Bilinear, format, m_pixels.get());
+    texture->updateBuffer(width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Trilinear, format, m_pixels.get());
 
     invoke(texture);
 

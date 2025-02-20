@@ -52,10 +52,6 @@ Batching *MeshRender::getBatchGroup()
 
 // TODO: falta orimizar e corrigir erros do material;
 void MeshRender::build() {
-    if (!m_transform) {
-        m_transform = entity->getComponent<Transform>();
-    }
-
     if (!entity->hasComponent<MeshFilter>()) {
         return Console::LogError("[ MeshRender ] MeshFilter component fo not found.");
     }
@@ -77,14 +73,14 @@ void MeshRender::Enable() {
     if (!m_batched) {
         return;
     }
-    m_batched->insert(GetComponent<Transform>());
+    m_batched->insert(m_transform, &m_materials);
 }
 
 void MeshRender::Disable() {
     if (!m_batched) {
         return;
     }
-    m_batched->remove(GetComponent<Transform>());
+    m_batched->remove(m_transform);
 }
 
 bool MeshRender::Serialize(Stream *stream) {
@@ -137,7 +133,9 @@ bool MeshRender::Deserialize(Stream *stream) {
         auto material = AssetsManager::FindMaterial(name);
         if (material) {
             if (!this->hasMaterial(material))
+            {
                 m_materials.push_back(material);
+            }
         }
     }
 
@@ -148,11 +146,14 @@ bool MeshRender::SetupShader(std::vector<Mesh> *meshList) {
     m_batched = Batching::FindBatchByName(std::to_string(*reinterpret_cast<int *>(meshList)));
 
     if (!m_batched) {
-        m_batched = Batching::CreateBatch(std::to_string(*reinterpret_cast<int *>(meshList)), &m_materials, 0);
-        m_batched->insert(m_transform);
-        m_batched->buildMeshe(meshList);
+        m_batched = Batching::CreateBatch(std::to_string(*reinterpret_cast<int *>(meshList)), meshList);
+        // m_batched->optimizeFlags = OptimizeFlags_InstanceMesh;
+
+        m_batched->insert(m_transform, &m_materials);
+        m_batched->buildMeshe();
     }
-    m_batched->insert(m_transform);
+    m_batched->insert(m_transform, &m_materials);
+
     return true;
 }
 

@@ -237,6 +237,19 @@ int SaveSceneTask::writeMaterial()
             return 3;
         }
 
+        std::size_t stream_size = 0;
+        {
+            Stream stream;
+            material->serialize(&stream);
+            stream_size = stream.getDataSize();
+            stream.close();
+        }
+
+        if (!m_stream->write(&stream_size, sizeof(std::size_t)))
+        {
+            return 4;
+        }
+
         material->serialize(m_stream.get());
     }
 
