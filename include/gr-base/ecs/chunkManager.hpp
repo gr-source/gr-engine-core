@@ -23,7 +23,7 @@ public:
 
     bool bCanEnableUpdate;
     
-    virtual Component *allocateComponent(const Component *) = 0;
+    virtual Component *allocateComponent(Entity *entity, const Component *) = 0;
 
     virtual void deallocate(Component *component) = 0;
 
@@ -58,7 +58,7 @@ public:
 
     void (*deallocatein)(BaseChunk *, Component *component);
 
-    Component *(*allocatein)(BaseChunk *, const Component *component);
+    Component *(*allocatein)(BaseChunk *, Entity *, const Component *component);
 
 private:
     std::unordered_map<std::string, grm::size> m_fieldID;
@@ -84,9 +84,9 @@ class ChunkManager : public BaseChunk {
 public:
     ComponentChunk<T>* allocateChunk();
     
-    Component* allocateComponent(const Component *) override;
+    Component* allocateComponent(Entity *, const Component *) override;
     
-    void deallocate(Component *component) override;
+    void deallocate(Component *) override;
     
     void allinit() override;
     
@@ -102,7 +102,7 @@ ComponentChunk<T>* ChunkManager<T>::allocateChunk() {
 }
 
 template <typename T>
-Component* ChunkManager<T>::allocateComponent(const Component *other) {
+Component* ChunkManager<T>::allocateComponent(Entity *entity, const Component *other) {
     Component *component = nullptr;
     for (auto &chunk : chunks) {
         for (int i = 0; i < CHUNK_SIZE; ++i) {
@@ -122,6 +122,8 @@ Component* ChunkManager<T>::allocateComponent(const Component *other) {
         
         component = &newChunk->components[0];
     }
+
+    static_cast<T *>(component)->entity = entity;
 
     if (other != nullptr)
     {

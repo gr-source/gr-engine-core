@@ -47,6 +47,8 @@ void GameObject::Rename(GameObject *go, std::string name) {
         return;
     }
 
+    NameManager::RemoveNameID(name);
+
     name = NameManager::GenerateNameID(name);
 
     auto ptr = std::move(it->second);

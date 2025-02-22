@@ -24,7 +24,7 @@ public:
     template <typename ...Args>
     Material *addMaterial(Args &&...args);
     
-    void insertMaterial(Material *material);
+    Material *insertMaterial(Material *material);
     
     void removeMaterial(Material *material);
 
@@ -54,7 +54,7 @@ private:
 
 template <typename... Args>
 inline Material *MeshRender::addMaterial(Args &&...args) {
-    return m_materials.emplace_back(AssetsManager::CreateMaterial(std::forward<Args>(args)...));
+    return insertMaterial(AssetsManager::CreateMaterial(std::forward<Args>(args)...));
 }
 
 REGISTER_COMPONENT(MeshRender, false)

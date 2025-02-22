@@ -12,9 +12,15 @@
 
 #include "gr-base/core/file/stream.hpp"
 
+#include <thread>
+
+static std::thread::id main_thread = std::this_thread::get_id();
+
 MeshRender::MeshRender() : m_batched(nullptr), m_transform(nullptr) {}
 
-MeshRender::MeshRender(const MeshRender &other) : m_transform(nullptr), m_batched(nullptr), m_materials(other.m_materials) {}
+MeshRender::MeshRender(const MeshRender &other) : m_transform(nullptr), m_batched(nullptr), m_materials(other.m_materials)
+{
+}
 
 void MeshRender::Init() {
     m_transform = GetComponent<Transform>();
@@ -32,12 +38,19 @@ std::vector<Material *> MeshRender::getMaterials() const {
     return m_materials;
 }
 
-void MeshRender::insertMaterial(Material *material) {
+Material *MeshRender::insertMaterial(Material *material) {
     m_materials.push_back(material);
+    
+    if (main_thread == std::this_thread::get_id())
+        build();
+    return material;
 }
 
-void MeshRender::removeMaterial(Material *material) {
+void MeshRender::removeMaterial(Material *material)
+{
     m_materials.erase(std::remove(m_materials.begin(), m_materials.end(), material), m_materials.end());
+
+    build();
 }
 
 bool MeshRender::hasMaterial(Material *material) const
@@ -56,6 +69,13 @@ void MeshRender::build() {
         return Console::LogError("[ MeshRender ] MeshFilter component fo not found.");
     }
 
+    if (m_batched != nullptr)
+    {
+        m_batched->remove(m_transform);
+
+        m_batched = nullptr;
+    }
+
     auto meshFilter = entity->getComponent<MeshFilter>();
     
     auto mesh = meshFilter->getMesh();
@@ -63,7 +83,7 @@ void MeshRender::build() {
         return Console::LogError("[ MeshRender ] Object do not has mesh.");
     }
 
-    if (m_batched == nullptr) {
+    if (m_batched == nullptr && !m_materials.empty()) {
         SetupShader(mesh);
     }
 
@@ -147,10 +167,11 @@ bool MeshRender::SetupShader(std::vector<Mesh> *meshList) {
 
     if (!m_batched) {
         m_batched = Batching::CreateBatch(std::to_string(*reinterpret_cast<int *>(meshList)), meshList);
-        // m_batched->optimizeFlags = OptimizeFlags_InstanceMesh;
 
         m_batched->insert(m_transform, &m_materials);
         m_batched->buildMeshe();
+
+        return true;
     }
     m_batched->insert(m_transform, &m_materials);
 

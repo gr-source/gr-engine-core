@@ -7,7 +7,7 @@
 
 Material::Material() : m_shader(nullptr)
 {
-    AssetsManager::LoadShader(File::GetAsset("/shader/model/default_instancing_model.glsl"), &Material::setShader, this);
+    // AssetsManager::LoadShader(File::GetAsset("/shader/model/default_instancing_model.glsl"), &Material::setShader, this);
 
     for (int i=0;i<10;i++)
     {

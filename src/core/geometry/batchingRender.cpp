@@ -65,19 +65,21 @@ void BatchingRender::build(Mesh *mesh)
     grr::gVertexArray::SetAttrib(1, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
     grr::gVertexArray::SetAttrib(2, 2,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
     
-    grr::gVertexArray::Bind(m_ebo);
-    grr::gVertexArray::SetAttribI(3, 1, sizeof(int), nullptr);
+    // grr::gVertexArray::SetAttribI(3, 1, sizeof(int), nullptr);
     // grr::gVertexArray::SetAttribDivisor(3, 1);
+    
+    if (m_flags == BatchingRenderFlags_Instanced)
+    {
+        grr::gVertexArray::Bind(m_pbo);
+        grr::gVertexArray::SetAttribI(3, 1, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, entityID)));
+        grr::gVertexArray::SetAttribDivisor(3, 1);
 
-    // grr::gVertexArray::SetAttribI(3, 1, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, entityID)));
-    // grr::gVertexArray::SetAttribDivisor(3, 1);
-
-    /*
-    for (int i=0;i<4;i++) {
-        grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, model) + i * sizeof(Vector4)));
-        grr::gVertexArray::SetAttribDivisor(4 + i, 1);
+        for (int i=0;i<4;i++)
+        {
+            grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, model) + i * sizeof(Vector4)));
+            grr::gVertexArray::SetAttribDivisor(4 + i, 1);
+        }
     }
-    */
 
     m_vertexBuffer->unbind();
 }
@@ -98,12 +100,20 @@ void BatchingRender::render()
     {
     case BatchingRenderFlags_Default:
         return grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
+    case BatchingRenderFlags_Instanced:
+        return grr::gVertexArray::DrawArraysInstanced(PrimitiveType::TRIANGLES, m_indexCount, m_pboCount);
     default:
         break;
     }
+
+    // m_vertexBuffer->unbind();
+
     // if (BatchingRenderFlags > 0)
-    //     grr::gVertexArray::DrawArraysInstanced(PrimitiveType::TRIANGLES, m_indexCount, m_instanceCount);
     // else
     //     grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
 }
 
+void BatchingRender::setInstancedCount(grm::size count)
+{
+    m_pboCount = count;
+}

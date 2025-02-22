@@ -8,7 +8,14 @@
 
 enum BatchingRenderFlags : uint8_t
 {
-    BatchingRenderFlags_Default = 1 << 0,
+    BatchingRenderFlags_Default   = 1 << 0,
+    BatchingRenderFlags_Instanced = 1 << 1,
+};
+
+struct InstancedData
+{
+    int entityID;
+    Matrix4x4 model;
 };
 
 class BatchingRender
@@ -23,10 +30,14 @@ public:
 
     void render();
 
+    void setInstancedCount(grm::size count);
+
 private:
     grr::gVertexArray *m_vertexBuffer;
 
     grm::u32 m_indexCount;
+
+    grm::u32 m_pboCount;
 
     grm::u32 m_vbo;
 

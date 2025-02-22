@@ -113,7 +113,7 @@ inline void ComponentRegistry::SetupMethod(BaseChunk *baseChunk, bool bEnableUpd
     baseChunk->initall = reinterpret_cast<void (*)(BaseChunk *)>((void *) &ChunkManager<T>::allinit);
     baseChunk->updateall = reinterpret_cast<void (*)(BaseChunk *)>((void *) &ChunkManager<T>::allupdate);
 
-    baseChunk->allocatein = reinterpret_cast<Component *(*)(BaseChunk *, const Component *)>((void *) &ChunkManager<T>::allocateComponent);
+    baseChunk->allocatein = reinterpret_cast<Component *(*)(BaseChunk *, Entity *, const Component *)>((void *) &ChunkManager<T>::allocateComponent);
     baseChunk->deallocatein = reinterpret_cast<void (*)(BaseChunk *, Component *)>((void *) &ChunkManager<T>::deallocate);
 }
 #pragma GCC diagnostic pop

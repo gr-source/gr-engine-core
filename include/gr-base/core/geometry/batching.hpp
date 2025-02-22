@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <memory>
+#include <map>
 
 #include "batchingRender.hpp"
 
@@ -26,12 +27,6 @@ enum BatchingFlags : uint16_t {
 };
 
 using BatchingFlags_ = uint16_t;
-
-struct InstancedData
-{
-    int entityID;
-    Matrix4x4 model;
-};
 
 struct BatchedModel
 {
@@ -90,6 +85,7 @@ public:
     bool isVisible() const;
 
     OptimizeFlags optimizeFlags;
+
 private:
     static std::unordered_map<std::string, std::unique_ptr<Batching>> mBatchInstanceMap;
 
@@ -97,13 +93,23 @@ private:
 
     static std::vector<Batching *> mBatchRefList;
 
+    static std::map<grm::u8, grr::gShader *> mShaderOptimize;
+
+    std::unordered_map<std::string, std::tuple<Transform *, OptimizeFlags>> m_optmizeMap;
+
+    std::unordered_map<std::string, std::size_t> m_optmizeCountMap;
+
+    std::unordered_map<Transform *, std::string> m_materialRef;
+
     std::vector<Mesh> *m_meshList;
 
     std::vector<std::unique_ptr<BatchingRender>> m_batchingRenderList;
 
-    std::vector<BatchedModel> m_batchedModelList;
+    std::vector<std::unique_ptr<BatchingRender>> m_batchingRenderInstancedList;
 
-    std::vector<InstancedData> m_instanceList;
+    std::vector<BatchedModel> m_batchedModelNoOptimizeList;
+
+    std::unordered_map<std::string, std::tuple<std::vector<Material *> *, std::vector<Transform *>>> m_batchedModelInstancedMap;
 
     Boundbox m_boundbox;
 
@@ -112,6 +118,9 @@ private:
     BatchingFlags_ m_flags;
 
     void calcboundbox(const Mesh *mesh);
+
+    static void AddShaderOptimize(grm::u8 id, grr::gShader *shader);
+    
 };
 
 template <typename... Args>
