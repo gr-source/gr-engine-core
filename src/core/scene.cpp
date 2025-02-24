@@ -18,6 +18,8 @@
 
 #include "gr-base/ecs/componentRegistry.hpp"
 
+#include <algorithm>
+
 std::unordered_map<std::string, std::unique_ptr<Scene>> Scene::m_scenes;
 
 std::hash<std::string> Scene::hash;

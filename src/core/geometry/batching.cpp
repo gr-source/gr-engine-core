@@ -18,6 +18,8 @@
 
 #include "gr-base/core/geometry/mesh.hpp"
 
+#include <algorithm>
+
 std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::mBatchInstanceMap;
 
 std::unordered_map<Batching *, std::string> Batching::mBatchRefToNameMap;

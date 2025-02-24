@@ -11,7 +11,7 @@ Material::Material() : m_shader(nullptr)
 
     for (int i=0;i<10;i++)
     {
-        m_texture[i] = nullptr;
+        m_textures[i] = nullptr;
     }
 }
 
@@ -27,16 +27,16 @@ Material::~Material()
 }
 
 void Material::setTexture(int idx, grr::gTexture *texture) {
-    m_texture[idx >= m_texture.size() ? 0 : idx] = texture;
+    m_textures[idx >= m_textures.size() ? 0 : idx] = texture;
 }
 
 grr::gTexture *Material::getTexture(int idx) const {
-    return m_texture[idx >= m_texture.size() ? 0 : idx];
+    return m_textures[idx >= m_textures.size() ? 0 : idx];
 }
 
 std::array<grr::gTexture *, 10> Material::getTextures() const
 {
-    return m_texture;
+    return m_textures;
 }
 
 grr::gShader *Material::getShader() const
@@ -66,13 +66,13 @@ void Material::setShader(grr::gShader *shader)
 void Material::serialize(Stream *stream) const
 {
     std::vector<std::tuple<grr::gTexture *, int>> textures;
-    for (std::size_t i={};i<m_texture.size();i++)
+    for (std::size_t i={};i<m_textures.size();i++)
     {
-        if (m_texture[i] == nullptr)
+        if (m_textures[i] == nullptr)
         {
             continue;
         }
-        textures.emplace_back(m_texture[i], i);
+        textures.emplace_back(m_textures[i], i);
     }
 
     auto tCount = textures.size();
@@ -229,7 +229,7 @@ void Material::flush() const
 
 bool Material::setupTexture(int id, grr::gTexture *texture)
 {
-    m_texture[id > 10 ? 0 : id] = texture;
+    m_textures[id > 10 ? 0 : id] = texture;
     return true;
 }
 

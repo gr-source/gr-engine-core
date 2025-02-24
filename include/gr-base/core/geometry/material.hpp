@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <array>
 
 #include <gr-render/gRender.h>
 
@@ -50,7 +51,7 @@ private:
     
     std::unordered_map<std::string, void *> m_uniformMap;
     
-    std::array<grr::gTexture *, 10> m_texture;
+    std::array<grr::gTexture *, 10> m_textures;
 
     bool setupTexture(int id, grr::gTexture *texture);
 

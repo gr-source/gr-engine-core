@@ -6,6 +6,7 @@
 
 #include <assimp/scene.h>
 
+#include <functional>
 #include <memory>
 
 class Filmbox {

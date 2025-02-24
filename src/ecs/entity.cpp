@@ -10,6 +10,7 @@
 
 #include "gr-base/script/transform.hpp"
 
+#include <algorithm>
 #include <list>
 
 Entity::Entity(GameObject *go, EntityID id) : m_gameObject(go), m_entityID(id) { }

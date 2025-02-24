@@ -12,6 +12,7 @@
 
 #include "gr-base/core/file/stream.hpp"
 
+#include <algorithm>
 #include <thread>
 
 static std::thread::id main_thread = std::this_thread::get_id();
