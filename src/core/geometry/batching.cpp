@@ -133,8 +133,6 @@ void Batching::insert(Transform *transform, std::vector<Material *> *materialLis
         name += AssetsManager::GetRefMaterialToName(material);
     }
 
-    std::cout << transform->getGameObject()->getName() << std::endl;
-    
     auto it = m_optmizeMap.find(name);
     if (it == m_optmizeMap.end())
     {
