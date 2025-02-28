@@ -222,6 +222,7 @@ grr::gShader *AssetsManager::FindShader(const std::string &name) {
     return &(*it->second);
 }
 
+/*
 void AssetsManager::UpdateShader(const std::string &path, grr::gShader *shader)
 {
     std::lock_guard<std::mutex> lock(mShaderMutex);
@@ -236,6 +237,7 @@ void AssetsManager::UpdateShader(const std::string &path, grr::gShader *shader)
 
     mShaderFromUpdate.emplace(path, std::make_unique<ShaderTask>(path, nullptr, shader));
 }
+*/
 
 grr::gTexture *AssetsManager::CreateTexture(const std::string &name) {
     std::lock_guard<std::mutex> lock(mTextureMutex);
@@ -451,7 +453,7 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
 }
 
 // TODO: aicionar lista de callbacks a serem chamadas apos shader serem adicionado a thread
-void AssetsManager::SetShaderList(const std::string &path, std::function<void(grr::gShader *)> func)
+void AssetsManager::SetShaderList(const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func)
 {
     std::lock_guard<std::mutex> lock(mShaderMutex);
     // check if contains in main list
@@ -482,7 +484,7 @@ void AssetsManager::SetShaderList(const std::string &path, std::function<void(gr
         return Console::LogError("[ AssetsManager-Shader ] File do not exists: " + path);
     }
 
-    mShaderTaskMap.emplace(path, std::make_unique<ShaderTask>(path, func));
+    mShaderTaskMap.emplace(path, std::make_unique<ShaderTask>(path, func, shader));
 }
 
 void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func)

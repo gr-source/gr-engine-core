@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include <mutex>
 #include <list>
@@ -65,7 +66,8 @@ public:
 
     static grr::gShader *FindShader(const std::string &name);
 
-    static void UpdateShader(const std::string &path, grr::gShader *shader);
+    template <typename ...Args>
+    static void UpdateShader(const std::string &path, grr::gShader *shader, Args &&...args);
 
     // ********** Texture ********** //
     static grr::gTexture *CreateTexture(const std::string &name);
@@ -98,7 +100,7 @@ public:
 
     static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
 
-    static void SetShaderList(const std::string &path, std::function<void(grr::gShader *)> func);
+    static void SetShaderList(const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func);
 
     static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
 
@@ -201,6 +203,7 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
     SetTextureList(path, func);
 }
 
+// ***** Shader ***** //
 template <typename... Args>
 inline void AssetsManager::LoadShader(const std::string &path, Args &&...args) {
     std::function<void(grr::gShader *)> func = nullptr;
@@ -208,7 +211,19 @@ inline void AssetsManager::LoadShader(const std::string &path, Args &&...args) {
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
     
-    SetShaderList(path, func);
+    SetShaderList(path, nullptr, func);
+}
+
+template <typename ...Args>
+inline void AssetsManager::UpdateShader(const std::string &path, grr::gShader *shader, Args &&...args)
+{
+    std::function<void (grr::gShader *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0)
+    {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
+
+    SetShaderList(path, shader, func);
 }
 
 // ***** Material ***** //

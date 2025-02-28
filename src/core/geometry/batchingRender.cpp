@@ -67,8 +67,12 @@ void BatchingRender::build(Mesh *mesh)
     
     // grr::gVertexArray::SetAttribI(3, 1, sizeof(int), nullptr);
     // grr::gVertexArray::SetAttribDivisor(3, 1);
-    
-    if (m_flags == BatchingRenderFlags_Instanced)
+    if (m_flags == BatchingRenderFlags_Default)
+    {
+        grr::gVertexArray::Bind(m_pbo);
+        grr::gVertexArray::SetAttribI(3, 1, sizeof(int), nullptr);
+        grr::gVertexArray::SetAttribDivisor(3, 1);
+    } else if (m_flags == BatchingRenderFlags_Instanced)
     {
         grr::gVertexArray::Bind(m_pbo);
         grr::gVertexArray::SetAttribI(3, 1, sizeof(InstancedData), reinterpret_cast<const void*>(offsetof(InstancedData, entityID)));

@@ -4,6 +4,7 @@
 #include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/event.hpp"
+#include "imgui.h"
 
 #include <gr-render/gShader.h>
 #include <gr-render/gError.h>
@@ -323,11 +324,6 @@ std::string ShaderTask::RemoveCommenter(const std::string &source)
     std::string line;
     while (std::getline(iss, line))
     {
-        if (line.empty())
-        {
-            continue;
-        }
-
         auto start_comment = line.find("//");
         if (start_comment != std::string::npos)
         {
@@ -380,11 +376,6 @@ void ShaderTask::bindShader(const std::string &path)
     std::string line;
     while (std::getline(is, line))
     {
-        if (line.empty())
-        {
-            continue;
-        }
-
         if (line.find("define_type") != std::string::npos)
         {
             if (line.find("shader2D") != std::string::npos)
@@ -491,9 +482,6 @@ void ShaderTask::bindShader(const std::string &path)
 
     m_shaderSource[ShaderType_Fragment] = RemoveCommenter(m_shaderSource[ShaderType_Fragment]);
     m_shaderSource[ShaderType_Vertex] = RemoveCommenter(m_shaderSource[ShaderType_Vertex]);
-
-    // std::cout << "===== Fragment =====" << std::endl;
-    // std::cout << m_shaderSource[ShaderType_Fragment] << std::endl;
 
     // std::cout << "===== Vertex =====" << std::endl;
     // std::cout << m_shaderSource[ShaderType_Vertex] << std::endl;

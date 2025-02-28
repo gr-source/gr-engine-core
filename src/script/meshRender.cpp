@@ -87,7 +87,6 @@ void MeshRender::build() {
     if (m_batched == nullptr && !m_materials.empty()) {
         SetupShader(mesh);
     }
-
 }
 
 void MeshRender::Enable() {

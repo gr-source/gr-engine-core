@@ -8,6 +8,7 @@
 #include "material.hpp"
 #include "boundbox.hpp"
 
+#include <algorithm>
 #include <vector>
 #include <memory>
 #include <map>
@@ -44,6 +45,24 @@ struct BatchedModel
     bool operator ==(const Transform *other) const
     {
         return transform == other;
+    }
+};
+
+struct BatchedInstanced {
+    std::vector<Material *> *materialList;
+
+    std::vector<Transform *> transformList;
+
+    BatchedInstanced(std::vector<Material *> *_materialList) : materialList(_materialList)
+    {}
+
+    ~BatchedInstanced()
+    {
+    }
+    
+    bool operator ==(const Transform *other) const
+    {
+        return std::find(transformList.begin(), transformList.end(), other) != transformList.end();
     }
 };
 
@@ -105,11 +124,15 @@ private:
 
     std::vector<std::unique_ptr<BatchingRender>> m_batchingRenderList;
 
+    std::vector<std::unique_ptr<BatchedInstanced>> m_batchingInstRenderList;
+
     std::vector<std::unique_ptr<BatchingRender>> m_batchingRenderInstancedList;
 
     std::vector<BatchedModel> m_batchedModelNoOptimizeList;
 
-    std::unordered_map<std::string, std::tuple<std::vector<Material *> *, std::vector<Transform *>>> m_batchedModelInstancedMap;
+    std::vector<std::tuple<std::vector<Material *> *, std::vector<Transform *>>> m_modelsInstacedFromRender;
+
+    std::unordered_map<std::string, std::tuple<std::vector<Material *> *, std::vector<Transform *>> *> m_batchedModelInstancedMap;
 
     Boundbox m_boundbox;
 
@@ -120,7 +143,8 @@ private:
     void calcboundbox(const Mesh *mesh);
 
     static void AddShaderOptimize(grm::u8 id, grr::gShader *shader);
-    
+
+    static void SetUpdateShaderOptmize(Material *material, grr::gShader *shader, int id);
 };
 
 template <typename... Args>

@@ -57,6 +57,8 @@ public:
 
     void bindShader(const std::string &path);
 
+    static std::string RemoveDefine(const std::string &source);
+
     bool buildShader(const std::string &name, grr::gShader *shader);
 };
 
