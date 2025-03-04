@@ -54,6 +54,7 @@ void Material::setShader(grr::gShader *shader)
     {
         temp.emplace_back(name, std::unique_ptr<uint8_t>((uint8_t *)ptr));
     }
+
     m_uniformMap.clear();
     m_uniformList.clear();
 
@@ -247,7 +248,7 @@ void Material::deserialize(Stream *stream)
             return;
         }
 
-        uint8_t data[stride] = {0};
+        uint8_t data[stride];
         if (!stream->read(reinterpret_cast<char *>(data), stride))
         {
             return;
@@ -300,3 +301,9 @@ void *Material::internal_set_value(const char *name, grm::u8 count, const void *
 
     return m_uniformMap[name];
 }
+
+
+
+
+
+

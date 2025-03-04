@@ -1,7 +1,5 @@
 #include "gr-base/core/geometry/batching.hpp"
 
-#include "gr-base/core/culling/frustum.hpp"
-
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/status.hpp"
 
@@ -19,7 +17,6 @@
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include <algorithm>
-#include <iterator>
 #include <string>
 #include <tuple>
 
@@ -72,7 +69,8 @@ void Batching::RenderBatches() {
     Status::BatchDrawCallRender = 0;
     Status::BatchRenderCount = 0;
 
-    for (auto &batching : mBatchRefList) {
+    for (auto &batching : mBatchRefList)
+    {
         if (!batching->isValid())
         {
             continue;
@@ -106,6 +104,9 @@ struct VertexData {
 void Batching::buildMeshe() {
     meshCount = m_meshList->size();
 
+    if (mBatchRefToNameMap.find(this) != mBatchRefToNameMap.end())
+        std::cout << mBatchRefToNameMap[this] << " Mesh: " << AssetsManager::GetMeshListRefToName(m_meshList) << std::endl;
+
     Status::BatchDrawCallCount += meshCount;
 
     for (auto &mesh : *m_meshList) {
@@ -127,7 +128,15 @@ void Batching::buildMeshe() {
     m_flags |= BatchingFlags_BuildMesh;
 }
 
+// TODO: Sempre que adiciono uma mesh diferente om materiais iguais buga tudo.
 void Batching::insert(Transform *transform, std::vector<Material *> *materialList) {
+    if (m_materialRef.find(transform) != m_materialRef.end())
+    {
+        return;
+    }
+
+    std::cout << mBatchRefToNameMap[this] << " - Add: " << transform->getGameObject()->getName() << std::endl;
+
     std::string name;
     for (auto material : *materialList)
     {
@@ -187,7 +196,7 @@ void Batching::insert(Transform *transform, std::vector<Material *> *materialLis
             vector.push_back(transform);
         }
     }
-    
+
     m_materialRef[transform] = name;
 }
 
@@ -393,6 +402,8 @@ void Batching::SetUpdateShaderOptmize(Material *material, grr::gShader *shader, 
         }
         os << line << std::endl;
     }
+
+    std::cout << path << ": Convert to " << (id == 0 ? "One Draw" : "Instanced") << std::endl;
 
     os.close();
 

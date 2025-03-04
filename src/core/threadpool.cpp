@@ -1,5 +1,8 @@
 #include "gr-base/core/threadpool.hpp"
 
+#include <mutex>
+#include <thread>
+
 std::list<std::function<void()>> Threadpool::m_task;
 
 std::vector<std::thread> Threadpool::m_threads;
@@ -12,9 +15,16 @@ std::mutex Threadpool::m_mutex;
 
 bool Threadpool::m_bStop = false;
 
+std::thread::id Threadpool::m_mainThreadID;
+
 void Threadpool::Initialize(std::uint32_t maxThread) {
     for (std::uint32_t i=0;i<maxThread;i++) {
         m_threads.emplace_back(&Threadpool::Update);
+    }
+    
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_mainThreadID = std::this_thread::get_id();
     }
 }
 
@@ -50,6 +60,12 @@ void Threadpool::CreateInternalTask(std::function<void()> func) {
         m_task.emplace_back(func);
     }
     m_cv.notify_all();
+}
+
+bool Threadpool::IsMainThread()
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_mainThreadID == std::this_thread::get_id();
 }
 
 void Threadpool::Update() {

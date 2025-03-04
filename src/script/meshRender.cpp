@@ -1,9 +1,11 @@
 #include "gr-base/script/meshRender.hpp"
+#include "gr-base/core/threadpool.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/animator.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
@@ -13,9 +15,6 @@
 #include "gr-base/core/file/stream.hpp"
 
 #include <algorithm>
-#include <thread>
-
-static std::thread::id main_thread = std::this_thread::get_id();
 
 MeshRender::MeshRender() : m_batched(nullptr), m_transform(nullptr) {}
 
@@ -42,8 +41,7 @@ std::vector<Material *> MeshRender::getMaterials() const {
 Material *MeshRender::insertMaterial(Material *material) {
     m_materials.push_back(material);
     
-    if (main_thread == std::this_thread::get_id())
-        build();
+    build();
     return material;
 }
 
@@ -66,6 +64,11 @@ Batching *MeshRender::getBatchGroup()
 
 // TODO: falta orimizar e corrigir erros do material;
 void MeshRender::build() {
+    if (!Threadpool::IsMainThread())
+    {
+        return;
+    }
+
     if (!entity->hasComponent<MeshFilter>()) {
         return Console::LogError("[ MeshRender ] MeshFilter component fo not found.");
     }
@@ -90,14 +93,15 @@ void MeshRender::build() {
 }
 
 void MeshRender::Enable() {
-    if (!m_batched) {
+    if (!m_batched || !Threadpool::IsMainThread()) {
         return;
     }
+
     m_batched->insert(m_transform, &m_materials);
 }
 
 void MeshRender::Disable() {
-    if (!m_batched) {
+    if (!m_batched || !Threadpool::IsMainThread()) {
         return;
     }
     m_batched->remove(m_transform);

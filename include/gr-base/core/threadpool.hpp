@@ -23,6 +23,9 @@ public:
     static std::size_t GetThreadAvailable();
 
     static void CreateInternalTask(std::function<void()> func);
+    
+    static bool IsMainThread();
+
 private:
     static std::list<std::function<void()>> m_task;
 
@@ -35,6 +38,8 @@ private:
     static std::mutex m_mutex;
 
     static bool m_bStop;
+
+    static std::thread::id m_mainThreadID;
 
     static void Update();
 };

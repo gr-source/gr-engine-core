@@ -287,6 +287,11 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
     for (auto &fbxMaterial : materialList) {
         auto material = meshRender->addMaterial(fbxMaterial.getName());
 
+        if (material->getShader() == nullptr)
+        {
+            AssetsManager::LoadShader(File::GetAsset("/shader/model/simple_model.glsl"), &Material::setShader, material);
+        }
+
         for (auto &&[type, path] : fbxMaterial.getTextures()) {
             switch (type) {
             case TextureType_Albedo:
