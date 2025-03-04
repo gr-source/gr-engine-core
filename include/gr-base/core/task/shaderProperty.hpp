@@ -5,6 +5,8 @@
 #include <gr-render/gCommon.h>
 #include <gr-math/gmath.hpp>
 
+#include <unordered_set>
+
 enum ShaderUser
 {
     ShaderUser_none     = 1 << 0,
@@ -50,6 +52,8 @@ public:
 
 private:
     std::vector<std::tuple<std::string, std::string, grr::UniformType>> mUniformList;
+    
+    std::unordered_set<std::string> m_tabHash;
 };
 
 

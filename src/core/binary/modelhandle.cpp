@@ -24,12 +24,15 @@
 
 #include <functional>
 #include <filesystem>
+#include <mutex>
 
 std::unordered_map<std::string, std::unique_ptr<ModelHandle>> ModelHandle::taskListMap;
 
 std::vector<ModelHandle *> ModelHandle::taskList;
 
 std::mutex ModelHandle::mutex;
+
+std::atomic<bool> ModelHandle::bHasTasks = false;
 
 void ModelHandle::ImportFBX(const std::string &path) {
     std::function<void (std::unique_ptr<FbxScene>)> func = std::bind(&ModelHandle::SetupFBX, path, std::placeholders::_1);
@@ -38,7 +41,7 @@ void ModelHandle::ImportFBX(const std::string &path) {
 }
 
 void ModelHandle::Render() {
-    if (taskList.empty()) { return; }
+    if (!bHasTasks) { return; }
 
     auto viewportsize = Window::GetWindowSize();
 
@@ -50,29 +53,41 @@ void ModelHandle::Render() {
 
     auto winsize = ImGui::GetContentRegionAvail();
 
-    for (auto task : taskList) {
-        if (task->isCanRender)
-            task->render();
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        for (auto task : taskList) {
+            if (task->isCanRender)
+                task->render();
+        }
     }
 
     auto spacing = ImGui::GetStyle().ItemSpacing;
 
     ImGui::SetCursorPosY(winsize.y - spacing.y);
     if (ImGui::Button("Cancel", ImVec2{winsize.x / 2.0f, 0.0f})) {
-        taskList.clear();
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            taskList.clear();
 
-        taskListMap.clear();
+            taskListMap.clear();
+        }
+
+        bHasTasks = false;
     }
 
     ImGui::SetCursorPos(ImVec2{(winsize.x / 2.0f) + spacing.x, winsize.y - spacing.y});
     if (ImGui::Button("Save", ImVec2{winsize.x / 2.0f, 0.0f})) {
-        for (auto task : taskList) {
-            task->run();
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            for (auto task : taskList) {
+                task->run();
+            }
+
+            taskList.clear();
+
+            taskListMap.clear();
         }
-
-        taskList.clear();
-
-        taskListMap.clear();
+        bHasTasks = false;
     }
 
     ImGui::End();
@@ -81,14 +96,25 @@ void ModelHandle::Render() {
 void ModelHandle::SetupFBX(const std::string &path, std::unique_ptr<FbxScene> scene) {
     auto filename = std::filesystem::path(path).filename();
 
-    auto it = taskListMap.find(filename);
-    if (it != taskListMap.end()) {
-        return;
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+
+        auto it = taskListMap.find(filename);
+        if (it != taskListMap.end()) {
+            return;
+        }
     }
 
-    taskListMap[filename] = std::make_unique<ModelHandle>(filename, std::move(scene));
+    auto modelHandle = std::make_unique<ModelHandle>(filename, std::move(scene));
 
-    taskList.push_back(&(*taskListMap[filename]));
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        taskListMap.emplace(filename, std::move(modelHandle));
+        
+        taskList.push_back(&(*taskListMap[filename]));
+    }
+
+    bHasTasks = true;
 }
 
 ModelHandle::ModelHandle(const std::string &name, std::unique_ptr<FbxScene> scene) : name(name), isCanRender(true) {

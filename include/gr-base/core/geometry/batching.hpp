@@ -112,8 +112,6 @@ private:
 
     static std::vector<Batching *> mBatchRefList;
 
-    static std::map<grm::u8, grr::gShader *> mShaderOptimize;
-
     std::unordered_map<std::string, std::tuple<Transform *, OptimizeFlags>> m_optmizeMap;
 
     std::unordered_map<std::string, std::size_t> m_optmizeCountMap;
@@ -141,8 +139,6 @@ private:
     BatchingFlags_ m_flags;
 
     void calcboundbox(const Mesh *mesh);
-
-    static void AddShaderOptimize(grm::u8 id, grr::gShader *shader);
 
     static void SetUpdateShaderOptmize(Material *material, grr::gShader *shader, int id);
 };

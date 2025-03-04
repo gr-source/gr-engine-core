@@ -65,6 +65,29 @@ void Material::setShader(grr::gShader *shader)
 
 void Material::serialize(Stream *stream) const
 {
+    bool hasShader = m_shader != nullptr;
+
+    if (!stream->write(&hasShader, sizeof(bool)))
+    {
+        return;
+    }
+
+    if (hasShader)
+    {
+        auto name = AssetsManager::GetShaderRefToName(m_shader);
+
+        auto nsize = name.size();
+        if (!stream->write(&nsize, sizeof(std::size_t)))
+        {
+            return;
+        }
+
+        if (!stream->write(name.c_str(), nsize * sizeof(char)))
+        {
+            return;
+        }
+    }
+
     std::vector<std::tuple<grr::gTexture *, int>> textures;
     for (std::size_t i={};i<m_textures.size();i++)
     {
@@ -145,6 +168,29 @@ void Material::serialize(Stream *stream) const
 
 void Material::deserialize(Stream *stream)
 {
+    bool hasShader = false;
+    if (!stream->read(reinterpret_cast<char *>(&hasShader), sizeof(bool)))
+    {
+        return;
+    }
+
+    if (hasShader)
+    {
+        std::size_t nsize = 0;
+        if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t)))
+        {
+            return;
+        }
+
+        std::string shader_name(nsize, '\0');
+        if (!stream->read(shader_name.data(), nsize * sizeof(char)))
+        {
+            return;
+        }
+
+        AssetsManager::LoadShader(shader_name, &Material::setShader, this);
+    }
+
     std::size_t tCount = 0;
     if (!stream->read(reinterpret_cast<char *>(&tCount), sizeof(std::size_t)))
     {
@@ -240,6 +286,7 @@ void *Material::internal_set_value(const char *name, grm::u8 count, const void *
     {
         return nullptr;
     }
+
     auto &uniform = m_shader->getUniform()[id];
     
     if (m_uniformMap[name] == nullptr)

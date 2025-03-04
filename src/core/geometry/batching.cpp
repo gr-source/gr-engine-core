@@ -20,19 +20,17 @@
 
 #include <algorithm>
 #include <iterator>
+#include <string>
 #include <tuple>
 
 std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::mBatchInstanceMap;
 
 std::unordered_map<Batching *, std::string> Batching::mBatchRefToNameMap;
 
-std::map<grm::u8, grr::gShader *> Batching::mShaderOptimize;
-
 std::vector<Batching *> Batching::mBatchRefList;
 
-void Batching::Initialize() {
-    AssetsManager::LoadShader(File::GetAsset("/shader/model/default_instancing_model.glsl"), &Batching::AddShaderOptimize, 1);
-    AssetsManager::LoadShader(File::GetAsset("/shader/model/default_one_model.glsl"), &Batching::AddShaderOptimize, 0);
+void Batching::Initialize()
+{
 }
 
 // TODO: falta descarregar o shader
@@ -75,7 +73,8 @@ void Batching::RenderBatches() {
     Status::BatchRenderCount = 0;
 
     for (auto &batching : mBatchRefList) {
-        if (!batching->isValid()) {
+        if (!batching->isValid())
+        {
             continue;
         }
 
@@ -142,11 +141,9 @@ void Batching::insert(Transform *transform, std::vector<Material *> *materialLis
 
         for (auto material : *materialList)
         {
-            if (material->getShader() != mShaderOptimize[0])
-                material->setShader(mShaderOptimize[0]);
+            // if (material->getShader() != mShaderOptimize[0])
+            //    material->setShader(mShaderOptimize[0]);
             
-
-
             Threadpool::AddTask(&Batching::SetUpdateShaderOptmize, material, material->getShader(), 0);
         }
         
@@ -170,9 +167,9 @@ void Batching::insert(Transform *transform, std::vector<Material *> *materialLis
 
                 for (auto material : *materialList)
                 {
-                    // Threadpool::AddTask(&Batching::SetUpdateShaderOptmize, material, material->getShader(), 1);
-                    if (material->getShader() != mShaderOptimize[1])
-                        material->setShader(mShaderOptimize[1]);
+                    Threadpool::AddTask(&Batching::SetUpdateShaderOptmize, material, material->getShader(), 1);
+                    // if (material->getShader() != mShaderOptimize[1])
+                    //    material->setShader(mShaderOptimize[1]);
                 }
                 
                 // move o last_transform para a lista de mesh instance
@@ -225,10 +222,15 @@ void Batching::remove(Transform *transform) {
             {
                 for (auto material : *materialList)
                 {
+                    /*
                     if (material->getShader() != mShaderOptimize[0])
                     {
                         material->setShader(mShaderOptimize[0]);
                     }
+                    */
+
+
+                    Threadpool::AddTask(&Batching::SetUpdateShaderOptmize, material, material->getShader(), 0);
                 }
 
                 if (transform == last_transform)
@@ -348,16 +350,15 @@ bool Batching::isVisible() const {
     // return Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, m_models[0]->getGlobalMatrix());
 }
 
-void Batching::AddShaderOptimize(grm::u8 id, grr::gShader *shader)
-{
-    mShaderOptimize[id] = shader;
-    
-    auto name = AssetsManager::GetShaderRefToName(shader);
-}
-
 void Batching::SetUpdateShaderOptmize(Material *material, grr::gShader *shader, int id)
 {
-    auto path = AssetsManager::GetShaderRefToName(shader);
+    std::string path;
+    try {
+        path = AssetsManager::GetShaderRefToName(shader);
+    }
+    catch (const std::exception&) {
+        return;
+    }
 
     std::ifstream is(path);
     if (!is.is_open())
@@ -365,7 +366,9 @@ void Batching::SetUpdateShaderOptmize(Material *material, grr::gShader *shader, 
         return;
     }
 
-    auto temp_file = std::filesystem::temp_directory_path() / "temp.glsl";
+    std::hash<std::string> hash;
+
+    auto temp_file = std::filesystem::temp_directory_path() / (std::to_string(hash(path)) + ".glsl");
 
     std::ofstream os(temp_file);
 
@@ -395,7 +398,7 @@ void Batching::SetUpdateShaderOptmize(Material *material, grr::gShader *shader, 
 
     is.close();
 
-    // AssetsManager::UpdateShader(temp_file, shader, &Material::setShader, material);
+    AssetsManager::UpdateShader(temp_file, shader, &Material::setShader, material);
 }
 
 

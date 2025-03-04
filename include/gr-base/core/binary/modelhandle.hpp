@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <mutex>
+#include <atomic>
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/filmbox/default.hpp"
@@ -27,6 +28,8 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<ModelHandle>> taskListMap;
 
     static std::vector<ModelHandle *> taskList;
+
+    static std::atomic<bool> bHasTasks;
 
     static std::mutex mutex;
 
