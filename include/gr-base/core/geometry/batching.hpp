@@ -2,6 +2,7 @@
 
 #include "gr-base/script/default.hpp"
 
+#include <array>
 #include <gr-render/gRender.h>
 
 #include "default.hpp"
@@ -10,6 +11,7 @@
 #include "boundbox.hpp"
 
 #include <algorithm>
+#include <gr-render/gShader.h>
 #include <vector>
 #include <memory>
 
@@ -111,6 +113,8 @@ private:
     static std::unordered_map<Batching *, std::string> mBatchRefToNameMap;
 
     static std::vector<Batching *> mBatchRefList;
+    
+    std::array<grr::gShader, 2> mShaderOptmize;
 
     std::unordered_map<std::string, std::tuple<Transform *, OptimizeFlags>> m_optmizeMap;
 
