@@ -28,6 +28,7 @@
 #include <gr-render/gTexture.h>
 #include <gr-render/gShader.h>
 #include <gr-render/gError.h>
+#include <mutex>
 
 grm::u32 AssetsManager::m_processCount = 0;
 
@@ -169,6 +170,7 @@ std::string AssetsManager::GetShaderRefToName(grr::gShader *shader)
 
 void AssetsManager::RemoveShader(grr::gShader *shader)
 {
+    std::lock_guard<std::mutex> lock(mShaderMutex);
     auto it = mShaderPathRef.find(shader);
     if (it == mShaderPathRef.end())
     {

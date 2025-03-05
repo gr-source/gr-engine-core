@@ -4,7 +4,9 @@
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
+#include <algorithm>
 #include <gr-math/vector3.hpp>
+#include <ios>
 
 Material::Material() : m_shader(nullptr)
 {
@@ -47,6 +49,7 @@ grr::gShader *Material::getShader() const
 
 void Material::setShader(grr::gShader *shader)
 {
+
     m_shader = shader;
 
     std::vector<std::tuple<std::string, std::unique_ptr<uint8_t>>> temp;
@@ -63,7 +66,6 @@ void Material::setShader(grr::gShader *shader)
     {
         if (internal_set_value(name.c_str(), 0, data.get()) != nullptr)
         {
-            Console::LogWarning("Load: %s", name.c_str());
             continue;
         }
 
@@ -320,6 +322,12 @@ void *Material::internal_set_value(const char *name, grm::u8 count, const void *
     } else
     {
         ptr = it->second;
+
+        if (!ptr)
+        {
+            m_uniformMap.erase(it);
+            return internal_set_value(name, count, data);
+        }
     }
  
     std::memcpy(ptr, data, uniform.stride);
