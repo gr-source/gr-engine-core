@@ -222,23 +222,6 @@ grr::gShader *AssetsManager::FindShader(const std::string &name) {
     return &(*it->second);
 }
 
-/*
-void AssetsManager::UpdateShader(const std::string &path, grr::gShader *shader)
-{
-    std::lock_guard<std::mutex> lock(mShaderMutex);
-    // check in list pre update
-    {
-        auto it = mShaderFromUpdate.find(path);
-        if (it != mShaderFromUpdate.end())
-        {
-            return;
-        }
-    }
-
-    mShaderFromUpdate.emplace(path, std::make_unique<ShaderTask>(path, nullptr, shader));
-}
-*/
-
 grr::gTexture *AssetsManager::CreateTexture(const std::string &name) {
     std::lock_guard<std::mutex> lock(mTextureMutex);
     mTextureMap.emplace(name, std::make_unique<grr::gTexture>());
@@ -452,21 +435,9 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
     mGameObjectTaskMap.emplace(path, std::make_unique<GameObjectTask>(path, func));
 }
 
-// TODO: aicionar lista de callbacks a serem chamadas apos shader serem adicionado a thread
 void AssetsManager::SetShaderList(const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func)
 {
     std::lock_guard<std::mutex> lock(mShaderMutex);
-    // check if contains in main list
-    {
-        auto it = mShaderMap.find(path);
-        if (it != mShaderMap.end()) {
-            if (func == nullptr)
-                return;
-
-            return func(&(*it->second));
-        }
-    }
-
     // check there loading
     {
         auto it = mShaderTaskMap.find(path);
@@ -478,10 +449,22 @@ void AssetsManager::SetShaderList(const std::string &path, grr::gShader *shader,
         }
     }
 
+    // check if contains in main list
+    {
+        auto it = mShaderMap.find(path);
+        if (it != mShaderMap.end()) {
+            if (func == nullptr)
+                return;
+
+            std::cout << "xxxx" << std::endl;
+            return func(&(*it->second));
+        }
+    }
+
     // check file exists
     if (!File::Exists(path))
     {
-        return Console::LogError("[ AssetsManager-Shader ] File do not exists: " + path);
+        return Console::LogError("[ AssetsManager-Shader ] File do not exists: %s", path.c_str());
     }
 
     mShaderTaskMap.emplace(path, std::make_unique<ShaderTask>(path, func, shader));

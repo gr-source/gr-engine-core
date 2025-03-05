@@ -31,40 +31,18 @@ enum BatchingFlags : uint16_t {
 
 using BatchingFlags_ = uint16_t;
 
-struct BatchedModel
+struct Instance
 {
+    Transform *transform;
+    
     std::vector<Material *> *materialList;
 
-    Transform *transform;
-
-    BatchedModel(std::vector<Material *> *_materialList, Transform *_transform) : materialList(_materialList), transform(_transform)
+    Instance(std::vector<Material *> *_materialList, Transform *_transform) : materialList(_materialList), transform(_transform)
     {}
 
-    ~BatchedModel()
-    {
-    }
-    
     bool operator ==(const Transform *other) const
     {
         return transform == other;
-    }
-};
-
-struct BatchedInstanced {
-    std::vector<Material *> *materialList;
-
-    std::vector<Transform *> transformList;
-
-    BatchedInstanced(std::vector<Material *> *_materialList) : materialList(_materialList)
-    {}
-
-    ~BatchedInstanced()
-    {
-    }
-    
-    bool operator ==(const Transform *other) const
-    {
-        return std::find(transformList.begin(), transformList.end(), other) != transformList.end();
     }
 };
 
@@ -105,42 +83,22 @@ public:
 
     bool isVisible() const;
 
-    OptimizeFlags optimizeFlags;
-
 private:
     static std::unordered_map<std::string, std::unique_ptr<Batching>> mBatchInstanceMap;
 
     static std::unordered_map<Batching *, std::string> mBatchRefToNameMap;
 
     static std::vector<Batching *> mBatchRefList;
+
+    std::vector<std::unique_ptr<BatchingRender>> m_batchingRender;
     
-    std::array<grr::gShader, 2> mShaderOptmize;
+    std::unordered_map<Transform *, std::unique_ptr<Instance>> m_instanceMap;
 
-    std::unordered_map<std::string, std::tuple<Transform *, OptimizeFlags>> m_optmizeMap;
-
-    std::unordered_map<std::string, std::size_t> m_optmizeCountMap;
-
-    std::unordered_map<Transform *, std::string> m_materialRef;
+    std::vector<Instance *> m_instanceList;
 
     std::vector<Mesh> *m_meshList;
 
-    std::vector<std::unique_ptr<BatchingRender>> m_batchingRenderList;
-
-    std::vector<std::unique_ptr<BatchedInstanced>> m_batchingInstRenderList;
-
-    std::vector<std::unique_ptr<BatchingRender>> m_batchingRenderInstancedList;
-
-    std::vector<BatchedModel> m_batchedModelNoOptimizeList;
-
-    std::vector<std::tuple<std::vector<Material *> *, std::vector<Transform *>>> m_modelsInstacedFromRender;
-
-    std::unordered_map<std::string, std::tuple<std::vector<Material *> *, std::vector<Transform *>> *> m_batchedModelInstancedMap;
-
     Boundbox m_boundbox;
-
-    int meshCount;
-
-    BatchingFlags_ m_flags;
 
     void calcboundbox(const Mesh *mesh);
 

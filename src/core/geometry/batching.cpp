@@ -17,6 +17,7 @@
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <tuple>
 
@@ -82,7 +83,7 @@ void Batching::RenderBatches() {
     }
 }
 
-Batching::Batching(std::vector<Mesh> *meshList) : m_meshList(meshList), meshCount(0), optimizeFlags(OptimizeFlags_NoOptimize)
+Batching::Batching(std::vector<Mesh> *meshList) : m_meshList(meshList)
 {
     m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
     m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
@@ -90,7 +91,7 @@ Batching::Batching(std::vector<Mesh> *meshList) : m_meshList(meshList), meshCoun
 
 Batching::~Batching()
 {
-    Status::BatchDrawCallCount -= meshCount;
+    Status::BatchDrawCallCount -= m_meshList->size();
 }
 
 struct VertexData {
@@ -102,173 +103,83 @@ struct VertexData {
 };
 
 void Batching::buildMeshe() {
-    meshCount = m_meshList->size();
-
-    if (mBatchRefToNameMap.find(this) != mBatchRefToNameMap.end())
-        std::cout << mBatchRefToNameMap[this] << " Mesh: " << AssetsManager::GetMeshListRefToName(m_meshList) << std::endl;
-
-    Status::BatchDrawCallCount += meshCount;
+    Status::BatchDrawCallCount += m_meshList->size();
 
     for (auto &mesh : *m_meshList) {
-        {
-            auto draw = &(*m_batchingRenderList.emplace_back(std::make_unique<BatchingRender>(BatchingRenderFlags_Default)));
+        auto draw = &(*m_batchingRender.emplace_back(std::make_unique<BatchingRender>(BatchingRenderFlags_Default)));
             
-            draw->build(&mesh);
-        }
+        draw->build(&mesh);
 
-        {
-            auto draw = &(*m_batchingRenderInstancedList.emplace_back(std::make_unique<BatchingRender>(BatchingRenderFlags_Instanced)));
-            
-            draw->build(&mesh);
-        }
-        
         calcboundbox(&mesh);
     }
-
-    m_flags |= BatchingFlags_BuildMesh;
 }
 
-// TODO: Sempre que adiciono uma mesh diferente om materiais iguais buga tudo.
-void Batching::insert(Transform *transform, std::vector<Material *> *materialList) {
-    if (m_materialRef.find(transform) != m_materialRef.end())
+void Batching::insert(Transform *transform, std::vector<Material *> *materialList)
+{
+    if (m_instanceMap.find(transform) != m_instanceMap.end())
     {
         return;
     }
 
-    std::cout << mBatchRefToNameMap[this] << " - Add: " << transform->getGameObject()->getName() << std::endl;
+    m_instanceMap.emplace(transform, std::make_unique<Instance>(materialList, transform));
 
-    std::string name;
-    for (auto material : *materialList)
-    {
-        name += AssetsManager::GetRefMaterialToName(material);
-    }
+    auto instance = &(*m_instanceMap[transform]);
 
-    auto it = m_optmizeMap.find(name);
-    if (it == m_optmizeMap.end())
-    {
-        m_optmizeCountMap[name]++;
-
-        for (auto material : *materialList)
-        {
-            // if (material->getShader() != mShaderOptimize[0])
-            //    material->setShader(mShaderOptimize[0]);
-            
-            Threadpool::AddTask(&Batching::SetUpdateShaderOptmize, material, material->getShader(), 0);
-        }
-        
-        m_batchedModelNoOptimizeList.emplace_back(materialList, transform);
-
-        m_optmizeMap.emplace(name, std::make_tuple(transform, OptimizeFlags_NoOptimize));
-    } else
-    {
-        // move to instanced
-        {
-            auto &&[last_transform, flags] = it->second;
-
-            if (flags == OptimizeFlags_NoOptimize)
-            {
-                // remove da lista de objstos n~ao otimizados.
-                m_batchedModelNoOptimizeList.erase(std::remove(m_batchedModelNoOptimizeList.begin(), m_batchedModelNoOptimizeList.end(), last_transform), m_batchedModelNoOptimizeList.end());
-
-                auto ptr_to_tuple = &m_modelsInstacedFromRender.emplace_back(std::make_tuple(materialList, std::vector<Transform *>()));
-
-                m_batchedModelInstancedMap.emplace(name, ptr_to_tuple);
-
-                for (auto material : *materialList)
-                {
-                    Threadpool::AddTask(&Batching::SetUpdateShaderOptmize, material, material->getShader(), 1);
-                    // if (material->getShader() != mShaderOptimize[1])
-                    //    material->setShader(mShaderOptimize[1]);
-                }
-                
-                // move o last_transform para a lista de mesh instance
-                auto &&[m, vector] = (*m_batchedModelInstancedMap[name]);
-                vector.push_back(last_transform);
-                
-                flags = OptimizeFlags_InstanceMesh;
-            }
-
-            m_optmizeCountMap[name]++;
-
-            auto &&[m, vector] = (*m_batchedModelInstancedMap[name]);
-
-            
-            vector.push_back(transform);
-        }
-    }
-
-    m_materialRef[transform] = name;
+    m_instanceList.push_back(instance);
 }
 
-void Batching::remove(Transform *transform) {
-    auto it = m_materialRef.find(transform);
-    if (it != m_materialRef.end())
+void Batching::remove(Transform *transform)
+{
+    auto it = m_instanceMap.find(transform);
+    if (it == m_instanceMap.end())
     {
-        auto &&[last_transform, flags] = m_optmizeMap[it->second];
-        
-        switch (flags)
-        {
-            case OptimizeFlags_NoOptimize:
-                m_batchedModelNoOptimizeList.erase(std::remove(m_batchedModelNoOptimizeList.begin(), m_batchedModelNoOptimizeList.end(), transform), m_batchedModelNoOptimizeList.end());
-                break;
-            case OptimizeFlags_InstanceMesh: {
-                auto &&[m, vector] = (*m_batchedModelInstancedMap[it->second]);
-
-                vector.erase(std::remove(vector.begin(), vector.end(), transform), vector.end());
-                break;
-            }
-        default:
-            break;
-        }
-
-        m_optmizeCountMap[it->second]--;
-
-        if (flags == OptimizeFlags_InstanceMesh)
-        {
-            auto &&[materialList, vector] = (*m_batchedModelInstancedMap[it->second]);
-
-            if (vector.size() <= 1)
-            {
-                for (auto material : *materialList)
-                {
-                    /*
-                    if (material->getShader() != mShaderOptimize[0])
-                    {
-                        material->setShader(mShaderOptimize[0]);
-                    }
-                    */
-
-
-                    Threadpool::AddTask(&Batching::SetUpdateShaderOptmize, material, material->getShader(), 0);
-                }
-
-                if (transform == last_transform)
-                {
-                    last_transform = vector.back();
-                }
-
-                m_modelsInstacedFromRender.erase(std::remove(m_modelsInstacedFromRender.begin(), m_modelsInstacedFromRender.end(), (*m_batchedModelInstancedMap[it->second])), m_modelsInstacedFromRender.end());
-
-                m_batchedModelInstancedMap.erase(it->second);
-
-                m_batchedModelNoOptimizeList.emplace_back(materialList, last_transform);
-            
-                flags = OptimizeFlags_NoOptimize;
-            }
-        }
-
-        if (m_optmizeCountMap[it->second] <= 0)
-        {
-            m_optmizeCountMap.erase(it->second);
-
-            m_optmizeMap.erase(it->second);
-
-            m_materialRef.erase(it);
-        }
+        return;
     }
+
+    m_instanceList.erase(std::remove(m_instanceList.begin(), m_instanceList.end(), &(*it->second)), m_instanceList.end());
+
+    m_instanceMap.erase(it);
 }
 
 void Batching::draw() {
+    for (auto instance : m_instanceList)
+    {
+        auto &&[transform, materialList] = *instance;
+        
+        auto matrix = transform->getGlobalMatrix();
+        
+        int entityID = static_cast<int>(transform->entity->getEntityID());
+
+        for (std::size_t i={};i<materialList->size();i++)
+        {
+            if (i >= m_batchingRender.size())
+            {
+                continue;
+            }
+
+            m_batchingRender[i]->updatePBO(sizeof(int), &entityID);
+    
+            auto material = (*materialList)[i];
+            
+            auto shader = material->getShader();
+            if (!shader)
+            {
+                continue;
+            }
+    
+            shader->setUniform("u_model", &matrix);
+    
+            material->flush();
+            
+            shader->bind();
+            shader->flush();
+    
+            m_batchingRender[i]->render();
+
+            shader->unbind();
+        }
+    }
+/*
     for (auto &&[materialList, transform] : m_batchedModelNoOptimizeList)
     {
         auto matrix = transform->getGlobalMatrix();
@@ -340,6 +251,7 @@ void Batching::draw() {
             shader->unbind();
         }
     }
+    */
 }
 
 void Batching::calcboundbox(const Mesh *mesh) {
@@ -351,7 +263,7 @@ void Batching::calcboundbox(const Mesh *mesh) {
 
 bool Batching::isValid() const
 {
-    return (!m_batchedModelInstancedMap.empty() || !m_batchedModelNoOptimizeList.empty()) && (m_flags & BatchingFlags_BuildMesh);
+    return !m_instanceList.empty();
 }
 
 bool Batching::isVisible() const {

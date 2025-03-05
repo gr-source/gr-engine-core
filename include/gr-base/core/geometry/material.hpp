@@ -17,7 +17,6 @@ class Material {
 public:
     Material();
     ~Material();
-
     
     void setTexture(int idx, grr::gTexture *texture);
 

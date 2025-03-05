@@ -4,6 +4,7 @@
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
+#include <gr-math/vector3.hpp>
 
 Material::Material() : m_shader(nullptr)
 {
@@ -60,7 +61,13 @@ void Material::setShader(grr::gShader *shader)
 
     for (auto &&[name, data] : temp)
     {
-        internal_set_value(name.c_str(), 0, data.get());
+        if (internal_set_value(name.c_str(), 0, data.get()) != nullptr)
+        {
+            Console::LogWarning("Load: %s", name.c_str());
+            continue;
+        }
+
+        Console::LogError("[ Material ] Fail to set value: %s", name.c_str());
     }
 }
 
@@ -175,6 +182,7 @@ void Material::deserialize(Stream *stream)
         return;
     }
 
+    std::string shader_path;
     if (hasShader)
     {
         std::size_t nsize = 0;
@@ -189,7 +197,8 @@ void Material::deserialize(Stream *stream)
             return;
         }
 
-        AssetsManager::LoadShader(shader_name, &Material::setShader, this);
+        shader_path = shader_name;
+
     }
 
     std::size_t tCount = 0;
@@ -254,15 +263,23 @@ void Material::deserialize(Stream *stream)
             return;
         }
 
-        if (m_uniformMap[name] != nullptr)
+        auto it = m_uniformMap.find(name);
+        if (it != m_uniformMap.end())
         {
-            std::memcpy(m_uniformMap[name], data, stride);
+            std::memcpy(it->second, data, stride);
         } else
         {
-            m_uniformMap[name] = std::malloc(stride);
+            auto ptr = std::malloc(stride);
             
-            std::memcpy(m_uniformMap[name], data, stride);
+            std::memcpy(ptr, data, stride);
+            
+            m_uniformMap.emplace(name, ptr);
         }
+    }
+
+    if (hasShader)
+    {
+        AssetsManager::LoadShader(shader_path, &Material::setShader, this);
     }
 }
 
@@ -289,17 +306,25 @@ void *Material::internal_set_value(const char *name, grm::u8 count, const void *
     }
 
     auto &uniform = m_shader->getUniform()[id];
-    
-    if (m_uniformMap[name] == nullptr)
+
+    void *ptr = nullptr;
+    auto it = m_uniformMap.find(name);
+    if (it == m_uniformMap.end())
     {
-        m_uniformMap[name] = std::malloc(uniform.stride);
+        ptr = std::malloc(uniform.stride);
 
-        m_uniformList.emplace_back(id, m_uniformMap[name]);
+        m_uniformList.emplace_back(id, ptr);
+
+        m_uniformMap.emplace(name, ptr);
+
+    } else
+    {
+        ptr = it->second;
     }
+ 
+    std::memcpy(ptr, data, uniform.stride);
 
-    std::memcpy(m_uniformMap[name], data, uniform.stride);
-
-    return m_uniformMap[name];
+    return ptr;
 }
 
 

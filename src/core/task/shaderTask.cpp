@@ -57,9 +57,9 @@ void ShaderTask::upload(std::string path)
         return AssetsManager::RemoveTask(path);
     }
 
-    invoke(m_shader);
-
     Console::LogInfo("[ ShaderTask ] Shader loaded sucessfuly %s.", name.c_str());
+    
+    invoke(m_shader);
 
     AssetsManager::RemoveTask(path);
 }
