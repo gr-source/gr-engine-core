@@ -16,8 +16,6 @@ Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_lastTransform(nullptr), m_
 {}
 
 void Rigidbody::Init() {
-    bCanUseUpdate = true;
-
     m_transform = GetComponent<Transform>();
 
     if (entity->hasComponent<MeshCollider>()) {
@@ -27,7 +25,7 @@ void Rigidbody::Init() {
     }
 
     if (!m_collisionShape) {
-        return Console::LogError("[ Rigidbody ] Shape not found.");
+        return Console::LogError("[ Rigidbody ] Shape not found: %s", GetGameObject()->getName().c_str());
     }
 
     m_lastTransform = std::make_shared<Transform>();
@@ -64,7 +62,12 @@ void Rigidbody::Init() {
     if (fSweptSphereRadius >= 0.0f)
         m_body->setCcdSweptSphereRadius(fSweptSphereRadius);
 
+    std::cout << "In: " << GetGameObject()->getName() << std::endl;
+
     PhysicsScene::AddRigidbody(&(*m_body));
+
+
+    bCanUseUpdate = true;
 }
 
 void Rigidbody::Destroy() {
