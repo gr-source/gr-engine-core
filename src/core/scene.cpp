@@ -419,6 +419,8 @@ void Scene::ProcessScript(Component *component, std::string path, std::streampos
 
 bool Scene::remove(GameObject *gameObject)
 {
+    m_tempInitObjects.erase(std::remove(m_tempInitObjects.begin(), m_tempInitObjects.end(), gameObject), m_tempInitObjects.end());
+
     m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObject), m_objects.end());
     return true;
 }

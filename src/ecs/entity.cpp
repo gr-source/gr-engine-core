@@ -12,8 +12,11 @@
 
 #include <algorithm>
 #include <list>
+#include <string>
 
-Entity::Entity(GameObject *go, EntityID id) : m_gameObject(go), m_entityID(id) { }
+Entity::Entity(GameObject *go, EntityID id) : m_gameObject(go), m_entityID(id)
+{
+}
 
 Entity::~Entity() {
     std::vector<std::string> scriptnames;
@@ -67,10 +70,13 @@ void Entity::destroy(const std::string &name) {
 
     auto pool = ComponentRegistry::Find(name);
     if (pool != nullptr) {
+        pool->destroy(it->second);
+
+        it->second->bCanUseUpdate = false;
+        it->second->entity = nullptr;
+
         pool->deallocatein(pool, it->second);
     }
-
-    pool->destroy(it->second);
 
     m_components.erase(std::remove(m_components.begin(), m_components.end(), it->second), m_components.end());
 
@@ -98,29 +104,45 @@ void Entity::setEnable(bool value) {
     }
 }
 
+static std::map<std::string, int> MapScriptPriority
+{
+    {"Transform",       100},
+    {"MeshRender",      98},
+    {"Camera",          98},
+    {"Light",           98},
+    {"MeshFilter",      99},
+    {"MeshRender",      98},
+    {"MeshCollider",    97},
+    {"BoxCollider",     97},
+    {"Rigidbody",       96}
+};
+
 void Entity::init() {
-    // /*
-    std::list<std::tuple<std::string, Component *>> temp;
+    std::vector<std::tuple<std::string, Component *>> temp;
     for (auto &&[name, component] : m_componentPtr) {
-        temp.emplace_front(name, &(*component));
+        temp.emplace_back(name, &(*component));
     }
 
+    std::sort(temp.begin(), temp.end(), [](auto &a, auto &b)
+        {
+           return MapScriptPriority[std::get<std::string>(a)] > MapScriptPriority[std::get<std::string>(b)];
+        }
+    );
+
     for (auto [name, component] : temp) {
-        // component->Init();
-        // /*
         auto pool = ComponentRegistry::Find(name);
         if (!pool) {
             continue;
         }
+
+        std::cout << getGameObject()->getName() << ": " << name << std::endl;
 
         try {
             pool->init(component);
         } catch (const std::exception &e) {
             throw std::runtime_error("Fail to initialize " + name + ", " + e.what());
         }
-        // */
     }
-    // */
 }
 
 void Entity::destroy() {
@@ -188,3 +210,7 @@ void Entity::copy(const Entity *entity)
         Console::LogError("[ Entity ] Target game object does not have a transform.");
     }
 }
+
+
+
+

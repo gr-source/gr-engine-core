@@ -4,10 +4,12 @@
 #include <vector>
 
 class MeshCollider;
+class BoxCollider;
 class MeshFilter;
 class MeshRender;
+class Rigidbody;
 class Transform;
 class Camera;
-
+class Light;
 
 

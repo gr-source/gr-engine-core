@@ -5,6 +5,8 @@
 #include "gr-base/ecs/entity.hpp"
 
 #include "default.hpp"
+#include <gr-math/quaternion.hpp>
+#include <gr-math/vector3.hpp>
 
 class Rigidbody : public Component {
     CLASS_FUNCTIONS
@@ -36,6 +38,42 @@ public:
     float getSweptSphereRadius() const;
 
     void setSweptSphereRadius(float value);
+
+    void applyImpulse(const Vector3 &impulse, const Vector3 &pos);
+
+    void applyCentralImpulse(const Vector3 &impulse);
+
+    void applyCentralForce(const Vector3 &force);
+
+    void applyCentralPushImpulse(const Vector3 &impulse);
+
+    void applyPushImpulse(const Vector3 &impulse, const Vector3 &pos);
+
+    void applyTorqueImpulse(const Vector3 &torque);
+
+    void applyTorqueTurnImpulse(const Vector3 &torque);
+
+    void applyDamping(float timeStep);
+
+    void applyForce(const Vector3 &force, const Vector3 &pos);
+
+    void applyTorque(const Vector3 &torque);
+
+    void setAngularVelocity(const Vector3 &value);
+
+    Vector3 getAngularVelocity() const;
+
+    void setLinearVelocity(const Vector3 &value);
+
+    Vector3 getLinearVelocity() const;
+
+    void setPosition(const Vector3 &position);
+
+    Vector3 getPosition() const;
+
+    void setRotation(const Quaternion &rotation);
+
+    Quaternion getRotation() const;
 
 private:
     std::shared_ptr<btDefaultMotionState> m_DefaultMotionState;
