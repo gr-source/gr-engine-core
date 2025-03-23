@@ -18,9 +18,11 @@ Entity::Entity(GameObject *go, EntityID id) : m_gameObject(go), m_entityID(id)
 {
 }
 
-Entity::~Entity() {
+Entity::~Entity()
+{
     std::vector<std::string> scriptnames;
-    for (auto [name, script] : m_componentPtr) {
+    for (auto [name, script] : m_componentPtr)
+    {
         scriptnames.push_back(name);
     }
 
@@ -134,8 +136,6 @@ void Entity::init() {
         if (!pool) {
             continue;
         }
-
-        std::cout << getGameObject()->getName() << ": " << name << std::endl;
 
         try {
             pool->init(component);

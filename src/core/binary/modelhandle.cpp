@@ -1,5 +1,6 @@
 #include "gr-base/core/binary/modelhandle.hpp"
 
+#include "gr-base/core/filmbox/fbxScene.hpp"
 #include "gr-base/core/filmbox/filmbox.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
@@ -118,9 +119,9 @@ void ModelHandle::SetupFBX(const std::string &path, std::unique_ptr<FbxScene> sc
 }
 
 ModelHandle::ModelHandle(const std::string &name, std::unique_ptr<FbxScene> scene) : name(name), isCanRender(true) {
-    auto &root = scene->getRootNode();
-
     convertToGameObject(scene.get());
+
+    generateAnimation(scene.get());
 }
 
 #include "gr-base/core/task/saveGameObjectTask.hpp"
@@ -130,11 +131,16 @@ void ModelHandle::run() {
     }
 }
 
-void ModelHandle::render() {
+void ModelHandle::render()
+{
     auto isOpen = ImGui::TreeNode(name.c_str());
-    if (!isOpen) { return; }
+    if (!isOpen)
+    {
+        return;
+    }
 
-    for (auto go : rootNode) {
+    for (auto go : rootNode)
+    {
         renderNode(go);
     }
 
@@ -209,13 +215,15 @@ GameObject *ModelHandle::CreateGameObject(const FbxScene *scene, const FbxNode *
     return go;
 }
 
-void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameObject *go) {
+void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameObject *go)
+{
     std::unordered_map<std::string, FbxBone> m_bones;
     std::vector<FbxMaterial> materialList;
     std::vector<Mesh> meshMap;
     std::string mesh_name;
 
-    for (auto fbxMesh : node->getMeshes()) {
+    for (auto fbxMesh : node->getMeshes())
+    {
         auto &mesh = meshMap.emplace_back(fbxMesh->getName());
 
         if (mesh_name.empty())
@@ -230,8 +238,7 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
                 continue;
             }
 
-            /*
-            auto& boneWeight = m_tempMesh.addBoneWeight();
+            auto& boneWeight = mesh.addBoneWeight();
 
             float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
 
@@ -239,25 +246,20 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
                 boneWeight.insert<int>(k, vertice.boneIndex[k]);
                 boneWeight.insert<float>(k, norm > 0.0f ? vertice.weight[k] / norm : vertice.weight[k]);
             }
-            */
         }
 
         for (auto &indice : fbxMesh->getIndices()) {
             mesh.addIndice(indice);
         }
 
-        /*
-        if (fbxMesh.hasBone()) {
-            for (auto &bone : fbxMesh.getBones()) {
+        if (fbxMesh->hasBone()) {
+            for (auto &bone : fbxMesh->getBones()) {
                 if (m_bones.find(bone.getName()) != m_bones.end()) { continue; }
 
                 m_bones.emplace(bone.getName(), bone);
             }
         }
-        verticeCount += vertices.size();
-        */
     }
-    // */
 
     auto m_mesh = AssetsManager::FindMesh(mesh_name);
     if (!m_mesh) {
@@ -303,5 +305,107 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
         }
     }
 }
+
+void ModelHandle::generateAnimation(FbxScene *fbxScene)
+{
+    auto &animations = fbxScene->getAnimations();
+
+    FileHeader fileHeader{{'g', 'r', 'a', 'n'}, 1.0f};
+
+    for (auto &animation : animations) {
+        auto name = animation.getName();
+
+        Stream stream(File::GetAsset("/animation/" + name + ".anm"), std::ios_base::out | std::ios_base::binary);
+
+        stream.writeS<FileHeader>(&fileHeader, 1, false);
+
+        gAnimationHeader pAnimationHeader;
+        std::strcpy(pAnimationHeader.m_name, name.c_str());
+        pAnimationHeader.m_tick = animation.getTick();
+        pAnimationHeader.m_duration = animation.getDuration();
+
+        stream.writeS<gAnimationHeader>(&pAnimationHeader, 1, false);
+
+        auto &channels = animation.getChannels();
+
+        grm::size sChannel = channels.size();
+        gChannel *pChannels = new gChannel[sChannel];
+
+        for (auto i=0;i<sChannel;++i) {
+            auto &channel = channels[i];
+
+            auto &name = channel.getName();
+            auto &keysScale = channel.getKeysScale();
+            auto &keysRotation = channel.getKeysRotation();
+            auto &keysPosition = channel.getKeysPosition();
+
+            auto &pChannel = pChannels[i];
+            std::strcpy(pChannel.m_name, name.c_str());
+
+            // gen key scale
+            pChannel.m_keyScaleCount = keysScale.size();
+            pChannel.m_keyScale = new gKeyScale[pChannel.m_keyScaleCount];
+            for (auto i=0;i<pChannel.m_keyScaleCount;++i) {
+                pChannel.m_keyScale[i].time = keysScale[i].time;
+                pChannel.m_keyScale[i].value = keysScale[i].value;
+            }
+
+            //gen key rotation
+            pChannel.m_keyRotationCount = keysRotation.size();
+            pChannel.m_keyRotation = new gKeyRotation[pChannel.m_keyRotationCount];
+            for (auto i=0;i<pChannel.m_keyRotationCount;++i) {
+                pChannel.m_keyRotation[i].time = keysRotation[i].time;
+                pChannel.m_keyRotation[i].value = keysRotation[i].value;
+            }
+
+            // gen key position
+            pChannel.m_keyPositionCount = keysPosition.size();
+            pChannel.m_keyPosition = new gKeyPosition[pChannel.m_keyPositionCount];
+            for (auto i=0;i<pChannel.m_keyPositionCount;++i) {
+                pChannel.m_keyPosition[i].time = keysPosition[i].time;
+                pChannel.m_keyPosition[i].value = keysPosition[i].value;
+            }
+        }
+        
+        stream.writeS<grm::size>(&sChannel, 1, false);
+        for (auto i=0;i<sChannel;++i) {
+            auto &pChannel = pChannels[i];
+
+            // ame
+            stream.writeS<char>(pChannel.m_name, 256, false);
+
+            // gen key scale
+            stream.writeS<grm::size>(&pChannel.m_keyScaleCount, 1, false);
+            stream.writeS<gKeyScale>(pChannel.m_keyScale, pChannel.m_keyScaleCount, false);
+
+            //gen key rotation
+            stream.writeS<grm::size>(&pChannel.m_keyRotationCount, 1, false);
+            stream.writeS<gKeyRotation>(pChannel.m_keyRotation, pChannel.m_keyRotationCount, false);
+
+            // gen key position
+            stream.writeS<grm::size>(&pChannel.m_keyPositionCount, 1, false);
+            stream.writeS<gKeyPosition>(pChannel.m_keyPosition, pChannel.m_keyPositionCount, false);
+        }
+        
+        // ========================= CLEAN =========================
+        for (auto i=0;i<sChannel;++i) {
+            auto &pChannel = pChannels[i];
+
+            // delete keys scale
+            delete[] pChannel.m_keyScale;
+
+            // delete keys rotation
+            delete[] pChannel.m_keyRotation;
+
+            // delete keys position
+            delete[] pChannel.m_keyPosition;
+        }
+        
+        delete[] pChannels;
+
+        stream.close();
+    }
+}
+
 
 

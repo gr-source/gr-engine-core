@@ -7,6 +7,7 @@
 #include <mutex>
 #include <atomic>
 
+#include "gr-base/core/filmbox/fbxScene.hpp"
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/filmbox/default.hpp"
 
@@ -54,6 +55,8 @@ private:
     GameObject *CreateGameObject(const FbxScene *scene, const FbxNode *node, Transform *parent = nullptr);
 
     void generateMesh(const FbxScene *scene, const FbxNode *node, GameObject *go);
+
+    void generateAnimation(FbxScene *fbxScene);
 
     static void SetupFBX(const std::string &path, std::unique_ptr<FbxScene> scene);
 };

@@ -1,5 +1,6 @@
 #include "gr-base/core/geometry/batchingRender.hpp"
 
+#include "gr-base/core/geometry/boneWeight.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include <gr-render/gVertexArray.h>
@@ -65,8 +66,25 @@ void BatchingRender::build(Mesh *mesh)
     grr::gVertexArray::SetAttrib(1, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
     grr::gVertexArray::SetAttrib(2, 2,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
     
-    // grr::gVertexArray::SetAttribI(3, 1, sizeof(int), nullptr);
-    // grr::gVertexArray::SetAttribDivisor(3, 1);
+
+    grr::gVertexArray::Bind(m_pbo);
+    /*grr::gVertexArray::SetAttribI(3, 1, sizeof(int), nullptr);*/
+    /*grr::gVertexArray::SetAttribDivisor(3, 1);*/
+    
+    auto boneweight = mesh->getBoneWeight();
+    if (!boneweight.empty())
+    {
+        grr::gVertexArray::UpdateResizeBuffer(boneweight.size() * sizeof(BoneWeight), BufferUsage::STATIC);
+        grr::gVertexArray::SetBufferUpdate(0, boneweight.size() * sizeof(BoneWeight), boneweight.data());
+
+        grr::gVertexArray::SetAttribI(4, 4, sizeof(BoneWeight), reinterpret_cast<const void*>(offsetof(BoneWeight, m_index)));
+        /*grr::gVertexArray::SetAttribDivisor(4, 1);*/
+
+        grr::gVertexArray::SetAttrib(5, 4, sizeof(BoneWeight), reinterpret_cast<const void*>(offsetof(BoneWeight, m_weight)));
+        /*grr::gVertexArray::SetAttribDivisor(5, 1);*/
+
+    }
+    /*
     if (m_flags == BatchingRenderFlags_Default)
     {
         grr::gVertexArray::Bind(m_pbo);
@@ -84,7 +102,7 @@ void BatchingRender::build(Mesh *mesh)
             grr::gVertexArray::SetAttribDivisor(4 + i, 1);
         }
     }
-
+    */
     m_vertexBuffer->unbind();
 }
 

@@ -27,9 +27,9 @@ public:
 
     virtual void Disable() {}
 
-    virtual bool Serialize(Stream *streaming) { return false; }
+    virtual bool Serialize(Stream *stream) { return false; }
 
-    virtual bool Deserialize(Stream *streaming) { return false; }
+    virtual bool Deserialize(Stream *stream) { return false; }
 
     virtual void Destroy() {}
 

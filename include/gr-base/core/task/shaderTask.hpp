@@ -2,12 +2,22 @@
 
 #include "shaderProperty.hpp"
 
+#include <gr-math/types.hpp>
 #include <gr-render/gCommon.h>
 #include <gr-render/gShader.h>
 
 #include <map>
 
 using ShaderFunc = std::function<void (grr::gShader *)>;
+
+typedef struct
+{
+    std::string name;
+
+    std::string type_name;
+
+    grm::u32 count;
+} ShaderUniform;
 
 class ShaderTask
 {
@@ -17,7 +27,7 @@ public:
     void addFunction(ShaderFunc func);
 
 private:
-    std::map<ShaderType, std::vector<std::tuple<std::string, std::string>>> m_uniformList;
+    std::map<ShaderType, std::vector<ShaderUniform>> mShaderUniformMapToList;
 
     std::map<ShaderType, std::string> m_shaderSource;
 
@@ -47,17 +57,15 @@ public:
 
     static std::size_t GetArrayCount(const std::string &content, std::string &name);
 
-    static void SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, const std::string &name, const std::string &type, std::vector<std::tuple<std::string, std::string>> &vector, bool makeArray = false);
+    static void SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniform> &vector, bool makeArray = false);
 
-    static std::vector<std::tuple<std::string, std::string>> GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, std::unordered_map<std::string, std::string> &fieldMap);
+    static std::vector<ShaderUniform> GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, std::unordered_map<std::string, std::string> &fieldMap);
 
     static std::unordered_map<std::string, std::string> ReadUniform(const std::string &content);
 
     static std::string RemoveCommenter(const std::string &source);
 
     void bindShader(const std::string &path);
-
-    static std::string RemoveDefine(const std::string &source);
 
     bool buildShader(const std::string &name, grr::gShader *shader);
 };

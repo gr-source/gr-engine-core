@@ -6,6 +6,8 @@
 #include "gr-base/core/event.hpp"
 #include "imgui.h"
 
+#include <cstddef>
+#include <gr-math/types.hpp>
 #include <gr-render/gShader.h>
 #include <gr-render/gError.h>
 
@@ -227,34 +229,35 @@ std::size_t ShaderTask::GetArrayCount(const std::string &content, std::string &n
     return std::atoi(content.substr(start_array + 1, end_array - (start_array + 1)).c_str());
 }
 
-void ShaderTask::SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, const std::string &name, const std::string &type, std::vector<std::tuple<std::string, std::string>> &vector, bool makeArray)
+void ShaderTask::SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniform> &vector, bool makeArray)
 {
     if (IsArray(name) && !makeArray)
     {
-        std::string array_name;
+        std::string field_name;
 
-        auto count = GetArrayCount(name, array_name);
+        auto count = GetArrayCount(name, field_name);
 
-        bool isArrayGlsl = structMap.find(type) == structMap.end();
-
-        for (std::size_t i={};i<count;i++)
+        bool bUserStruct = structMap.find(type) != structMap.end();
+        if (bUserStruct)
         {
-            auto array_item(array_name + '[' + std::to_string(i) + "]");
-            if (isArrayGlsl)
+            for (std::size_t i={};i<count;i++)
             {
-                vector.emplace_back(array_item, type);
-                continue;
-            }
+                auto item_name(field_name + '[' + std::to_string(i) + ']');
 
-            SetUniformList(structMap, array_item, type, vector, true);
+                vector.emplace_back(ShaderUniform{item_name, type, static_cast<grm::u32>(count)});
+            }
+            return;
         }
+
+        vector.emplace_back(ShaderUniform{field_name, type, static_cast<grm::u32>(count)});
+        
         return;
     }
 
     auto it = structMap.find(type);
     if (it == structMap.end())
     {
-        vector.emplace_back(name, type);
+        vector.emplace_back(ShaderUniform{name, type, 1});
         return;
     }
 
@@ -266,9 +269,9 @@ void ShaderTask::SetUniformList(std::unordered_map<std::string, std::vector<std:
     }
 }
 
-std::vector<std::tuple<std::string, std::string>> ShaderTask::GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, std::unordered_map<std::string, std::string> &uniformMap)
+std::vector<ShaderUniform> ShaderTask::GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, std::unordered_map<std::string, std::string> &uniformMap)
 {
-    std::vector<std::tuple<std::string, std::string>> uniformFromRegister;
+    std::vector<ShaderUniform> uniformFromRegister;
     for (auto &&[name, type] : uniformMap)
     {
         SetUniformList(structMap, name, type, uniformFromRegister);
@@ -491,7 +494,7 @@ void ShaderTask::bindShader(const std::string &path)
         auto structList = ReadStuct(m_shaderSource[ShaderType_Fragment]);
         auto uniformMap = ReadUniform(m_shaderSource[ShaderType_Fragment]);
 
-        m_uniformList.emplace(ShaderType_Fragment, GetRegistryField(structList, uniformMap));
+        mShaderUniformMapToList.emplace(ShaderType_Fragment, GetRegistryField(structList, uniformMap));
     }
 
     // vertex
@@ -499,7 +502,7 @@ void ShaderTask::bindShader(const std::string &path)
         auto structList = ReadStuct(m_shaderSource[ShaderType_Vertex]);
         auto uniformMap = ReadUniform(m_shaderSource[ShaderType_Vertex]);
 
-        m_uniformList.emplace(ShaderType_Vertex, GetRegistryField(structList, uniformMap));
+        mShaderUniformMapToList.emplace(ShaderType_Vertex, GetRegistryField(structList, uniformMap));
     }
 }
 
@@ -518,27 +521,27 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader)
         return false;
     }
 
-    for (auto &&[name, type] : m_uniformList[ShaderType_Fragment])
+    for (auto &&[name, type_name, count] : mShaderUniformMapToList[ShaderType_Fragment])
     {
-        auto it = mUniformNameToType.find(type);
+        auto it = mUniformNameToType.find(type_name);
         if (it == mUniformNameToType.end())
         {
-            Console::LogWarning("[ ShaderTask ] Fragment Shader uniform type do not is valid: %s, %s", name.c_str(), type.c_str());
+            Console::LogWarning("[ ShaderTask ] Fragment Shader uniform type do not is valid: %s, %s", name.c_str(), type_name.c_str());
             continue;
         }
 
-        PRINT_ERROR(shader->registry(name.c_str(), 1, it->second));
+        PRINT_ERROR(shader->registry(name.c_str(), count, it->second));
     }
     
-    for (auto &&[name, type] : m_uniformList[ShaderType_Vertex]) {
-        auto it = mUniformNameToType.find(type);
+    for (auto &&[name, type_name, count] : mShaderUniformMapToList[ShaderType_Vertex]) {
+        auto it = mUniformNameToType.find(type_name);
         if (it == mUniformNameToType.end())
         {
-            Console::LogWarning("[ ShaderTask ] Vertex Shader uniform type do not is valid: %s, %s", name.c_str(), type.c_str());
+            Console::LogWarning("[ ShaderTask ] Vertex Shader uniform type do not is valid: %s, %s", name.c_str(), type_name.c_str());
             continue;
         }
 
-        PRINT_ERROR(shader->registry(name.c_str(), 1, it->second));
+        PRINT_ERROR(shader->registry(name.c_str(), count, it->second));
     }
     return true;
 }

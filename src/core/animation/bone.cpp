@@ -2,7 +2,8 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-Bone::Bone(const std::string &name, const Vector3 &position, const Vector3 &scale, const Quaternion &rotation, int id) : m_name(name), m_position(position), m_scale(scale), m_rotation(rotation), m_boneIndex(id), m_localMatrix(Matrix4x4::identityMatrix) {
+Bone::Bone(const std::string &name, const Vector3 &position, const Vector3 &scale, const Quaternion &rotation, int id) : m_name(name), m_position(position), m_scale(scale), m_rotation(rotation), m_boneIndex(id), m_localMatrix(Matrix4x4::identityMatrix)
+{
     updateMatrix();
 }
 
@@ -29,6 +30,7 @@ bool Bone::serialize(Stream *stream) const {
         if (!stream->write(&nlen, sizeof(std::size_t))) {
             return false;
         }
+
         if (!stream->write(m_name.data(), nlen * sizeof(char))) {
             return false;
         }
@@ -97,6 +99,8 @@ bool Bone::deserialize(Stream *stream) {
     if (!stream->read(reinterpret_cast<char *>(&m_boneIndex), sizeof(int))) {
         return false;
     }
+
+    updateMatrix();
 
     return true;
 }

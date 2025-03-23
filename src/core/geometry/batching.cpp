@@ -4,6 +4,7 @@
 #include "gr-base/core/status.hpp"
 
 #include "gr-base/core/threadpool.hpp"
+#include "gr-base/script/animator.hpp"
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
@@ -157,7 +158,7 @@ void Batching::draw() {
                 continue;
             }
 
-            m_batchingRender[i]->updatePBO(sizeof(int), &entityID);
+            /*m_batchingRender[i]->updatePBO(sizeof(int), &entityID);*/
     
             auto material = (*materialList)[i];
             
@@ -165,6 +166,14 @@ void Batching::draw() {
             if (!shader)
             {
                 continue;
+            }
+
+            if (transform->getGameObject()->hasComponent<Animator>())
+            {
+                auto animator = transform->getGameObject()->getComponent<Animator>();
+
+
+                shader->setUniform("u_boneMatrices", animator->m_FinalBoneMatrices.data());
             }
     
             shader->setUniform("u_model", &matrix);
@@ -179,79 +188,6 @@ void Batching::draw() {
             shader->unbind();
         }
     }
-/*
-    for (auto &&[materialList, transform] : m_batchedModelNoOptimizeList)
-    {
-        auto matrix = transform->getGlobalMatrix();
-        
-        int entityID = static_cast<int>(transform->entity->getEntityID());
-
-        for (std::size_t i={};i<materialList->size();i++)
-        {
-            if (i >= m_batchingRenderList.size())
-            {
-                continue;
-            }
-
-            m_batchingRenderList[i]->updatePBO(sizeof(int), &entityID);
-    
-            auto material = (*materialList)[i];
-            
-            auto shader = material->getShader();
-            if (!shader)
-            {
-                continue;
-            }
-    
-            shader->setUniform("u_model", &matrix);
-    
-            material->flush();
-            
-            shader->bind();
-            shader->flush();
-    
-            m_batchingRenderList[i]->render();
-
-            shader->unbind();
-        }
-    }
-        
-    for (auto &&[materialList, vector] : m_modelsInstacedFromRender)
-    {
-
-        std::vector<InstancedData> m_instanceList;
-
-        for (auto transform : vector)
-        {
-            m_instanceList.push_back({static_cast<int>(transform->entity->getEntityID()), transform->getGlobalMatrix()});
-        }
-
-        for (int i=0;i<materialList->size();i++) {
-            if (i >= m_batchingRenderInstancedList.size()) { continue; }
-
-            
-            auto draw = &(*m_batchingRenderInstancedList[i]);
-            
-            draw->setInstancedCount(m_instanceList.size());
-            
-            auto material = (*materialList)[i];
-            
-            auto shader = material->getShader();
-            if (!shader) { continue; }
-    
-            draw->updatePBO(m_instanceList.size() * sizeof(InstancedData), m_instanceList.data());
-    
-            material->flush();
-            
-            shader->bind();
-            shader->flush();
-    
-            draw->render();
-    
-            shader->unbind();
-        }
-    }
-    */
 }
 
 void Batching::calcboundbox(const Mesh *mesh) {
