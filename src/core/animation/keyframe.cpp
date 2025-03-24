@@ -1,4 +1,8 @@
 #include "gr-base/core/animation/keyframe.hpp"
+#include "gr-base/core/file/stream.hpp"
+#include <cstddef>
+#include <gr-math/vector3.hpp>
+#include <iterator>
 
 Keyframe::Keyframe(const std::string &name) : m_name(name) {}
 
@@ -55,6 +59,136 @@ float Keyframe::getScaleFactor(float last, float next, float time) const {
     if (next == last)
         return 0.0f;
     return ((time - last) / (next - last));
+}
+
+bool Keyframe::serialize(Stream *stream) const
+{
+    // write name
+    {
+        auto nsize = m_name.size();
+        if (!stream->write(&nsize, sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        if (!stream->write(m_name.c_str(), nsize * sizeof(char)))
+        {
+            return false;
+        }
+    }
+
+    // write key scale
+    {
+        auto ksize = m_keyScale.size();
+        if (!stream->write(&ksize, sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        if (!stream->write(m_keyScale.data(), ksize * sizeof(Key<Vector3>)))
+        {
+            return false;
+        }
+    }
+
+
+    // write key rotation
+    {
+        auto ksize = m_keyRotation.size();
+        if (!stream->write(&ksize, sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        if (!stream->write(m_keyRotation.data(), ksize * sizeof(Key<Quaternion>)))
+        {
+            return false;
+        }
+    }
+
+
+    // write key position
+    {
+        auto ksize = m_keyPosition.size();
+        if (!stream->write(&ksize, sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        if (!stream->write(m_keyPosition.data(), ksize * sizeof(Key<Vector3>)))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Keyframe::deserialize(Stream *stream)
+{
+    // read name
+    {
+        std::size_t nsize = 0;
+        if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        std::string name(nsize, '\0');
+        if (!stream->read(name.data(), nsize * sizeof(char)))
+        {
+            return false;
+        }
+
+        m_name = name;
+    }
+
+    // write key scale
+    {
+        std::size_t ksize = 0;
+        if (!stream->read(reinterpret_cast<char *>(&ksize), sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        m_keyScale.resize(ksize, Key<Vector3>(0.0f, Vector3::zero));
+        if (!stream->read(reinterpret_cast<char *>(m_keyScale.data()), ksize * sizeof(Key<Vector3>)))
+        {
+            return false;
+        }
+    }
+
+
+    // write key rotation
+    {
+        std::size_t ksize = 0;
+        if (!stream->read(reinterpret_cast<char *>(&ksize), sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        m_keyRotation.resize(ksize, Key<Quaternion>(0.0f, Quaternion::identity));
+        if (!stream->read(reinterpret_cast<char *>(m_keyRotation.data()), ksize * sizeof(Key<Quaternion>)))
+        {
+            return false;
+        }
+    }
+
+
+    // write key position
+    {
+        std::size_t ksize = 0;
+        if (!stream->read(reinterpret_cast<char *>(&ksize), sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        m_keyPosition.resize(ksize, Key<Vector3>(0.0f, Vector3::zero));
+        if (!stream->read(reinterpret_cast<char *>(m_keyPosition.data()), ksize * sizeof(Key<Vector3>)))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 

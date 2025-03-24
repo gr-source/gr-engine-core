@@ -1,5 +1,8 @@
 #pragma once
 
+#include "gr-base/core/file/default.hpp"
+
+#include "gr-base/core/file/stream.hpp"
 #include "keyframe.hpp"
 
 #include <unordered_map>
@@ -24,6 +27,10 @@ public:
 
     template <typename ...Args>
     Keyframe &addkeyframe(Args &&... args);
+
+    bool serialize(Stream *stream) const;
+
+    bool deserialize(Stream *stream);
     
 private:
     std::string m_name;

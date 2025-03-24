@@ -5,7 +5,6 @@
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/threadpool.hpp"
-#include "gr-base/core/console.hpp"
 #include "gr-base/core/window.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
@@ -20,12 +19,13 @@
 #include "gr-base/core/animation/bone.hpp"
 
 #include "gr-base/core/file/stream.hpp"
+#include "gr-base/core/file/file.hpp"
+
+#include "gr-base/core/task/animationsavetask.hpp"
 
 #include <imgui.h>
 
-#include <functional>
 #include <filesystem>
-#include <mutex>
 
 std::unordered_map<std::string, std::unique_ptr<ModelHandle>> ModelHandle::taskListMap;
 
@@ -41,14 +41,18 @@ void ModelHandle::ImportFBX(const std::string &path) {
         Threadpool::AddTask(&Filmbox::Load, path, func, true);
 }
 
-void ModelHandle::Render() {
-    if (!bHasTasks) { return; }
+void ModelHandle::Render()
+{
+    if (!bHasTasks)
+    {
+        return;
+    }
 
     auto viewportsize = Window::GetWindowSize();
 
     ImVec2 windowSize(300, 400);
 
-    ImGui::SetNextWindowPos(ImVec2{(viewportsize.x / 2) - (windowSize.x / 2), (viewportsize.y / 2) - (windowSize.y / 2)});
+    ImGui::SetNextWindowPos(ImVec2{(static_cast<float>(viewportsize.x) / 2) - (windowSize.x / 2), (static_cast<float>(viewportsize.y) / 2) - (windowSize.y / 2)});
     ImGui::SetNextWindowSize(windowSize);
     ImGui::Begin("Import Menu", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 
@@ -94,14 +98,16 @@ void ModelHandle::Render() {
     ImGui::End();
 }
 
-void ModelHandle::SetupFBX(const std::string &path, std::unique_ptr<FbxScene> scene) {
+void ModelHandle::SetupFBX(const std::string &path, std::unique_ptr<FbxScene> scene)
+{
     auto filename = std::filesystem::path(path).filename();
 
     {
         std::lock_guard<std::mutex> lock(mutex);
 
         auto it = taskListMap.find(filename);
-        if (it != taskListMap.end()) {
+        if (it != taskListMap.end())
+        {
             return;
         }
     }
@@ -125,10 +131,11 @@ ModelHandle::ModelHandle(const std::string &name, std::unique_ptr<FbxScene> scen
 }
 
 #include "gr-base/core/task/saveGameObjectTask.hpp"
-void ModelHandle::run() {
-    for (auto go : rootNode) {
-        SaveGameObjectTask SaveGameObjectTask(go, File::GetAsset("/model/" + go->getName() + ".gmdx"));
-    }
+void ModelHandle::run()
+{
+    saveNode();
+
+    saveAnimation();
 }
 
 void ModelHandle::render()
@@ -139,9 +146,30 @@ void ModelHandle::render()
         return;
     }
 
-    for (auto go : rootNode)
+    if (!rootNode.empty())
     {
-        renderNode(go);
+        if (ImGui::TreeNode("Node"))
+        {
+            for (auto go : rootNode)
+            {
+                renderNode(go);
+            }
+
+            ImGui::TreePop();
+        }
+    }
+
+    if (!mAnimationLits.empty())
+    {
+        if (ImGui::TreeNode("Animation"))
+        {
+            
+            for (auto &animation : mAnimationLits)
+            {
+                renderAnimation(&(*animation));
+            }
+            ImGui::TreePop();
+        }
     }
 
     ImGui::TreePop();
@@ -308,104 +336,58 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
 
 void ModelHandle::generateAnimation(FbxScene *fbxScene)
 {
-    auto &animations = fbxScene->getAnimations();
+    for (auto &fbxAnimation : fbxScene->getAnimations())
+    {
+        auto animation = &(*mAnimationLits.emplace_back(std::make_unique<Animation>()));
+        animation->setDuration(fbxAnimation.getDuration());
+        animation->setName(fbxAnimation.getName());
+        animation->setTick(fbxAnimation.getTick());
 
-    FileHeader fileHeader{{'g', 'r', 'a', 'n'}, 1.0f};
+        for (auto &channel : fbxAnimation.getChannels())
+        {
+            auto &keyframe = animation->addkeyframe(channel.getName(), channel.getName());
 
-    for (auto &animation : animations) {
-        auto name = animation.getName();
-
-        Stream stream(File::GetAsset("/animation/" + name + ".anm"), std::ios_base::out | std::ios_base::binary);
-
-        stream.writeS<FileHeader>(&fileHeader, 1, false);
-
-        gAnimationHeader pAnimationHeader;
-        std::strcpy(pAnimationHeader.m_name, name.c_str());
-        pAnimationHeader.m_tick = animation.getTick();
-        pAnimationHeader.m_duration = animation.getDuration();
-
-        stream.writeS<gAnimationHeader>(&pAnimationHeader, 1, false);
-
-        auto &channels = animation.getChannels();
-
-        grm::size sChannel = channels.size();
-        gChannel *pChannels = new gChannel[sChannel];
-
-        for (auto i=0;i<sChannel;++i) {
-            auto &channel = channels[i];
-
-            auto &name = channel.getName();
-            auto &keysScale = channel.getKeysScale();
-            auto &keysRotation = channel.getKeysRotation();
-            auto &keysPosition = channel.getKeysPosition();
-
-            auto &pChannel = pChannels[i];
-            std::strcpy(pChannel.m_name, name.c_str());
-
-            // gen key scale
-            pChannel.m_keyScaleCount = keysScale.size();
-            pChannel.m_keyScale = new gKeyScale[pChannel.m_keyScaleCount];
-            for (auto i=0;i<pChannel.m_keyScaleCount;++i) {
-                pChannel.m_keyScale[i].time = keysScale[i].time;
-                pChannel.m_keyScale[i].value = keysScale[i].value;
+            for (auto &key : channel.getKeysScale())
+            {
+                keyframe.addKeyScale(key.time, key.value);
             }
 
-            //gen key rotation
-            pChannel.m_keyRotationCount = keysRotation.size();
-            pChannel.m_keyRotation = new gKeyRotation[pChannel.m_keyRotationCount];
-            for (auto i=0;i<pChannel.m_keyRotationCount;++i) {
-                pChannel.m_keyRotation[i].time = keysRotation[i].time;
-                pChannel.m_keyRotation[i].value = keysRotation[i].value;
+            for (auto &key : channel.getKeysRotation())
+            {
+                keyframe.addKeyRotation(key.time, key.value);
             }
 
-            // gen key position
-            pChannel.m_keyPositionCount = keysPosition.size();
-            pChannel.m_keyPosition = new gKeyPosition[pChannel.m_keyPositionCount];
-            for (auto i=0;i<pChannel.m_keyPositionCount;++i) {
-                pChannel.m_keyPosition[i].time = keysPosition[i].time;
-                pChannel.m_keyPosition[i].value = keysPosition[i].value;
+            for (auto &key : channel.getKeysPosition())
+            {
+                keyframe.addKeyPosition(key.time, key.value);
             }
         }
-        
-        stream.writeS<grm::size>(&sChannel, 1, false);
-        for (auto i=0;i<sChannel;++i) {
-            auto &pChannel = pChannels[i];
+    }
+    /*
+    */
+}
 
-            // ame
-            stream.writeS<char>(pChannel.m_name, 256, false);
+void ModelHandle::renderAnimation(Animation *animation)
+{
+    auto name = animation->getName();
 
-            // gen key scale
-            stream.writeS<grm::size>(&pChannel.m_keyScaleCount, 1, false);
-            stream.writeS<gKeyScale>(pChannel.m_keyScale, pChannel.m_keyScaleCount, false);
+    ImGui::Text("%s", name.c_str());
+}
 
-            //gen key rotation
-            stream.writeS<grm::size>(&pChannel.m_keyRotationCount, 1, false);
-            stream.writeS<gKeyRotation>(pChannel.m_keyRotation, pChannel.m_keyRotationCount, false);
-
-            // gen key position
-            stream.writeS<grm::size>(&pChannel.m_keyPositionCount, 1, false);
-            stream.writeS<gKeyPosition>(pChannel.m_keyPosition, pChannel.m_keyPositionCount, false);
-        }
-        
-        // ========================= CLEAN =========================
-        for (auto i=0;i<sChannel;++i) {
-            auto &pChannel = pChannels[i];
-
-            // delete keys scale
-            delete[] pChannel.m_keyScale;
-
-            // delete keys rotation
-            delete[] pChannel.m_keyRotation;
-
-            // delete keys position
-            delete[] pChannel.m_keyPosition;
-        }
-        
-        delete[] pChannels;
-
-        stream.close();
+void ModelHandle::saveNode()
+{
+    for (auto go : rootNode)
+    {
+        SaveGameObjectTask SaveGameObjectTask(go, File::GetAsset("/model/" + go->getName() + ".gmdx"));
     }
 }
 
+void ModelHandle::saveAnimation()
+{
+    for (auto &animation : mAnimationLits)
+    {
+        AnimationSaveTask animationsavetask(File::GetAsset("/animation"), &(*animation));
+    }
+}
 
 

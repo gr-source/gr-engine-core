@@ -157,6 +157,10 @@ void File::rename(const std::string &from, const std::string &to) {
     std::filesystem::rename(from, to);
 }
 
-
+/////////////////////
+std::string gfile::createTempFile(const std::string &name)
+{
+    return std::filesystem::temp_directory_path().string() + "/" + name;
+}
 
 

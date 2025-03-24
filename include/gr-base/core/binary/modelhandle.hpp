@@ -8,10 +8,11 @@
 #include <atomic>
 
 #include "gr-base/core/filmbox/fbxScene.hpp"
-#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/filmbox/default.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
+
+#include "gr-base/core/animation/animation.hpp"
 
 #include <gr-render/gCommon.h>
 
@@ -38,6 +39,8 @@ private:
 
     std::vector<std::unique_ptr<GameObject>> gameObjects;
 
+    std::vector<std::unique_ptr<Animation>> mAnimationLits;
+
     std::vector<GameObject *> rootNode;
 
     std::string name;
@@ -57,6 +60,12 @@ private:
     void generateMesh(const FbxScene *scene, const FbxNode *node, GameObject *go);
 
     void generateAnimation(FbxScene *fbxScene);
+
+    void renderAnimation(Animation *animation);
+
+    void saveNode();
+
+    void saveAnimation();
 
     static void SetupFBX(const std::string &path, std::unique_ptr<FbxScene> scene);
 };

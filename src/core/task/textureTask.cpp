@@ -20,7 +20,7 @@ TextureTask::TextureTask(const std::string &path, TextureFunc func) : m_pixels(n
 
 void TextureTask::addFunction(TextureFunc func)
 {
-    m_functions.push_back(func);
+    return m_functions.push_back(func);
 }
 
 void TextureTask::invoke(grr::gTexture *texture)

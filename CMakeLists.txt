@@ -92,6 +92,8 @@ set(culling
 
 set(task
     src/core/task/saveGameObjectTask.cpp
+    src/core/task/animationloadtask.cpp
+    src/core/task/animationsavetask.cpp
     src/core/task/gameObjectTask.cpp
     src/core/task/shaderProperty.cpp
     src/core/task/saveSceneTask.cpp

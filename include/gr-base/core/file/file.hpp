@@ -59,3 +59,12 @@ private:
 
     static std::stringstream m_error;
 };
+
+
+class gfile {
+public:
+    static std::string createTempFile(const std::string& name);
+};
+
+
+

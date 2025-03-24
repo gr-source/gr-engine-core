@@ -23,11 +23,13 @@
 
 #include <filesystem>
 #include <cassert>
+#include <functional>
 #include <future>
 
 #include <gr-render/gTexture.h>
 #include <gr-render/gShader.h>
 #include <gr-render/gError.h>
+#include <memory>
 #include <mutex>
 
 grm::u32 AssetsManager::m_processCount = 0;
@@ -53,9 +55,9 @@ std::unordered_map<std::string, std::unique_ptr<TextureTask>> AssetsManager::mTe
 std::mutex AssetsManager::mTextureMutex;
 
 /***************** Animation *****************/
-std::unordered_map<std::string, std::unique_ptr<Animation>> AssetsManager::s_animationList;
-std::list<std::tuple<std::string, Animation *>> AssetsManager::s_animationFromLoader;
-std::mutex AssetsManager::s_animatioMutex;
+std::unordered_map<std::string, std::unique_ptr<AnimationLoadTask>> AssetsManager::mAnimationLoadTask;
+std::unordered_map<std::string, std::unique_ptr<Animation>> AssetsManager::mAnimationList;
+std::mutex AssetsManager::mAnimationMutex;
 
 /***************** GameObject *****************/
 std::unordered_map<std::string, std::unique_ptr<GameObjectTask>> AssetsManager::mGameObjectTaskMap;
@@ -99,8 +101,8 @@ void AssetsManager::Shutdown() {
     // m_textureHandle.clear();
 
     /***************** Animation *****************/
-    s_animationList.clear();
-    s_animationFromLoader.clear();
+    /*s_animationList.clear();*/
+    /*s_animationFromLoader.clear();*/
 
     /***************** GameObject *****************/
     // s_gameObjectFromLoader.clear();
@@ -181,38 +183,6 @@ void AssetsManager::RemoveShader(grr::gShader *shader)
     mShaderList.erase(std::remove(mShaderList.begin(), mShaderList.end(), it->first), mShaderList.end());
 
     mShaderPathRef.erase(it);
-}
-
-Animation *AssetsManager::LoadAnimation(const std::string &path)
-{
-    if (!File::Exists(path)) {
-        Console::log(Log::ERROR, "Falied to open animation: " + path);
-        return nullptr;
-    }
-    auto it = s_animationList.find(path);
-    if (it != s_animationList.end()) {
-        return &(*(*it).second);
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(s_animatioMutex);
-        auto it = std::find_if(s_animationFromLoader.begin(), s_animationFromLoader.end(), [&path](auto &tuple) {
-            return std::get<std::string>(tuple) == path;
-        });
-        if (it != s_animationFromLoader.end()) {
-            return std::get<Animation *>((*it));
-        }
-    }
-
-    auto animation = new Animation();
-    {
-        std::lock_guard<std::mutex> lock(s_animatioMutex);
-        s_animationFromLoader.emplace_back(path, animation);
-    }
-
-    Threadpool::AddTask(&AssetsManager::ProcessAnimation);
-
-    return animation;
 }
 
 grr::gShader *AssetsManager::FindShader(const std::string &name) {
@@ -300,124 +270,6 @@ std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> &AssetsManag
     return mMeshMapList;
 }
 
-void AssetsManager::SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *animation) {
-    animation->setName(temp->getName());
-    animation->setDuration(temp->getDuration());
-    animation->setTick(temp->getTick());
-
-    for (const auto &channel : temp->getChannels()) {
-        auto &keyframe = animation->addkeyframe(channel.getName(), channel.getName());
-
-        for (auto &keyScale : channel.getKeysScale()) {
-            keyframe.addKeyScale(keyScale.time, keyScale.value);
-        }
-
-        for (auto &keyRotation : channel.getKeysRotation()) {
-            keyframe.addKeyRotation(keyRotation.time, keyRotation.value);
-        }
-
-        for (auto &keyPosition : channel.getKeysPosition()) {
-            keyframe.addKeyPosition(keyPosition.time, keyPosition.value);
-        }
-    }
-
-    s_animationList.emplace(path, std::unique_ptr<Animation>(animation));
-    
-    delete temp;
-}
-
-void AssetsManager::doAnimationInBackground(const std::string &path, Animation *target) {
-    Stream stream(path, std::ios_base::in | std::ios_base::binary);
-    if (!stream.is_open()) {
-        return Console::LogError("Falied to open animation: %s", path.c_str());
-    }
-
-    FileHeader pHeader;
-    stream.readS<FileHeader>(&pHeader, 1);
-
-    gAnimationHeader pAnimationHeader;
-    stream.readS<gAnimationHeader>(&pAnimationHeader, 1);
-
-    auto fbxAnimation = new FbxAnimation(pAnimationHeader.m_name, pAnimationHeader.m_duration, pAnimationHeader.m_tick);
-
-    grm::size sChannel;
-    stream.readS<grm::size>(&sChannel, 1);
-
-    std::vector<gChannel> pChannels(sChannel);
-
-    for (auto i=0;i<sChannel;++i) {
-        auto &pChannel = pChannels[i];
-
-        stream.readS<char>(pChannel.m_name, 256);
-
-        // gen key scale
-        stream.readS<grm::size>(&pChannel.m_keyScaleCount, 1);
-        pChannel.m_keyScale = new gKeyScale[pChannel.m_keyScaleCount];
-        stream.readS<gKeyScale>(pChannel.m_keyScale, pChannel.m_keyScaleCount);
-
-        //gen key rotation
-        stream.readS<grm::size>(&pChannel.m_keyRotationCount, 1);
-        pChannel.m_keyRotation = new gKeyRotation[pChannel.m_keyRotationCount];
-        stream.readS<gKeyRotation>(pChannel.m_keyRotation, pChannel.m_keyRotationCount);
-
-        // gen key position
-        stream.readS<grm::size>(&pChannel.m_keyPositionCount, 1);
-        pChannel.m_keyPosition = new gKeyPosition[pChannel.m_keyPositionCount];
-        stream.readS<gKeyPosition>(pChannel.m_keyPosition, pChannel.m_keyPositionCount);
-    }
-
-    for (auto &channel : pChannels) {
-        auto &keyframe = fbxAnimation->addChannel(channel.m_name);
-
-        for (auto i=0;i<channel.m_keyScaleCount;++i) {
-            auto &keyScale = channel.m_keyScale[i];
-
-            keyframe.addKeyScale(keyScale.time, keyScale.value);
-        }
-
-        for (auto i=0;i<channel.m_keyRotationCount;++i) {
-            auto &keyRotation = channel.m_keyRotation[i];
-
-            keyframe.addKeyRotation(keyRotation.time, keyRotation.value);
-        }
-
-        for (auto i=0;i<channel.m_keyPositionCount;++i) {
-            auto &keyPosition = channel.m_keyPosition[i];
-
-            keyframe.addKeyPosition(keyPosition.time, keyPosition.value);
-        }
-    }
-
-    // releaser memory
-    for (auto i=0;i<sChannel;++i) {
-        auto &pChannel = pChannels[i];
-
-        // gen key scale
-        delete[] pChannel.m_keyScale;
-
-        //gen key rotation
-        delete[] pChannel.m_keyRotation;
-
-        // gen key position
-        delete[] pChannel.m_keyPosition;
-    }
-
-    Event::Add(&AssetsManager::SetupAnimation, path, fbxAnimation, target);
-}
-
-void AssetsManager::ProcessAnimation() {
-    std::unique_lock<std::mutex> lock(s_animatioMutex);
-    while (!s_animationFromLoader.empty()) {
-        auto &&[path, animation] = s_animationFromLoader.front();
-        lock.unlock();
-
-        doAnimationInBackground(path, animation);
-
-        lock.lock();
-        s_animationFromLoader.pop_front();
-    }
-}
-
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func)
 {
     if (!File::Exists(path))
@@ -458,7 +310,6 @@ void AssetsManager::SetShaderList(const std::string &path, grr::gShader *shader,
             if (func == nullptr)
                 return;
 
-            std::cout << "xxxx" << std::endl;
             return func(&(*it->second));
         }
     }
@@ -505,6 +356,50 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
     
     // Create task to load texture
     mTextureTaskMap.emplace(path, std::make_unique<TextureTask>(path, func));
+}
+
+void AssetsManager::SetAnimationList(const std::string &path, const std::function<void (Animation *)> func)
+{
+    if (!File::Exists(path)) {
+        return Console::log(Log::ERROR, "Falied to open animation: " + path);
+    }
+
+    std::lock_guard<std::mutex> lock(mAnimationMutex);
+    
+    // check task is processing
+    {
+        auto it = mAnimationLoadTask.find(path);
+        if (it != mAnimationLoadTask.end())
+        {
+            if (func == nullptr)
+                return;
+
+            return it->second->addFunction(func);
+        }
+    }
+
+    // check animation has be loaded
+    {
+        auto it = mAnimationList.find(path);
+        if (it != mAnimationList.end())
+        {
+            if (func == nullptr)
+                return;
+            
+            return func(&(*it->second));
+        }
+    }
+
+    mAnimationLoadTask.emplace(path, std::make_unique<AnimationLoadTask>(path, func));
+}
+
+Animation *AssetsManager::CreateAnimation(const std::string &name)
+{
+    std::lock_guard<std::mutex> lock(mAnimationMutex);
+
+    mAnimationList.emplace(name, std::make_unique<Animation>(name));
+
+    return &(*mAnimationList[name]);
 }
 
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::GetShaderMap() {
@@ -612,6 +507,17 @@ void AssetsManager::RemoveTask(const std::string &name)
         auto it = mGameObjectTaskMap.find(name);
         if (it != mGameObjectTaskMap.end()) {
             mGameObjectTaskMap.erase(it);
+            return;
+        }
+    }
+
+    // Chck task is on AnimationLoadTask
+    {
+        std::lock_guard<std::mutex> lock(mAnimationMutex);
+        auto it = mAnimationLoadTask.find(name);
+        if (it != mAnimationLoadTask.end())
+        {
+            mAnimationLoadTask.erase(it);
             return;
         }
     }

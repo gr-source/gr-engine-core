@@ -1,6 +1,5 @@
 #pragma once
 
-#include <condition_variable>
 #include <functional>
 #include <memory>
 #include <string>
@@ -8,27 +7,21 @@
 #include <vector>
 #include <mutex>
 #include <list>
-#include <map>
 
 #include <gr-render/gRender.h>
 
 #include "gr-base/core/animation/animation.hpp"
-
-#include "gr-base/core/binary/gHeader.hpp"
-
-#include "gr-base/core/file/file.hpp"
 
 #include "gr-base/core/filmbox/default.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
-#include "gr-base/script/default.hpp"
-
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/core/default.hpp"
 
+#include "gr-base/core/task/animationloadtask.hpp"
 #include "gr-base/core/task/gameObjectTask.hpp"
 #include "gr-base/core/task/textureTask.hpp"
 #include "gr-base/core/task/shaderTask.hpp"
@@ -62,7 +55,10 @@ public:
     template <typename ...Args>
     static void LoadScene(const std::string &path, Args &&...args);
 
-    static Animation *LoadAnimation(const std::string &path);
+    template <typename ...Args>
+    static void LoadAnimation(const std::string &path, Args &&...args);
+
+    static Animation *CreateAnimation(const std::string &name);
 
     static grr::gShader *FindShader(const std::string &name);
 
@@ -104,6 +100,8 @@ public:
 
     static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
 
+    static void SetAnimationList(const std::string &path, std::function<void(Animation *)> func);
+
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &GetShaderMap();
 
     static std::vector<grr::gShader *> GetShaderList();
@@ -142,9 +140,9 @@ private:
     static std::mutex mTextureMutex;
 
     /***************** Animation *****************/
-    static std::unordered_map<std::string, std::unique_ptr<Animation>> s_animationList;
-    static std::list<std::tuple<std::string, Animation *>> s_animationFromLoader;
-    static std::mutex s_animatioMutex;
+    static std::unordered_map<std::string, std::unique_ptr<AnimationLoadTask>> mAnimationLoadTask;
+    static std::unordered_map<std::string, std::unique_ptr<Animation>> mAnimationList;
+    static std::mutex mAnimationMutex;
 
     /***************** GameObject *****************/
     static std::unordered_map<std::string, std::unique_ptr<GameObjectTask>> mGameObjectTaskMap;
@@ -164,12 +162,6 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<SceneTask>> mSceneTaskMap;
     static std::unordered_map<std::string, std::unique_ptr<Scene>> mSceneMap;
     static std::mutex mSceneMutex;
-
-    static void SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *target);
-
-    static void doAnimationInBackground(const std::string &path, Animation *target);
-
-    static void ProcessAnimation();
 
     static void SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void (Scene *)> func);
 };
@@ -241,7 +233,17 @@ inline Material *AssetsManager::CreateMaterial(const std::string &key, Args && .
     return &(*mMaterialMap[key]);
 }
 
+template <typename ...Args>
+void AssetsManager::LoadAnimation(const std::string &path, Args &&...args)
+{
+    std::function<void (Animation *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0)
+    {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
 
+    SetAnimationList(path, func);
+}
 
 
 

@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "gr-base/core/file/default.hpp"
+
 #include <gr-math/gmath.hpp>
 
 template <typename T>
@@ -40,6 +42,10 @@ public:
 
     template <typename ...Args>
     Key<Quaternion> &addKeyRotation(Args &&...args);
+
+    bool serialize(Stream *stream) const;
+    
+    bool deserialize(Stream *stream);
 
 private:
     std::string m_name;

@@ -12,6 +12,8 @@
 
 #include "gr-base/ecs/gameObject.hpp"
 
+#include "gr-base/core/binary/gHeader.hpp"
+
 GameObjectTask::GameObjectTask(const std::string &path, GameObjectFunc func) : m_function(func), m_stream(nullptr)
 {
     Threadpool::AddTask(&GameObjectTask::doInBackground, this, path);
