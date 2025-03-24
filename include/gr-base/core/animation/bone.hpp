@@ -1,9 +1,10 @@
 #pragma once
 
-#include <gr-math/gmath.hpp>
 #include <string>
 
 #include "gr-base/core/file/default.hpp"
+
+#include <gr-math/gmath.hpp>
 
 // TODO: Remover o nome do bone dessa classe, inutil?
 class Bone {
@@ -15,6 +16,12 @@ public:
     Matrix4x4 getLocalMatrix() const;
 
     int getBoneIndex() const;
+
+    Vector3 getScale() const;
+
+    Quaternion getRotation() const;
+
+    Vector3 getPosition() const;
 
     bool serialize(Stream *stream) const;
 

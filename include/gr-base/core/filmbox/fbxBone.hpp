@@ -24,6 +24,8 @@ public:
 
     int getID() const;
 
+    Matrix4x4 getLocalMatrix() const;
+
 private:
     std::string m_name;
 

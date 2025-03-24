@@ -19,17 +19,17 @@ public:
 private:
     static void SceneLoader(const aiScene *scene, FbxScene *fbxScene);
 
-    static void ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, FbxScene *fbxScene);
+    static void ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap);
 
     static void LoadMaterial(const aiScene *scene, FbxScene *fbxScene);
 
     static void ProcessTexture(aiMaterial *iMaterial, FbxMaterial& fbxMaterial);
 
-    static void LoadMesh(const aiScene *scene, FbxScene *fbxScene);
+    static void LoadMesh(const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap);
 
-    static void ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene);
+    static void ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap);
 
-    static void InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh);
+    static void InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std::string, Matrix4x4> &boneMap);
 
     static void LoadAnimation(const aiScene *scene, FbxScene *fbxScene);
 

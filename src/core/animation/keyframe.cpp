@@ -1,6 +1,7 @@
 #include "gr-base/core/animation/keyframe.hpp"
 #include "gr-base/core/file/stream.hpp"
 #include <cstddef>
+#include <gr-math/gmath.hpp>
 #include <gr-math/vector3.hpp>
 #include <iterator>
 

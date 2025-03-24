@@ -8,6 +8,10 @@
 
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
+#include <gr-math/matrix4x4.hpp>
+#include <gr-math/quaternion.hpp>
+#include <gr-math/vector3.hpp>
+#include <unordered_map>
 
 #define NORMALIZE(v) if (std::abs(v.x) > 6.0f) v.x /= 1e2f; if (std::abs(v.y) > 6.0f) v.y /= 1e2f; if (std::abs(v.z) > 6.0f) v.z /= 1e2f;
 
@@ -50,9 +54,11 @@ void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene) {
         LoadMaterial(scene, fbxScene);
     }
 
+    std::unordered_map<std::string, Matrix4x4> boneMap;
+
     if (scene->HasMeshes()) {
         Console::log(Log::WARNING, "Loading Mesh...");
-        LoadMesh(scene, fbxScene);
+        LoadMesh(scene, fbxScene, boneMap);
     }
 
     if (scene->HasAnimations()) {
@@ -66,11 +72,11 @@ void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene) {
     auto& fRootNode = fbxScene->m_rootNode;
 
     for (auto i=0;i<mRootNode->mNumChildren;++i) {
-        ProcessNode(mRootNode->mChildren[i], fRootNode, scene, fbxScene);
+        ProcessNode(mRootNode->mChildren[i], fRootNode, scene, fbxScene, boneMap);
     }
 }
 
-void Filmbox::ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, FbxScene *fbxScene) {
+void Filmbox::ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap) {
     auto name = mNode->mName;
 
     auto& newNode = node.addNode(name.C_Str(), nullptr);
@@ -80,7 +86,7 @@ void Filmbox::ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, Fb
     aiQuaternion rotation;
     mNode->mTransformation.Decompose(scale, rotation, position);
 
-    NORMALIZE(scale)
+    /*NORMALIZE(scale)*/
 
     // magnitude = std::sqrt((position.x * position.x) + (position.y * position.y) + (position.z * position.z));
     // if (magnitude > 1e-5f) {
@@ -88,10 +94,23 @@ void Filmbox::ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, Fb
     //     position.y /= magnitude;
     //     position.z /= magnitude;
     // }
-
+    
     newNode.setPosition({position.x, position.y, position.z});
     newNode.setScale({scale.x, scale.y, scale.z});
     newNode.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
+    
+    if (boneMap.find(name.C_Str()) != boneMap.end())
+    {
+        Vector3 t;
+        Quaternion r;
+        Vector3 s;
+
+        boneMap[name.C_Str()].decompose(s, r, t);
+        
+        newNode.setPosition(t);
+        newNode.setRotation(r);
+        newNode.setScale(s);
+    }
 
     for (auto i=0;i<mNode->mNumMeshes;++i) {
         auto id = mNode->mMeshes[i];
@@ -102,7 +121,7 @@ void Filmbox::ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, Fb
     for (auto i=0;i<mNode->mNumChildren;++i) {
         auto child = mNode->mChildren[i];
 
-        ProcessNode(child, newNode, scene, fbxScene);
+        ProcessNode(child, newNode, scene, fbxScene, boneMap);
     }
 }
 
@@ -146,21 +165,21 @@ void Filmbox::ProcessTexture(aiMaterial *iMaterial, FbxMaterial &fbxMaterial) {
     }
 }
 
-void Filmbox::LoadMesh(const aiScene *scene, FbxScene *fbxScene) {
+void Filmbox::LoadMesh(const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap) {
     for (auto i=0;i<scene->mNumMeshes;++i) {
-        ProcessMesh(scene->mMeshes[i], fbxScene);
+        ProcessMesh(scene->mMeshes[i], fbxScene, boneMap);
     }
 }
 
-void Filmbox::ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene) {
+void Filmbox::ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap) {
     auto name = std::string(mMesh->mName.C_Str());
 
     auto mesh = fbxScene->addMesh(name);
 
-    InserMesh(mesh, mMesh);
+    InserMesh(mesh, mMesh, boneMap);
 }
 
-void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh) {
+void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std::string, Matrix4x4> &boneMap) {
     auto bHasPosition = mMesh->HasPositions();
     auto bHasNormal = mMesh->HasNormals();
     auto bHasTexCoord = mMesh->HasTextureCoords(0);
@@ -220,6 +239,11 @@ void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh) {
             fBone.setScale({scale.x, scale.y, scale.z});
             fBone.setPosition({position.x, position.y, position.z});
             fBone.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
+
+            if (boneMap.find(name.C_Str()) == boneMap.end())
+            {
+                boneMap.emplace(name.C_Str(), fBone.getLocalMatrix());
+            }
 
             for (auto j=0;j<mBone->mNumWeights;++j) {
                 auto weight = mBone->mWeights[j];

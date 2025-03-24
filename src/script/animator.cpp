@@ -12,6 +12,8 @@
 
 #include "gr-base/ecs/gameObject.hpp"
 #include <cstddef>
+#include <gr-math/quaternion.hpp>
+#include <gr-math/vector3.hpp>
 #include <memory>
 #include <ostream>
 #include <string>

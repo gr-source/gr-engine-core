@@ -1,4 +1,6 @@
 #include "gr-base/core/filmbox/fbxBone.hpp"
+#include <gr-math/gmath.hpp>
+#include <gr-math/matrix4x4.hpp>
 
 FbxBone::FbxBone(const std::string & name, int id) : m_name(name), m_id(id) {}
 
@@ -33,3 +35,9 @@ Quaternion FbxBone::getRotation() const {
 int FbxBone::getID() const {
     return m_id;
 }
+
+Matrix4x4 FbxBone::getLocalMatrix() const
+{
+    return Math::CreateTRS(m_scale, m_rotation, m_position);
+}
+

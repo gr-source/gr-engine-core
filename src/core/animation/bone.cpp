@@ -19,6 +19,20 @@ int Bone::getBoneIndex() const {
     return m_boneIndex;
 }
 
+Vector3 Bone::getScale() const
+{
+    return m_scale;
+}
+
+Quaternion Bone::getRotation() const
+{
+    return m_rotation;
+}
+
+Vector3 Bone::getPosition() const
+{
+    return m_position;
+}
 void Bone::updateMatrix() {
     m_localMatrix = Math::CreateTRS(m_scale, m_rotation, m_position); // Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(Math::normalize(m_rotation)) * Math::scale<Matrix4x4>(m_scale);
 }
