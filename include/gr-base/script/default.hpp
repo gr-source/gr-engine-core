@@ -9,6 +9,7 @@ class MeshFilter;
 class MeshRender;
 class Rigidbody;
 class Transform;
+class Animator;
 class Camera;
 class Light;
 

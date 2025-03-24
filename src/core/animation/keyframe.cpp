@@ -22,7 +22,7 @@ const Vector3 Keyframe::getInterpolateScaling(float time) const {
     auto p0Index = getIndexFromTime<Vector3>(time, m_keyScale);
     auto p1Index = p0Index + 1;
 
-    float scaleFactor = getScaleFactor(m_keyScale[p0Index].time, m_keyScale[p1Index].time, time);
+    float scaleFactor = GetScaleFactor(m_keyScale[p0Index].time, m_keyScale[p1Index].time, time);
 
     const Vector3 finalScale = Math::mix(m_keyScale[p0Index].value, m_keyScale[p1Index].value, scaleFactor);
 
@@ -37,7 +37,7 @@ const Quaternion Keyframe::getInterpolateRotation(float time) const {
     int p0Index = getIndexFromTime<Quaternion>(time, m_keyRotation);
     int p1Index = p0Index + 1;
 
-    float scaleFactor = getScaleFactor(m_keyRotation[p0Index].time, m_keyRotation[p1Index].time, time);
+    float scaleFactor = GetScaleFactor(m_keyRotation[p0Index].time, m_keyRotation[p1Index].time, time);
     
     return Math::normalize(Math::slerp(m_keyRotation[p1Index].value, m_keyRotation[p0Index].value, scaleFactor));
 }
@@ -49,17 +49,32 @@ const Vector3 Keyframe::getInterpolatePosition(float time) const {
     int p0Index = getIndexFromTime<Vector3>(time, m_keyPosition);
     int p1Index = p0Index + 1;
 
-    float scaleFactor = getScaleFactor(m_keyPosition[p0Index].time, m_keyPosition[p1Index].time, time);
+    float scaleFactor = GetScaleFactor(m_keyPosition[p0Index].time, m_keyPosition[p1Index].time, time);
     
     const Vector3 finalPosition = Math::mix(m_keyPosition[p0Index].value, m_keyPosition[p1Index].value, scaleFactor);
 
     return finalPosition;
 }
 
-float Keyframe::getScaleFactor(float last, float next, float time) const {
+float Keyframe::GetScaleFactor(float last, float next, float time) {
     if (next == last)
         return 0.0f;
     return ((time - last) / (next - last));
+}
+
+Key<Vector3> Keyframe::getScaleFromTime(float t) const
+{
+    return t == 0.0f ? Key<Vector3>(0.0f, Vector3::zero) : m_keyScale[getIndexFromTime(t, m_keyScale)];
+}
+
+Key<Quaternion> Keyframe::getRotationFromTime(float t) const
+{
+    return t == 0.0f ? Key<Quaternion>(0.0f, Quaternion::identity) : m_keyRotation[getIndexFromTime(t, m_keyRotation)];
+}
+
+Key<Vector3> Keyframe::getPositionFromTime(float t) const
+{
+    return t == 0.0f ? Key<Vector3>(0.0f, Vector3::zero) : m_keyPosition[getIndexFromTime(t, m_keyPosition)];
 }
 
 bool Keyframe::serialize(Stream *stream) const
@@ -190,6 +205,31 @@ bool Keyframe::deserialize(Stream *stream)
         }
     }
     return true;
+}
+
+
+Vector3 Keyframe::GetInterpolateScaling(float time, Key<Vector3> p0, Key<Vector3> p1)
+{
+    float scaleFactor = GetScaleFactor(p0.time, p1.time, time);
+
+    const Vector3 finalScale = Math::mix(p0.value, p1.value, scaleFactor);
+
+    return finalScale;
+}
+
+
+Quaternion Keyframe::GetInterpolateRotation(float time, Key<Quaternion> p0, Key<Quaternion> p1) {
+    float scaleFactor = GetScaleFactor(p0.time, p1.time, time);
+    
+    return Math::normalize(Math::slerp(p1.value, p0.value, scaleFactor));
+}
+
+Vector3 Keyframe::GetInterpolatePosition(float time, Key<Vector3> p0, Key<Vector3> p1) {
+    float scaleFactor = GetScaleFactor(p0.time, p1.time, time);
+    
+    const Vector3 finalPosition = Math::mix(p0.value, p1.value, scaleFactor);
+
+    return finalPosition;
 }
 
 

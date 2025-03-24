@@ -12,13 +12,15 @@
 
 #include "gr-base/ecs/gameObject.hpp"
 #include <cstddef>
+#include <gr-math/gmath.hpp>
+#include <gr-math/matrix4x4.hpp>
 #include <gr-math/quaternion.hpp>
 #include <gr-math/vector3.hpp>
 #include <memory>
 #include <ostream>
 #include <string>
 
-Animator::Animator() : m_animation(nullptr), m_armature(nullptr), m_currentTime(0.0f), m_FinalBoneMatrices(100, Matrix4x4::identityMatrix)
+Animator::Animator() : m_animation(nullptr), m_armature(nullptr), m_currentTime(0.0f), m_FinalBoneMatrices(100, Matrix4x4::identityMatrix), m_nextAnimation(nullptr), queueAnimation(nullptr), haltTime(0.0f), interTime(0.0f), bInterpolating(false)
 {
 }
 
@@ -102,6 +104,83 @@ void Animator::updateFrame()
     auto transform = m_armature->getTransform();
 
     for_each(transform, Matrix4x4::identityMatrix);
+    /*
+    auto transform = m_armature->getTransform();
+
+	if (m_animation) {
+		m_currentTime = fmod(m_currentTime + m_animation->getTick() * Clock::deltaTime, m_animation->getDuration());
+
+		if (bInterpolating) {
+			interTime += m_animation->getTick() * Clock::deltaTime;
+			calculateBoneTransition(transform, Matrix4x4::identityMatrix, m_animation, m_nextAnimation, haltTime, interTime, 0.5f);
+			return;
+		}
+		else if (bInterpolating) {
+			if (queueAnimation) {
+				m_animation = m_nextAnimation;
+				haltTime = 0.0f;
+				m_nextAnimation = queueAnimation;
+				queueAnimation = nullptr;
+				m_currentTime = 0.0f;
+				interTime = 0.0;
+				return;
+			}
+
+			bInterpolating = false;
+			m_animation = m_nextAnimation;
+			m_currentTime = 0.0;
+			interTime = 0.0;
+		}
+
+        for_each(transform, Matrix4x4::identityMatrix);
+	}
+    */
+}
+
+float easeInOut(float t) {
+    return t * t * (3.0f - 2.0f * t);
+}
+
+void Animator::calculateBoneTransition(const Transform* transform, Matrix4x4 parent, Animation* prevAnimation, Animation* nextAnimation, float haltTime, float currentTime, float transitionTime)
+{
+    auto boneName = transform->getGameObject()->getName();
+
+    auto prevKeyframe = prevAnimation->findKeyframe(boneName);
+    auto nextKeyframe = nextAnimation->findKeyframe(boneName);
+    
+    auto it = m_bones.find(boneName);
+
+    if (prevKeyframe != nullptr && nextKeyframe != nullptr && it != m_bones.end())
+    {
+
+		auto prevPos = prevKeyframe->getPositionFromTime(haltTime);
+		auto prevRot = prevKeyframe->getRotationFromTime(haltTime);
+		auto prevScl = prevKeyframe->getScaleFromTime(haltTime);
+
+		auto nextPos = nextKeyframe->getPositionFromTime(0.0f);
+		auto nextRot = nextKeyframe->getRotationFromTime(0.0f);
+		auto nextScl = nextKeyframe->getScaleFromTime(0.0f);
+
+        prevPos.time = 0.0f;
+        prevRot.time = 0.0f;
+        prevScl.time = 0.0f;
+
+        nextPos.time = transitionTime;
+        nextRot.time = transitionTime;
+        nextScl.time = transitionTime;
+
+        parent *= Math::CreateTRS(
+                Keyframe::GetInterpolateScaling(m_currentTime, prevScl, nextScl),
+                Keyframe::GetInterpolateRotation(m_currentTime, prevRot, nextRot),
+                Keyframe::GetInterpolatePosition(m_currentTime, prevPos, nextPos)
+                );
+
+        m_FinalBoneMatrices[it->second->getBoneIndex()] = parent * it->second->getLocalMatrix();
+    }
+
+    for (auto child : transform->getChildren()) {
+        for_each(child, parent);
+    }
 }
 
 void Animator::for_each(Transform *transform, Matrix4x4 parent) {
@@ -132,9 +211,28 @@ GameObject *Animator::getArmature() const
     return m_armature;
 }
 
-void Animator::setAnimation(Animation *animation)
+void Animator::play(bool repeat, Animation *animation)
 {
-    m_animation = animation;
+	if (!m_animation)
+    {
+		m_animation = animation;
+		return;
+	}
+
+	if (bInterpolating)
+    {
+		if (animation != m_nextAnimation)
+			queueAnimation = animation;
+	}
+	else {
+		if (animation != m_nextAnimation) {
+			bInterpolating = true;
+			haltTime = fmod(m_currentTime, m_animation->getDuration());
+			m_nextAnimation = animation;
+			m_currentTime = 0.0f;
+			interTime = 0.0;
+		}
+	}
 }
 
 Animation *Animator::getAnimation() const

@@ -1,11 +1,14 @@
 #pragma once
 
+#include "gr-base/core/animation/animation.hpp"
 #include "gr-base/core/animation/default.hpp"
 
 #include "gr-base/core/file/stream.hpp"
 #include "gr-base/script/default.hpp"
 
 #include "gr-base/ecs/component.hpp"
+#include "gr-base/script/transform.hpp"
+#include <gr-math/matrix4x4.hpp>
 
 class Animator : public Component {
 public:
@@ -23,7 +26,7 @@ public:
 
     GameObject *getArmature() const;
 
-    void setAnimation(Animation *animation);
+    void play(bool repeate, Animation *animation);
 
     Animation *getAnimation() const;
 
@@ -36,9 +39,21 @@ private:
 
     Animation *m_animation;
 
+    Animation *m_nextAnimation;
+
+    Animation *queueAnimation;
+
     float m_currentTime;
 
+    float haltTime;
+
+    float interTime;
+
+    bool bInterpolating;
+
     void updateFrame();
+
+	void calculateBoneTransition(const Transform* transform, Matrix4x4 parentTransform, Animation* prevAnimation, Animation* nextAnimation, float haltTime, float currentTime, float transitionTime);
 
     void for_each(Transform *transform, Matrix4x4 parent);
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gr-math/quaternion.hpp>
+#include <gr-math/vector3.hpp>
 #include <string>
 #include <vector>
 
@@ -32,7 +34,13 @@ public:
 
     const Vector3 getInterpolatePosition(float time) const;
 
-    float getScaleFactor(float last, float next, float time) const;
+    Key<Vector3> getScaleFromTime(float t) const;
+
+    Key<Quaternion> getRotationFromTime(float t) const;
+
+    Key<Vector3> getPositionFromTime(float t) const;
+
+    static float GetScaleFactor(float last, float next, float time);
 
     template <typename ...Args>
     Key<Vector3> &addKeyPosition(Args &&...args);
@@ -46,6 +54,12 @@ public:
     bool serialize(Stream *stream) const;
     
     bool deserialize(Stream *stream);
+
+    static Vector3 GetInterpolateScaling(float time, Key<Vector3> p0, Key<Vector3> p1);
+
+    static Quaternion GetInterpolateRotation(float time, Key<Quaternion> p0, Key<Quaternion> p1);
+
+    static Vector3 GetInterpolatePosition(float time, Key<Vector3> p0, Key<Vector3> p1);
 
 private:
     std::string m_name;
