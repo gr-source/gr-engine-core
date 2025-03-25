@@ -26,6 +26,8 @@ public:
 
     const std::string &getName() const;
 
+    void setName(const std::string &name);
+
     const Matrix4x4 getLocalMatrix(float time) const;
 
     const Vector3 getInterpolateScaling(float time) const;

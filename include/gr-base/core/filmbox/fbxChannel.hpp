@@ -23,6 +23,8 @@ public:
 
     const std::string &getName() const;
 
+    void setName(const std::string &name);
+
     template <typename ...Args>
     FbxKey<Vector3> &addKeyPosition(Args &&... args);
 

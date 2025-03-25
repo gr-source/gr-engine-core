@@ -8,6 +8,8 @@ public:
 
     const std::string &getName() const;
 
+    void setName(const std::string &name);
+
     const float getDuration() const;
 
     const float getTick() const;
@@ -16,6 +18,10 @@ public:
     FbxChannel &addChannel(Args &&...args);
 
     const std::vector<FbxChannel> &getChannels() const;
+
+    void setChannel(const std::vector<FbxChannel> &channels);
+
+    FbxChannel *getChannel(int index);
 
 private:
     std::string m_name;

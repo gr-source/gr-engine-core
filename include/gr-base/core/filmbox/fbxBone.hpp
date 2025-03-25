@@ -26,6 +26,10 @@ public:
 
     Matrix4x4 getLocalMatrix() const;
 
+    int getParentIndex() const;
+
+    void setParentIndex(int index);
+
 private:
     std::string m_name;
 
@@ -36,6 +40,8 @@ private:
     Quaternion m_rotation;
 
     int m_id;
+
+    int m_parentIndex;
 };
 
 

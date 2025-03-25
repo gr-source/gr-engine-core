@@ -1,8 +1,11 @@
 #include "gr-base/core/animation/animation.hpp"
+#include "gr-base/core/animation/keyframe.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
+#include <strings.h>
+#include <vector>
 
 Animation::Animation(const std::string &name, float duration, float tick) : m_name(name), m_duration(duration), m_tick(tick) {}
 
@@ -30,12 +33,24 @@ float Animation::getTick() const {
     return m_tick;
 }
 
+/*
 Keyframe *Animation::findKeyframe(const std::string &name) {
     auto it = m_keyframes.find(name);
     if (it != m_keyframes.end()) {
         return &(*it).second;
     }
     return nullptr;
+}
+*/
+
+void Animation::setKeyFrame(const std::vector<Keyframe> &keyframes)
+{
+    m_keyframes = keyframes;
+}
+
+Keyframe *Animation::getKeyFrame(int index)
+{
+    return &m_keyframes[index];
 }
 
 bool Animation::serialize(Stream *stream) const
@@ -70,9 +85,9 @@ bool Animation::serialize(Stream *stream) const
         return false;
     }
 
-    for (auto &&[name, keyframe] : m_keyframes)
+    for (auto &keyframe : m_keyframes)
     {
-        auto nsize = name.size();
+        /*auto nsize = name.size();
         if (!stream->write(&nsize, sizeof(std::size_t)))
         {
             return false;
@@ -82,6 +97,7 @@ bool Animation::serialize(Stream *stream) const
         {
             return false;
         }
+        */
 
         keyframe.serialize(stream);
     }
@@ -123,8 +139,11 @@ bool Animation::deserialize(Stream *stream)
         return false;
     }
 
+    setKeyFrame(std::vector<Keyframe>(numkeyframe, {"None"}));
+
     for (std::size_t i={};i<numkeyframe;i++)
     {
+        /*
         std::size_t nsize = 0;
         if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t)))
         {
@@ -136,10 +155,11 @@ bool Animation::deserialize(Stream *stream)
         {
             return false;
         }
+        */
 
-        auto &keyframe = addkeyframe(name, name);
+        auto keyframe = getKeyFrame(i);
 
-        keyframe.deserialize(stream);
+        keyframe->deserialize(stream);
     }
 
     return true;

@@ -2,7 +2,7 @@
 #include <gr-math/gmath.hpp>
 #include <gr-math/matrix4x4.hpp>
 
-FbxBone::FbxBone(const std::string & name, int id) : m_name(name), m_id(id) {}
+FbxBone::FbxBone(const std::string & name, int id) : m_name(name), m_id(id), m_parentIndex(0) {}
 
 std::string FbxBone::getName() const {
     return m_name;
@@ -34,6 +34,16 @@ Quaternion FbxBone::getRotation() const {
 
 int FbxBone::getID() const {
     return m_id;
+}
+
+int FbxBone::getParentIndex() const
+{
+    return m_parentIndex;
+}
+
+void FbxBone::setParentIndex(int index)
+{
+    m_parentIndex = index;
 }
 
 Matrix4x4 FbxBone::getLocalMatrix() const

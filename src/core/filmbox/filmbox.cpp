@@ -11,6 +11,7 @@
 #include <gr-math/matrix4x4.hpp>
 #include <gr-math/quaternion.hpp>
 #include <gr-math/vector3.hpp>
+#include <string>
 #include <unordered_map>
 
 #define NORMALIZE(v) if (std::abs(v.x) > 6.0f) v.x /= 1e2f; if (std::abs(v.y) > 6.0f) v.y /= 1e2f; if (std::abs(v.z) > 6.0f) v.z /= 1e2f;
@@ -55,15 +56,16 @@ void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene) {
     }
 
     std::unordered_map<std::string, Matrix4x4> boneMap;
+    std::unordered_map<std::string, int> boneIndex;
 
     if (scene->HasMeshes()) {
         Console::log(Log::WARNING, "Loading Mesh...");
-        LoadMesh(scene, fbxScene, boneMap);
+        LoadMesh(scene, fbxScene, boneMap, boneIndex);
     }
 
     if (scene->HasAnimations()) {
         Console::log(Log::WARNING, "Loading Animations...");
-        LoadAnimation(scene, fbxScene);
+        LoadAnimation(scene, fbxScene, boneIndex);
     }
 
     Console::log(Log::WARNING, "Loading Node...");
@@ -165,21 +167,21 @@ void Filmbox::ProcessTexture(aiMaterial *iMaterial, FbxMaterial &fbxMaterial) {
     }
 }
 
-void Filmbox::LoadMesh(const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap) {
+void Filmbox::LoadMesh(const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex) {
     for (auto i=0;i<scene->mNumMeshes;++i) {
-        ProcessMesh(scene->mMeshes[i], fbxScene, boneMap);
+        ProcessMesh(scene->mMeshes[i], fbxScene, boneMap, boneIndex);
     }
 }
 
-void Filmbox::ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap) {
+void Filmbox::ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex) {
     auto name = std::string(mMesh->mName.C_Str());
 
     auto mesh = fbxScene->addMesh(name);
 
-    InserMesh(mesh, mMesh, boneMap);
+    InserMesh(mesh, mMesh, boneMap, boneIndex);
 }
 
-void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std::string, Matrix4x4> &boneMap) {
+void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex) {
     auto bHasPosition = mMesh->HasPositions();
     auto bHasNormal = mMesh->HasNormals();
     auto bHasTexCoord = mMesh->HasTextureCoords(0);
@@ -226,6 +228,11 @@ void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std:
 
             auto name = mBone->mName;
 
+            if (boneIndex.find(name.C_Str()) == boneIndex.end())
+            {
+                boneIndex.emplace(name.C_Str(), i);
+            }
+
             // if (fbxMesh->findBone(name.C_Str()) != nullptr) {
             //     continue;
             // }
@@ -239,6 +246,16 @@ void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std:
             fBone.setScale({scale.x, scale.y, scale.z});
             fBone.setPosition({position.x, position.y, position.z});
             fBone.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
+
+            int parentIndex = 0;
+            if (mBone->mNode->mParent != nullptr)
+            {
+                auto it = boneIndex.find(mBone->mNode->mParent->mName.C_Str());
+                if (it != boneIndex.end())
+                    parentIndex = it->second;
+            }
+
+            fBone.setParentIndex(parentIndex);
 
             if (boneMap.find(name.C_Str()) == boneMap.end())
             {
@@ -262,7 +279,8 @@ void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std:
     }
 }
 
-void Filmbox::LoadAnimation(const aiScene *scene, FbxScene *fbxScene) {
+void Filmbox::LoadAnimation(const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, int> &boneIndex)
+{
     for (auto i=0;i<scene->mNumAnimations;i++) {
         auto mAnimation = scene->mAnimations[i];
 
@@ -271,33 +289,41 @@ void Filmbox::LoadAnimation(const aiScene *scene, FbxScene *fbxScene) {
         auto tick = mAnimation->mTicksPerSecond;
 
         auto &animation = fbxScene->addAnimation(name.C_Str(), duration, tick);
+        animation.setChannel(std::vector<FbxChannel>(boneIndex.size(), {"None"}));
 
         for (auto j=0;j<mAnimation->mNumChannels;j++) {
             auto mChannel = mAnimation->mChannels[j];
 
             auto cName = mChannel->mNodeName;
 
-            auto &channel = animation.addChannel(cName.C_Str());
+            auto it = boneIndex.find(cName.C_Str());
+            if (it == boneIndex.end())
+            {
+                continue;
+            }
+
+            auto channel = animation.getChannel(it->second);
+            channel->setName(cName.C_Str());
 
             AddKeys(mChannel, channel);
         }
     }
 }
 
-void Filmbox::AddKeys(aiNodeAnim *mNodeAnim, FbxChannel &channel) {
+void Filmbox::AddKeys(aiNodeAnim *mNodeAnim, FbxChannel *channel) {
     for (auto i=0;i<mNodeAnim->mNumPositionKeys;++i) {
         auto key = mNodeAnim->mPositionKeys[i];
-        channel.addKeyPosition(static_cast<float>(key.mTime), Vector3{key.mValue.x, key.mValue.y, key.mValue.z});
+        channel->addKeyPosition(static_cast<float>(key.mTime), Vector3{key.mValue.x, key.mValue.y, key.mValue.z});
     }
 
     for (auto i=0;i<mNodeAnim->mNumScalingKeys;++i) {
         auto key = mNodeAnim->mScalingKeys[i];
-        channel.addKeyScale(static_cast<float>(key.mTime), Vector3{key.mValue.x, key.mValue.y, key.mValue.z});
+        channel->addKeyScale(static_cast<float>(key.mTime), Vector3{key.mValue.x, key.mValue.y, key.mValue.z});
     }
 
     for (auto i=0;i<mNodeAnim->mNumRotationKeys;++i) {
         auto key = mNodeAnim->mRotationKeys[i];
-        channel.addKeyRotation(static_cast<float>(key.mTime), Quaternion(key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z));
+        channel->addKeyRotation(static_cast<float>(key.mTime), Quaternion(key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z));
     }
 }
 

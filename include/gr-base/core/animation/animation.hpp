@@ -6,6 +6,7 @@
 #include "keyframe.hpp"
 
 #include <unordered_map>
+#include <vector>
 
 class Animation {
 public:
@@ -23,10 +24,14 @@ public:
 
     float getTick() const;
 
-    Keyframe *findKeyframe(const std::string &name);
+    /*Keyframe *findKeyframe(const std::string &name);*/
 
     template <typename ...Args>
-    Keyframe &addkeyframe(Args &&... args);
+    Keyframe *addkeyframe(Args &&... args);
+
+    void setKeyFrame(const std::vector<Keyframe> &keyframes);
+
+    Keyframe *getKeyFrame(int index);
 
     bool serialize(Stream *stream) const;
 
@@ -39,14 +44,13 @@ private:
 
     float m_tick;
 
-    std::unordered_map<std::string, Keyframe> m_keyframes;
+    std::vector<Keyframe> m_keyframes;
 };
 
 template <typename ...Args>
-inline Keyframe &Animation::addkeyframe(Args &&...args) {
-    auto &&[it, added] = m_keyframes.emplace(std::forward<Args>(args)...);
-
-    return (*it).second;
+inline Keyframe *Animation::addkeyframe(Args &&...args)
+{
+    return &m_keyframes.emplace_back(std::forward<Args>(args)...);
 }
 
 

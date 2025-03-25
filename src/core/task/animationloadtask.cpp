@@ -60,8 +60,6 @@ void AnimationLoadTask::doInBackground(std::string path)
         return AssetsManager::RemoveTask(path);
     }
 
-
-
     stream.close();
 
     invoke(animation);

@@ -13,15 +13,25 @@ public:
 
     std::string getName() const;
 
+    void setName(const std::string &name);
+
     Matrix4x4 getLocalMatrix() const;
 
-    int getBoneIndex() const;
+    int getParentIndex() const;
+
+    void setParentIndex(int index);
 
     Vector3 getScale() const;
 
+    void setScale(const Vector3 &scale);
+
     Quaternion getRotation() const;
 
+    void setRotation(const Quaternion& rotation);
+
     Vector3 getPosition() const;
+
+    void setPosition(const Vector3 &position);
 
     bool serialize(Stream *stream) const;
 
@@ -36,7 +46,7 @@ private:
 
     Vector3 m_position;
 
-    int m_boneIndex;
+    int m_parent;
 
     Matrix4x4 m_localMatrix;
 

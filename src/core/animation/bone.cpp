@@ -1,8 +1,11 @@
 #include "gr-base/core/animation/bone.hpp"
 
 #include "gr-base/core/file/stream.hpp"
+#include <gr-math/quaternion.hpp>
+#include <gr-math/vector3.hpp>
+#include <string>
 
-Bone::Bone(const std::string &name, const Vector3 &position, const Vector3 &scale, const Quaternion &rotation, int id) : m_name(name), m_position(position), m_scale(scale), m_rotation(rotation), m_boneIndex(id), m_localMatrix(Matrix4x4::identityMatrix)
+Bone::Bone(const std::string &name, const Vector3 &position, const Vector3 &scale, const Quaternion &rotation, int id) : m_name(name), m_position(position), m_scale(scale), m_rotation(rotation), m_parent(id), m_localMatrix(Matrix4x4::identityMatrix)
 {
     updateMatrix();
 }
@@ -11,12 +14,22 @@ std::string Bone::getName() const {
     return m_name;
 }
 
+void Bone::setName(const std::string &name)
+{
+    m_name = name;
+}
+
 Matrix4x4 Bone::getLocalMatrix() const {
     return m_localMatrix;
 }
 
-int Bone::getBoneIndex() const {
-    return m_boneIndex;
+int Bone::getParentIndex() const {
+    return m_parent;
+}
+
+void Bone::setParentIndex(int index)
+{
+    m_parent = index;
 }
 
 Vector3 Bone::getScale() const
@@ -24,15 +37,37 @@ Vector3 Bone::getScale() const
     return m_scale;
 }
 
+void Bone::setScale(const Vector3 &scale)
+{
+    m_scale = scale;
+
+    updateMatrix();
+}
+
 Quaternion Bone::getRotation() const
 {
     return m_rotation;
+}
+
+void Bone::setRotation(const Quaternion &rotation)
+{
+    m_rotation = rotation;
+
+    updateMatrix();
 }
 
 Vector3 Bone::getPosition() const
 {
     return m_position;
 }
+
+void Bone::setPosition(const Vector3 &position)
+{
+    m_position = position;
+
+    updateMatrix();
+}
+
 void Bone::updateMatrix() {
     m_localMatrix = Math::CreateTRS(m_scale, m_rotation, m_position); // Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(Math::normalize(m_rotation)) * Math::scale<Matrix4x4>(m_scale);
 }
@@ -45,7 +80,7 @@ bool Bone::serialize(Stream *stream) const {
             return false;
         }
 
-        if (!stream->write(m_name.data(), nlen * sizeof(char))) {
+        if (!stream->write(m_name.c_str(), nlen * sizeof(char))) {
             return false;
         }
     }
@@ -70,7 +105,7 @@ bool Bone::serialize(Stream *stream) const {
     }
 
     // bone index
-    if (!stream->write(&m_boneIndex, sizeof(int))) {
+    if (!stream->write(&m_parent, sizeof(int))) {
         return false;
     }
 
@@ -85,6 +120,7 @@ bool Bone::deserialize(Stream *stream) {
             return false;
         }
 
+        m_name.resize(nlen, '\0');
         if (!stream->read(m_name.data(), nlen * sizeof(char))) {
             return false;
         }
@@ -110,7 +146,7 @@ bool Bone::deserialize(Stream *stream) {
     }
 
     // bone index
-    if (!stream->read(reinterpret_cast<char *>(&m_boneIndex), sizeof(int))) {
+    if (!stream->read(reinterpret_cast<char *>(&m_parent), sizeof(int))) {
         return false;
     }
 

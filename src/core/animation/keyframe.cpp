@@ -11,6 +11,11 @@ const std::string &Keyframe::getName() const {
     return m_name;
 }
 
+void Keyframe::setName(const std::string &name)
+{
+    m_name = name;
+}
+
 const Matrix4x4 Keyframe::getLocalMatrix(float time) const {
     return Math::CreateTRS(getInterpolateScaling(time), getInterpolateRotation(time), getInterpolatePosition(time));;// Math::translate<Matrix4x4>() * Math::rotate<Matrix4x4>() * Math::scale<Matrix4x4>();
 }
@@ -212,9 +217,7 @@ Vector3 Keyframe::GetInterpolateScaling(float time, Key<Vector3> p0, Key<Vector3
 {
     float scaleFactor = GetScaleFactor(p0.time, p1.time, time);
 
-    const Vector3 finalScale = Math::mix(p0.value, p1.value, scaleFactor);
-
-    return finalScale;
+    return Math::mix(p0.value, p1.value, scaleFactor);
 }
 
 
@@ -227,9 +230,7 @@ Quaternion Keyframe::GetInterpolateRotation(float time, Key<Quaternion> p0, Key<
 Vector3 Keyframe::GetInterpolatePosition(float time, Key<Vector3> p0, Key<Vector3> p1) {
     float scaleFactor = GetScaleFactor(p0.time, p1.time, time);
     
-    const Vector3 finalPosition = Math::mix(p0.value, p1.value, scaleFactor);
-
-    return finalPosition;
+    return Math::mix(p0.value, p1.value, scaleFactor);
 }
 
 

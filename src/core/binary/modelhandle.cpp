@@ -1,5 +1,6 @@
 #include "gr-base/core/binary/modelhandle.hpp"
 
+#include "gr-base/core/animation/keyframe.hpp"
 #include "gr-base/core/filmbox/fbxScene.hpp"
 #include "gr-base/core/filmbox/filmbox.hpp"
 
@@ -23,9 +24,11 @@
 
 #include "gr-base/core/task/animationsavetask.hpp"
 
+#include <cstddef>
 #include <imgui.h>
 
 #include <filesystem>
+#include <vector>
 
 std::unordered_map<std::string, std::unique_ptr<ModelHandle>> ModelHandle::taskListMap;
 
@@ -246,6 +249,8 @@ GameObject *ModelHandle::CreateGameObject(const FbxScene *scene, const FbxNode *
 void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameObject *go)
 {
     std::unordered_map<std::string, FbxBone> m_bones;
+    std::vector<FbxBone> bonesList;
+
     std::vector<FbxMaterial> materialList;
     std::vector<Mesh> meshMap;
     std::string mesh_name;
@@ -289,6 +294,12 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
         }
     }
 
+    bonesList.resize(m_bones.size(), {"", 0});
+    for (auto &&[name, bone] : m_bones)
+    {
+        bonesList[bone.getID()] = bone;
+    }
+
     auto m_mesh = AssetsManager::FindMesh(mesh_name);
     if (!m_mesh) {
         m_mesh = AssetsManager::CreateMesh(mesh_name);
@@ -309,8 +320,15 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
         auto animator = go->addComponent<Animator>();
         if (!animator) { return; }
 
-        for (auto &&[name, bone] : m_bones) {
-            animator->m_bones[name] = std::make_shared<Bone>(name, bone.getPosition(), bone.getScale(), bone.getRotation(), bone.getID());
+        animator->m_bones.resize(m_bones.size(), {});
+
+        for (std::size_t i=0;i<bonesList.size();i++) {
+            animator->m_bones[i].setName(bonesList[i].getName());
+            animator->m_bones[i].setScale(bonesList[i].getScale());
+            animator->m_bones[i].setRotation(bonesList[i].getRotation());
+            animator->m_bones[i].setPosition(bonesList[i].getPosition());
+
+            animator->m_bones[i].setParentIndex(bonesList[i].getParentIndex());
         }
     }
 
@@ -338,28 +356,34 @@ void ModelHandle::generateAnimation(FbxScene *fbxScene)
 {
     for (auto &fbxAnimation : fbxScene->getAnimations())
     {
+        auto &channels = fbxAnimation.getChannels();
+
         auto animation = &(*mAnimationLits.emplace_back(std::make_unique<Animation>()));
         animation->setDuration(fbxAnimation.getDuration());
         animation->setName(fbxAnimation.getName());
         animation->setTick(fbxAnimation.getTick());
+        animation->setKeyFrame(std::vector<Keyframe>(channels.size(), {"None"}));
 
-        for (auto &channel : fbxAnimation.getChannels())
+        for (std::size_t i=0;i<channels.size();i++)
         {
-            auto &keyframe = animation->addkeyframe(channel.getName(), channel.getName());
+            auto &channel = channels[i];
+
+            auto keyframe = animation->getKeyFrame(i);
+            keyframe->setName(channel.getName());
 
             for (auto &key : channel.getKeysScale())
             {
-                keyframe.addKeyScale(key.time, key.value);
+                keyframe->addKeyScale(key.time, key.value);
             }
 
             for (auto &key : channel.getKeysRotation())
             {
-                keyframe.addKeyRotation(key.time, key.value);
+                keyframe->addKeyRotation(key.time, key.value);
             }
 
             for (auto &key : channel.getKeysPosition())
             {
-                keyframe.addKeyPosition(key.time, key.value);
+                keyframe->addKeyPosition(key.time, key.value);
             }
         }
     }

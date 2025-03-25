@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gr-base/core/animation/animation.hpp"
+#include "gr-base/core/animation/bone.hpp"
 #include "gr-base/core/animation/default.hpp"
 
 #include "gr-base/core/file/stream.hpp"
@@ -9,6 +9,7 @@
 #include "gr-base/ecs/component.hpp"
 #include "gr-base/script/transform.hpp"
 #include <gr-math/matrix4x4.hpp>
+#include <vector>
 
 class Animator : public Component {
 public:
@@ -30,7 +31,7 @@ public:
 
     Animation *getAnimation() const;
 
-    std::unordered_map<std::string, std::shared_ptr<Bone>> m_bones;
+    std::vector<Bone> m_bones;
 
     std::vector<Matrix4x4> m_FinalBoneMatrices;
 

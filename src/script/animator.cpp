@@ -1,5 +1,6 @@
 #include "gr-base/script/animator.hpp"
 
+#include "gr-base/core/animation/keyframe.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/clock.hpp"
 
@@ -16,9 +17,11 @@
 #include <gr-math/matrix4x4.hpp>
 #include <gr-math/quaternion.hpp>
 #include <gr-math/vector3.hpp>
+#include <iterator>
 #include <memory>
 #include <ostream>
 #include <string>
+#include <vector>
 
 Animator::Animator() : m_animation(nullptr), m_armature(nullptr), m_currentTime(0.0f), m_FinalBoneMatrices(100, Matrix4x4::identityMatrix), m_nextAnimation(nullptr), queueAnimation(nullptr), haltTime(0.0f), interTime(0.0f), bInterpolating(false)
 {
@@ -47,9 +50,9 @@ bool Animator::Serialize(Stream *stream)
         return false;
     }
 
-    for (auto &&[name, bone] : m_bones)
+    for (auto &bone : m_bones)
     {
-        auto nsize = name.size();
+        /*auto nsize = name.size();
         if (!stream->write(&nsize, sizeof(std::size_t)))
         {
             return false;
@@ -59,8 +62,9 @@ bool Animator::Serialize(Stream *stream)
         {
             return false;
         }
+        */
 
-        bone->serialize(stream);
+        bone.serialize(stream);
     }
     return true;
 }
@@ -73,8 +77,12 @@ bool Animator::Deserialize(Stream *stream)
         return false;
     }
 
+    m_bones.resize(boneMapCount, {});
+
     for (std::size_t i=0;i<boneMapCount;i++)
     {
+
+        /*
         std::size_t nsize = 0;
         if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t)))
         {
@@ -86,12 +94,15 @@ bool Animator::Deserialize(Stream *stream)
         {
             return false;
         }
+        */
 
         {
-            m_bones.emplace(name, std::make_shared<Bone>());
+            /*m_bones.emplace_back(std::make_shared<Bone>());*/
         }
 
-        m_bones[name]->deserialize(stream);
+        m_bones[i].deserialize(stream);
+
+        /*std::cout << m_bones[i]->getName() << std::endl;*/
     }
     return true;
 }
@@ -143,6 +154,7 @@ float easeInOut(float t) {
 
 void Animator::calculateBoneTransition(const Transform* transform, Matrix4x4 parent, Animation* prevAnimation, Animation* nextAnimation, float haltTime, float currentTime, float transitionTime)
 {
+    /*
     auto boneName = transform->getGameObject()->getName();
 
     auto prevKeyframe = prevAnimation->findKeyframe(boneName);
@@ -181,9 +193,27 @@ void Animator::calculateBoneTransition(const Transform* transform, Matrix4x4 par
     for (auto child : transform->getChildren()) {
         for_each(child, parent);
     }
+    */
 }
 
-void Animator::for_each(Transform *transform, Matrix4x4 parent) {
+void Animator::for_each(Transform *transform, Matrix4x4 parent)
+{
+    auto bonecount = m_bones.size();
+
+    std::vector<Matrix4x4> parentList(bonecount, Matrix4x4::identityMatrix);
+    for (std::size_t i={};i<bonecount;i++)
+    {
+        auto parentIndex = m_bones[i].getParentIndex();
+
+        parentList[i] = parentList[parentIndex] * m_animation->getKeyFrame(i)->getLocalMatrix(m_currentTime);
+    }
+
+    for (std::size_t i=0;i<bonecount;i++)
+    {
+        m_FinalBoneMatrices[i] = parentList[i] * m_bones[i].getLocalMatrix();
+    }
+
+    /*
     auto boneName = transform->getGameObject()->getName();
 
     auto keyframe = m_animation->findKeyframe(boneName);
@@ -199,6 +229,7 @@ void Animator::for_each(Transform *transform, Matrix4x4 parent) {
     for (auto child : transform->getChildren()) {
         for_each(child, parent);
     }
+    */
 }
 
 void Animator::setArmature(GameObject *armature)
@@ -213,7 +244,9 @@ GameObject *Animator::getArmature() const
 
 void Animator::play(bool repeat, Animation *animation)
 {
-	if (!m_animation)
+    m_animation = animation;
+	/*
+    if (!m_animation)
     {
 		m_animation = animation;
 		return;
@@ -233,6 +266,7 @@ void Animator::play(bool repeat, Animation *animation)
 			interTime = 0.0;
 		}
 	}
+    */
 }
 
 Animation *Animator::getAnimation() const
