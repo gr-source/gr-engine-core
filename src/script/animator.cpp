@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-Animator::Animator() : m_animation(nullptr), m_armature(nullptr), m_currentTime(0.0f), m_FinalBoneMatrices(100, Matrix4x4::identityMatrix), m_nextAnimation(nullptr), queueAnimation(nullptr), haltTime(0.0f), interTime(0.0f), bInterpolating(false)
+Animator::Animator() : m_animation(nullptr), m_currentTime(0.0f), m_FinalBoneMatrices(100, Matrix4x4::identityMatrix), m_nextAnimation(nullptr), m_nextTime(0.0f), blendFactor(0.0f)
 {
 }
 
@@ -34,7 +34,7 @@ void Animator::Init()
 
 void Animator::Update()
 {
-    if (m_animation == nullptr || m_armature == nullptr)
+    if (m_animation == nullptr)
     {
         return;
     }
@@ -109,94 +109,32 @@ bool Animator::Deserialize(Stream *stream)
 
 void Animator::updateFrame()
 {
-    m_currentTime += m_animation->getTick() * Clock::deltaTime;
-    m_currentTime = std::fmod(m_currentTime, m_animation->getDuration());
-
-    auto transform = m_armature->getTransform();
-
-    for_each(transform, Matrix4x4::identityMatrix);
-    /*
-    auto transform = m_armature->getTransform();
-
-	if (m_animation) {
-		m_currentTime = fmod(m_currentTime + m_animation->getTick() * Clock::deltaTime, m_animation->getDuration());
-
-		if (bInterpolating) {
-			interTime += m_animation->getTick() * Clock::deltaTime;
-			calculateBoneTransition(transform, Matrix4x4::identityMatrix, m_animation, m_nextAnimation, haltTime, interTime, 0.5f);
-			return;
-		}
-		else if (bInterpolating) {
-			if (queueAnimation) {
-				m_animation = m_nextAnimation;
-				haltTime = 0.0f;
-				m_nextAnimation = queueAnimation;
-				queueAnimation = nullptr;
-				m_currentTime = 0.0f;
-				interTime = 0.0;
-				return;
-			}
-
-			bInterpolating = false;
-			m_animation = m_nextAnimation;
-			m_currentTime = 0.0;
-			interTime = 0.0;
-		}
-
-        for_each(transform, Matrix4x4::identityMatrix);
-	}
-    */
-}
-
-float easeInOut(float t) {
-    return t * t * (3.0f - 2.0f * t);
-}
-
-void Animator::calculateBoneTransition(const Transform* transform, Matrix4x4 parent, Animation* prevAnimation, Animation* nextAnimation, float haltTime, float currentTime, float transitionTime)
-{
-    /*
-    auto boneName = transform->getGameObject()->getName();
-
-    auto prevKeyframe = prevAnimation->findKeyframe(boneName);
-    auto nextKeyframe = nextAnimation->findKeyframe(boneName);
-    
-    auto it = m_bones.find(boneName);
-
-    if (prevKeyframe != nullptr && nextKeyframe != nullptr && it != m_bones.end())
+    if (m_animation == nullptr || m_nextAnimation == nullptr)
     {
-
-		auto prevPos = prevKeyframe->getPositionFromTime(haltTime);
-		auto prevRot = prevKeyframe->getRotationFromTime(haltTime);
-		auto prevScl = prevKeyframe->getScaleFromTime(haltTime);
-
-		auto nextPos = nextKeyframe->getPositionFromTime(0.0f);
-		auto nextRot = nextKeyframe->getRotationFromTime(0.0f);
-		auto nextScl = nextKeyframe->getScaleFromTime(0.0f);
-
-        prevPos.time = 0.0f;
-        prevRot.time = 0.0f;
-        prevScl.time = 0.0f;
-
-        nextPos.time = transitionTime;
-        nextRot.time = transitionTime;
-        nextScl.time = transitionTime;
-
-        parent *= Math::CreateTRS(
-                Keyframe::GetInterpolateScaling(m_currentTime, prevScl, nextScl),
-                Keyframe::GetInterpolateRotation(m_currentTime, prevRot, nextRot),
-                Keyframe::GetInterpolatePosition(m_currentTime, prevPos, nextPos)
-                );
-
-        m_FinalBoneMatrices[it->second->getBoneIndex()] = parent * it->second->getLocalMatrix();
+        return;
     }
 
-    for (auto child : transform->getChildren()) {
-        for_each(child, parent);
-    }
-    */
+    float a = 1.0f;
+    float b = m_animation->getDuration() / m_nextAnimation->getDuration();
+    const float animSpeedMultiplierUp = (1.0f - blendFactor) * a + b * blendFactor; // Lerp
+
+    a = m_nextAnimation->getDuration() / m_animation->getDuration();
+    b = 1.0f;
+    const float animSpeedMultiplierDown = (1.0f - blendFactor) * a + b * blendFactor; // Lerp
+
+    // Current time of each animation, "scaled" by the above speed multiplier variables
+    static float currentTimeBase = 0.0f;
+    currentTimeBase += m_animation->getTick() * Clock::deltaTime * animSpeedMultiplierUp;
+    currentTimeBase = fmod(currentTimeBase, m_animation->getDuration());
+
+    static float currentTimeLayered = 0.0f;
+    currentTimeLayered += m_nextAnimation->getTick() * Clock::deltaTime * animSpeedMultiplierDown;
+    currentTimeLayered = fmod(currentTimeLayered, m_nextAnimation->getDuration());
+
+    updateBoneTransform(m_animation, currentTimeBase, m_nextAnimation, currentTimeLayered, blendFactor);
 }
 
-void Animator::for_each(Transform *transform, Matrix4x4 parent)
+void Animator::updateBoneTransform(Animation *animation, float time)
 {
     auto bonecount = m_bones.size();
 
@@ -205,46 +143,60 @@ void Animator::for_each(Transform *transform, Matrix4x4 parent)
     {
         auto parentIndex = m_bones[i].getParentIndex();
 
-        parentList[i] = parentList[parentIndex] * m_animation->getKeyFrame(i)->getLocalMatrix(m_currentTime);
+        parentList[i] = parentList[parentIndex] * animation->getKeyFrame(i)->getLocalMatrix(time);
     }
 
     for (std::size_t i=0;i<bonecount;i++)
     {
         m_FinalBoneMatrices[i] = parentList[i] * m_bones[i].getLocalMatrix();
     }
-
-    /*
-    auto boneName = transform->getGameObject()->getName();
-
-    auto keyframe = m_animation->findKeyframe(boneName);
-    
-    auto it = m_bones.find(boneName);
-
-    if (keyframe != nullptr && it != m_bones.end()) {
-        parent *= keyframe->getLocalMatrix(m_currentTime);
-
-        m_FinalBoneMatrices[it->second->getBoneIndex()] = parent * it->second->getLocalMatrix();
-    }
-
-    for (auto child : transform->getChildren()) {
-        for_each(child, parent);
-    }
-    */
 }
 
-void Animator::setArmature(GameObject *armature)
-{
-    m_armature = armature;
-}
 
-GameObject *Animator::getArmature() const
+void Animator::updateBoneTransform(Animation *prevAnimation, float prevTime, Animation *nextAnimation, float nextTime, float factor)
 {
-    return m_armature;
+    auto bonecount = m_bones.size();
+
+    std::vector<Matrix4x4> parentList(bonecount, Matrix4x4::identityMatrix);
+    for (std::size_t i={};i<bonecount;i++)
+    {
+        auto parentIndex = m_bones[i].getParentIndex();
+
+        auto prevScale      = prevAnimation->getKeyFrame(i)->getScaleFromTime(prevTime);
+        auto prevRotate     = prevAnimation->getKeyFrame(i)->getRotationFromTime(prevTime);
+        auto prevPosition   = prevAnimation->getKeyFrame(i)->getPositionFromTime(prevTime);
+
+        auto nextScale      = nextAnimation->getKeyFrame(i)->getScaleFromTime(nextTime);
+        auto nextRotate     = nextAnimation->getKeyFrame(i)->getRotationFromTime(nextTime);
+        auto nextPosition   = nextAnimation->getKeyFrame(i)->getPositionFromTime(nextTime);
+
+        Vector3 s = (1.0f - factor) * prevScale.value + nextScale.value * factor;
+        /*Vector3 s = Math::lerp(prevScale.value, nextScale.value, factor);*/
+        Quaternion r = Math::slerp(prevRotate.value, nextRotate.value, factor);
+        /*Vector3 t = Math::lerp(prevPosition.value, nextPosition.value, factor);*/
+        Vector3 t = (1.0f - factor) * prevPosition.value + nextPosition.value * factor;
+        
+        parentList[i] = parentList[parentIndex] * Math::CreateTRS(
+                s, r, t
+                );
+    }
+
+    for (std::size_t i=0;i<bonecount;i++)
+    {
+        m_FinalBoneMatrices[i] = parentList[i] * m_bones[i].getLocalMatrix();
+    }
 }
 
 void Animator::play(bool repeat, Animation *animation)
 {
-    m_animation = animation;
+    if (m_animation == nullptr)
+    {
+        m_animation = animation;
+        return;
+    }
+
+    if (m_nextAnimation != animation)
+        m_nextAnimation = animation;
 	/*
     if (!m_animation)
     {

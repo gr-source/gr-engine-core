@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/core/animation/animation.hpp"
 #include "gr-base/core/animation/bone.hpp"
 #include "gr-base/core/animation/default.hpp"
 
@@ -23,10 +24,6 @@ public:
 
     bool Deserialize(Stream *stream) override;
 
-    void setArmature(GameObject *armature);
-
-    GameObject *getArmature() const;
-
     void play(bool repeate, Animation *animation);
 
     Animation *getAnimation() const;
@@ -35,28 +32,22 @@ public:
 
     std::vector<Matrix4x4> m_FinalBoneMatrices;
 
-private:
-    GameObject *m_armature;
+    float blendFactor;
 
+private:
     Animation *m_animation;
 
     Animation *m_nextAnimation;
 
-    Animation *queueAnimation;
-
     float m_currentTime;
 
-    float haltTime;
-
-    float interTime;
-
-    bool bInterpolating;
+    float m_nextTime;
 
     void updateFrame();
 
-	void calculateBoneTransition(const Transform* transform, Matrix4x4 parentTransform, Animation* prevAnimation, Animation* nextAnimation, float haltTime, float currentTime, float transitionTime);
+    void updateBoneTransform(Animation *animation, float time);
 
-    void for_each(Transform *transform, Matrix4x4 parent);
+    void updateBoneTransform(Animation *prevAnimation, float prevTime, Animation *nextAnimation, float nextTime, float factor);
 };
 
 REGISTER_COMPONENT(Animator, true);
