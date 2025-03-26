@@ -28,6 +28,7 @@
 #include <imgui.h>
 
 #include <filesystem>
+#include <mutex>
 #include <vector>
 
 std::unordered_map<std::string, std::unique_ptr<ModelHandle>> ModelHandle::taskListMap;
@@ -62,10 +63,16 @@ void ModelHandle::Render()
     auto winsize = ImGui::GetContentRegionAvail();
 
     {
-        std::lock_guard<std::mutex> lock(mutex);
-        for (auto task : taskList) {
+
+        std::unique_lock<std::mutex> lock(mutex);
+        for (auto task : taskList)
+        {
+            lock.unlock();
+
             if (task->isCanRender)
                 task->render();
+
+            lock.lock();
         }
     }
 
@@ -86,9 +93,14 @@ void ModelHandle::Render()
     ImGui::SetCursorPos(ImVec2{(winsize.x / 2.0f) + spacing.x, winsize.y - spacing.y});
     if (ImGui::Button("Save", ImVec2{winsize.x / 2.0f, 0.0f})) {
         {
-            std::lock_guard<std::mutex> lock(mutex);
-            for (auto task : taskList) {
+            std::unique_lock<std::mutex> lock(mutex);
+            for (auto task : taskList)
+            {
+                lock.unlock();
+
                 task->run();
+
+                lock.lock();
             }
 
             taskList.clear();
@@ -143,6 +155,8 @@ void ModelHandle::run()
 
 void ModelHandle::render()
 {
+    ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+
     auto isOpen = ImGui::TreeNode(name.c_str());
     if (!isOpen)
     {
@@ -178,23 +192,33 @@ void ModelHandle::render()
     ImGui::TreePop();
 }
 
-void ModelHandle::renderNode(const GameObject *go) {
+void ModelHandle::renderNode(const GameObject *go)
+{
     auto transform = go->getTransform();
 
     auto children = transform->getChildren();
 
+    ImGui::PushID(transform);
+
     auto isOpen = ImGui::TreeNodeEx(go->getName().c_str(), children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
 
     ImGui::SameLine();
-    ImGui::Checkbox("##import_checkbox_enable", &mModelCanImport[go]);
+    ImGui::Checkbox("##import_checkbox_enable", &mMarkToSaveObject[go]);
     
-    if (!isOpen) { return; }
+    if (!isOpen)
+    {
+        ImGui::PopID();
+        return;
+    }
 
-    for (auto child : children) {
+    for (auto child : children)
+    {
         renderNode(child->getGameObject());
     }
 
     ImGui::TreePop();
+
+    ImGui::PopID();
 }
 
 void ModelHandle::convertToGameObject(FbxScene *scene) {
@@ -212,7 +236,7 @@ void ModelHandle::convertToGameObject(FbxScene *scene) {
 }
 
 void ModelHandle::enableNode(const GameObject *go) {
-    mModelCanImport[go] = true;
+    mMarkToSaveObject[go] = true;
 
     auto transform = go->getTransform();
     for (auto child : transform->getChildren()) {
@@ -323,7 +347,6 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
         animator->m_bones.resize(m_bones.size(), {});
 
         for (std::size_t i=0;i<bonesList.size();i++) {
-            animator->m_bones[i].setName(bonesList[i].getName());
             animator->m_bones[i].setScale(bonesList[i].getScale());
             animator->m_bones[i].setRotation(bonesList[i].getRotation());
             animator->m_bones[i].setPosition(bonesList[i].getPosition());
@@ -362,14 +385,13 @@ void ModelHandle::generateAnimation(FbxScene *fbxScene)
         animation->setDuration(fbxAnimation.getDuration());
         animation->setName(fbxAnimation.getName());
         animation->setTick(fbxAnimation.getTick());
-        animation->setKeyFrame(std::vector<Keyframe>(channels.size(), {"None"}));
+        animation->setKeyFrame(std::vector<Keyframe>(channels.size(), Keyframe{}));
 
         for (std::size_t i=0;i<channels.size();i++)
         {
             auto &channel = channels[i];
 
             auto keyframe = animation->getKeyFrame(i);
-            keyframe->setName(channel.getName());
 
             for (auto &key : channel.getKeysScale())
             {
@@ -386,23 +408,53 @@ void ModelHandle::generateAnimation(FbxScene *fbxScene)
                 keyframe->addKeyPosition(key.time, key.value);
             }
         }
+
+        mMarkToSaveAnimation.emplace(animation, true);
     }
-    /*
-    */
 }
 
 void ModelHandle::renderAnimation(Animation *animation)
 {
     auto name = animation->getName();
 
-    ImGui::Text("%s", name.c_str());
+    ImGui::Checkbox(name.c_str(), &mMarkToSaveAnimation[animation]);
 }
 
 void ModelHandle::saveNode()
 {
+    removeObjectMarkUnsave();
+
     for (auto go : rootNode)
     {
         SaveGameObjectTask SaveGameObjectTask(go, File::GetAsset("/model/" + go->getName() + ".gmdx"));
+    }
+}
+
+void ModelHandle::removeObjectMarkUnsave()
+{
+    for (auto it=rootNode.begin();it!=rootNode.end();)
+    {
+        if (!mMarkToSaveObject[*it])
+        {
+            it = rootNode.erase(it);
+            continue;
+        }
+        for_each((*it)->getTransform());
+        it++;
+    }
+}
+
+void ModelHandle::for_each(Transform *transform)
+{
+
+    for (auto child : transform->getChildren())
+    {
+        if (!mMarkToSaveObject[child->getGameObject()])
+        {
+            child->setParent(nullptr);
+            continue;
+        }
+        for_each(child);
     }
 }
 
@@ -410,6 +462,10 @@ void ModelHandle::saveAnimation()
 {
     for (auto &animation : mAnimationLits)
     {
+        if (!mMarkToSaveAnimation[animation.get()])
+        {
+            continue;
+        }
         AnimationSaveTask animationsavetask(File::GetAsset("/animation"), &(*animation));
     }
 }

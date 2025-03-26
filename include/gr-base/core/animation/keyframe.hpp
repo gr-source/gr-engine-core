@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <gr-math/quaternion.hpp>
 #include <gr-math/vector3.hpp>
 #include <string>
@@ -22,27 +23,21 @@ inline Key<T>::Key(float time, T value) : time(time), value(value) {}
 
 class Keyframe {
 public:
-    Keyframe(const std::string &name);
+    Keyframe();
 
-    const std::string &getName() const;
+    Vector3 getInterpolatePosition(float time) const;
 
-    void setName(const std::string &name);
+    Quaternion getInterpolateRotation(float time) const;
 
-    const Matrix4x4 getLocalMatrix(float time) const;
+    Vector3 getInterpolateScaling(float time) const;
 
-    const Vector3 getInterpolateScaling(float time) const;
-
-    const Quaternion getInterpolateRotation(float time) const;
-
-    const Vector3 getInterpolatePosition(float time) const;
-
-    Key<Vector3> getScaleFromTime(float t) const;
-
-    Key<Quaternion> getRotationFromTime(float t) const;
+    Matrix4x4 getLocalMatrix(float time) const;
 
     Key<Vector3> getPositionFromTime(float t) const;
 
-    static float GetScaleFactor(float last, float next, float time);
+    Key<Quaternion> getRotationFromTime(float t) const;
+
+    Key<Vector3> getScaleFromTime(float t) const;
 
     template <typename ...Args>
     Key<Vector3> &addKeyPosition(Args &&...args);
@@ -62,10 +57,10 @@ public:
     static Quaternion GetInterpolateRotation(float time, Key<Quaternion> p0, Key<Quaternion> p1);
 
     static Vector3 GetInterpolatePosition(float time, Key<Vector3> p0, Key<Vector3> p1);
+    
+    static float GetScaleFactor(float last, float next, float time);
 
 private:
-    std::string m_name;
-
     std::vector<Key<Vector3>> m_keyPosition;
 
     std::vector<Key<Vector3>> m_keyScale;
@@ -73,12 +68,14 @@ private:
     std::vector<Key<Quaternion>> m_keyRotation;
 
     template <typename T>
-    const grm::u32 getIndexFromTime(float time, const std::vector<Key<T>>& keys) const;
+    static std::size_t GetIndexFromTime(float time, const std::vector<Key<T>>& keys);
 };
 
 template <typename T>
-inline const grm::u32 Keyframe::getIndexFromTime(float time, const std::vector<Key<T>>& keys) const {
-    for (auto i=0;i<keys.size() - 1;i++) {
+inline std::size_t Keyframe::GetIndexFromTime(float time, const std::vector<Key<T>>& keys)
+{
+    for (std::size_t i=0;i<keys.size() - 1;i++)
+    {
         if (time <= keys[i + 1].time)
             return i;
     }

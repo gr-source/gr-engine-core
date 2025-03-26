@@ -13,6 +13,7 @@
 #include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/core/animation/animation.hpp"
+#include "gr-base/script/transform.hpp"
 
 #include <gr-render/gCommon.h>
 
@@ -35,7 +36,9 @@ private:
 
     static std::mutex mutex;
 
-    std::unordered_map<const GameObject *, bool> mModelCanImport;
+    std::unordered_map<const GameObject *, bool> mMarkToSaveObject;
+
+    std::unordered_map<const Animation *, bool> mMarkToSaveAnimation;
 
     std::vector<std::unique_ptr<GameObject>> gameObjects;
 
@@ -64,6 +67,10 @@ private:
     void renderAnimation(Animation *animation);
 
     void saveNode();
+
+    void removeObjectMarkUnsave();
+
+    void for_each(Transform *transform);
 
     void saveAnimation();
 

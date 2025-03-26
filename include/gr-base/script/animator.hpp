@@ -39,9 +39,17 @@ private:
 
     Animation *m_nextAnimation;
 
+    Animation *queueAnimation;
+
     float m_currentTime;
 
     float m_nextTime;
+
+    float haltTime;
+
+    float interTime;
+
+    bool interpolating;
 
     void updateFrame();
 

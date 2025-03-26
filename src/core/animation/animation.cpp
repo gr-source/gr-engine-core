@@ -87,18 +87,6 @@ bool Animation::serialize(Stream *stream) const
 
     for (auto &keyframe : m_keyframes)
     {
-        /*auto nsize = name.size();
-        if (!stream->write(&nsize, sizeof(std::size_t)))
-        {
-            return false;
-        }
-
-        if (!stream->write(name.c_str(), nsize * sizeof(char)))
-        {
-            return false;
-        }
-        */
-
         keyframe.serialize(stream);
     }
 
@@ -139,27 +127,13 @@ bool Animation::deserialize(Stream *stream)
         return false;
     }
 
-    setKeyFrame(std::vector<Keyframe>(numkeyframe, {"None"}));
+    setKeyFrame(std::vector<Keyframe>(numkeyframe, Keyframe{}));
 
     for (std::size_t i={};i<numkeyframe;i++)
     {
-        /*
-        std::size_t nsize = 0;
-        if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t)))
-        {
-            return false;
-        }
-
-        std::string name(nsize, '\0');
-        if (!stream->read(name.data(), nsize * sizeof(char)))
-        {
-            return false;
-        }
-        */
-
         auto keyframe = getKeyFrame(i);
-
-        keyframe->deserialize(stream);
+        if (keyframe != nullptr)
+            keyframe->deserialize(stream);
     }
 
     return true;
