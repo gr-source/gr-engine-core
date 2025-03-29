@@ -57,7 +57,7 @@ void Bone::setParentIndex(int index)
 }
 
 void Bone::updateMatrix() {
-    m_localMatrix = Math::CreateTRS(m_scale, m_rotation, m_position); // Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(Math::normalize(m_rotation)) * Math::scale<Matrix4x4>(m_scale);
+    m_localMatrix = Math::CreateTRS(m_position, m_rotation, m_scale);
 }
 
 bool Bone::serialize(Stream *stream) const {

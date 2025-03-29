@@ -148,7 +148,7 @@ void Animator::updateBoneTransform(Animation *prevAnimation, float prevTime, Ani
         Vector3 t       =   Math::mix(nextPosition.value, prevPosition.value, factor);
         
         parentList[i] = parentList[parentIndex] * Math::CreateTRS(
-                s, r, t
+                t, r, s
                 );
     }
 

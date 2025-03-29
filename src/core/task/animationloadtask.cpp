@@ -1,7 +1,10 @@
 #include "gr-base/core/task/animationloadtask.hpp"
 
 #include "BulletCollision/NarrowPhaseCollision/btPersistentManifold.h"
+#include "gr-base/core/animation/animation.hpp"
 #include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/event.hpp"
+#include "gr-base/core/task/animationsavetask.hpp"
 #include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
 
@@ -27,6 +30,15 @@ void AnimationLoadTask::invoke(Animation *animation)
     {
         func(animation);
     }
+}
+
+void AnimationLoadTask::postExecute(Animation *animation, std::string path)
+{
+    invoke(animation);
+
+    AssetsManager::RemoveTask(path);
+
+    Console::LogInfo("[ AnimationTask ] Animation loaded %s.", animation->getName().c_str());
 }
 
 void AnimationLoadTask::doInBackground(std::string path)
@@ -62,10 +74,7 @@ void AnimationLoadTask::doInBackground(std::string path)
 
     stream.close();
 
-    invoke(animation);
-
-    Console::LogInfo("[ AnimationTask ] Animation loaded %s.", animation->getName().c_str());
-    AssetsManager::RemoveTask(path);
+    Event::Add(&AnimationLoadTask::postExecute, this, animation, path);
 }
 
 

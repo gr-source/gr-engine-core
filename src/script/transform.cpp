@@ -119,8 +119,7 @@ bool Transform::hasChildren() const {
 }
 
 void Transform::updateLocalMatrix() {
-    m_localMatrix = Math::CreateTRS(m_scale, m_rotation, m_position);//Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(m_rotation) * Math::scale<Matrix4x4>(m_scale);
-
+    m_localMatrix = Math::CreateTRS(m_position, m_rotation, m_scale);
     updateGlobalMatrix();
 }
 
@@ -182,3 +181,6 @@ bool Transform::Deserialize(Stream *stream) {
     updateLocalMatrix();
     return true;
 }
+
+
+

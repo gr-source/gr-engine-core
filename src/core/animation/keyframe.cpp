@@ -33,7 +33,7 @@ Vector3 Keyframe::getInterpolateScaling(float time) const {
 }
 
 Matrix4x4 Keyframe::getLocalMatrix(float time) const {
-    return Math::CreateTRS(getInterpolateScaling(time), getInterpolateRotation(time), getInterpolatePosition(time));;// Math::translate<Matrix4x4>() * Math::rotate<Matrix4x4>() * Math::scale<Matrix4x4>();
+    return Math::CreateTRS(getInterpolatePosition(time), getInterpolateRotation(time), getInterpolateScaling(time));
 }
 
 Key<Vector3> Keyframe::getPositionFromTime(float t) const

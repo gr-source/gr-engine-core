@@ -18,6 +18,8 @@ private:
 
     void invoke(Animation *animation);
 
+    void postExecute(Animation *animation, std::string path);
+
 protected:
     void doInBackground(std::string path);
 };

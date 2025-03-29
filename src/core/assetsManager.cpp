@@ -13,24 +13,16 @@
 #include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/gameObject.hpp"
 
-#include "gr-base/script/meshFilter.hpp"
-#include "gr-base/script/meshRender.hpp"
-#include "gr-base/script/transform.hpp"
-#include "gr-base/script/animator.hpp"
-
-#include "gr-base/core/filmbox/fbxAnimation.hpp"
-#include "gr-base/core/filmbox/fbxScene.hpp"
-
-#include <filesystem>
 #include <cassert>
 #include <functional>
-#include <future>
 
 #include <gr-render/gTexture.h>
 #include <gr-render/gShader.h>
 #include <gr-render/gError.h>
 #include <memory>
 #include <mutex>
+
+#include <algorithm>
 
 grm::u32 AssetsManager::m_processCount = 0;
 
