@@ -108,15 +108,15 @@ void Entity::setEnable(bool value) {
 
 static std::map<std::string, int> MapScriptPriority
 {
-    {"Transform",       100},
-    {"MeshRender",      98},
-    {"Camera",          98},
-    {"Light",           98},
-    {"MeshFilter",      99},
-    {"MeshRender",      98},
-    {"MeshCollider",    97},
-    {"BoxCollider",     97},
-    {"Rigidbody",       96}
+    {"Transform",           100},
+    {"Camera",              98},
+    {"Light",               98},
+    {"MeshFilter",          99},
+    {"MeshRender",          98},
+    {"SkinnedMeshRender",   98},
+    {"MeshCollider",        97},
+    {"BoxCollider",         97},
+    {"Rigidbody",           96}
 };
 
 void Entity::init() {
@@ -146,11 +146,16 @@ void Entity::init() {
 }
 
 void Entity::destroy() {
-    // /*
-    std::list<std::tuple<std::string, Component *>> temp;
+    std::vector<std::tuple<std::string, Component *>> temp;
     for (auto &&[name, component] : m_componentPtr) {
-        temp.emplace_front(name, &(*component));
+        temp.emplace_back(name, &(*component));
     }
+
+    std::sort(temp.begin(), temp.end(), [](auto &a, auto &b)
+        {
+           return MapScriptPriority[std::get<std::string>(a)] > MapScriptPriority[std::get<std::string>(b)];
+        }
+    );
 
     for (auto [name, component] : temp) {
         auto pool = ComponentRegistry::Find(name);
@@ -158,7 +163,6 @@ void Entity::destroy() {
             pool->destroy(component);
         }
     }
-    // */
 }
 
 void Entity::copy(const Entity *entity)

@@ -5,14 +5,15 @@
 #include "gr-base/core/animation/default.hpp"
 
 #include "gr-base/core/file/stream.hpp"
+
 #include "gr-base/script/default.hpp"
 
-#include "gr-base/ecs/component.hpp"
-#include "gr-base/script/transform.hpp"
-#include <gr-math/matrix4x4.hpp>
-#include <vector>
+#include "gr-base/ecs/entity.hpp"
+#include <cstddef>
 
-class Animator : public Component {
+class Animator : public Component
+{
+    CLASS_FUNCTIONS
 public:
     Animator();
 
@@ -28,13 +29,13 @@ public:
 
     Animation *getAnimation() const;
 
-    std::vector<Bone> m_bones;
-
     std::vector<Matrix4x4> m_FinalBoneMatrices;
 
     float blendFactor;
 
 private:
+    SkinnedMeshRender *m_skinnedMeshRender;
+
     Animation *m_animation;
 
     Animation *m_nextAnimation;

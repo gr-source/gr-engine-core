@@ -5,8 +5,6 @@
 #include "gr-base/ecs/entity.hpp"
 
 #include "default.hpp"
-#include <gr-math/quaternion.hpp>
-#include <gr-math/vector3.hpp>
 
 class Rigidbody : public Component {
     CLASS_FUNCTIONS

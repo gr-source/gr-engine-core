@@ -8,6 +8,7 @@
 #include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/window.hpp"
 
+#include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
@@ -337,26 +338,28 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
 
     meshFilter->setMesh(m_mesh);
 
-    auto meshRender = go->addComponent<MeshRender>();
-    if (!meshRender) { return; }
+    auto renderer = static_cast<MeshRender *>(m_bones.empty() ? go->addComponent<MeshRender>() : go->addComponent<SkinnedMeshRender>());
+    if (!renderer) { return; }
 
     if (!m_bones.empty()) {
         auto animator = go->addComponent<Animator>();
         if (!animator) { return; }
 
-        animator->m_bones.resize(m_bones.size(), {});
+        SkinnedMeshRender *skinnedMeshRender = static_cast<SkinnedMeshRender *>(renderer);
+
+        skinnedMeshRender->setBones(std::vector<Bone>(m_bones.size(), Bone{}));
 
         for (std::size_t i=0;i<bonesList.size();i++) {
-            animator->m_bones[i].setScale(bonesList[i].getScale());
-            animator->m_bones[i].setRotation(bonesList[i].getRotation());
-            animator->m_bones[i].setPosition(bonesList[i].getPosition());
+            skinnedMeshRender->getBone(i)->setScale(bonesList[i].getScale());
+            skinnedMeshRender->getBone(i)->setRotation(bonesList[i].getRotation());
+            skinnedMeshRender->getBone(i)->setPosition(bonesList[i].getPosition());
 
-            animator->m_bones[i].setParentIndex(bonesList[i].getParentIndex());
+            skinnedMeshRender->getBone(i)->setParentIndex(bonesList[i].getParentIndex());
         }
     }
 
     for (auto &fbxMaterial : materialList) {
-        auto material = meshRender->addMaterial(fbxMaterial.getName());
+        auto material = renderer->addMaterial(fbxMaterial.getName());
 
         if (material->getShader() == nullptr)
         {

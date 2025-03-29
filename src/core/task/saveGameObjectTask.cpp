@@ -6,6 +6,7 @@
 #include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
@@ -374,9 +375,9 @@ void SaveGameObjectTask::readObjectSource(const GameObject *go)
 
     // copy material
     {
-        if (go->hasComponent<MeshRender>())
+        if (go->hasComponent<MeshRender>() || go->hasComponent<SkinnedMeshRender>())
         {
-            auto meshRender = go->getComponent<MeshRender>();
+            auto meshRender = go->hasComponent<MeshRender>() ? go->getComponent<MeshRender>() : go->getComponent<SkinnedMeshRender>();
             
             for (auto material : meshRender->getMaterials())
             {

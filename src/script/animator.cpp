@@ -9,17 +9,22 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-#include "gr-base/script/transform.hpp"
+#include "gr-base/script/skinnedMeshRender.hpp"
+#include <cstddef>
 
-#include "gr-base/ecs/gameObject.hpp"
-#include <gr-math/gmath.hpp>
-
-Animator::Animator() : m_animation(nullptr), m_currentTime(0.0f), m_FinalBoneMatrices(100, Matrix4x4::identityMatrix), m_nextAnimation(nullptr), m_nextTime(0.0f), blendFactor(0.5f), interpolating(false), queueAnimation(nullptr), haltTime(0.0f), interTime(0.0f)
+Animator::Animator() : m_animation(nullptr), m_currentTime(0.0f), m_FinalBoneMatrices(100, Matrix4x4::identityMatrix), m_nextAnimation(nullptr), m_nextTime(0.0f), blendFactor(0.5f), interpolating(false), queueAnimation(nullptr), haltTime(0.0f), interTime(0.0f), m_skinnedMeshRender(nullptr)
 {
 }
 
 void Animator::Init()
 {
+    if (!HasComponent<SkinnedMeshRender>())
+    {
+        return;
+    }
+
+    m_skinnedMeshRender = GetComponent<SkinnedMeshRender>();
+
     bCanUseUpdate = true;
 }
 
@@ -35,34 +40,33 @@ void Animator::Update()
 
 bool Animator::Serialize(Stream *stream)
 {
-    auto boneMapCount = m_bones.size();
-    if (!stream->write(&boneMapCount, sizeof(std::size_t)))
-    {
-        return false;
-    }
-
-    for (auto &bone : m_bones)
-    {
-        bone.serialize(stream);
-    }
     return true;
 }
 
 bool Animator::Deserialize(Stream *stream)
 {
-    std::size_t boneMapCount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&boneMapCount), sizeof(std::size_t)))
-    {
-        return false;
-    }
-
-    m_bones.resize(boneMapCount, {});
-
-    for (std::size_t i=0;i<boneMapCount;i++)
-    {
-        m_bones[i].deserialize(stream);
-    }
     return true;
+}
+
+void Animator::play(bool repeat, Animation *animation)
+{
+    if (m_animation == nullptr)
+    {
+        m_animation = animation;
+        return;
+    }
+    
+    if (animation != m_animation && m_nextAnimation != animation)
+    {
+        m_nextAnimation = animation;
+
+        m_nextTime = 0.0f;
+    }
+}
+
+Animation *Animator::getAnimation() const
+{
+    return m_animation;
 }
 
 void Animator::updateFrame()
@@ -105,31 +109,31 @@ void Animator::updateFrame()
 
 void Animator::updateBoneTransform(Animation *animation, float time)
 {
-    auto bonecount = m_bones.size();
+    auto bonecount = m_skinnedMeshRender->getBoneCount();
 
     std::vector<Matrix4x4> parentList(bonecount, Matrix4x4::identityMatrix);
     for (std::size_t i={};i<bonecount;i++)
     {
-        auto parentIndex = m_bones[i].getParentIndex();
+        auto parentIndex = m_skinnedMeshRender->getBone(i)->getParentIndex();
 
         parentList[i] = parentList[parentIndex] * animation->getKeyFrame(i)->getLocalMatrix(time);
     }
 
     for (std::size_t i=0;i<bonecount;i++)
     {
-        m_FinalBoneMatrices[i] = parentList[i] * m_bones[i].getLocalMatrix();
+        m_FinalBoneMatrices[i] = parentList[i] * m_skinnedMeshRender->getBone(i)->getLocalMatrix();
     }
 }
 
 
 void Animator::updateBoneTransform(Animation *prevAnimation, float prevTime, Animation *nextAnimation, float nextTime, float factor)
 {
-    auto bonecount = m_bones.size();
+    auto bonecount = m_skinnedMeshRender->getBoneCount();
 
     std::vector<Matrix4x4> parentList(bonecount, Matrix4x4::identityMatrix);
     for (std::size_t i={};i<bonecount;i++)
     {
-        auto parentIndex = m_bones[i].getParentIndex();
+        auto parentIndex = m_skinnedMeshRender->getBone(i)->getParentIndex();
 
         auto prevScale      = prevAnimation->getKeyFrame(i)->getScaleFromTime(prevTime);
         auto prevRotate     = prevAnimation->getKeyFrame(i)->getRotationFromTime(prevTime);
@@ -150,34 +154,9 @@ void Animator::updateBoneTransform(Animation *prevAnimation, float prevTime, Ani
 
     for (std::size_t i=0;i<bonecount;i++)
     {
-        m_FinalBoneMatrices[i] = parentList[i] * m_bones[i].getLocalMatrix();
+        m_FinalBoneMatrices[i] = parentList[i] * m_skinnedMeshRender->getBone(i)->getLocalMatrix();
     }
 }
-
-void Animator::play(bool repeat, Animation *animation)
-{
-    if (m_animation == nullptr)
-    {
-        m_animation = animation;
-        return;
-    }
-    
-    if (animation != m_animation && m_nextAnimation != animation)
-    {
-        m_nextAnimation = animation;
-
-        m_nextTime = 0.0f;
-    }
-}
-
-Animation *Animator::getAnimation() const
-{
-    return m_animation;
-}
-
-
-
-
 
 
 

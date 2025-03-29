@@ -222,13 +222,9 @@ inline void AssetsManager::UpdateShader(const std::string &path, grr::gShader *s
 template <typename... Args>
 inline Material *AssetsManager::CreateMaterial(const std::string &key, Args && ...args) {
     std::lock_guard<std::mutex> lock(mMaterialMutex);
-    auto it = mMaterialMap.find(key);
-    if (it != mMaterialMap.end()) {
-        return &(*it->second);
-    }
-    mMaterialMap[key] = std::make_unique<Material>(std::forward<Args>(args)...);
+    mMaterialMap.emplace(key, std::make_unique<Material>(std::forward<Args>(args)...));
 
-    mMaterialRefToName[&(*mMaterialMap[key])] = key;
+    mMaterialRefToName.emplace(&(*mMaterialMap[key]), key);
 
     return &(*mMaterialMap[key]);
 }

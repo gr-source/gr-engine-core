@@ -16,13 +16,15 @@
 
 #include <algorithm>
 
-MeshRender::MeshRender() : m_batched(nullptr), m_transform(nullptr) {}
+MeshRender::MeshRender() : m_batched(nullptr), m_transform(nullptr)
+{}
 
 MeshRender::MeshRender(const MeshRender &other) : m_transform(nullptr), m_batched(nullptr), m_materials(other.m_materials)
 {
 }
 
-void MeshRender::Init() {
+void MeshRender::Init()
+{
     m_transform = GetComponent<Transform>();
 }
 
@@ -83,11 +85,13 @@ void MeshRender::build() {
     auto meshFilter = entity->getComponent<MeshFilter>();
     
     auto mesh = meshFilter->getMesh();
-    if (!mesh) {
+    if (!mesh)
+    {
         return Console::LogError("[ MeshRender ] Object do not has mesh.");
     }
 
-    if (m_batched == nullptr && !m_materials.empty()) {
+    if (m_batched == nullptr && !m_materials.empty())
+    {
         SetupShader(mesh);
     }
 }
@@ -140,7 +144,6 @@ bool MeshRender::Deserialize(Stream *stream) {
     }
     
     std::size_t size = 0;
-    std::size_t sname = 0;
     stream->read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
     if (size <= 0) {
         return false;
@@ -149,17 +152,20 @@ bool MeshRender::Deserialize(Stream *stream) {
     m_materials.clear();
 
     for (std::size_t i={};i<size;i++) {
+        std::size_t sname = 0;
         stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t));
 
         std::string name(sname, '\0');
         stream->read(name.data(), sname * sizeof(char));
 
         auto material = AssetsManager::FindMaterial(name);
-        if (material) {
-            if (!this->hasMaterial(material))
-            {
-                m_materials.push_back(material);
-            }
+        if (material == nullptr) {
+            continue;
+        }
+
+        if (!this->hasMaterial(material))
+        {
+            m_materials.push_back(material);
         }
     }
 

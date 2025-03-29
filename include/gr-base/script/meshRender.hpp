@@ -9,7 +9,8 @@
 
 #include "default.hpp"
 
-class MeshRender : public Component {
+class MeshRender : public Component
+{
     CLASS_FUNCTIONS
 public:
     MeshRender(const MeshRender &other);

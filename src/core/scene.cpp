@@ -11,6 +11,7 @@
 #include "gr-base/core/event.hpp"
 
 #include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
@@ -184,6 +185,9 @@ void Scene::Init(GameObject *gameObject)
     if (entity->hasComponent<MeshRender>())
     {
         entity->getComponent<MeshRender>()->build();
+    } else if (entity->hasComponent<SkinnedMeshRender>())
+    {
+        entity->getComponent<SkinnedMeshRender>()->build();
     }
 
     auto transform = entity->getComponent<Transform>();
@@ -313,11 +317,10 @@ void Scene::InitializeAllScript()
     }
 }
 
-static std::array<std::string, 4> Scripts = {"MeshRender", "MeshFilter", "Light", "Camera"};
+static std::array<std::string, 5> Scripts = {"MeshRender", "SkinnedMeshRender", "MeshFilter", "Light", "Camera"};
 
 void Scene::InitializeInternalScript(Transform *transform)
 {
-    // /*
     auto go = transform->getGameObject();
 
     auto entity = go->getEntity();
@@ -336,6 +339,9 @@ void Scene::InitializeInternalScript(Transform *transform)
             if (script == "MeshRender")
             {
                 static_cast<MeshRender *>(component)->build();
+            } else if (script == "SkinnedMeshRender")
+            {
+                static_cast<SkinnedMeshRender *>(component)->build();
             }
         }
     }

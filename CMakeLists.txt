@@ -71,6 +71,7 @@ set(binary
 )
 
 set(script
+    src/script/skinnedMeshRender.cpp
     src/script/meshCollider.cpp
     src/script/boxCollider.cpp
     src/script/meshFilter.cpp
