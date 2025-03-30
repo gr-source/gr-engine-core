@@ -15,30 +15,14 @@
 #include <vector>
 #include <memory>
 
+#include <unordered_set>
 #include "batchingRender.hpp"
-
-enum OptimizeFlags : uint8_t
-{
-    OptimizeFlags_NoOptimize   = 1 << 0,
-    OptimizeFlags_InstanceMesh = 1 << 1,
-    OptimizeFlags_SaticMesh    = 1 << 2,
-};
-
-enum BatchingFlags : uint16_t {
-    BatchingFlags_None           = 1 << 0,
-    BatchingFlags_BuildMesh      = 1 << 2,
-};
-
-using BatchingFlags_ = uint16_t;
 
 struct Instance
 {
     Transform *transform;
     
     std::vector<Material *> *materialList;
-
-    Instance(std::vector<Material *> *_materialList, Transform *_transform) : materialList(_materialList), transform(_transform)
-    {}
 
     bool operator ==(const Transform *other) const
     {
@@ -90,11 +74,11 @@ private:
 
     static std::vector<Batching *> mBatchRefList;
 
-    std::vector<std::unique_ptr<BatchingRender>> m_batchingRender;
+    std::vector<BatchingRender> m_batchingRender;
     
-    std::unordered_map<Transform *, std::unique_ptr<Instance>> m_instanceMap;
+    std::unordered_set<Transform *> m_instanceMap;
 
-    std::vector<Instance *> m_instanceList;
+    std::vector<Instance> m_instanceList;
 
     std::vector<Mesh> *m_meshList;
 

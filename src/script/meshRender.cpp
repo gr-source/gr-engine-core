@@ -175,7 +175,8 @@ bool MeshRender::Deserialize(Stream *stream) {
 bool MeshRender::SetupShader(std::vector<Mesh> *meshList) {
     m_batched = Batching::FindBatchByName(std::to_string(*reinterpret_cast<int *>(meshList)));
 
-    if (!m_batched) {
+    if (!m_batched)
+    {
         m_batched = Batching::CreateBatch(std::to_string(*reinterpret_cast<int *>(meshList)), meshList);
 
         m_batched->insert(m_transform, &m_materials);

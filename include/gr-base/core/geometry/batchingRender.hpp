@@ -21,7 +21,7 @@ struct InstancedData
 class BatchingRender
 {
 public:
-    BatchingRender(BatchingRenderFlags flags);
+    BatchingRender(BatchingRenderFlags flags = BatchingRenderFlags_Default);
     ~BatchingRender();
 
     void build(Mesh *mesh);

@@ -4,8 +4,6 @@
 #include <mutex>
 #include <list>
 
-#include <gr-math/gmath.hpp>
-
 class Event {
 public:
     template <typename ...Args>
@@ -15,7 +13,7 @@ public:
 
     static void Update();
 
-    static grm::size GetCount();
+    static std::size_t GetCount();
 
 protected:
     static std::list<std::function<void()>> m_events;

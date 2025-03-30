@@ -1,6 +1,7 @@
 #include "gr-base/core/geometry/batching.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/geometry/batchingRender.hpp"
 #include "gr-base/core/status.hpp"
 
 #include "gr-base/core/threadpool.hpp"
@@ -9,6 +10,7 @@
 
 #include "gr-base/ecs/gameObject.hpp"
 
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <gr-render/gVertexArray.h>
@@ -20,7 +22,8 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#include <tuple>
+
+#include "gr-base/core/culling/frustum.hpp"
 
 std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::mBatchInstanceMap;
 
@@ -32,7 +35,6 @@ void Batching::Initialize()
 {
 }
 
-// TODO: falta descarregar o shader
 void Batching::Shutdown()
 {
 }
@@ -67,7 +69,8 @@ void Batching::RemoveBatch(Batching * batching)
     mBatchRefToNameMap.erase(it);
 }
 
-void Batching::RenderBatches() {
+void Batching::RenderBatches()
+{
     Status::BatchDrawCallRender = 0;
     Status::BatchRenderCount = 0;
 
@@ -103,13 +106,19 @@ struct VertexData {
     int entityID;
 };
 
-void Batching::buildMeshe() {
+void Batching::buildMeshe()
+{
     Status::BatchDrawCallCount += m_meshList->size();
 
-    for (auto &mesh : *m_meshList) {
-        auto draw = &(*m_batchingRender.emplace_back(std::make_unique<BatchingRender>(BatchingRenderFlags_Default)));
-            
-        draw->build(&mesh);
+    auto count = m_meshList->size();
+
+    m_batchingRender.resize(count);
+
+    for (std::size_t i=0;i<count;i++)
+    {
+        auto mesh = (*m_meshList)[i];
+
+        m_batchingRender[i].build(&mesh);
 
         calcboundbox(&mesh);
     }
@@ -122,11 +131,11 @@ void Batching::insert(Transform *transform, std::vector<Material *> *materialLis
         return;
     }
 
-    m_instanceMap.emplace(transform, std::make_unique<Instance>(materialList, transform));
+    auto &instance = m_instanceList.emplace_back();
+    instance.materialList = materialList;
+    instance.transform = transform;
 
-    auto instance = &(*m_instanceMap[transform]);
-
-    m_instanceList.push_back(instance);
+    m_instanceMap.emplace(transform);
 }
 
 void Batching::remove(Transform *transform)
@@ -137,17 +146,20 @@ void Batching::remove(Transform *transform)
         return;
     }
 
-    m_instanceList.erase(std::remove(m_instanceList.begin(), m_instanceList.end(), &(*it->second)), m_instanceList.end());
+    m_instanceList.erase(std::remove(m_instanceList.begin(), m_instanceList.end(), *it), m_instanceList.end());
 
     m_instanceMap.erase(it);
 }
 
 void Batching::draw() {
-    for (auto instance : m_instanceList)
+    for (auto &&[transform, materialList] : m_instanceList)
     {
-        auto &&[transform, materialList] = *instance;
-        
         auto matrix = transform->getGlobalMatrix();
+
+        if (!Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, matrix))
+        {
+            continue;
+        }
         
         int entityID = static_cast<int>(transform->entity->getEntityID());
 
@@ -161,7 +173,7 @@ void Batching::draw() {
             /*m_batchingRender[i]->updatePBO(sizeof(int), &entityID);*/
     
             auto material = (*materialList)[i];
-            
+
             auto shader = material->getShader();
             if (!shader)
             {
@@ -175,23 +187,25 @@ void Batching::draw() {
 
                 shader->setUniform("u_boneMatrices", animator->m_FinalBoneMatrices.data());
             }
-    
+
             shader->setUniform("u_model", &matrix);
-    
+
             material->flush();
-            
+
             shader->bind();
             shader->flush();
-    
-            m_batchingRender[i]->render();
+
+            m_batchingRender[i].render();
 
             shader->unbind();
         }
     }
 }
 
-void Batching::calcboundbox(const Mesh *mesh) {
-    for (auto vertex : mesh->getVertices()) {
+void Batching::calcboundbox(const Mesh *mesh)
+{
+    for (auto vertex : mesh->getVertices())
+    {
         m_boundbox.min = Math::min(m_boundbox.min, vertex.position);
         m_boundbox.max = Math::max(m_boundbox.max, vertex.position);
     }
@@ -204,62 +218,8 @@ bool Batching::isValid() const
 
 bool Batching::isVisible() const {
     return false;
-    // return Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, m_models[0]->getGlobalMatrix());
+    /*return Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, m_models[0]->getGlobalMatrix());*/
 }
-
-void Batching::SetUpdateShaderOptmize(Material *material, grr::gShader *shader, int id)
-{
-    std::string path;
-    try {
-        path = AssetsManager::GetShaderRefToName(shader);
-    }
-    catch (const std::exception&) {
-        return;
-    }
-
-    std::ifstream is(path);
-    if (!is.is_open())
-    {
-        return;
-    }
-
-    std::hash<std::string> hash;
-
-    auto temp_file = std::filesystem::temp_directory_path() / (std::to_string(hash(path)) + ".glsl");
-
-    std::ofstream os(temp_file);
-
-    std::string line;
-    while (std::getline(is, line))
-    {
-        if (line.find("define_type") != std::string::npos)
-        {
-            os << line << std::endl;
-            switch (id) {
-                case 0:
-                    os << "#define USE_MODEL" << std::endl;
-                    break;
-                case 1:
-                    os << "#define USE_MODEL" << std::endl;
-                    os << "#define USE_INSTANCED" << std::endl;
-                    break;
-                default:
-                    break;
-            }
-            continue;
-        }
-        os << line << std::endl;
-    }
-
-    std::cout << path << ": Convert to " << (id == 0 ? "One Draw" : "Instanced") << std::endl;
-
-    os.close();
-
-    is.close();
-
-    AssetsManager::UpdateShader(temp_file, shader, &Material::setShader, material);
-}
-
 
 
 

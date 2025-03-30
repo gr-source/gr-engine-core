@@ -290,7 +290,7 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
         materialList.push_back(scene->getMaterials()[fbxMesh->getMaterialIndex()]);
 
         for (auto &vertice : fbxMesh->getVertices()) {
-            mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord, materialList.size() - 1);
+            mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord);
 
             if (!fbxMesh->hasBone()) {
                 continue;

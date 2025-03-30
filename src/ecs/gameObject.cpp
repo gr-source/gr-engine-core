@@ -8,15 +8,18 @@
 
 std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::mGoCache;
 
-GameObject *GameObject::Create(const std::string &name, const std::string &tag) {
+GameObject *GameObject::Create(const std::string &name, const std::string &tag)
+{
     auto newName = NameManager::GenerateNameID(name);
 
-    while (Find(newName)) {
+    while (Find(newName))
+    {
         newName = NameManager::GenerateNameID(newName);
     }
 
     auto &&[it, added] = mGoCache.emplace(newName, std::make_unique<GameObject>(newName, tag));
-    if (!added) {
+    if (!added)
+    {
         throw std::runtime_error("GameObject has been replaced: " + newName);
     }
 
@@ -25,9 +28,11 @@ GameObject *GameObject::Create(const std::string &name, const std::string &tag) 
     return &(*gameObject);
 }
 
-GameObject *GameObject::Instantiate(const GameObject *go) {
+GameObject *GameObject::Instantiate(const GameObject *go)
+{
     auto gameObject = GameObject::Create(go->m_name, go->m_tag);
-    if (!gameObject) {
+    if (!gameObject)
+    {
         return nullptr;
     }
     
@@ -41,9 +46,11 @@ GameObject *GameObject::Instantiate(const GameObject *go) {
     return gameObject;
 }
 
-void GameObject::Rename(GameObject *go, std::string name) {
+void GameObject::Rename(GameObject *go, std::string name)
+{
     auto it = mGoCache.find(go->getName());
-    if (it == mGoCache.end()) {
+    if (it == mGoCache.end())
+    {
         return;
     }
 
@@ -60,13 +67,15 @@ void GameObject::Rename(GameObject *go, std::string name) {
     go->setName(name);
 }
 
-GameObject *GameObject::Find(const std::string &name) {
+GameObject *GameObject::Find(const std::string &name)
+{
     auto it = mGoCache.find(name);
     return it != mGoCache.end() ? &(*it->second) : nullptr;
 }
 
 #include "gr-base/core/scene.hpp"
-void GameObject::Destroy(GameObject *go) {
+void GameObject::Destroy(GameObject *go)
+{
     Scene::Remove(go);
 
     auto sname = go->getName();

@@ -127,12 +127,6 @@ void BatchingRender::render()
     default:
         break;
     }
-
-    // m_vertexBuffer->unbind();
-
-    // if (BatchingRenderFlags > 0)
-    // else
-    //     grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
 }
 
 void BatchingRender::setInstancedCount(grm::size count)
