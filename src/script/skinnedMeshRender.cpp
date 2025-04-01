@@ -1,29 +1,32 @@
 #include "gr-base/script/skinnedMeshRender.hpp"
 
 #include "gr-base/core/animation/bone.hpp"
-#include <cstddef>
+
+#include "gr-base/core/file/stream.hpp"
+
+#include "gr-base/ecs/gameObject.hpp"
 
 SkinnedMeshRender::SkinnedMeshRender()
 {}
 
 void SkinnedMeshRender::Init()
 {
-    MeshRender::Init();
+    BaseRender::Init();
 }
 
 void SkinnedMeshRender::Destroy()
 {
-    MeshRender::Destroy();
+    BaseRender::Destroy();
 }
 
 void SkinnedMeshRender::Enable()
 {
-    MeshRender::Enable();
+    BaseRender::Enable();
 }
 
 void SkinnedMeshRender::Disable()
 {
-    MeshRender::Disable();
+    BaseRender::Disable();
 }
 
 bool SkinnedMeshRender::Serialize(Stream *stream)
@@ -38,7 +41,8 @@ bool SkinnedMeshRender::Serialize(Stream *stream)
     {
         bone.serialize(stream);
     }
-    return MeshRender::Serialize(stream);
+
+    return BaseRender::Serialize(stream);
 }
 
 bool SkinnedMeshRender::Deserialize(Stream *stream)
@@ -56,7 +60,12 @@ bool SkinnedMeshRender::Deserialize(Stream *stream)
         m_bones[i].deserialize(stream);
     }
 
-    return MeshRender::Deserialize(stream);
+    return BaseRender::Deserialize(stream);
+}
+
+void SkinnedMeshRender::build()
+{
+    std::cout << "Build SkinnedMeshRender: " << GetGameObject()->getName() << std::endl;
 }
 
 void SkinnedMeshRender::setBones(const std::vector<Bone> &bones)

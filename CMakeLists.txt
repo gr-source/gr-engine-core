@@ -75,6 +75,7 @@ set(script
     src/script/meshCollider.cpp
     src/script/boxCollider.cpp
     src/script/meshFilter.cpp
+    src/script/baserender.cpp
     src/script/meshRender.cpp
     src/script/rigidbody.cpp
     src/script/transform.cpp

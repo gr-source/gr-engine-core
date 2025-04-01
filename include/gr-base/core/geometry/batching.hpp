@@ -1,103 +1,69 @@
 #pragma once
 
+#include <unordered_map>
+#include <memory>
+#include <string>
+
 #include "gr-base/script/default.hpp"
 
-#include <array>
-#include <gr-render/gRender.h>
+#include "gr-base/core/geometry/default.hpp"
 
-#include "default.hpp"
-#include "gr-base/script/transform.hpp"
-#include "material.hpp"
-#include "boundbox.hpp"
-
-#include <algorithm>
-#include <gr-render/gShader.h>
-#include <vector>
-#include <memory>
-
+#include <gr-render/gVertexArray.h>
 #include <unordered_set>
-#include "batchingRender.hpp"
+#include <vector>
 
-struct Instance
+typedef struct MeshData
 {
-    Transform *transform;
-    
-    std::vector<Material *> *materialList;
+    grr::gVertexArray *vertexArray;
 
-    bool operator ==(const Transform *other) const
-    {
-        return transform == other;
-    }
-};
+    grm::u32 vbo;
 
-class Batching {
-public:
-    // ***** Static Method ***** //
-    static void Initialize();
-
-    static void Shutdown();
-
-    static void RenderShadowPass();
-
-    static grm::size GetBatchCount();
-
-    static Batching *FindBatchByName(const std::string &name);
-
-    template <typename... Args>
-    static Batching *CreateBatch(const std::string &key, Args &&...args);
-
-    static void RemoveBatch(Batching *batching);
-
-    static void RenderBatches();
-
-    // ***** Class Method ***** //
-
-    Batching(std::vector<Mesh> *meshList);
-    ~Batching();
-
-    void buildMeshe();
-
-    void insert(Transform *transform, std::vector<Material *> *materialList);
-
-    void remove(Transform *transform);
+    grm::u32 count;
 
     void draw();
 
-    bool isValid() const;
+} MeshData;
 
-    bool isVisible() const;
+class Batching
+{
+public:
+    static Batching *Create(const std::string &name);
+
+    static Batching *Find(const std::string &name);
+
+    static void Render();
+
+    Batching();
+
+    void insert(Transform *transform, const std::vector<Material *> *materialList);
+
+    void erase(Transform *transform);
+
+    void setMesh(std::vector<Mesh> *meshList);
 
 private:
-    static std::unordered_map<std::string, std::unique_ptr<Batching>> mBatchInstanceMap;
+    std::unordered_set<Transform *> mInstances;
 
-    static std::unordered_map<Batching *, std::string> mBatchRefToNameMap;
+    std::vector<std::tuple<Transform *, const std::vector<Material *> *>> mInstanceRender;
 
-    static std::vector<Batching *> mBatchRefList;
+    std::vector<MeshData> mMeshData;
 
-    std::vector<BatchingRender> m_batchingRender;
-    
-    std::unordered_set<Transform *> m_instanceMap;
+    void render();
 
-    std::vector<Instance> m_instanceList;
+protected:
+    static std::unordered_map<std::string, std::unique_ptr<Batching>> mBatcheInstances;
 
-    std::vector<Mesh> *m_meshList;
-
-    Boundbox m_boundbox;
-
-    void calcboundbox(const Mesh *mesh);
-
-    static void SetUpdateShaderOptmize(Material *material, grr::gShader *shader, int id);
+    static std::vector<Batching *> mBatcheList;
 };
 
-template <typename... Args>
-inline Batching *Batching::CreateBatch(const std::string &key, Args &&...args) {
-    auto &&[it, added] = mBatchInstanceMap.emplace(key, std::make_unique<Batching>(std::forward<Args>(args)...));
 
-    auto ptr = &(*it->second);
-    
-    mBatchRefList.push_back(ptr);
 
-    mBatchRefToNameMap.emplace(ptr, key);
 
-    return &(*ptr);
-}
+
+
+
+
+
+
+
+

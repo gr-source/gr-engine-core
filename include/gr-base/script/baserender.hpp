@@ -1,0 +1,55 @@
+#pragma once
+
+#include "gr-base/core/assetsManager.hpp"
+
+#include "gr-base/core/geometry/default.hpp"
+
+#include "gr-base/core/geometry/material.hpp"
+#include "gr-base/ecs/entity.hpp"
+
+class BaseRender : public Component
+{
+    CLASS_FUNCTIONS
+public:
+    BaseRender();
+
+    void Init() override;
+
+    void Destroy() override;
+
+    bool Serialize(Stream *stream) override;
+
+    bool Deserialize(Stream *stream) override;
+
+    virtual void build() {}
+
+    template <typename ...Args>
+    Material *createMaterial(Args &&...args);
+
+    Material *addMaterial(Material *material);
+
+    void delMaterial(Material *material);
+
+    bool hasMaterial(const Material *material) const;
+
+    std::vector<Material *> getMaterial() const;
+
+    const std::vector<Material *> &getMaterialRef() const;
+
+private:
+    std::vector<Material *> m_material;
+};
+
+#include "gr-base/core/assetsManager.hpp"
+
+template <typename ...Args>
+inline Material *BaseRender::createMaterial(Args &&...args)
+{
+    return addMaterial(static_cast<Material *>(AssetsManager::CreateMaterial(std::forward<Args>(args)...)));
+}
+
+REGISTER_COMPONENT(BaseRender, false)
+
+
+
+

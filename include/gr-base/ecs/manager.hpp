@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stack>
 #include <vector>
 #include <memory>
 #include <mutex>
@@ -26,7 +27,7 @@ private:
 
     static std::vector<Entity *> mEntities;
 
-    static std::vector<EntityID> mAvailable;
+    static std::stack<EntityID> mAvailable;
 
     static grm::size mEntityCount;
 

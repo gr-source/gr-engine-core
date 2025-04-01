@@ -11,8 +11,8 @@
 #include "gr-base/script/transform.hpp"
 
 #include <algorithm>
-#include <list>
 #include <string>
+#include <map>
 
 Entity::Entity(GameObject *go, EntityID id) : m_gameObject(go), m_entityID(id)
 {
@@ -193,6 +193,9 @@ void Entity::copy(const Entity *entity)
             {
                 scene->insert(getGameObject());
             }
+        } else
+        {
+            localTransform->setParent(targetTransform->getParent());
         }
 
         for (const auto& child : targetTransform->getChildren())

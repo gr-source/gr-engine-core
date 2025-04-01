@@ -94,8 +94,14 @@ inline bool ComponentRegistry::registry(bool bInternal, bool bEnableUpdate)
     return true;
 }
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpmf-conversions"
+#elif defined(__GNUC__) || defined(__GNUG__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpmf-conversions"
+#endif
+
 template <typename T>
 inline void ComponentRegistry::SetupMethod(BaseChunk *baseChunk, bool bEnableUpdate)
 {
@@ -116,4 +122,16 @@ inline void ComponentRegistry::SetupMethod(BaseChunk *baseChunk, bool bEnableUpd
     baseChunk->allocatein = reinterpret_cast<Component *(*)(BaseChunk *, Entity *, const Component *)>((void *) &ChunkManager<T>::allocateComponent);
     baseChunk->deallocatein = reinterpret_cast<void (*)(BaseChunk *, Component *)>((void *) &ChunkManager<T>::deallocate);
 }
+
+
+
+
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__) || defined(__GNUG__)
 #pragma GCC diagnostic pop
+#endif
+
+
+

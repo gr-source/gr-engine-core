@@ -5,9 +5,12 @@
 
 #include "gr-base/core/binary/gHeader.hpp"
 
-#include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/skinnedMeshRender.hpp"
+#include "gr-base/script/baserender.hpp"
+#include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
+
+#include "gr-base/core/geometry/material.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
 
@@ -375,11 +378,18 @@ void SaveGameObjectTask::readObjectSource(const GameObject *go)
 
     // copy material
     {
-        if (go->hasComponent<MeshRender>() || go->hasComponent<SkinnedMeshRender>())
+        BaseRender *baseRender = nullptr;
+        if (go->hasComponent<SkinnedMeshRender>())
         {
-            auto meshRender = go->hasComponent<MeshRender>() ? go->getComponent<MeshRender>() : go->getComponent<SkinnedMeshRender>();
-            
-            for (auto material : meshRender->getMaterials())
+            baseRender = static_cast<BaseRender *>(go->getComponent<SkinnedMeshRender>());
+        } else if (go->hasComponent<MeshRender>())
+        {
+            baseRender = static_cast<BaseRender *>(go->getComponent<MeshRender>());
+        }
+
+        if (baseRender != nullptr)
+        {
+            for (auto material : baseRender->getMaterial())
             {
                 auto mname = AssetsManager::GetRefMaterialToName(material);
                 if (mname.empty())

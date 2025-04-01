@@ -7,8 +7,8 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-#include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/skinnedMeshRender.hpp"
+#include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
@@ -315,12 +315,12 @@ int GameObjectTask::readMaterial()
             {
                 auto meshRender = go->getComponent<MeshRender>();
                 if (!meshRender->hasMaterial(material))
-                    meshRender->insertMaterial(material);
+                    meshRender->addMaterial(material);
             } else if (go->hasComponent<SkinnedMeshRender>())
             {
                 auto meshRender = go->getComponent<SkinnedMeshRender>();
                 if (!meshRender->hasMaterial(material))
-                    meshRender->insertMaterial(material);
+                    meshRender->addMaterial(material);
             }
 
         }

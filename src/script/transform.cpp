@@ -118,19 +118,24 @@ bool Transform::hasChildren() const {
     return !m_children.empty();
 }
 
-void Transform::updateLocalMatrix() {
+void Transform::updateLocalMatrix()
+{
     m_localMatrix = Math::CreateTRS(m_position, m_rotation, m_scale);
+
     updateGlobalMatrix();
 }
 
-void Transform::updateGlobalMatrix() {
+void Transform::updateGlobalMatrix()
+{
     m_globalMatrix = getLocalMatrix();
 
-    if (m_parent) {
+    if (m_parent)
+    {
         m_globalMatrix = m_parent->getGlobalMatrix() * m_globalMatrix;
     }
 
-    for (auto & child : m_children) {
+    for (auto & child : m_children)
+    {
         child->updateLocalMatrix();
     }
 }
@@ -168,16 +173,40 @@ Transform *Transform::findChildrenComponent(const std::string &name) const {
 }
 
 bool Transform::Serialize(Stream *stream) {
-    stream->write(reinterpret_cast<const char *>(&m_scale), sizeof(Vector3));
-    stream->write(reinterpret_cast<const char *>(&m_rotation), sizeof(Quaternion));
-    stream->write(reinterpret_cast<const char *>(&m_position), sizeof(Vector3));
+    if (!stream->write(reinterpret_cast<const char *>(&m_scale), sizeof(Vector3)))
+    {
+        return false;
+    }
+
+    if (!stream->write(reinterpret_cast<const char *>(&m_rotation), sizeof(Quaternion)))
+    {
+        return false;
+    }
+
+    if (!stream->write(reinterpret_cast<const char *>(&m_position), sizeof(Vector3)))
+    {
+        return false;
+    }
     return true;
 }
 
-bool Transform::Deserialize(Stream *stream) {
-    stream->read(reinterpret_cast<char *>(&m_scale), sizeof(Vector3));
-    stream->read(reinterpret_cast<char *>(&m_rotation), sizeof(Quaternion));
-    stream->read(reinterpret_cast<char *>(&m_position), sizeof(Vector3));
+bool Transform::Deserialize(Stream *stream)
+{
+    if (!stream->read(reinterpret_cast<char *>(&m_scale), sizeof(Vector3)))
+    {
+        return false;
+    }
+
+    if (!stream->read(reinterpret_cast<char *>(&m_rotation), sizeof(Quaternion)))
+    {
+        return false;
+    }
+
+    if (!stream->read(reinterpret_cast<char *>(&m_position), sizeof(Vector3)))
+    {
+        return false;
+    }
+
     updateLocalMatrix();
     return true;
 }

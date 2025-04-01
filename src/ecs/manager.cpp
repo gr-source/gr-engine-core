@@ -10,7 +10,7 @@ std::unordered_map<EntityID, std::unique_ptr<Entity>> Manager::mMapEntities;
 
 std::vector<Entity *> Manager::mEntities;
 
-std::vector<EntityID> Manager::mAvailable;
+std::stack<EntityID> Manager::mAvailable;
 
 grm::size Manager::mEntityCount = 0;
 
@@ -20,9 +20,9 @@ Entity *Manager::CreateEntity(GameObject *go) {
     std::lock_guard<std::mutex> lock(mMutex);
     auto hasAvailable = !mAvailable.empty();
 
-    auto id = (hasAvailable ? mAvailable.back() : mEntityCount++);
+    auto id = (hasAvailable ? mAvailable.top() : mEntityCount++);
     if (hasAvailable) {
-        mAvailable.pop_back();
+        mAvailable.pop();
     }
     
     auto &entity = mMapEntities[id] = std::make_unique<Entity>(go, id);
@@ -42,7 +42,7 @@ void Manager::DestroyEntity(Entity *entity) {
     auto id = entity->getEntityID();
 
     std::lock_guard<std::mutex> lock(mMutex);
-    mAvailable.push_back(id);
+    mAvailable.emplace(id);
 
     mMapEntities.erase(id);
 
@@ -54,7 +54,9 @@ std::size_t Manager::GetEntityCount() {
     return mEntities.size();
 }
 
-// #include "compo"
 void Manager::Update() {
     ComponentRegistry::getInstance().update();
 }
+
+
+

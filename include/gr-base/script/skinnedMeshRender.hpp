@@ -2,11 +2,11 @@
 
 #include "gr-base/ecs/component.hpp"
 
-#include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/baserender.hpp"
 
 #include "gr-base/core/animation/bone.hpp"
 
-class SkinnedMeshRender : public MeshRender
+class SkinnedMeshRender : public BaseRender
 {
     CLASS_FUNCTIONS
 public:
@@ -23,6 +23,8 @@ public:
     bool Serialize(Stream *stream) override;
 
     bool Deserialize(Stream *stream) override;
+
+    void build() override;
 
     void setBones(const std::vector<Bone> &bones);
 

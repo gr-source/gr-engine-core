@@ -10,6 +10,7 @@
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/event.hpp"
 
+#include "gr-base/script/baserender.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/transform.hpp"
@@ -182,12 +183,19 @@ void Scene::Init(GameObject *gameObject)
 
     entity->init();
 
+    BaseRender *baseRender = nullptr;
+
     if (entity->hasComponent<MeshRender>())
     {
-        entity->getComponent<MeshRender>()->build();
+        baseRender = static_cast<BaseRender *>(entity->getComponent<MeshRender>());
     } else if (entity->hasComponent<SkinnedMeshRender>())
     {
-        entity->getComponent<SkinnedMeshRender>()->build();
+        baseRender = static_cast<BaseRender *>(entity->getComponent<SkinnedMeshRender>());
+    }
+
+    if (baseRender != nullptr)
+    {
+        baseRender->build();
     }
 
     auto transform = entity->getComponent<Transform>();
@@ -335,13 +343,20 @@ void Scene::InitializeInternalScript(Transform *transform)
             component->Init();
 
             // pool->init(component);
+            //
+            BaseRender *baseRender = nullptr;
 
             if (script == "MeshRender")
             {
-                static_cast<MeshRender *>(component)->build();
+                baseRender = static_cast<BaseRender *>(component);
             } else if (script == "SkinnedMeshRender")
             {
-                static_cast<SkinnedMeshRender *>(component)->build();
+                baseRender = static_cast<BaseRender *>(component);
+            }
+
+            if (baseRender != nullptr)
+            {
+                baseRender->build();
             }
         }
     }

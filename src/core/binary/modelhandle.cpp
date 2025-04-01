@@ -25,6 +25,8 @@
 
 #include "gr-base/core/task/animationsavetask.hpp"
 
+#include "gr-base/ecs/gameObject.hpp"
+
 #include <cstddef>
 #include <imgui.h>
 
@@ -338,7 +340,7 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
 
     meshFilter->setMesh(m_mesh);
 
-    auto renderer = static_cast<MeshRender *>(m_bones.empty() ? go->addComponent<MeshRender>() : go->addComponent<SkinnedMeshRender>());
+    auto renderer = m_bones.empty() ? static_cast<BaseRender *>(go->addComponent<MeshRender>()) : static_cast<BaseRender *>(go->addComponent<SkinnedMeshRender>());
     if (!renderer) { return; }
 
     if (!m_bones.empty()) {
@@ -359,7 +361,7 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
     }
 
     for (auto &fbxMaterial : materialList) {
-        auto material = renderer->addMaterial(fbxMaterial.getName());
+        auto material = renderer->createMaterial(fbxMaterial.getName());
 
         if (material->getShader() == nullptr)
         {
