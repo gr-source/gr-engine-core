@@ -53,7 +53,7 @@ bool SkinnedMeshRender::Deserialize(Stream *stream)
         return false;
     }
 
-    m_bones.resize(boneMapCount, {});
+    m_bones.resize(boneMapCount);
 
     for (std::size_t i=0;i<boneMapCount;i++)
     {

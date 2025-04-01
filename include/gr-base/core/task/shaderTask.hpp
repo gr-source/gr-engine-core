@@ -35,6 +35,8 @@ private:
 
     grr::gShader *m_shader;
 
+    bool bCreateShader;
+
     void invoke(grr::gShader *shader);
     
     void upload(std::string path);

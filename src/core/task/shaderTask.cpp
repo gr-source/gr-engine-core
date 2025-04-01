@@ -32,7 +32,7 @@ std::unordered_map<std::string, grr::UniformType> ShaderTask::mUniformNameToType
     {"vec4",        grr::UniformType_vec4},
 };
 
-ShaderTask::ShaderTask(const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader)
+ShaderTask::ShaderTask(const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bCreateShader(shader == nullptr)
 {
     if (func != nullptr)
         m_functions.push_back(func);

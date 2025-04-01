@@ -143,14 +143,12 @@ std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
 grr::gShader *AssetsManager::CreateShader(const std::string &name)
 {
     std::lock_guard<std::mutex> lock(mShaderMutex);
-    mShaderMap.emplace(name, std::make_unique<grr::gShader>());
+    auto &&[it, badded] = mShaderMap.emplace(name, std::make_unique<grr::gShader>());
 
-    auto shader = &(*mShaderMap[name]);
+    mShaderList.push_back(&(*it->second));
 
-    mShaderList.push_back(shader);
-
-    mShaderPathRef.emplace(shader, name);
-    return shader;
+    mShaderPathRef.emplace(&(*it->second), name);
+    return &(*it->second);
 }
 
 std::string AssetsManager::GetShaderRefToName(grr::gShader *shader)
