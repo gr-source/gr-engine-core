@@ -32,7 +32,7 @@ std::unordered_map<std::string, grr::UniformType> ShaderTask::mUniformNameToType
     {"vec4",        grr::UniformType_vec4},
 };
 
-ShaderTask::ShaderTask(const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bCreateShader(shader == nullptr)
+ShaderTask::ShaderTask(const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr)
 {
     if (func != nullptr)
         m_functions.push_back(func);
@@ -54,7 +54,15 @@ void ShaderTask::invoke(grr::gShader *shader)
 void ShaderTask::upload(std::string path)
 {
     auto name = std::filesystem::path(path).filename().string();
-    if (!buildShader(name, m_shader)) {
+    if (!buildShader(name, m_shader))
+    {
+        if (bShaderCreated)
+        {
+            AssetsManager::RemoveShader(m_shader);
+        }
+
+        Console::LogError("[ ShaderTask ] Fail to build shader: %s", path.c_str());
+
         return AssetsManager::RemoveTask(path);
     }
 
@@ -67,13 +75,21 @@ void ShaderTask::upload(std::string path)
 
 void ShaderTask::doInBackground(std::string path)
 {
-    m_shader = m_shader != nullptr ? m_shader : AssetsManager::CreateShader(path);
+    m_shader = bShaderCreated ? AssetsManager::CreateShader(path) : m_shader;
+
+    auto macroList = extract_macros_from_string(path);
+
+    path = macroList.content;
 
     try {
-        bindShader(path);
+        bind_shader(macroList);
     } catch (const std::exception &e)
     {
-        Console::LogError("[ ShaderTask ] Failt to loas shader: " + path);
+        Console::LogError("[ ShaderTask ] Failt to load shader: %s", path.c_str());
+        if (bShaderCreated)
+        {
+            AssetsManager::RemoveShader(m_shader);
+        }
 
         return AssetsManager::RemoveTask(path);
     }
@@ -152,15 +168,15 @@ std::vector<std::tuple<std::string, std::string>> ShaderTask::ReadStructField(co
             if (fieldline.find('/') != std::string::npos)
                 break;
 
+            lastPos = pos + 1;
+
             std::string params[2];
             if (!ValidStr(fieldline, params, 2))
             {
                 continue;
             }
 
-            auto &field = fieldList.emplace_back(params[0], params[1]);
-            
-            lastPos = pos + 1;
+            auto &field = fieldList.emplace_back(params[0], params[1]);    
         }
     }
     return fieldList;
@@ -170,6 +186,7 @@ std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>
 {
     std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> structMap;
     std::size_t lastPos = 0;
+
     while (true)
     {
         auto pos = content.find("struct", lastPos);
@@ -358,12 +375,12 @@ std::string ShaderTask::RemoveCommenter(const std::string &source)
     return result;
 }
 
-void ShaderTask::bindShader(const std::string &path)
+void ShaderTask::bind_shader(const MacroLists &macroLists)
 {
-    std::ifstream is(path);
+    std::ifstream is(macroLists.content);
     if (!is.is_open())
     {
-        throw std::runtime_error("Fail to open file: " + path);
+        throw std::runtime_error("Fail to open file: " + macroLists.content);
     }
 
     std::vector<std::string> defineMap;
@@ -475,6 +492,18 @@ void ShaderTask::bindShader(const std::string &path)
             m_shaderSource[ShaderType_Vertex]   += defination + '\n';
         }
 
+        for (auto &d : macroLists.definedMacros)
+        {
+            // m_shaderSource[ShaderType_Fragment] += "#define " + d + '\n';
+            m_shaderSource[ShaderType_Vertex]   += "#define " + d + '\n';
+        }
+
+        for (auto &u : macroLists.undefinedMacros)
+        {
+            // m_shaderSource[ShaderType_Fragment] += "#undef " + u + '\n';
+            m_shaderSource[ShaderType_Vertex]   += "#undef " + u + '\n';
+        }
+
         m_shaderSource[ShaderType_Fragment] += baseShaderSource[ShaderType_Fragment];
         m_shaderSource[ShaderType_Vertex]   += baseShaderSource[ShaderType_Vertex];
     }
@@ -485,8 +514,11 @@ void ShaderTask::bindShader(const std::string &path)
     m_shaderSource[ShaderType_Fragment] = RemoveCommenter(m_shaderSource[ShaderType_Fragment]);
     m_shaderSource[ShaderType_Vertex] = RemoveCommenter(m_shaderSource[ShaderType_Vertex]);
 
-    // std::cout << "===== Vertex =====" << std::endl;
-    // std::cout << m_shaderSource[ShaderType_Vertex] << std::endl;
+    std::cout << "===== Vertex =====" << std::endl;
+    std::cout << m_shaderSource[ShaderType_Vertex] << std::endl;
+
+    std::cout << "===== Fragment =====" << std::endl;
+    std::cout << m_shaderSource[ShaderType_Fragment] << std::endl;
 
     // fragment
     {
@@ -545,6 +577,65 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader)
     return true;
 }
 
+MacroLists ShaderTask::extract_macros_from_string(const std::string &content)
+{
+    MacroLists macroLists;
+    std::size_t pos = 0, start = 0;
 
+    std::cout << content << std::endl;
+
+    while ((start = content.find(';', pos)) != std::string::npos)
+    {
+        auto str = content.substr(pos, start - pos);
+
+        pos = start + 1;
+
+        auto sub = str.find('=');
+        if (sub == std::string::npos)
+        {
+            macroLists.content = str;
+            continue;
+        }
+
+        auto key = str.substr(0, sub);
+
+        std::vector<std::string> &vector = key == "define" ? macroLists.definedMacros : macroLists.undefinedMacros;
+        {
+            auto kstart = str.find('{');
+            if (kstart == std::string::npos)
+            {
+                continue;
+            }
+
+            auto kend = str.find('}');
+            if (kend == std::string::npos)
+            {
+                continue;
+            }
+
+            auto line = str.substr(kstart + 1, kend - (kstart + 1));
+
+            std::size_t vpos = 0, vstart = 0;
+
+            while ((vstart = line.find(',', vpos)) != std::string::npos)
+            {
+                vector.push_back(line.substr(vpos, vstart - vpos));
+                vpos = vstart + 1;
+            }
+
+            if (vpos > 0 && vpos != line.length())
+                vector.push_back(line.substr(vpos, line.length() - vpos));
+            else if (vpos == 0)
+                vector.push_back(line);
+        }
+    }
+
+    if (pos == 0)
+    {
+        macroLists.content = content;
+    }
+
+    return macroLists;
+}
 
 

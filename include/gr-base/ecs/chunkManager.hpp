@@ -4,16 +4,21 @@
 
 #include "field.hpp"
 
+#include <cstddef>
+#include <cstring>
 #include <memory>
 
 class Stream;
 
-const int CHUNK_SIZE = 1024;
+using ChunkCount = std::size_t;
 
-template <typename T>
-struct ComponentChunk {
-    T components[CHUNK_SIZE];
-    bool used[CHUNK_SIZE] = {false};
+constexpr const std::size_t CHUNK_SIZE = 1024;
+
+template <typename T, ChunkCount N>
+struct ComponentChunk
+{
+    T components[N];
+    bool used[N] = {false};
 };
 
 class BaseChunk
@@ -79,10 +84,10 @@ inline bool BaseChunk::registerField(const std::string &name, Args &&...args) {
     return true;
 }
 
-template <typename T>
+template <typename T, ChunkCount N>
 class ChunkManager : public BaseChunk {
 public:
-    ComponentChunk<T>* allocateChunk();
+    ComponentChunk<T, N>* allocateChunk();
     
     Component* allocateComponent(Entity *, const Component *) override;
     
@@ -93,16 +98,16 @@ public:
     void allupdate() override;
 
 private:
-    std::vector<std::unique_ptr<ComponentChunk<T>>> chunks;
+    std::vector<std::unique_ptr<ComponentChunk<T, N>>> chunks;
 };
 
-template <typename T>
-ComponentChunk<T>* ChunkManager<T>::allocateChunk() {
-    return &(*chunks.emplace_back(std::make_unique<ComponentChunk<T>>()));
+template <typename T, ChunkCount N>
+ComponentChunk<T, N>* ChunkManager<T, N>::allocateChunk() {
+    return &(*chunks.emplace_back(std::make_unique<ComponentChunk<T, N>>()));
 }
 
-template <typename T>
-Component* ChunkManager<T>::allocateComponent(Entity *entity, const Component *other) {
+template <typename T, ChunkCount N>
+Component* ChunkManager<T, N>::allocateComponent(Entity *entity, const Component *other) {
     Component *component = nullptr;
     for (auto &chunk : chunks) {
         for (int i = 0; i < CHUNK_SIZE; ++i) {
@@ -117,7 +122,7 @@ Component* ChunkManager<T>::allocateComponent(Entity *entity, const Component *o
 
     if (component == nullptr)
     {
-        ComponentChunk<T>* newChunk = allocateChunk();
+        ComponentChunk<T, N>* newChunk = allocateChunk();
         newChunk->used[0] = true;
         
         component = &newChunk->components[0];
@@ -136,12 +141,20 @@ Component* ChunkManager<T>::allocateComponent(Entity *entity, const Component *o
     return component;
 }
 
-template <typename T>
-void ChunkManager<T>::deallocate(Component *component) {
-    for (auto &chunk : chunks) {
-        for (int i = 0; i < CHUNK_SIZE; ++i) {
-            if (&chunk->components[i] == component) {
+template <typename T, ChunkCount N>
+void ChunkManager<T, N>::deallocate(Component *component)
+{
+    for (auto &chunk : chunks)
+    {
+        for (int i = 0; i < CHUNK_SIZE; ++i)
+        {
+            if (&chunk->components[i] == component)
+            {
+                std::destroy_at(static_cast<T *>(component));
+
                 chunk->used[i] = false;
+
+                std::memset(component, 0, sizeof(T));
                 return;
             }
         }
@@ -149,29 +162,35 @@ void ChunkManager<T>::deallocate(Component *component) {
     std::cerr << "Componente não encontrado para desalocar!\n";
 }
 
-template <typename T>
-void ChunkManager<T>::allinit()
+template <typename T, ChunkCount N>
+void ChunkManager<T, N>::allinit()
 {
-    for (auto &chunk : chunks) {
-        for (int i = 0; i < CHUNK_SIZE; ++i) {
-            if (chunk->used[i]) {
+    for (auto &chunk : chunks)
+    {
+        for (int i = 0; i < CHUNK_SIZE; ++i)
+        {
+            if (chunk->used[i])
+            {
                 init(reinterpret_cast<Component *>(&chunk->components[i]));
             }
         }
     }
 }
 
-template <typename T>
-void ChunkManager<T>::allupdate()
+template <typename T, ChunkCount N>
+void ChunkManager<T, N>::allupdate()
 {
     if (!bCanEnableUpdate)
     {
         return;
     }
     
-    for (auto &chunk : chunks) {
-        for (int i = 0; i < CHUNK_SIZE; ++i) {
-            if (chunk->used[i] && chunk->components[i].bCanUseUpdate) {
+    for (auto &chunk : chunks)
+    {
+        for (int i = 0; i < CHUNK_SIZE; ++i)
+        {
+            if (chunk->used[i] && chunk->components[i].bCanUseUpdate)
+            {
                 update(reinterpret_cast<Component *>(&chunk->components[i]));
             }
         }

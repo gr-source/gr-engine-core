@@ -4,7 +4,6 @@
 
 #include "gr-base/core/geometry/default.hpp"
 
-#include "gr-base/core/geometry/material.hpp"
 #include "gr-base/ecs/entity.hpp"
 
 class BaseRender : public Component
@@ -38,6 +37,11 @@ public:
 
 private:
     std::vector<Material *> m_material;
+
+    Batching *m_batching;
+
+    friend class SkinnedMeshRender;
+    friend class MeshRender;
 };
 
 #include "gr-base/core/assetsManager.hpp"

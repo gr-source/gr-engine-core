@@ -84,3 +84,15 @@ void TextureTask::doInBackground(std::string path)
 
     Event::Add(&TextureTask::upload, this, path, width, height, format);
 }
+
+
+
+
+
+
+
+
+
+
+
+

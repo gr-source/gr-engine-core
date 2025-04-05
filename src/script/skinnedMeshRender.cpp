@@ -1,32 +1,38 @@
 #include "gr-base/script/skinnedMeshRender.hpp"
 
+#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/file/file.hpp"
+#include "gr-base/script/meshFilter.hpp"
+
 #include "gr-base/core/animation/bone.hpp"
 
 #include "gr-base/core/file/stream.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
 
+#include "gr-base/core/geometry/batching.hpp"
+
 SkinnedMeshRender::SkinnedMeshRender()
 {}
 
 void SkinnedMeshRender::Init()
 {
-    BaseRender::Init();
+    return BaseRender::Init();
 }
 
 void SkinnedMeshRender::Destroy()
 {
-    BaseRender::Destroy();
+    return BaseRender::Destroy();
 }
 
 void SkinnedMeshRender::Enable()
 {
-    BaseRender::Enable();
+    return BaseRender::Enable();
 }
 
 void SkinnedMeshRender::Disable()
 {
-    BaseRender::Disable();
+    return BaseRender::Disable();
 }
 
 bool SkinnedMeshRender::Serialize(Stream *stream)
@@ -65,7 +71,35 @@ bool SkinnedMeshRender::Deserialize(Stream *stream)
 
 void SkinnedMeshRender::build()
 {
-    std::cout << "Build SkinnedMeshRender: " << GetGameObject()->getName() << std::endl;
+    auto meshFilter = GetComponent<MeshFilter>();
+
+    auto meshList = meshFilter->getMesh();
+
+    auto meshListName = AssetsManager::GetMeshListRefToName(meshList);
+
+    auto batching = Batching::Find(meshListName);
+    if (batching == nullptr)
+    {
+        batching = Batching::Create(meshListName);
+        batching->setMesh(meshList);
+    }
+
+    for (auto &material : m_material)
+    {
+        auto shader = material->getShader();
+        if (shader == nullptr)
+        {
+            continue;
+        }
+        auto path = AssetsManager::GetShaderRefToName(shader);
+        if (!File::Exists(path))
+        {
+            continue;
+        }
+        AssetsManager::LoadShader(path + ";define={USE_MODEL,ENABLE_ANIMATION}", &Material::setShader, material);
+    }
+
+    batching->insert(GetGameObject()->getTransform(), &m_material);
 }
 
 void SkinnedMeshRender::setBones(const std::vector<Bone> &bones)

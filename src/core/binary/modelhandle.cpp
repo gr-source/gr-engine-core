@@ -365,7 +365,7 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
 
         if (material->getShader() == nullptr)
         {
-            AssetsManager::LoadShader(File::GetAsset("/shader/model/simple_model.glsl"), &Material::setShader, material);
+            AssetsManager::LoadShader(File::GetAsset("/shader/model/simple_model.glsl") + (m_bones.empty() ? ";define={USE_MODEL};" : ";define={USE_MODEL,ENABLE_ANIMATION};"), &Material::setShader, material);
         }
 
         for (auto &&[type, path] : fbxMaterial.getTextures()) {

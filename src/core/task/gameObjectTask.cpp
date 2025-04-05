@@ -28,7 +28,8 @@ void GameObjectTask::upload(std::string path)
     }
 
     auto scene = Scene::GetCurrentScene();
-    if (scene != nullptr) {
+    if (scene != nullptr)
+    {
         Scene::Use(nullptr);
     }
 
@@ -57,19 +58,23 @@ void GameObjectTask::doInBackground(std::string path)
     Console::LogInfo("[ GameObjectTask ] Loading model: %s", path.c_str());
 
     FileHeader header;
-    if (!m_stream->read(reinterpret_cast<char *>(&header), sizeof(FileHeader))) {
+    if (!m_stream->read(reinterpret_cast<char *>(&header), sizeof(FileHeader)))
+    {
         Console::LogError("[ GameObjectTask ] Falied to read header binary.");
+        
         return AssetsManager::RemoveTask(path);
     }
     
-    if (header.signature[0] != 'g' && header.signature[1] != 'r' && header.signature[2] != 'm' && header.signature[3] != 'x') {
+    if (std::strcmp(header.signature, "grmx") != 0) {
         Console::LogError("[ GameObjectTask ] Invalid binary type.");
         return AssetsManager::RemoveTask(path);
     }
 
     auto result = readData();
-    if (result != 0) {
+    if (result != 0)
+    {
         Console::LogError("[ GameObjectTask ] Fail to read data %d", result);
+        
         return AssetsManager::RemoveTask(path);
     }
 

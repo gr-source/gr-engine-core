@@ -24,8 +24,6 @@
 
 #include <algorithm>
 
-grm::u32 AssetsManager::m_processCount = 0;
-
 /***************** Shader *****************/
 std::unordered_map<std::string, std::unique_ptr<ShaderTask>> AssetsManager::mShaderTaskMap;
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::mShaderMap;
@@ -79,7 +77,6 @@ void AssetsManager::Initialize() {
 // TODO: Falta corrigir
 void AssetsManager::Shutdown() {
     // clear assets
-    m_processCount = 0;
 
     /***************** Shader *****************/
     // mShaderMap.clear();
@@ -112,8 +109,6 @@ void AssetsManager::Render() {
     {
         return;
     }
-    std::cout << "ee" << std::endl;
-
 
     auto mainWindowSize = Window::GetWindowSize() / 2;
     auto beginSize = ImVec2{400, 300};
@@ -148,11 +143,13 @@ grr::gShader *AssetsManager::CreateShader(const std::string &name)
     mShaderList.push_back(&(*it->second));
 
     mShaderPathRef.emplace(&(*it->second), name);
+
     return &(*it->second);
 }
 
 std::string AssetsManager::GetShaderRefToName(grr::gShader *shader)
 {
+    std::lock_guard<std::mutex> lock(mShaderMutex);
     auto it = mShaderPathRef.find(shader);
     if (it == mShaderPathRef.end()) {
         throw std::runtime_error("Shader do reference undefined.");
@@ -186,24 +183,21 @@ grr::gShader *AssetsManager::FindShader(const std::string &name) {
 
 grr::gTexture *AssetsManager::CreateTexture(const std::string &name) {
     std::lock_guard<std::mutex> lock(mTextureMutex);
-    mTextureMap.emplace(name, std::make_unique<grr::gTexture>());
+    auto &&[it, badded] = mTextureMap.emplace(name, std::make_unique<grr::gTexture>());
 
-    auto texture = &(*mTextureMap[name]);
+    mTextureRefToName.emplace(&(*it->second), name);
 
-    mTextureRefToName.emplace(texture, name);
-
-    return texture;
+    return &(*it->second);
 }
 
 // ********** Mesh ********** //
 std::vector<Mesh> *AssetsManager::CreateMesh(const std::string &name) {
     std::lock_guard<std::mutex> lock(m_meshMutex);
-    mMeshMapList.emplace(name, std::make_unique<std::vector<Mesh>>());
+    auto &&[it, badded] = mMeshMapList.emplace(name, std::make_unique<std::vector<Mesh>>());
     
-    auto ptr = &(*mMeshMapList[name]);
+    mMeshListRefToName.emplace(&(*it->second), name);
 
-    mMeshListRefToName.emplace(ptr, name);
-    return ptr;
+    return &(*it->second);
 }
 
 std::vector<Mesh> *AssetsManager::FindMesh(const std::string &name) {
@@ -233,6 +227,7 @@ void AssetsManager::RemoveMesh(const std::string &name)
         return;
     }
     mMeshListRefToName.erase(&(*it->second));
+
     mMeshMapList.erase(it);
 }
 
@@ -305,10 +300,12 @@ void AssetsManager::SetShaderList(const std::string &path, grr::gShader *shader,
     }
 
     // check file exists
-    if (!File::Exists(path))
+    /*
+     * if (!File::Exists(path))
     {
-        return Console::LogError("[ AssetsManager-Shader ] File do not exists: %s", path.c_str());
+        return Console::LogError("[ AssetsManager::Shader ] File do not exists: %s", path.c_str());
     }
+    */
 
     mShaderTaskMap.emplace(path, std::make_unique<ShaderTask>(path, func, shader));
 }
@@ -350,10 +347,6 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
 
 void AssetsManager::SetAnimationList(const std::string &path, const std::function<void (Animation *)> func)
 {
-    if (!File::Exists(path)) {
-        return Console::log(Log::ERROR, "Falied to open animation: " + path);
-    }
-
     std::lock_guard<std::mutex> lock(mAnimationMutex);
     
     // check task is processing
@@ -380,6 +373,11 @@ void AssetsManager::SetAnimationList(const std::string &path, const std::functio
         }
     }
 
+    if (!File::Exists(path))
+    {
+        return Console::LogError("[ AssetsManager::Animation ] Fail to load, file do not found: %s", path.c_str());
+    }
+
     mAnimationLoadTask.emplace(path, std::make_unique<AnimationLoadTask>(path, func));
 }
 
@@ -387,9 +385,9 @@ Animation *AssetsManager::CreateAnimation(const std::string &name)
 {
     std::lock_guard<std::mutex> lock(mAnimationMutex);
 
-    mAnimationList.emplace(name, std::make_unique<Animation>(name));
+    auto &&[it, badded] = mAnimationList.emplace(name, std::make_unique<Animation>(name));
 
-    return &(*mAnimationList[name]);
+    return &(*it->second);
 }
 
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::GetShaderMap() {
@@ -406,11 +404,14 @@ grm::size AssetsManager::GetTextureCount() {
     return mTextureMap.size();
 }
 
-grm::size AssetsManager::GetShaderCount() {
+grm::size AssetsManager::GetShaderCount()
+{
+    std::lock_guard<std::mutex> lock(mShaderMutex);
     return mShaderMap.size();
 }
 
-grm::size AssetsManager::GetMeshCount() {
+grm::size AssetsManager::GetMeshCount()
+{
     std::lock_guard<std::mutex> lock(m_meshMutex);
     return mMeshMapList.size();
 }

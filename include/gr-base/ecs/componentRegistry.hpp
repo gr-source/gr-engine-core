@@ -88,7 +88,7 @@ inline bool ComponentRegistry::registry(bool bInternal, bool bEnableUpdate)
         return true;
     }
     
-    baseChunk = registryScript(name, std::make_unique<ChunkManager<T>>(), sizeof(T), bInternal);
+    baseChunk = registryScript(name, std::make_unique<ChunkManager<T, CHUNK_SIZE>>(), sizeof(T), bInternal);
     
     SetupMethod<T>(baseChunk, bEnableUpdate);
     return true;
@@ -116,11 +116,11 @@ inline void ComponentRegistry::SetupMethod(BaseChunk *baseChunk, bool bEnableUpd
     baseChunk->deserialize = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::Deserialize);
     baseChunk->destroy     = reinterpret_cast<void (*) (Component *)>((void *) &T::Destroy);
 
-    baseChunk->initall = reinterpret_cast<void (*)(BaseChunk *)>((void *) &ChunkManager<T>::allinit);
-    baseChunk->updateall = reinterpret_cast<void (*)(BaseChunk *)>((void *) &ChunkManager<T>::allupdate);
+    baseChunk->initall = reinterpret_cast<void (*)(BaseChunk *)>((void *) &ChunkManager<T, CHUNK_SIZE>::allinit);
+    baseChunk->updateall = reinterpret_cast<void (*)(BaseChunk *)>((void *) &ChunkManager<T, CHUNK_SIZE>::allupdate);
 
-    baseChunk->allocatein = reinterpret_cast<Component *(*)(BaseChunk *, Entity *, const Component *)>((void *) &ChunkManager<T>::allocateComponent);
-    baseChunk->deallocatein = reinterpret_cast<void (*)(BaseChunk *, Component *)>((void *) &ChunkManager<T>::deallocate);
+    baseChunk->allocatein = reinterpret_cast<Component *(*)(BaseChunk *, Entity *, const Component *)>((void *) &ChunkManager<T, CHUNK_SIZE>::allocateComponent);
+    baseChunk->deallocatein = reinterpret_cast<void (*)(BaseChunk *, Component *)>((void *) &ChunkManager<T, CHUNK_SIZE>::deallocate);
 }
 
 

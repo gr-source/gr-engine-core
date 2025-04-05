@@ -1,10 +1,14 @@
 #include "gr-base/script/meshRender.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
+
 #include "gr-base/core/geometry/batching.hpp"
+
 #include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
+
+#include "gr-base/core/file/file.hpp"
 
 MeshRender::MeshRender()
 {}
@@ -49,7 +53,22 @@ void MeshRender::build()
         batching->setMesh(meshList);
     }
 
-    batching->insert(GetGameObject()->getTransform(), &getMaterialRef());
+    for (auto &material : m_material)
+    {
+        auto shader = material->getShader();
+        if (shader == nullptr)
+        {
+            continue;
+        }
+        auto path = AssetsManager::GetShaderRefToName(shader);
+        if (!File::Exists(path))
+        {
+            continue;
+        }
+        AssetsManager::LoadShader(path + ";define={USE_MODEL}", &Material::setShader, material);
+    }
+
+    batching->insert(GetGameObject()->getTransform(), &m_material);
 }
 
 

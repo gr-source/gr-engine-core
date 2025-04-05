@@ -19,6 +19,15 @@ typedef struct
     grm::u32 count;
 } ShaderUniform;
 
+typedef struct MacroLists
+{
+    std::vector<std::string> definedMacros;
+
+    std::vector<std::string> undefinedMacros;
+
+    std::string content;
+} MacroLists;
+
 class ShaderTask
 {
 public:
@@ -35,7 +44,7 @@ private:
 
     grr::gShader *m_shader;
 
-    bool bCreateShader;
+    bool bShaderCreated;
 
     void invoke(grr::gShader *shader);
     
@@ -67,9 +76,11 @@ public:
 
     static std::string RemoveCommenter(const std::string &source);
 
-    void bindShader(const std::string &path);
+    void bind_shader(const MacroLists &macroList);
 
     bool buildShader(const std::string &name, grr::gShader *shader);
+
+    static MacroLists extract_macros_from_string(const std::string &content);
 };
 
 

@@ -84,8 +84,6 @@ public:
 
     static std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> &GetMeshListMap();
 
-    static grm::u32 m_processCount;
-
     static grm::size GetTextureCount();
 
     static grm::size GetShaderCount();

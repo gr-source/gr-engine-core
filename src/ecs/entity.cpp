@@ -14,6 +14,19 @@
 #include <string>
 #include <map>
 
+static std::map<std::string, int> MapScriptPriority
+{
+    {"Transform",           100},
+    {"Camera",              98},
+    {"Light",               98},
+    {"MeshFilter",          99},
+    {"MeshRender",          98},
+    {"SkinnedMeshRender",   98},
+    {"MeshCollider",        97},
+    {"BoxCollider",         97},
+    {"Rigidbody",           96}
+};
+
 Entity::Entity(GameObject *go, EntityID id) : m_gameObject(go), m_entityID(id)
 {
 }
@@ -32,14 +45,17 @@ Entity::~Entity()
     }
 }
 
-Component *Entity::addComponent(const std::string &name, const Component *component) {
+Component *Entity::addComponent(const std::string &name, const Component *component)
+{
     auto pool = ComponentRegistry::Find(name);
-    if (!pool) {
+    if (!pool)
+    {
         throw std::runtime_error("Fail to add component, " + name + " do not registry.");
     }
 
     auto instance = pool->allocatein(pool, this, component);
-    if (!instance) {
+    if (!instance)
+    {
         throw std::runtime_error("Fail to add component, " + name + " invalid instance.");
     }
     
@@ -89,39 +105,34 @@ std::unordered_map<std::string, Component *> Entity::getComponentMap() const {
     return m_componentPtr;
 }
 
-GameObject *Entity::getGameObject() const {
+GameObject *Entity::getGameObject() const
+{
     return m_gameObject;
 }
 
-EntityID Entity::getEntityID() const {
+EntityID Entity::getEntityID() const
+{
     return m_entityID;
 }
 
 void Entity::setEnable(bool value) {
-    for (auto [name, component] : m_componentPtr) {
+    for (auto [name, component] : m_componentPtr)
+    {
         auto pool = ComponentRegistry::Find(name);
-        if (pool) {
-            value ? pool->enable(component) : pool->disable(component);
+        if (pool == nullptr)
+        {
+            continue;
         }
+
+        value ? pool->enable(component) : pool->disable(component);
     }
 }
 
-static std::map<std::string, int> MapScriptPriority
-{
-    {"Transform",           100},
-    {"Camera",              98},
-    {"Light",               98},
-    {"MeshFilter",          99},
-    {"MeshRender",          98},
-    {"SkinnedMeshRender",   98},
-    {"MeshCollider",        97},
-    {"BoxCollider",         97},
-    {"Rigidbody",           96}
-};
 
 void Entity::init() {
     std::vector<std::tuple<std::string, Component *>> temp;
-    for (auto &&[name, component] : m_componentPtr) {
+    for (auto &&[name, component] : m_componentPtr)
+    {
         temp.emplace_back(name, &(*component));
     }
 
@@ -131,15 +142,19 @@ void Entity::init() {
         }
     );
 
-    for (auto [name, component] : temp) {
+    for (auto [name, component] : temp)
+    {
         auto pool = ComponentRegistry::Find(name);
-        if (!pool) {
+        if (!pool)
+        {
             continue;
         }
 
-        try {
+        try
+        {
             pool->init(component);
-        } catch (const std::exception &e) {
+        } catch (const std::exception &e)
+        {
             throw std::runtime_error("Fail to initialize " + name + ", " + e.what());
         }
     }

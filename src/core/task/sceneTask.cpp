@@ -62,17 +62,20 @@ void SceneTask::upload(std::string path)
     } else
     {
         auto gocamera = GameObject::Create("MainEngineCamera", "Engine");
-        if (gocamera) {
+        if (gocamera)
+        {
             gocamera->addComponent<Camera>();
             
             Scene::Init(gocamera);
+
             current->setCamera(gocamera);
         }
     }
 
     Scene::Use(current);
 
-    for (auto go : tempRootNode) {
+    for (auto go : tempRootNode)
+    {
         GameObject::Instantiate(go);
     }
 

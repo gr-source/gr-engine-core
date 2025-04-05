@@ -1,23 +1,32 @@
 #include "gr-base/script/baserender.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
+
 #include "gr-base/core/geometry/material.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
-#include "gr-base/script/meshFilter.hpp"
-#include "gr-base/script/skinnedMeshRender.hpp"
+
+#include "gr-base/core/geometry/batching.hpp"
 
 #include <algorithm>
 #include <cstddef>
 
-BaseRender::BaseRender()
+BaseRender::BaseRender() : m_batching(nullptr)
 {}
 
 void BaseRender::Init()
 {}
 
 void BaseRender::Destroy()
-{}
+{
+    if (m_batching == nullptr)
+    {
+        return;
+    }
+    m_batching->erase(GetGameObject()->getTransform());
+
+    m_batching = nullptr;
+}
 
 bool BaseRender::Serialize(Stream *stream)
 {
