@@ -18,6 +18,8 @@ typedef struct MeshData
 
     grm::u32 vbo;
 
+    grm::u32 abo;
+
     grm::u32 count;
 
     void draw();
@@ -35,7 +37,7 @@ public:
 
     Batching();
 
-    void insert(Transform *transform, const std::vector<Material *> *materialList);
+    void insert(Transform *transform, const std::vector<Material *> *materialList, int index);
 
     void erase(Transform *transform);
 
@@ -46,7 +48,9 @@ private:
 
     std::vector<std::tuple<Transform *, const std::vector<Material *> *>> mInstanceRender;
 
-    std::vector<MeshData> mMeshData;
+    std::vector<std::tuple<Transform *, const std::vector<Material *> *, Animator *>> mInstanceSkinnedRender;
+
+    std::vector<MeshData> mMeshData[2];
 
     void render();
 

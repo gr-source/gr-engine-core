@@ -2,19 +2,23 @@
 
 #include <unordered_map>
 #include <string>
+#include <mutex>
 
 class NameManager {
 public:
-    static void Shutdown();
+    std::string GenerateNameID(std::string name);
 
-    static std::string GenerateNameID(std::string name);
+    void RemoveNameID(std::string name);
 
-    static void RemoveNameID(std::string name);
+    void clear();
 
 private:
-    static std::unordered_map<std::string, int> m_nameID;
+    std::unordered_map<std::string, int> m_nameID;
 
     static std::size_t FindDelimiter(char delimiter, const std::string &name);
+
+protected:
+    static std::mutex mutex;
 };
 
 

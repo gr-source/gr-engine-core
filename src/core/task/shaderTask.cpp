@@ -32,7 +32,7 @@ std::unordered_map<std::string, grr::UniformType> ShaderTask::mUniformNameToType
     {"vec4",        grr::UniformType_vec4},
 };
 
-ShaderTask::ShaderTask(const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr)
+ShaderTask::ShaderTask(const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr), task_name(path)
 {
     if (func != nullptr)
         m_functions.push_back(func);
@@ -53,6 +53,7 @@ void ShaderTask::invoke(grr::gShader *shader)
 
 void ShaderTask::upload(std::string path)
 {
+    std::cout << path << std::endl;
     auto name = std::filesystem::path(path).filename().string();
     if (!buildShader(name, m_shader))
     {
@@ -63,23 +64,30 @@ void ShaderTask::upload(std::string path)
 
         Console::LogError("[ ShaderTask ] Fail to build shader: %s", path.c_str());
 
-        return AssetsManager::RemoveTask(path);
+        return AssetsManager::RemoveTask(task_name);
     }
 
     Console::LogInfo("[ ShaderTask ] Shader loaded sucessfuly %s.", name.c_str());
     
     invoke(m_shader);
 
-    AssetsManager::RemoveTask(path);
+    AssetsManager::RemoveTask(task_name);
 }
 
 void ShaderTask::doInBackground(std::string path)
 {
-    m_shader = bShaderCreated ? AssetsManager::CreateShader(path) : m_shader;
-
     auto macroList = extract_macros_from_string(path);
 
     path = macroList.content;
+    if (!File::Exists(path))
+    {
+        Console::LogWarning("[ ShaderTask ] File do not found: %s", path.c_str());
+
+        return AssetsManager::RemoveTask(task_name);
+    }
+
+    m_shader = bShaderCreated ? AssetsManager::CreateShader(task_name) : m_shader;
+
 
     try {
         bind_shader(macroList);
@@ -91,7 +99,7 @@ void ShaderTask::doInBackground(std::string path)
             AssetsManager::RemoveShader(m_shader);
         }
 
-        return AssetsManager::RemoveTask(path);
+        return AssetsManager::RemoveTask(task_name);
     }
  
     Event::Add(&ShaderTask::upload, this, path);
@@ -514,11 +522,11 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
     m_shaderSource[ShaderType_Fragment] = RemoveCommenter(m_shaderSource[ShaderType_Fragment]);
     m_shaderSource[ShaderType_Vertex] = RemoveCommenter(m_shaderSource[ShaderType_Vertex]);
 
-    std::cout << "===== Vertex =====" << std::endl;
-    std::cout << m_shaderSource[ShaderType_Vertex] << std::endl;
-
-    std::cout << "===== Fragment =====" << std::endl;
-    std::cout << m_shaderSource[ShaderType_Fragment] << std::endl;
+    // std::cout << "===== Vertex =====" << std::endl;
+    // std::cout << m_shaderSource[ShaderType_Vertex] << std::endl;
+    //
+    // std::cout << "===== Fragment =====" << std::endl;
+    // std::cout << m_shaderSource[ShaderType_Fragment] << std::endl;
 
     // fragment
     {
@@ -581,8 +589,6 @@ MacroLists ShaderTask::extract_macros_from_string(const std::string &content)
 {
     MacroLists macroLists;
     std::size_t pos = 0, start = 0;
-
-    std::cout << content << std::endl;
 
     while ((start = content.find(';', pos)) != std::string::npos)
     {

@@ -8,13 +8,15 @@
 
 std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::mGoCache;
 
+NameManager GameObject::mNameManager;
+
 GameObject *GameObject::Create(const std::string &name, const std::string &tag)
 {
-    auto newName = NameManager::GenerateNameID(name);
+    auto newName = mNameManager.GenerateNameID(name);
 
     while (Find(newName))
     {
-        newName = NameManager::GenerateNameID(newName);
+        newName = mNameManager.GenerateNameID(newName);
     }
 
     auto &&[it, added] = mGoCache.emplace(newName, std::make_unique<GameObject>(newName, tag));
@@ -54,9 +56,9 @@ void GameObject::Rename(GameObject *go, std::string name)
         return;
     }
 
-    NameManager::RemoveNameID(name);
+    mNameManager.RemoveNameID(name);
 
-    name = NameManager::GenerateNameID(name);
+    name = mNameManager.GenerateNameID(name);
 
     auto ptr = std::move(it->second);
 
@@ -85,7 +87,7 @@ void GameObject::Destroy(GameObject *go)
         return;
     }
 
-    NameManager::RemoveNameID(sname);
+    mNameManager.RemoveNameID(sname);
 
     auto transform = go->getTransform();
     // remove o objeto pai do objeto altual e se o pai me ter como filho me remove do objeto pai.
@@ -108,8 +110,7 @@ void GameObject::Destroy(GameObject *go)
 void GameObject::Clear() {
     mGoCache.clear();
 
-    NameManager::Shutdown();
-    
+    mNameManager.clear();
 }
 
 std::size_t GameObject::GetGameObjectCount() {

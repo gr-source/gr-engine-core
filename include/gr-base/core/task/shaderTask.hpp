@@ -44,6 +44,8 @@ private:
 
     grr::gShader *m_shader;
 
+    std::string task_name;
+
     bool bShaderCreated;
 
     void invoke(grr::gShader *shader);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/core/nameManager.hpp"
 #include <unordered_map>
 #include <string>
 #include <memory>
@@ -76,6 +77,8 @@ private:
 
 protected:
     static std::unordered_map<std::string, std::unique_ptr<GameObject>> mGoCache;
+
+    static NameManager mNameManager;
 };
 
 #include "entity.hpp"
