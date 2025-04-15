@@ -1,20 +1,10 @@
 #include "gr-base/core/window.hpp"
 
-#include <GLFW/glfw3.h>
+void (*Window::SetWindowSize)(const gVector2<int> &size);
 
-gVector2<int> Window::windowsize = {0, 0};
+gVector2<int> (*Window::GetWindowSize)();
 
-void Window::SetWindowSize(const gVector2<int> &size) {
-    windowsize = size;
+void (*Window::SetWindowTitle)(const char *title);
 
-    glfwSetWindowSize(glfwGetCurrentContext(), size.x, size.y);
-}
 
-gVector2<int> Window::GetWindowSize() {
-    glfwGetWindowSize(glfwGetCurrentContext(), &windowsize.x, &windowsize.y);
-    return windowsize;
-}
 
-void Window::SetWindowTitle(const char *title) {
-    glfwSetWindowTitle(glfwGetCurrentContext(), title);
-}

@@ -514,12 +514,6 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
     m_shaderSource[ShaderType_Fragment] = RemoveCommenter(m_shaderSource[ShaderType_Fragment]);
     m_shaderSource[ShaderType_Vertex] = RemoveCommenter(m_shaderSource[ShaderType_Vertex]);
 
-    std::cout << "===== Vertex =====" << std::endl;
-    std::cout << m_shaderSource[ShaderType_Vertex] << std::endl;
-
-    std::cout << "===== Fragment =====" << std::endl;
-    std::cout << m_shaderSource[ShaderType_Fragment] << std::endl;
-
     // fragment
     {
         auto structList = ReadStuct(m_shaderSource[ShaderType_Fragment]);
@@ -581,8 +575,6 @@ MacroLists ShaderTask::extract_macros_from_string(const std::string &content)
 {
     MacroLists macroLists;
     std::size_t pos = 0, start = 0;
-
-    std::cout << content << std::endl;
 
     while ((start = content.find(';', pos)) != std::string::npos)
     {
