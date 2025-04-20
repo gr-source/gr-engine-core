@@ -522,15 +522,6 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
     m_shaderSource[ShaderType_Fragment] = RemoveCommenter(m_shaderSource[ShaderType_Fragment]);
     m_shaderSource[ShaderType_Vertex] = RemoveCommenter(m_shaderSource[ShaderType_Vertex]);
 
-<<<<<<< HEAD
-=======
-    // std::cout << "===== Vertex =====" << std::endl;
-    // std::cout << m_shaderSource[ShaderType_Vertex] << std::endl;
-    //
-    // std::cout << "===== Fragment =====" << std::endl;
-    // std::cout << m_shaderSource[ShaderType_Fragment] << std::endl;
-
->>>>>>> 18be6b39b650268c850588ea8da7991b685c72b1
     // fragment
     {
         auto structList = ReadStuct(m_shaderSource[ShaderType_Fragment]);
