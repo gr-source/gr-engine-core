@@ -99,7 +99,7 @@ void SkinnedMeshRender::build()
         AssetsManager::LoadShader(path + ";define={USE_MODEL,ENABLE_ANIMATION}", &Material::setShader, material);
     }
 
-    batching->insert(GetGameObject()->getTransform(), &m_material);
+    batching->insert(GetGameObject()->getTransform(), &m_material, 2);
 }
 
 void SkinnedMeshRender::setBones(const std::vector<Bone> &bones)

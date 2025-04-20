@@ -68,7 +68,7 @@ void MeshRender::build()
         AssetsManager::LoadShader(path + ";define={USE_MODEL}", &Material::setShader, material);
     }
 
-    batching->insert(GetGameObject()->getTransform(), &m_material);
+    batching->insert(GetGameObject()->getTransform(), &m_material, 1);
 }
 
 
