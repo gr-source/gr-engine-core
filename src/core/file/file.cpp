@@ -1,5 +1,6 @@
 #include "gr-base/core/file/file.hpp"
 
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 
@@ -62,7 +63,7 @@ std::string File::GetFileName(const std::string &path) {
 }
 
 std::string File::GetFile(const std::string &path, bool internal) {
-    return (internal ? m_configPath : m_currentPath) + path;
+    return (internal ? m_userPath : m_currentPath) + path;
 }
 
 std::string File::GetAsset(const std::string &path, bool internal) {
@@ -157,10 +158,79 @@ void File::rename(const std::string &from, const std::string &to) {
     std::filesystem::rename(from, to);
 }
 
-/////////////////////
-std::string gfile::createTempFile(const std::string &name)
+// ********** gfile ********** //
+std::string gfile::create_temp_file(const std::string &name)
 {
     return std::filesystem::temp_directory_path().string() + "/" + name;
 }
+
+std::string gfile::get_home_directory()
+{
+    const char *retval = getenv("HOME");
+    return retval != nullptr ? retval : "";
+}
+
+std::string gfile::get_data_directory(const std::string &path)
+{
+    return get_home_directory() + "/.local/share/gr-engine" + path;
+}
+
+std::string gfile::get_config_directory(const std::string &path)
+{
+    return get_home_directory() + "/.config/gr-engine" + path;
+}
+
+std::string gfile::get_cache_directory(const std::string &path)
+{
+    return get_home_directory() + "/.cache/gr-engine" + path;
+}
+
+bool gfile::exists(const std::string &path)
+{
+    return std::filesystem::exists(path);
+}
+
+bool gfile::create_directories(const std::string &path)
+{
+    try
+    {
+        std::filesystem::create_directories(path);
+    } catch (const std::exception &e)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool gfile::create_directory(const std::string &path)
+{
+    try
+    {
+        std::filesystem::create_directory(path);
+    } catch (const std::exception &e)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool gfile::remove(const std::string &path)
+{
+    if (!std::filesystem::is_directory(path))
+    {
+        return std::filesystem::remove(path);
+    }
+
+    for (auto entry : std::filesystem::directory_iterator(path))
+    {
+        if (!remove(entry.path()))
+        {
+            return false;
+        }
+    }
+    return std::filesystem::remove(path);
+}
+
+
 
 

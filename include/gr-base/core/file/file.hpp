@@ -63,7 +63,23 @@ private:
 
 class gfile {
 public:
-    static std::string createTempFile(const std::string& name);
+    static std::string create_temp_file(const std::string& name);
+
+    static std::string get_home_directory();
+
+    static std::string get_data_directory(const std::string &path = "");
+
+    static std::string get_config_directory(const std::string &path = "");
+
+    static std::string get_cache_directory(const std::string &path = "");
+
+    static bool exists(const std::string &path);
+
+    static bool create_directories(const std::string &path);
+
+    static bool create_directory(const std::string &path);
+
+    static bool remove(const std::string &path);
 };
 
 

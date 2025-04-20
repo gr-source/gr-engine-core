@@ -4,6 +4,8 @@
 
 #include "gr-base/ecs/entity.hpp"
 
+#include "gr-base/core/rendertarget.hpp"
+
 #include <gr-render/gRender.h>
 
 class Camera : public Component {
@@ -45,6 +47,8 @@ public:
     void setRect(const Rect &rect);
 
     Rect getRect() const;
+
+    RenderTarget rendertarget;
 
 private:
     static std::vector<Camera *> m_cameraList;

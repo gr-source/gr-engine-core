@@ -1,5 +1,6 @@
 #include "gr-base/script/camera.hpp"
 
+#include "gr-base/core/rendertarget.hpp"
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/core/display.hpp"
@@ -31,7 +32,8 @@ Camera *Camera::Current() {
     return s_current;
 }
 
-Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_texture(new grr::gTexture()), m_rect({0.0f, 0.0f, 1.0f, 1.0f}) {
+Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_texture(new grr::gTexture()), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(1024, 1024)
+{
     // auto rect = Display::GetDisplayRect();
 
     // m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
@@ -53,6 +55,8 @@ void Camera::Init() {
     m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
 
     updateProjection();
+
+    rendertarget.init();
 }
 
 void Camera::Destroy() {
@@ -60,6 +64,8 @@ void Camera::Destroy() {
         s_current = nullptr;
     }
     m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
+
+    rendertarget.shutdown();
 }
 
 void Camera::Enable() {

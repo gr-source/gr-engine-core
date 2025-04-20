@@ -40,6 +40,7 @@ set(file
 
 set(core
     src/core/assetsManager.cpp
+    src/core/rendertarget.cpp
     src/core/nameManager.cpp
     src/core/threadpool.cpp
     src/core/display.cpp
