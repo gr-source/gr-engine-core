@@ -32,13 +32,8 @@ Camera *Camera::Current() {
     return s_current;
 }
 
-Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_texture(new grr::gTexture()), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(1024, 1024)
+Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(1024, 1024)
 {
-    // auto rect = Display::GetDisplayRect();
-
-    // m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
-    
-    // updateProjection();
 }
 
 void Camera::Init() {
@@ -157,21 +152,29 @@ bool Camera::Deserialize(Stream *stream)
     return false;
 }
 
-Matrix4x4 Camera::getPerspesctive() const {
+Matrix4x4 Camera::getPerspesctive() const
+{
     return m_projection;
 }
 
-Matrix4x4 Camera::getViewmatrix() const {
+Matrix4x4 Camera::getViewmatrix() const
+{
     return Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getForward(), m_transform->getUp());
 }
 
-void Camera::setAspectRatio(float aspect) {
+void Camera::setAspectRatio(float aspect)
+{
     if (aspect <= 0.0f) {
         return;
     }
     m_aspect = aspect;
 
     updateProjection();
+}
+
+float Camera::get_aspect_ratio() const
+{
+    return m_aspect;
 }
 
 void Camera::setActive(bool value) {
@@ -190,10 +193,6 @@ Vector3 Camera::getPosition() const {
 
 void Camera::lookIt(const Vector3 &direction) {
     m_transform->setLocalRotation(Math::normalize(Math::lookRotation(direction, Vector3::up)));
-}
-
-grr::gTexture *Camera::getColorTexture() const {
-    return m_texture;
 }
 
 void Camera::setRect(const Rect &rect) {

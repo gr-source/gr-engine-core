@@ -53,7 +53,6 @@ void ShaderTask::invoke(grr::gShader *shader)
 
 void ShaderTask::upload(std::string path)
 {
-    std::cout << path << std::endl;
     auto name = std::filesystem::path(path).filename().string();
     if (!buildShader(name, m_shader))
     {

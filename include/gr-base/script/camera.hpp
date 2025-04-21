@@ -36,14 +36,14 @@ public:
 
     void setAspectRatio(float aspect);
 
+    float get_aspect_ratio() const;
+
     void setActive(bool value);
 
     Vector3 getPosition() const;
 
     void lookIt(const Vector3 &direction);
     
-    grr::gTexture *getColorTexture() const;
-
     void setRect(const Rect &rect);
 
     Rect getRect() const;
@@ -52,8 +52,6 @@ public:
 
 private:
     static std::vector<Camera *> m_cameraList;
-
-    grr::gTexture *m_texture;
 
     Transform *m_transform;
 
