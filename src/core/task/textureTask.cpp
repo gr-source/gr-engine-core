@@ -4,6 +4,7 @@
 #include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/event.hpp"
+#include <gr-render/gCommon.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "gr-base/core/stb/stb_image.h"
@@ -31,10 +32,15 @@ void TextureTask::invoke(grr::gTexture *texture)
     }
 }
 
-void TextureTask::upload(std::string path, int width, int height, grr::TextureFormat format)
+void TextureTask::upload(std::string path, int width, int height, TextureFormat format)
 {
     auto texture = AssetsManager::CreateTexture(path);
-    texture->updateBuffer(width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Trilinear, format, m_pixels.get());
+    texture->set_filtering(gTextureFlags_Filter_Trilinear);
+    texture->set_texture(gTextureFlags_Texture);
+    texture->set_format(format);
+    texture->generate_mipmaps();
+
+    texture->updateBuffer(width, height, m_pixels.get());
 
     invoke(texture);
 
@@ -62,20 +68,20 @@ void TextureTask::doInBackground(std::string path)
         return AssetsManager::RemoveTask(path);
     }
 
-    grr::TextureFormat format;
+    TextureFormat format;
     switch (ch)
     {
     case 1:
-        format = grr::TextureFormat_RED;
+        format = TextureFormat_RED;
         break;
     case 2:
-        format = isHDR ? grr::TextureFormat_RG16F : grr::TextureFormat_RG;
+        format = isHDR ? TextureFormat_RG16F : TextureFormat_RG;
         break;
     case 3:
-        format = isHDR ? grr::TextureFormat_RGB16F : grr::TextureFormat_RGB;
+        format = isHDR ? TextureFormat_RGB16F : TextureFormat_RGB;
         break;
     case 4:
-        format = isHDR ? grr::TextureFormat_RGBA16F : grr::TextureFormat_RGBA;
+        format = isHDR ? TextureFormat_RGBA16F : TextureFormat_RGBA;
         break;
     default:
         std::cout << "Errr: " << ch << std::endl;

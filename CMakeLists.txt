@@ -48,6 +48,7 @@ set(core
     src/core/window.cpp
     src/core/string.cpp
     src/core/status.cpp
+    src/core/skybox.cpp
     src/core/scene.cpp
     src/core/event.cpp
     src/core/clock.cpp

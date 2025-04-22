@@ -23,7 +23,7 @@ private:
 
     std::unique_ptr<char> m_pixels;
 
-    void upload(std::string path, int width, int height, grr::TextureFormat format);
+    void upload(std::string path, int width, int height, TextureFormat format);
 
 protected:
     void doInBackground(std::string path);
