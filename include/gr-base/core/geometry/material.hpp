@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <array>
 
@@ -13,7 +14,8 @@ typedef struct
     grm::u32 id;
 } Params;
 
-class Material {
+class Material
+{
 public:
     Material();
     ~Material();
@@ -44,13 +46,13 @@ public:
     void flush() const;
 
 private:
-    grr::gShader *m_shader;
-
     std::vector<std::tuple<int, const void *>> m_uniformList;
     
     std::unordered_map<std::string, void *> m_uniformMap;
     
     std::array<grr::gTexture *, 10> m_textures;
+
+    grr::gShader *m_shader;
 
     bool setupTexture(int id, grr::gTexture *texture);
 

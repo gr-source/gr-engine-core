@@ -280,7 +280,8 @@ void AssetsManager::SetShaderList(const std::string &path, grr::gShader *shader,
     // check there loading
     {
         auto it = mShaderTaskMap.find(path);
-        if (it != mShaderTaskMap.end()) {
+        if (it != mShaderTaskMap.end())
+        {
             if (func == nullptr)
                 return;
 
@@ -291,21 +292,14 @@ void AssetsManager::SetShaderList(const std::string &path, grr::gShader *shader,
     // check if contains in main list
     {
         auto it = mShaderMap.find(path);
-        if (it != mShaderMap.end()) {
+        if (it != mShaderMap.end() && shader == nullptr)
+        {
             if (func == nullptr)
                 return;
 
             return func(&(*it->second));
         }
     }
-
-    // check file exists
-    /*
-     * if (!File::Exists(path))
-    {
-        return Console::LogError("[ AssetsManager::Shader ] File do not exists: %s", path.c_str());
-    }
-    */
 
     mShaderTaskMap.emplace(path, std::make_unique<ShaderTask>(path, func, shader));
 }

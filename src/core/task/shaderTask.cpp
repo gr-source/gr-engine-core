@@ -66,7 +66,7 @@ void ShaderTask::upload(std::string path)
         return AssetsManager::RemoveTask(task_name);
     }
 
-    Console::LogInfo("[ ShaderTask ] Shader loaded sucessfuly %s.", name.c_str());
+    Console::LogInfo("[ ShaderTask ] Shader loaded sucessfully %s.", name.c_str());
     
     invoke(m_shader);
 
@@ -86,13 +86,17 @@ void ShaderTask::doInBackground(std::string path)
     }
 
     m_shader = bShaderCreated ? AssetsManager::CreateShader(task_name) : m_shader;
-
+    if (!bShaderCreated)
+    {
+        auto property = AssetsManager::GetShaderProperty(m_shader);
+        property->clear();
+    }
 
     try {
         bind_shader(macroList);
     } catch (const std::exception &e)
     {
-        Console::LogError("[ ShaderTask ] Failt to load shader: %s", path.c_str());
+        Console::LogError("[ ShaderTask ] Failt to load shader %s: %s", path.c_str(), e.what());
         if (bShaderCreated)
         {
             AssetsManager::RemoveShader(m_shader);

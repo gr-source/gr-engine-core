@@ -43,6 +43,10 @@ void MeshRender::build()
     auto meshFilter = GetComponent<MeshFilter>();
 
     auto meshList = meshFilter->getMesh();
+    if (meshList == nullptr)
+    {
+        return;
+    }
 
     auto meshListName = AssetsManager::GetMeshListRefToName(meshList);
 
@@ -60,11 +64,9 @@ void MeshRender::build()
         {
             continue;
         }
+
         auto path = AssetsManager::GetShaderRefToName(shader);
-        if (!File::Exists(path))
-        {
-            continue;
-        }
+        
         AssetsManager::LoadShader(path + ";define={USE_MODEL}", &Material::setShader, material);
     }
 

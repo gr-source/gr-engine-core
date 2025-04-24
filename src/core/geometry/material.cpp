@@ -4,14 +4,11 @@
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
-#include <algorithm>
-#include <gr-math/vector3.hpp>
-#include <ios>
+
+#include <gr-render/gShader.h>
 
 Material::Material() : m_shader(nullptr)
 {
-    // AssetsManager::LoadShader(File::GetAsset("/shader/model/default_instancing_model.glsl"), &Material::setShader, this);
-
     for (int i=0;i<10;i++)
     {
         m_textures[i] = nullptr;
@@ -29,11 +26,13 @@ Material::~Material()
     }
 }
 
-void Material::setTexture(int idx, grr::gTexture *texture) {
+void Material::setTexture(int idx, grr::gTexture *texture)
+{
     m_textures[idx >= m_textures.size() ? 0 : idx] = texture;
 }
 
-grr::gTexture *Material::getTexture(int idx) const {
+grr::gTexture *Material::getTexture(int idx) const
+{
     return m_textures[idx >= m_textures.size() ? 0 : idx];
 }
 

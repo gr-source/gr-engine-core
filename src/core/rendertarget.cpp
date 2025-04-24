@@ -33,13 +33,10 @@ void RenderTarget::init()
     */
     // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbufferDepth);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
         std::cerr << "Erro ao configurar o framebuffer!" << std::endl;
     }
-
-
-    GLenum buffers[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
-    glDrawBuffers(4, buffers);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -69,25 +66,7 @@ void RenderTarget::shutdown()
 
 RenderTarget::~RenderTarget()
 {
-    if (textureColor)
-    {
-        glDeleteTextures(1, &textureColor);
-    }
-
-    if (textureDepth)
-    {
-        glDeleteTextures(1, &textureDepth);
-    }
-
-    if (framebuffer)
-    {
-        glDeleteFramebuffers(1, &framebuffer);
-    }
-
-    if (renderbufferDepth)
-    {
-        glDeleteRenderbuffers(1, &renderbufferDepth);
-    }
+    shutdown();
 }
 
 void RenderTarget::bind()
@@ -106,15 +85,11 @@ void RenderTarget::resize(std::uint32_t w, std::uint32_t h)
     width = w;
     height = h;
 
-
     glBindTexture(GL_TEXTURE_2D, textureColor);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
     glBindTexture(GL_TEXTURE_2D, textureDepth);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-
-    glBindRenderbuffer(GL_RENDERBUFFER, renderbufferDepth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 }
 
 std::uint32_t RenderTarget::getTextureID() const

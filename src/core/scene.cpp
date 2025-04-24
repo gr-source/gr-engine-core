@@ -291,6 +291,43 @@ Camera *Scene::getCamera() const
     return m_camera;
 }
 
+// ********** public ********** //
+void Scene::select(GameObject *go)
+{
+    v_object_selected_list.push_back(go);
+
+    u_object_has_been_selected.emplace(go);
+}
+
+void Scene::deselect(GameObject *go)
+{
+    v_object_selected_list.erase(std::remove(v_object_selected_list.begin(), v_object_selected_list.end(),  go), v_object_selected_list.end());
+
+    u_object_has_been_selected.erase(go);
+}
+
+void Scene::deselect_all()
+{
+    v_object_selected_list.clear();
+    u_object_has_been_selected.clear();
+}
+
+bool Scene::has_object_selected() const
+{
+    return !v_object_selected_list.empty();
+}
+
+bool Scene::object_has_been_selected(GameObject *go) const
+{
+    return u_object_has_been_selected.find(go) != u_object_has_been_selected.end();
+}
+
+std::vector<GameObject *> Scene::get_object_selected() const
+{
+    return v_object_selected_list;
+}
+
+
 std::unordered_map<std::string, std::unique_ptr<Scene>> &Scene::GetScenes()
 {
     return m_scenes;
@@ -414,27 +451,6 @@ void Scene::SetupScene(Scene *scene)
     for (auto &go : scene->getObjectList())
     {
         Scene::Init(go);
-    }
-}
-
-void Scene::ProcessScript(Component *component, std::string path, std::streampos position)
-{
-    Stream stream(path, std::ios_base::in | std::ios_base::binary);
-    if (!stream.is_open())
-    {
-        Console::LogError("[ Scene ] Falied to load binary: ", path.c_str());
-        return;
-    }
-
-    stream.seekg(position, std::ios_base::beg);
-
-    try
-    {
-        component->Deserialize(&stream);
-    }
-    catch (const std::exception &e)
-    {
-        Console::LogError("[ Scene ] %s", e.what());
     }
 }
 

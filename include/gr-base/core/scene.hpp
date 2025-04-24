@@ -9,6 +9,8 @@
 #include <condition_variable>
 #include <functional>
 #include <list>
+#include <map>
+#include <unordered_set>
 
 class Stream;
 
@@ -71,6 +73,18 @@ public:
 
     Camera *getCamera() const;
 
+    void select(GameObject *go);
+
+    void deselect(GameObject *go);
+
+    void deselect_all();
+
+    bool has_object_selected() const;
+
+    bool object_has_been_selected(GameObject *go) const;
+
+    std::vector<GameObject *> get_object_selected() const;
+
 private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;
 
@@ -90,6 +104,10 @@ private:
 
     std::vector<GameObject *> m_objects;
 
+    std::unordered_set<GameObject *> u_object_has_been_selected;
+
+    std::vector<GameObject *> v_object_selected_list;
+
     std::string m_name;
 
     GameObject *m_goCamera;
@@ -107,8 +125,6 @@ private:
     void setDisableEntity(Transform *transform, bool value);
 
     static void SetupScene(Scene *scene);
-
-    static void ProcessScript(Component *component, std::string path, std::streampos position);
 
     bool remove(GameObject *gameObject);
 

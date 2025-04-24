@@ -41,6 +41,9 @@ public:
     static std::string GetRefTextureName(grr::gTexture *texture);
 
     template <typename ...Args>
+    static void LoadShader(const std::string &path, grr::gShader *shader, Args &&...args);
+
+    template <typename ...Args>
     static void LoadShader(const std::string &path, Args &&...args);
 
     static grr::gShader *CreateShader(const std::string &name);
@@ -61,9 +64,6 @@ public:
     static Animation *CreateAnimation(const std::string &name);
 
     static grr::gShader *FindShader(const std::string &name);
-
-    template <typename ...Args>
-    static void UpdateShader(const std::string &path, grr::gShader *shader, Args &&...args);
 
     // ********** Texture ********** //
     static grr::gTexture *CreateTexture(const std::string &name);
@@ -194,18 +194,8 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
 }
 
 // ***** Shader ***** //
-template <typename... Args>
-inline void AssetsManager::LoadShader(const std::string &path, Args &&...args) {
-    std::function<void(grr::gShader *)> func = nullptr;
-    if constexpr (sizeof...(Args) > 0) {
-        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
-    }
-    
-    SetShaderList(path, nullptr, func);
-}
-
 template <typename ...Args>
-inline void AssetsManager::UpdateShader(const std::string &path, grr::gShader *shader, Args &&...args)
+inline void AssetsManager::LoadShader(const std::string &path, grr::gShader *shader, Args &&...args)
 {
     std::function<void (grr::gShader *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
@@ -214,6 +204,18 @@ inline void AssetsManager::UpdateShader(const std::string &path, grr::gShader *s
     }
 
     SetShaderList(path, shader, func);
+}
+
+template <typename... Args>
+inline void AssetsManager::LoadShader(const std::string &path, Args &&...args)
+{
+    std::function<void(grr::gShader *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0)
+    {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
+    
+    SetShaderList(path, nullptr, func);
 }
 
 // ***** Material ***** //
