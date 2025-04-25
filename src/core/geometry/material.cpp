@@ -4,6 +4,7 @@
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/geometry/shader.hpp"
 
 #include <gr-render/gShader.h>
 
@@ -83,7 +84,7 @@ void Material::serialize(Stream *stream) const
 
     if (hasShader)
     {
-        auto name = AssetsManager::GetShaderName(AssetShader_Shader3D, m_shader);
+        auto name = AssetsManager::GetShaderName(m_shader);
 
         auto nsize = name.size();
         if (!stream->write(&nsize, sizeof(std::size_t)))
@@ -278,10 +279,10 @@ void Material::deserialize(Stream *stream)
         }
     }
 
-    if (hasShader)
-    {
-        AssetsManager::LoadShader(AssetShader_Shader3D, shader_path, &Material::setShader, this);
-    }
+    // if (hasShader)
+    // {
+        // AssetsManager::LoadShader(ShaderOptimize_DYNAMIC, shader_path, &Material::setShader, this);
+    // }
 }
 
 void Material::flush() const

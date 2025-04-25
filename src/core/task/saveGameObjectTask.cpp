@@ -80,19 +80,6 @@ int SaveGameObjectTask::writeData()
         m_stream->flush();
     }
 
-    // write script
-    {
-        if (writeScript() != 0) {
-            return 7;
-        }
-
-        DataSegment dataSegment = {gHeaderType_Script, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false)) {
-            return 8;
-        }
-        m_stream->flush();
-    }
-
     // write material
     {
         if (writeMaterial() != 0) {
@@ -102,6 +89,19 @@ int SaveGameObjectTask::writeData()
         DataSegment dataSegment = {gHeaderType_Material, static_cast<std::size_t>(m_stream->getDataSize())};
         if (!m_stream->writeS(&dataSegment, 1, false)) {
             return 6;
+        }
+        m_stream->flush();
+    }
+
+    // write script
+    {
+        if (writeScript() != 0) {
+            return 7;
+        }
+
+        DataSegment dataSegment = {gHeaderType_Script, static_cast<std::size_t>(m_stream->getDataSize())};
+        if (!m_stream->writeS(&dataSegment, 1, false)) {
+            return 8;
         }
         m_stream->flush();
     }

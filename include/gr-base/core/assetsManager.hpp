@@ -15,6 +15,8 @@
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
+#include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/core/geometry/shadermanager.hpp"
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/core/default.hpp"
@@ -25,7 +27,8 @@
 #include "gr-base/core/task/shaderTask.hpp"
 #include "gr-base/core/task/sceneTask.hpp"
 
-class AssetsManager {
+class AssetsManager
+{
 public:
     static void Initialize();
 
@@ -39,18 +42,18 @@ public:
     static std::string GetRefTextureName(grr::gTexture *texture);
 
     template <typename ...Args>
-    static void LoadShader(AssetShader type, const std::string &path, grr::gShader *shader, Args &&...args);
+    static void LoadShader(ShaderOptimize optimize, const std::string &path, grr::gShader *shader, Args &&...args);
 
     template <typename ...Args>
-    static void LoadShader(AssetShader type, const std::string &path, Args &&...args);
+    static void LoadShader(ShaderOptimize optimize, const std::string &path, Args &&...args);
 
-    static grr::gShader *CreateShader(AssetShader type, const std::string &name);
+    static grr::gShader *CreateShader(AssetShader type, ShaderOptimize_ optmize, const std::string &name);
 
     static grr::gShader *FindShader(AssetShader type, const std::string &name);
 
-    static std::string GetShaderName(AssetShader type, grr::gShader *shader);
+    static std::string GetShaderName(grr::gShader *shader);
 
-    static void RemoveShader(AssetShader type, grr::gShader *shader);
+    static void RemoveShader(grr::gShader *shader);
 
     template <typename ...Args>
     static void LoadGameObject(const std::string &path, Args &&...args);
@@ -84,23 +87,17 @@ public:
 
     static grm::size GetTextureCount();
 
-    static grm::size GetShaderCount(AssetShader type);
-    
     static grm::size GetMeshCount();
 
     static std::unordered_map<grr::gTexture *, std::string> GetTextureRefMap();
 
     static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
 
-    static void SetShaderList(AssetShader type, const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func);
-
     static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
 
     static void SetAnimationList(const std::string &path, std::function<void(Animation *)> func);
 
-    static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &GetShaderMap(AssetShader type);
-
-    static std::vector<grr::gShader *> GetShaderList(AssetShader type);
+    static std::vector<Shader *> GetShaderList(AssetShader type, ShaderOptimize_ optimize);
 
     template <typename ...Args>
     static Material *CreateMaterial(const std::string &key, Args &&...args);
@@ -115,11 +112,7 @@ public:
 
 private:
     /***************** Shader *****************/
-    static std::unordered_map<std::string, std::unique_ptr<ShaderTask>> mShaderTaskMap;
-    static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> mShaderMap[IAssetShaderCount];
-    static std::unordered_map<grr::gShader *, std::string> mShaderNameMap[IAssetShaderCount];
-    static std::vector<grr::gShader *> mShaderList[IAssetShaderCount];
-    static std::mutex mShaderMutex;
+    static ShaderManager mShaderManager;
 
     // Update Shader
     static std::unordered_map<std::string, std::unique_ptr<ShaderTask>> mShaderFromUpdate;
@@ -193,7 +186,7 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
 
 // ***** Shader ***** //
 template <typename ...Args>
-inline void AssetsManager::LoadShader(AssetShader type, const std::string &path, grr::gShader *shader, Args &&...args)
+inline void AssetsManager::LoadShader(ShaderOptimize optimize, const std::string &path, grr::gShader *shader, Args &&...args)
 {
     std::function<void (grr::gShader *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
@@ -201,11 +194,11 @@ inline void AssetsManager::LoadShader(AssetShader type, const std::string &path,
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
 
-    SetShaderList(type, path, shader, func);
+    mShaderManager.create_shader_task(optimize, path, static_cast<Shader *>(shader), func);
 }
 
 template <typename... Args>
-inline void AssetsManager::LoadShader(AssetShader type, const std::string &path, Args &&...args)
+inline void AssetsManager::LoadShader(ShaderOptimize optimize, const std::string &path, Args &&...args)
 {
     std::function<void(grr::gShader *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
@@ -213,7 +206,7 @@ inline void AssetsManager::LoadShader(AssetShader type, const std::string &path,
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
     
-    SetShaderList(type, path, nullptr, func);
+    mShaderManager.create_shader_task(optimize, path, nullptr, func);
 }
 
 // ***** Material ***** //

@@ -1,6 +1,7 @@
 #include "gr-base/core/task/shaderTask.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/task/shaderProperty.hpp"
 #include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
@@ -34,7 +35,7 @@ std::unordered_map<std::string, grr::UniformType> ShaderTask::mUniformNameToType
     {"vec4",        grr::UniformType_vec4},
 };
 
-ShaderTask::ShaderTask(const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr), task_name(path)
+ShaderTask::ShaderTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr), task_name(path), shaderoptimize(optimize)
 {
     if (func != nullptr)
         m_functions.push_back(func);
@@ -60,7 +61,7 @@ void ShaderTask::upload(std::string path)
     {
         if (bShaderCreated)
         {
-            AssetsManager::RemoveShader(m_asset_shader_type, m_shader);
+            AssetsManager::RemoveShader(m_shader);
         }
 
         Console::LogError("[ ShaderTask ] Fail to build shader: %s", path.c_str());
@@ -90,7 +91,7 @@ void ShaderTask::doInBackground(std::string path)
 
     m_asset_shader_type = get_shader_asset_type(path);
 
-    m_shader = bShaderCreated ? AssetsManager::CreateShader(m_asset_shader_type, task_name) : m_shader;
+    m_shader = bShaderCreated ? AssetsManager::CreateShader(m_asset_shader_type, shaderoptimize, task_name) : m_shader;
     if (!bShaderCreated)
     {
         auto property = AssetsManager::GetShaderProperty(m_shader);
@@ -104,7 +105,7 @@ void ShaderTask::doInBackground(std::string path)
         Console::LogError("[ ShaderTask ] Failt to load shader %s: %s", path.c_str(), e.what());
         if (bShaderCreated)
         {
-            AssetsManager::RemoveShader(m_asset_shader_type, m_shader);
+            AssetsManager::RemoveShader(m_shader);
         }
 
         return AssetsManager::RemoveTask(task_name);
@@ -555,7 +556,6 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
             m_shaderSource[ShaderType_Vertex]   += defination + '\n';
         }
 
-
         m_shaderSource[ShaderType_Fragment] += baseShaderSource[ShaderType_Fragment];
         m_shaderSource[ShaderType_Vertex]   += baseShaderSource[ShaderType_Vertex];
     }
@@ -567,9 +567,17 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
     m_shaderSource[ShaderType_Vertex] = RemoveCommenter(m_shaderSource[ShaderType_Vertex]);
 
     std::unordered_set<std::string> macro_map;
-    for (auto &d : macroLists.definedMacros)
+    switch (shaderoptimize)
     {
-        macro_map.emplace(d);
+        case ShaderOptimize_DYNAMIC:
+            macro_map.emplace("USE_MODEL");
+            break;
+        case ShaderOptimize_ANIMATION_DYNAMIC:
+            macro_map.emplace("ENABLE_ANIMATION");
+            macro_map.emplace("USE_MODEL");
+            break;
+        default:
+            break;
     }
 
     m_shaderSource[ShaderType_Fragment] = process_macro(m_shaderSource[ShaderType_Fragment], macro_map);

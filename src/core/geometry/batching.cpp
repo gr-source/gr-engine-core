@@ -81,11 +81,38 @@ void Batching::setMesh(std::vector<Mesh> *meshList)
 
         auto bones = mesh.getBoneWeight();
 
+        auto vertices = mesh.getVertices();
+
+        auto &meshRender = mMeshData[0][i];
+        meshRender.vertexArray = grr::gVertexArray::Create();
+        meshRender.vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
+
+        meshRender.count = vertices.size();
+
+        meshRender.vertexArray->bind();
+
+        grr::gVertexArray::Bind(meshRender.vbo);
+        grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex3D), BufferUsage::STATIC);
+        grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex3D), vertices.data());
+
+        grr::gVertexArray::SetAttrib(0, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
+        grr::gVertexArray::SetAttrib(1, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
+        grr::gVertexArray::SetAttrib(2, 2,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
+
+        meshRender.vertexArray->unbind();
+    }
+
+    for (std::size_t i=0;i<meshCount;i++)
+    {
+        auto &mesh = (*meshList)[i];
+
+        auto bones = mesh.getBoneWeight();
+
         bool bHasBone = !bones.empty();
 
         auto vertices = mesh.getVertices();
 
-        auto &meshRender = mMeshData[bHasBone ? 1 : 0][i];
+        auto &meshRender = mMeshData[1][i];
         meshRender.vertexArray = grr::gVertexArray::Create();
         meshRender.vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
         if (bHasBone)
@@ -156,7 +183,7 @@ void Batching::render()
         }
     }
 
-    /*{
+    {
         auto meshCount = mMeshData[1].size();
 
         for (auto &&[transform, materialList, animator] : mInstanceSkinnedRender)
@@ -191,7 +218,6 @@ void Batching::render()
             }
         }
     }
-    */
 }
 
 void MeshData::draw()

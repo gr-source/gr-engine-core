@@ -18,12 +18,14 @@ set(ecs
 
 set(geometry
     src/core/geometry/batchingRender.cpp
+    src/core/geometry/shadermanager.cpp
     src/core/geometry/boneWeight.cpp
     src/core/geometry/vertex2D.cpp
     src/core/geometry/vertex3D.cpp
     src/core/geometry/batching.cpp
     src/core/geometry/material.cpp
     src/core/geometry/boundbox.cpp
+    src/core/geometry/shader.cpp
     src/core/geometry/mesh.cpp
 )
 

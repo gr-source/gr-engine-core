@@ -5,21 +5,11 @@
 #include <gr-math/types.hpp>
 
 #include <gr-render/gCommon.h>
-#include <gr-render/gShader.h>
+
+#include "gr-base/core/geometry/shader.hpp"
 
 #include <map>
 
-enum AssetShader
-{
-    AssetShader_None        = 0,
-    AssetShader_Shader2D    = 1,
-    AssetShader_Shader3DD   = 2, // dynamic
-    AssetShader_Shader3DS   = 3, // static
-    AssetShader_Shader3DI   = 4, // instanced
-    AssetShader_Count
-};
-
-constexpr auto IAssetShaderCount = AssetShader_Count;
 
 using ShaderFunc = std::function<void (grr::gShader *)>;
 
@@ -44,7 +34,7 @@ typedef struct MacroLists
 class ShaderTask
 {
 public:
-    ShaderTask(const std::string &path, ShaderFunc func, grr::gShader *shader = nullptr);
+    ShaderTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader = nullptr);
 
     void addFunction(ShaderFunc func);
 
@@ -54,7 +44,9 @@ private:
     std::map<ShaderType, std::string> m_shaderSource;
 
     std::vector<ShaderFunc> m_functions;
-
+    
+    ShaderOptimize_ shaderoptimize;
+    
     AssetShader m_asset_shader_type;
 
     grr::gShader *m_shader;

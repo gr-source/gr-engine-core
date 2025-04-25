@@ -5,6 +5,7 @@
 #include "gr-base/core/file/file.hpp"
 
 #include "gr-base/core/file/stream.hpp"
+#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/script/camera.hpp"
 
 #include <cstdint>
@@ -70,7 +71,7 @@ void Skybox::build(grr::gTexture *texture)
 
     create_cube_mesh();
     
-    AssetsManager::LoadShader(AssetShader_Shader3D,
+    AssetsManager::LoadShader(ShaderOptimize_None,
         gfile::get_data_directory("/assets/shader/skybox/skybox.glsl"),
         &Skybox::upload_cubemap_texture, this, texture
     );
@@ -160,7 +161,7 @@ void Skybox::upload_cubemap_texture(grr::gTexture *texture, grr::gShader *shader
     texture->unbind();
     shader->unbind();
 
-    AssetsManager::LoadShader(AssetShader_Shader3D,
+    AssetsManager::LoadShader(ShaderOptimize_None,
         gfile::get_data_directory("/assets/shader/skybox/background.glsl"),
         &Skybox::set_skyshader, this
     );
