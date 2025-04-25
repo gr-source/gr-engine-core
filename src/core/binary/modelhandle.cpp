@@ -5,6 +5,7 @@
 #include "gr-base/core/filmbox/filmbox.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/task/shaderTask.hpp"
 #include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/window.hpp"
 
@@ -365,7 +366,7 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
 
         if (material->getShader() == nullptr)
         {
-            AssetsManager::LoadShader(File::GetAsset("/shader/model/simple_model.glsl") + (m_bones.empty() ? ";define={USE_MODEL};" : ";define={USE_MODEL,ENABLE_ANIMATION};"), &Material::setShader, material);
+            AssetsManager::LoadShader(AssetShader_Shader3D, File::GetAsset("/shader/model/simple_model.glsl") + (m_bones.empty() ? ";define={USE_MODEL};" : ";define={USE_MODEL,ENABLE_ANIMATION};"), &Material::setShader, material);
         }
 
         for (auto &&[type, path] : fbxMaterial.getTextures()) {

@@ -3,10 +3,21 @@
 #include "shaderProperty.hpp"
 
 #include <gr-math/types.hpp>
+
 #include <gr-render/gCommon.h>
 #include <gr-render/gShader.h>
 
 #include <map>
+
+enum AssetShader
+{
+    AssetShader_None        = 0,
+    AssetShader_Shader2D    = 1,
+    AssetShader_Shader3D    = 2,
+    AssetShader_Count
+};
+
+constexpr auto IAssetShaderCount = AssetShader_Count;
 
 using ShaderFunc = std::function<void (grr::gShader *)>;
 
@@ -42,6 +53,8 @@ private:
 
     std::vector<ShaderFunc> m_functions;
 
+    AssetShader m_asset_shader_type;
+
     grr::gShader *m_shader;
 
     std::string task_name;
@@ -55,10 +68,12 @@ private:
 protected:
     void doInBackground(std::string path);
 
+    static AssetShader get_shader_asset_type(const std::string &path);
+
 public:
     static std::unordered_map<std::string, grr::UniformType> mUniformNameToType;
 
-    static std::map<ShaderType, std::string> LoadShaderBase(ShaderUser type);
+    static std::map<ShaderType, std::string> LoadShaderBase(ShaderUser_ type);
 
     static bool ValidStr(const std::string &str, std::string *data, int count);
 
@@ -77,6 +92,8 @@ public:
     static std::unordered_map<std::string, std::string> ReadUniform(const std::string &content);
 
     static std::string RemoveCommenter(const std::string &source);
+
+    static std::string process_macro(const std::string &content, const std::unordered_set<std::string> &macro_map);
 
     void bind_shader(const MacroLists &macroList);
 

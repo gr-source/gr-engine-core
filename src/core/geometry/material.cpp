@@ -83,7 +83,7 @@ void Material::serialize(Stream *stream) const
 
     if (hasShader)
     {
-        auto name = AssetsManager::GetShaderRefToName(m_shader);
+        auto name = AssetsManager::GetShaderName(AssetShader_Shader3D, m_shader);
 
         auto nsize = name.size();
         if (!stream->write(&nsize, sizeof(std::size_t)))
@@ -280,7 +280,7 @@ void Material::deserialize(Stream *stream)
 
     if (hasShader)
     {
-        AssetsManager::LoadShader(shader_path, &Material::setShader, this);
+        AssetsManager::LoadShader(AssetShader_Shader3D, shader_path, &Material::setShader, this);
     }
 }
 

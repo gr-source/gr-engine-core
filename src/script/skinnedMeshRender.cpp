@@ -91,12 +91,13 @@ void SkinnedMeshRender::build()
         {
             continue;
         }
-        auto path = AssetsManager::GetShaderRefToName(shader);
+
+        auto path = AssetsManager::GetShaderName(AssetShader_Shader3D, shader);
         if (!File::Exists(path))
         {
             continue;
         }
-        AssetsManager::LoadShader(path + ";define={USE_MODEL,ENABLE_ANIMATION}", &Material::setShader, material);
+        AssetsManager::LoadShader(AssetShader_Shader3D, path + ";define={USE_MODEL,ENABLE_ANIMATION}", &Material::setShader, material);
     }
 
     batching->insert(GetGameObject()->getTransform(), &m_material, 2);

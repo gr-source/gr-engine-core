@@ -70,7 +70,7 @@ void Skybox::build(grr::gTexture *texture)
 
     create_cube_mesh();
     
-    AssetsManager::LoadShader(
+    AssetsManager::LoadShader(AssetShader_Shader3D,
         gfile::get_data_directory("/assets/shader/skybox/skybox.glsl"),
         &Skybox::upload_cubemap_texture, this, texture
     );
@@ -160,7 +160,7 @@ void Skybox::upload_cubemap_texture(grr::gTexture *texture, grr::gShader *shader
     texture->unbind();
     shader->unbind();
 
-    AssetsManager::LoadShader(
+    AssetsManager::LoadShader(AssetShader_Shader3D,
         gfile::get_data_directory("/assets/shader/skybox/background.glsl"),
         &Skybox::set_skyshader, this
     );

@@ -1,6 +1,5 @@
 #include "gr-base/core/assetsManager.hpp"
 
-#include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/file/file.hpp"
 
 #include "gr-base/core/animation/animation.hpp"
@@ -8,12 +7,11 @@
 #include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/scene.hpp"
-#include "gr-base/core/event.hpp"
 
-#include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/gameObject.hpp"
 
 #include <cassert>
+#include <cstddef>
 #include <functional>
 
 #include <gr-render/gTexture.h>
@@ -26,9 +24,9 @@
 
 /***************** Shader *****************/
 std::unordered_map<std::string, std::unique_ptr<ShaderTask>> AssetsManager::mShaderTaskMap;
-std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::mShaderMap;
-std::unordered_map<grr::gShader *, std::string> AssetsManager::mShaderPathRef;
-std::vector<grr::gShader *> AssetsManager::mShaderList;
+std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::mShaderMap[IAssetShaderCount];
+std::unordered_map<grr::gShader *, std::string> AssetsManager::mShaderNameMap[IAssetShaderCount];
+std::vector<grr::gShader *> AssetsManager::mShaderList[IAssetShaderCount];
 std::mutex AssetsManager::mShaderMutex;
 
 // shader update
@@ -135,50 +133,53 @@ std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
     return it->second;
 }
 
-grr::gShader *AssetsManager::CreateShader(const std::string &name)
+grr::gShader *AssetsManager::CreateShader(AssetShader type, const std::string &name)
 {
     std::lock_guard<std::mutex> lock(mShaderMutex);
-    auto &&[it, badded] = mShaderMap.emplace(name, std::make_unique<grr::gShader>());
+    auto &&[it, badded] = mShaderMap[type].emplace(name, std::make_unique<grr::gShader>());
 
-    mShaderList.push_back(&(*it->second));
+    mShaderList[type].push_back(&(*it->second));
 
-    mShaderPathRef.emplace(&(*it->second), name);
+    mShaderNameMap[type].emplace(&(*it->second), name);
 
     return &(*it->second);
 }
 
-std::string AssetsManager::GetShaderRefToName(grr::gShader *shader)
+grr::gShader *AssetsManager::FindShader(AssetShader type, const std::string &name)
 {
     std::lock_guard<std::mutex> lock(mShaderMutex);
-    auto it = mShaderPathRef.find(shader);
-    if (it == mShaderPathRef.end()) {
-        throw std::runtime_error("Shader do reference undefined.");
+    auto it = mShaderMap[type].find(name);
+    if (it == mShaderMap[type].end())
+    {
+        return nullptr;
+    }
+    return &(*it->second);
+}
+
+std::string AssetsManager::GetShaderName(AssetShader type, grr::gShader *shader)
+{
+    std::lock_guard<std::mutex> lock(mShaderMutex);
+    auto it = mShaderNameMap[type].find(shader);
+    if (it == mShaderNameMap[type].end())
+    {
+        throw std::runtime_error("[ AssetsManager.Shader ] Fail to get shader name, pointer is not valid.");
     }
     return it->second;
 }
 
-void AssetsManager::RemoveShader(grr::gShader *shader)
+void AssetsManager::RemoveShader(AssetShader type, grr::gShader *shader)
 {
     std::lock_guard<std::mutex> lock(mShaderMutex);
-    auto it = mShaderPathRef.find(shader);
-    if (it == mShaderPathRef.end())
+    auto it = mShaderNameMap[type].find(shader);
+    if (it == mShaderNameMap[type].end())
     {
         return;
     }
-    mShaderMap.erase(it->second);
+    mShaderMap[type].erase(it->second);
 
-    mShaderList.erase(std::remove(mShaderList.begin(), mShaderList.end(), it->first), mShaderList.end());
+    mShaderList[type].erase(std::remove(mShaderList[type].begin(), mShaderList[type].end(), it->first), mShaderList[type].end());
 
-    mShaderPathRef.erase(it);
-}
-
-grr::gShader *AssetsManager::FindShader(const std::string &name) {
-    std::lock_guard<std::mutex> lock(mShaderMutex);
-    auto it = mShaderMap.find(name);
-    if (it == mShaderMap.end()) {
-        return nullptr;
-    }
-    return &(*it->second);
+    mShaderNameMap[type].erase(it);
 }
 
 grr::gTexture *AssetsManager::CreateTexture(const std::string &name) {
@@ -274,7 +275,7 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
     mGameObjectTaskMap.emplace(path, std::make_unique<GameObjectTask>(path, func));
 }
 
-void AssetsManager::SetShaderList(const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func)
+void AssetsManager::SetShaderList(AssetShader type, const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func)
 {
     std::lock_guard<std::mutex> lock(mShaderMutex);
     // check there loading
@@ -291,8 +292,8 @@ void AssetsManager::SetShaderList(const std::string &path, grr::gShader *shader,
 
     // check if contains in main list
     {
-        auto it = mShaderMap.find(path);
-        if (it != mShaderMap.end() && shader == nullptr)
+        auto it = mShaderMap[type].find(path);
+        if (it != mShaderMap[type].end() && shader == nullptr)
         {
             if (func == nullptr)
                 return;
@@ -384,13 +385,14 @@ Animation *AssetsManager::CreateAnimation(const std::string &name)
     return &(*it->second);
 }
 
-std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::GetShaderMap() {
-    return mShaderMap;
+std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::GetShaderMap(AssetShader type)
+{
+    return mShaderMap[type];
 }
 
-std::vector<grr::gShader *> AssetsManager::GetShaderList()
+std::vector<grr::gShader *> AssetsManager::GetShaderList(AssetShader type)
 {
-    return mShaderList;
+    return mShaderList[type];
 }
 
 grm::size AssetsManager::GetTextureCount() {
@@ -398,10 +400,10 @@ grm::size AssetsManager::GetTextureCount() {
     return mTextureMap.size();
 }
 
-grm::size AssetsManager::GetShaderCount()
+grm::size AssetsManager::GetShaderCount(AssetShader type)
 {
     std::lock_guard<std::mutex> lock(mShaderMutex);
-    return mShaderMap.size();
+    return mShaderMap[type].size();
 }
 
 grm::size AssetsManager::GetMeshCount()

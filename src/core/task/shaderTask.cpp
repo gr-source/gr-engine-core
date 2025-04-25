@@ -1,6 +1,7 @@
 #include "gr-base/core/task/shaderTask.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/task/shaderProperty.hpp"
 #include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/event.hpp"
@@ -12,6 +13,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <stdexcept>
 
 #define PRINT_ERROR(func) \
     if (func == -1) { \
@@ -58,7 +60,7 @@ void ShaderTask::upload(std::string path)
     {
         if (bShaderCreated)
         {
-            AssetsManager::RemoveShader(m_shader);
+            AssetsManager::RemoveShader(m_asset_shader_type, m_shader);
         }
 
         Console::LogError("[ ShaderTask ] Fail to build shader: %s", path.c_str());
@@ -78,14 +80,17 @@ void ShaderTask::doInBackground(std::string path)
     auto macroList = extract_macros_from_string(path);
 
     path = macroList.content;
-    if (!File::Exists(path))
+
+    if (!gfile::exists(path))
     {
-        Console::LogWarning("[ ShaderTask ] File do not found: %s", path.c_str());
+        Console::LogWarning("[ ShaderTask ] File not found: %s", path.c_str());
 
         return AssetsManager::RemoveTask(task_name);
     }
 
-    m_shader = bShaderCreated ? AssetsManager::CreateShader(task_name) : m_shader;
+    m_asset_shader_type = get_shader_asset_type(path);
+
+    m_shader = bShaderCreated ? AssetsManager::CreateShader(m_asset_shader_type, task_name) : m_shader;
     if (!bShaderCreated)
     {
         auto property = AssetsManager::GetShaderProperty(m_shader);
@@ -99,7 +104,7 @@ void ShaderTask::doInBackground(std::string path)
         Console::LogError("[ ShaderTask ] Failt to load shader %s: %s", path.c_str(), e.what());
         if (bShaderCreated)
         {
-            AssetsManager::RemoveShader(m_shader);
+            AssetsManager::RemoveShader(m_asset_shader_type, m_shader);
         }
 
         return AssetsManager::RemoveTask(task_name);
@@ -108,16 +113,63 @@ void ShaderTask::doInBackground(std::string path)
     Event::Add(&ShaderTask::upload, this, path);
 }
 
-std::map<ShaderType, std::string> ShaderTask::LoadShaderBase(ShaderUser type)
+AssetShader ShaderTask::get_shader_asset_type(const std::string &name)
+{
+    std::ifstream is(name);
+    if (!is.is_open())
+    {
+        throw std::runtime_error("File do not open.");
+    }
+
+    AssetShader type = AssetShader_None;
+
+    std::string line;
+    while (std::getline(is, line))
+    {
+        if (line.find("#define_type") == std::string::npos)
+        {
+            continue;
+        }
+
+        if (line.find("shader2D") != std::string::npos)
+        {
+            type = AssetShader_Shader2D;
+        } else if (line.find("shader3D") != std::string::npos)
+        {
+            type = AssetShader_Shader3D;
+        }
+
+        break;
+    }
+
+    is.close();
+
+    return type;
+}
+
+std::map<ShaderType, std::string> ShaderTask::LoadShaderBase(ShaderUser_ type)
 {
     std::map<ShaderType, std::string> mShaderMap;
 
-    auto path = File::GetAsset(type == ShaderUser_shader3D ? "/shader/model/shader3D.glsl" : "/shader/model/shader2D.glsl", true);
+    std::string path_to_base;
+    switch (type)
+    {
+        case ShaderUser_shader2D:
+            path_to_base = "/assets/shader/model/shader2D.glsl";
+            break;
+        case ShaderUser_shader3D:
+            path_to_base = "/assets/shader/model/shader3D.glsl";
+            break;
+        default:
+            break;
+    }
+
+    auto path = gfile::get_data_directory(path_to_base);
 
     std::ifstream is(path);
     if (!is.is_open())
     {
-        throw std::runtime_error("Fail to load file: " + path);
+        throw std::runtime_error("Fail to open file: " + path);
     }
 
     ShaderType shaderType = ShaderType_None;
@@ -503,17 +555,6 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
             m_shaderSource[ShaderType_Vertex]   += defination + '\n';
         }
 
-        for (auto &d : macroLists.definedMacros)
-        {
-            // m_shaderSource[ShaderType_Fragment] += "#define " + d + '\n';
-            m_shaderSource[ShaderType_Vertex]   += "#define " + d + '\n';
-        }
-
-        for (auto &u : macroLists.undefinedMacros)
-        {
-            // m_shaderSource[ShaderType_Fragment] += "#undef " + u + '\n';
-            m_shaderSource[ShaderType_Vertex]   += "#undef " + u + '\n';
-        }
 
         m_shaderSource[ShaderType_Fragment] += baseShaderSource[ShaderType_Fragment];
         m_shaderSource[ShaderType_Vertex]   += baseShaderSource[ShaderType_Vertex];
@@ -524,6 +565,15 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
 
     m_shaderSource[ShaderType_Fragment] = RemoveCommenter(m_shaderSource[ShaderType_Fragment]);
     m_shaderSource[ShaderType_Vertex] = RemoveCommenter(m_shaderSource[ShaderType_Vertex]);
+
+    std::unordered_set<std::string> macro_map;
+    for (auto &d : macroLists.definedMacros)
+    {
+        macro_map.emplace(d);
+    }
+
+    m_shaderSource[ShaderType_Fragment] = process_macro(m_shaderSource[ShaderType_Fragment], macro_map);
+    m_shaderSource[ShaderType_Vertex] = process_macro(m_shaderSource[ShaderType_Vertex], macro_map);
 
     // fragment
     {
@@ -553,7 +603,6 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader)
     if (!shader->isValid())
     {
         Console::LogError("[ ShaderTask ] Shader.Build Fail to build shader, %s, %s", name.c_str(), grr::error());
-        // AssetsManager::RemoveShader(shader);
         return false;
     }
 
@@ -640,5 +689,52 @@ MacroLists ShaderTask::extract_macros_from_string(const std::string &content)
 
     return macroLists;
 }
+
+std::string ShaderTask::process_macro(const std::string &content, const std::unordered_set<std::string> &macro_map)
+{
+    std::istringstream iss(content);
+    bool bcan_read_line = true;
+
+    std::string output;
+
+    std::string line;
+    while (std::getline(iss, line))
+    {
+        if (line.find("#") != std::string::npos)
+        {
+            std::istringstream issk(line);
+            if (line.find("ifdef") != std::string::npos)
+            {
+                std::string er, key;
+
+                issk >> er >> key;
+
+                bcan_read_line = false;
+
+                if (macro_map.find(key) != macro_map.end())
+                {
+                    bcan_read_line = true;
+                }
+
+                continue;
+            } else if (line.find("else") != std::string::npos)
+            {
+                bcan_read_line = !bcan_read_line;
+
+                continue;
+            } else if (line.find("endif") != std::string::npos)
+            {
+                bcan_read_line = true;
+
+                continue;
+            }
+        }
+
+        if (bcan_read_line)
+            output += line + '\n';
+    }
+    return output;
+}
+
 
 

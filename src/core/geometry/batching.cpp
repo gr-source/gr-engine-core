@@ -156,7 +156,7 @@ void Batching::render()
         }
     }
 
-    {
+    /*{
         auto meshCount = mMeshData[1].size();
 
         for (auto &&[transform, materialList, animator] : mInstanceSkinnedRender)
@@ -191,6 +191,7 @@ void Batching::render()
             }
         }
     }
+    */
 }
 
 void MeshData::draw()

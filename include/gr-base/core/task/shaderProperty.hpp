@@ -7,11 +7,13 @@
 
 #include <unordered_set>
 
-enum ShaderUser
+using ShaderUser_ = std::uint8_t;
+
+enum ShaderUser : ShaderUser_
 {
     ShaderUser_none     = 1 << 0,
     ShaderUser_shader3D = 1 << 1,
-    ShaderUser_shader2D = 1 << 2,
+    ShaderUser_shader2D = 1 << 2
 };
 
 enum ShaderType {

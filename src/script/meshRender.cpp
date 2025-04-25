@@ -65,9 +65,9 @@ void MeshRender::build()
             continue;
         }
 
-        auto path = AssetsManager::GetShaderRefToName(shader);
+        auto path = AssetsManager::GetShaderName(AssetShader_Shader3D, shader);
         
-        AssetsManager::LoadShader(path + ";define={USE_MODEL}", &Material::setShader, material);
+        AssetsManager::LoadShader(AssetShader_Shader3D, path + ";define={USE_MODEL}", &Material::setShader, material);
     }
 
     batching->insert(GetGameObject()->getTransform(), &m_material, 1);
