@@ -13,7 +13,9 @@ enum AssetShader
 {
     AssetShader_None        = 0,
     AssetShader_Shader2D    = 1,
-    AssetShader_Shader3D    = 2,
+    AssetShader_Shader3DD   = 2, // dynamic
+    AssetShader_Shader3DS   = 3, // static
+    AssetShader_Shader3DI   = 4, // instanced
     AssetShader_Count
 };
 
