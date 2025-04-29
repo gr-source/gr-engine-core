@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gr-base/core/geometry/shader.hpp"
-#include "gr-base/core/task/shaderTask.hpp"
+#include "gr-base/core/task/shaderloadtask.hpp"
 
 #include <array>
 #include <unordered_map>
@@ -41,7 +41,7 @@ protected:
 
     std::vector<Shader *> ShaderList[IAssetShaderCount][IShaderOptmize];
 
-    std::unordered_map<std::string, std::unique_ptr<ShaderTask>> ShaderTaskMap;
+    std::unordered_map<std::string, std::unique_ptr<ShaderLoadTask>> ShaderTaskMap;
 
     std::unordered_map<std::string, AssetShader_> ShaderTypeMap;
 

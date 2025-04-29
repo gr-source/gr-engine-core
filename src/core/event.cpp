@@ -1,4 +1,5 @@
 #include "gr-base/core/event.hpp"
+#include "gr-base/core/console.hpp"
 
 std::list<std::function<void()>> Event::m_events;
 
@@ -10,17 +11,22 @@ void Event::AddEvent(std::function<void()> func)
     m_events.push_back(func);
 }
 
-void Event::Update() {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    while (!m_events.empty())
+void Event::Update()
+{
+    std::list<std::function<void()>> events;
     {
-        auto event = m_events.front();
-        m_events.pop_front();
-        lock.unlock();
+        std::lock_guard<std::mutex> lock(m_mutex);
+        events = m_events;
+        m_events.clear();
+    }
 
-        event();
-
-        lock.lock();
+    for (const auto& event : events) {
+        try {
+            event();
+        } catch (const std::exception& e)
+        {
+            Console::LogError("[ Event ] Exception deceted: %s", e.what());
+        }
     }
 }
 

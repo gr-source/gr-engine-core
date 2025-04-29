@@ -89,12 +89,12 @@ int GameObjectTask::readData() {
             return 1;
         }
 
-        if (segment.type == gHeaderType_None && segment.sizeData == 0)
+        if (segment.type == HeaderType::NONE && segment.sizeData == 0)
         {
             break;
         }
 
-        auto segment_name = struct_name[segment.type];
+        auto segment_name = HeaderName[segment.type];
 
         auto next_position = m_stream->tellg() + static_cast<std::streampos>(segment.sizeData);
         if (segment.sizeData <= 0)
@@ -104,25 +104,26 @@ int GameObjectTask::readData() {
         }
 
         int result = -1;
-        switch (segment.type) {
-        case gHeaderType_Object:
-            result = readGameObject();
-            break;
-        case gHeaderType_Script:
-            result = readScript();
-            break;
-        case gHeaderType_Material:
-            result = readMaterial();
-            break;
-        case gHeaderType_Texture:
-            result = readTexture();
-            break;
-        default:
-            break;
+        switch (segment.type)
+        {
+            case HeaderType::OBJECT:
+                result = readGameObject();
+                break;
+            case HeaderType::SCRIPT:
+                result = readScript();
+                break;
+            case HeaderType::MATERIAL:
+                result = readMaterial();
+                break;
+            case HeaderType::TEXTURE:
+                result = readTexture();
+                break;
+            default:
+                break;
         }
 
         if (result != 0) {
-            Console::LogError("[ AssetsManager ] Falied to load segment: %s code: %d", struct_name[segment.type], result);
+            Console::LogError("[ AssetsManager ] Falied to load segment: %s code: %d", HeaderName[segment.type], result);
         }
 
         if (m_stream->tellg() != next_position) {

@@ -131,13 +131,13 @@ void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
             return AssetsManager::RemoveTask(path);
         }
         
-        if (data.type == gHeaderType_None && data.sizeData == 0)
+        if (data.type == HeaderType::NONE && data.sizeData == 0)
         {
             break;
         }
         
         auto nextPosition = stream->tellg() + static_cast<std::streampos>(data.sizeData);
-        auto block_name = struct_name[data.type];
+        auto block_name = HeaderName[data.type];
 
         if (data.sizeData <= 0)
         {
@@ -149,32 +149,32 @@ void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
         try {
             switch (data.type)
             {
-            case gHeaderType_Metadata:
-                if (flags & SceneLoadFlags_Metadata)
-                    result = readMetadata();
-                break;
-            case gHeaderType_Texture:
-                if (flags & SceneLoadFlags_Texture)
-                    result = readTexture();
-                break;
-            case gHeaderType_Material:
-                if (flags & SceneLoadFlags_Material)
-                    result = readMaterial();
-                break;
-            case gHeaderType_Mesh:
-                if (flags & SceneLoadFlags_Mesh)
-                    result = readMesh();
-                break;
-            case gHeaderType_Object:
-                if (flags & SceneLoadFlags_Object)
-                    result = readObject();
-                break;
-            case gHeaderType_Script:
-                if (flags & SceneLoadFlags_Script)
-                    result = readScript();
-                break;
-            default:
-                break;
+                case HeaderType::METADATA:
+                    if (flags & SceneLoadFlags_Metadata)
+                        result = readMetadata();
+                    break;
+                case HeaderType::TEXTURE:
+                    if (flags & SceneLoadFlags_Texture)
+                        result = readTexture();
+                    break;
+                case HeaderType::MATERIAL:
+                    if (flags & SceneLoadFlags_Material)
+                        result = readMaterial();
+                    break;
+                case HeaderType::MESH:
+                    if (flags & SceneLoadFlags_Mesh)
+                        result = readMesh();
+                    break;
+                case HeaderType::OBJECT:
+                    if (flags & SceneLoadFlags_Object)
+                        result = readObject();
+                    break;
+                case HeaderType::SCRIPT:
+                    if (flags & SceneLoadFlags_Script)
+                        result = readScript();
+                    break;
+                default:
+                    break;
             }
         } catch (const std::exception &e)
         {

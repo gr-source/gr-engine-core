@@ -29,7 +29,7 @@ std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> AssetsManage
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::mTextureMap;
 std::unordered_map<grr::gTexture *, std::string> AssetsManager::mTextureRefToName;
 
-std::unordered_map<std::string, std::unique_ptr<TextureTask>> AssetsManager::mTextureTaskMap;
+std::unordered_map<std::string, std::unique_ptr<TextureLoadTask>> AssetsManager::mTextureLoadTaskMap;
 std::mutex AssetsManager::mTextureMutex;
 
 /***************** Animation *****************/
@@ -237,8 +237,8 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
 
     // Check texture is loading
     {
-        auto it = mTextureTaskMap.find(path);
-        if (it != mTextureTaskMap.end())
+        auto it = mTextureLoadTaskMap.find(path);
+        if (it != mTextureLoadTaskMap.end())
         {
             if (func == nullptr)
                 return;
@@ -252,7 +252,7 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
     }
     
     // Create task to load texture
-    mTextureTaskMap.emplace(path, std::make_unique<TextureTask>(path, func));
+    mTextureLoadTaskMap.emplace(path, std::make_unique<TextureLoadTask>(path, func));
 }
 
 void AssetsManager::SetAnimationList(const std::string &path, const std::function<void (Animation *)> func)
@@ -365,10 +365,10 @@ void AssetsManager::RemoveTask(const std::string &name)
     // Check if task on the texture
     {
         std::lock_guard<std::mutex> lock(mTextureMutex);
-        auto it = mTextureTaskMap.find(name);
-        if (it != mTextureTaskMap.end())
+        auto it = mTextureLoadTaskMap.find(name);
+        if (it != mTextureLoadTaskMap.end())
         {
-            mTextureTaskMap.erase(it);
+            mTextureLoadTaskMap.erase(it);
             return;
         }
     }

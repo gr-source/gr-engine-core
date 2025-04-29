@@ -6,7 +6,6 @@
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/geometry/shader.hpp"
-#include "gr-base/core/task/shaderTask.hpp"
 #include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/window.hpp"
 

@@ -1,4 +1,4 @@
-#include "gr-base/core/task/shaderTask.hpp"
+#include "gr-base/core/task/shaderloadtask.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/geometry/shader.hpp"
@@ -19,12 +19,12 @@
 
 #define PRINT_ERROR(func, property, type) \
     if (func == InvalidUniformID) { \
-        Console::LogError("[ ShaderTask ] Shader.Regiter uniform: %s", grr::error()); \
+        Console::LogError("[ ShaderLoadTask ] Shader.Regiter uniform: %s", grr::error()); \
     } else if (userfield.find(name) != userfield.end()) { \
         property->addProperty(variablename, name, type); \
     }
 
-std::unordered_map<std::string, UniformVariable_> ShaderTask::mVariableNameToID =
+std::unordered_map<std::string, UniformVariable_> ShaderLoadTask::mVariableNameToID =
 {
     {"float",       UniformVariable::FLOAT},
     {"int",         UniformVariable::INT},
@@ -38,26 +38,26 @@ std::unordered_map<std::string, UniformVariable_> ShaderTask::mVariableNameToID 
     {"vec4",        UniformVariable::VEC4},
 };
 
-ShaderTask::ShaderTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr), task_name(path), shaderoptimize(optimize)
+ShaderLoadTask::ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr), task_name(path), shaderoptimize(optimize)
 {
     if (func != nullptr)
         m_functions.push_back(func);
 
-    Threadpool::AddTask(&ShaderTask::doInBackground, this, path);
+    Threadpool::AddTask(&ShaderLoadTask::doInBackground, this, path);
 }
 
-void ShaderTask::addFunction(ShaderFunc func)
+void ShaderLoadTask::addFunction(ShaderFunc func)
 {
     m_functions.push_back(func);
 }
 
-void ShaderTask::invoke(grr::gShader *shader)
+void ShaderLoadTask::invoke(grr::gShader *shader)
 {
     for (auto func : m_functions)
         func(shader);
 }
 
-void ShaderTask::upload(std::string path)
+void ShaderLoadTask::upload(std::string path)
 {
     auto name = std::filesystem::path(path).filename().string();
     if (!buildShader(name, m_shader))
@@ -67,23 +67,23 @@ void ShaderTask::upload(std::string path)
             AssetsManager::RemoveShader(m_shader);
         }
 
-        Console::LogError("[ ShaderTask ] Fail to build shader: %s", path.c_str());
+        Console::LogError("[ ShaderLoadTask ] Fail to build shader: %s", path.c_str());
 
         return AssetsManager::RemoveTask(task_name);
     }
 
-    Console::LogInfo("[ ShaderTask ] Shader loaded sucessfully %s.", name.c_str());
+    Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name.c_str());
     
     invoke(m_shader);
 
     AssetsManager::RemoveTask(task_name);
 }
 
-void ShaderTask::doInBackground(std::string path)
+void ShaderLoadTask::doInBackground(std::string path)
 {
     if (!gfile::exists(path))
     {
-        Console::LogWarning("[ ShaderTask ] File not found: %s", path.c_str());
+        Console::LogWarning("[ ShaderLoadTask ] File not found: %s", path.c_str());
 
         return AssetsManager::RemoveTask(task_name);
     }
@@ -96,7 +96,7 @@ void ShaderTask::doInBackground(std::string path)
         bind_shader(path);
     } catch (const std::exception &e)
     {
-        Console::LogError("[ ShaderTask ] Failt to load shader %s: %s", path.c_str(), e.what());
+        Console::LogError("[ ShaderLoadTask ] Failt to load shader %s: %s", path.c_str(), e.what());
         if (bShaderCreated)
         {
             AssetsManager::RemoveShader(m_shader);
@@ -105,10 +105,10 @@ void ShaderTask::doInBackground(std::string path)
         return AssetsManager::RemoveTask(task_name);
     }
  
-    Event::Add(&ShaderTask::upload, this, path);
+    Event::Add(&ShaderLoadTask::upload, this, path);
 }
 
-AssetShader ShaderTask::get_shader_asset_type(const std::string &name)
+AssetShader ShaderLoadTask::get_shader_asset_type(const std::string &name)
 {
     std::ifstream is(name);
     if (!is.is_open())
@@ -142,7 +142,7 @@ AssetShader ShaderTask::get_shader_asset_type(const std::string &name)
     return type;
 }
 
-std::array<std::string, IShaderStage> ShaderTask::LoadShaderBase(ShaderType_ type)
+std::array<std::string, IShaderStage> ShaderLoadTask::LoadShaderBase(ShaderType_ type)
 {
     std::array<std::string, IShaderStage> mShaderMap;
 
@@ -191,7 +191,7 @@ std::array<std::string, IShaderStage> ShaderTask::LoadShaderBase(ShaderType_ typ
     return mShaderMap;
 }
 
-bool ShaderTask::ValidStr(const std::string &str, std::string *data, int count)
+bool ShaderLoadTask::ValidStr(const std::string &str, std::string *data, int count)
 {
     std::stringstream iss(str);
 
@@ -205,7 +205,7 @@ bool ShaderTask::ValidStr(const std::string &str, std::string *data, int count)
     return true;
 }
 
-std::vector<std::tuple<std::string, std::string, bool>> ShaderTask::ReadStructField(const std::string &content)
+std::vector<std::tuple<std::string, std::string, bool>> ShaderLoadTask::ReadStructField(const std::string &content)
 {
     std::stringstream iss(content);
     
@@ -242,7 +242,7 @@ std::vector<std::tuple<std::string, std::string, bool>> ShaderTask::ReadStructFi
     return fieldList;
 }
 
-std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> ShaderTask::ReadStuct(const std::string &content)
+std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> ShaderLoadTask::ReadStuct(const std::string &content)
 {
     std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> structMap;
     std::size_t end = 0, start = 0;
@@ -275,12 +275,12 @@ std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string,
     return structMap;
 }
 
-bool ShaderTask::IsArray(const std::string &content)
+bool ShaderLoadTask::IsArray(const std::string &content)
 {
     return content.find('[') != std::string::npos;
 }
 
-std::size_t ShaderTask::GetArrayCount(const std::string &content, std::string &name)
+std::size_t ShaderLoadTask::GetArrayCount(const std::string &content, std::string &name)
 {
     auto start_array = content.find('[');
     if (start_array == std::string::npos)
@@ -299,7 +299,7 @@ std::size_t ShaderTask::GetArrayCount(const std::string &content, std::string &n
     return std::atoi(content.substr(start_array + 1, end_array - (start_array + 1)).c_str());
 }
 
-void ShaderTask::SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniform> &vector, bool isarray)
+void ShaderLoadTask::SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniform> &vector, bool isarray)
 {
     if (isarray)
     {
@@ -348,7 +348,7 @@ void ShaderTask::SetUniformList(std::unordered_map<std::string, std::vector<std:
     }
 }
 
-std::vector<ShaderUniform> ShaderTask::GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, std::unordered_map<std::string, std::tuple<std::string, bool>> &uniformMap)
+std::vector<ShaderUniform> ShaderLoadTask::GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, std::unordered_map<std::string, std::tuple<std::string, bool>> &uniformMap)
 {
     std::vector<ShaderUniform> uniformFromRegister;
     for (auto &&[name, tuple] : uniformMap)
@@ -361,7 +361,7 @@ std::vector<ShaderUniform> ShaderTask::GetRegistryField(std::unordered_map<std::
     return uniformFromRegister;
 }
 
-std::unordered_map<std::string, std::tuple<std::string, bool>> ShaderTask::ReadUniform(const std::string &content)
+std::unordered_map<std::string, std::tuple<std::string, bool>> ShaderLoadTask::ReadUniform(const std::string &content)
 {
     std::unordered_map<std::string, std::tuple<std::string, bool>> uniformMap;
 
@@ -397,7 +397,7 @@ std::unordered_map<std::string, std::tuple<std::string, bool>> ShaderTask::ReadU
     return uniformMap;
 }
 
-void ShaderTask::bind_shader(const std::string &path)
+void ShaderLoadTask::bind_shader(const std::string &path)
 {
     std::ifstream is(path);
     if (!is.is_open())
@@ -546,7 +546,7 @@ void ShaderTask::bind_shader(const std::string &path)
     }
 }
 
-bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader)
+bool ShaderLoadTask::buildShader(const std::string &name, grr::gShader *shader)
 {
     auto fragment_source = m_shaderSource[ShaderStage::FRAGMENT].c_str();
     auto vertex_source = m_shaderSource[ShaderStage::VERTEX].c_str();
@@ -556,7 +556,7 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader)
     shader->build(&fragment_source, 1, &vertex_source, 1);
     if (!shader->isValid())
     {
-        Console::LogError("[ ShaderTask ] Shader.Build Fail to build shader, %s, %s", name.c_str(), grr::error());
+        Console::LogError("[ ShaderLoadTask ] Shader.Build Fail to build shader, %s, %s", name.c_str(), grr::error());
         return false;
     }
 
@@ -572,7 +572,7 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader)
         auto it = mVariableNameToID.find(variablename);
         if (it == mVariableNameToID.end())
         {
-            Console::LogWarning("[ ShaderTask ] Fragment Shader uniform type do not is valid: %s, %s", name.c_str(), variablename.c_str());
+            Console::LogWarning("[ ShaderLoadTask ] Fragment Shader uniform type do not is valid: %s, %s", name.c_str(), variablename.c_str());
             continue;
         }
 
@@ -583,7 +583,7 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader)
         auto it = mVariableNameToID.find(variablename);
         if (it == mVariableNameToID.end())
         {
-            Console::LogWarning("[ ShaderTask ] Vertex Shader uniform type do not is valid: %s, %s", name.c_str(), variablename.c_str());
+            Console::LogWarning("[ ShaderLoadTask ] Vertex Shader uniform type do not is valid: %s, %s", name.c_str(), variablename.c_str());
             continue;
         }
 
@@ -592,7 +592,7 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader)
     return true;
 }
 
-std::string ShaderTask::process_macro(const std::string &content, const std::unordered_set<std::string> &macro_map)
+std::string ShaderLoadTask::process_macro(const std::string &content, const std::unordered_set<std::string> &macro_map)
 {
     std::istringstream iss(content);
     bool bcan_read_line = true;
@@ -638,7 +638,7 @@ std::string ShaderTask::process_macro(const std::string &content, const std::uno
     return output;
 }
 
-std::string ShaderTask::remove_comment(const std::string &str)
+std::string ShaderLoadTask::remove_comment(const std::string &str)
 {
     std::string result;
     bool is_in_block = false;

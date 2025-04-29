@@ -128,7 +128,7 @@ void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::strin
                 {
                     auto &&[t, o] = itsw->second;
 
-                    ShaderTaskMap.emplace(path, std::make_unique<ShaderTask>(o, path, func, shader));
+                    ShaderTaskMap.emplace(path, std::make_unique<ShaderLoadTask>(o, path, func, shader));
                     return;
                 }
             } else
@@ -143,7 +143,7 @@ void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::strin
         }
     }
 
-    ShaderTaskMap.emplace(path, std::make_unique<ShaderTask>(optmize, path, func, shader));
+    ShaderTaskMap.emplace(path, std::make_unique<ShaderLoadTask>(optmize, path, func, shader));
 }
 
 void ShaderManager::remove_task(const std::string &name)

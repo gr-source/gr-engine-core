@@ -1,4 +1,5 @@
 #include "gr-base/core/threadpool.hpp"
+#include "gr-base/core/console.hpp"
 
 #include <mutex>
 #include <thread>
@@ -17,8 +18,10 @@ bool Threadpool::m_bStop = false;
 
 std::thread::id Threadpool::m_mainThreadID;
 
-void Threadpool::Initialize(std::uint32_t maxThread) {
-    for (std::uint32_t i=0;i<maxThread;i++) {
+void Threadpool::Initialize(std::uint32_t maxThread)
+{
+    for (std::uint32_t i=0;i<maxThread;i++)
+    {
         m_threads.emplace_back(&Threadpool::Update);
     }
     
@@ -68,14 +71,17 @@ bool Threadpool::IsMainThread()
     return m_mainThreadID == std::this_thread::get_id();
 }
 
-void Threadpool::Update() {
-    while (true) {
+void Threadpool::Update()
+{
+    while (true)
+    {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_cv.wait(lock, [] {
             return m_bStop || !m_task.empty();
         });
 
-        if (m_bStop) {
+        if (m_bStop)
+        {
             break;
         }
         m_available++;
@@ -84,8 +90,12 @@ void Threadpool::Update() {
         m_task.pop_front();
         lock.unlock();
 
-        if (task)
+        try {
             task();
+        } catch (const std::exception &e)
+        {
+            Console::LogError("[ Threadpool ] Exception deected: %s", e.what());
+        }
 
         lock.lock();
         m_available--;

@@ -1,4 +1,4 @@
-#include "gr-base/core/task/textureTask.hpp"
+#include "gr-base/core/task/textureloadtask.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/threadpool.hpp"
@@ -11,20 +11,20 @@
 
 #include <gr-render/gTexture.h>
 
-TextureTask::TextureTask(const std::string &path, TextureFunc func) : m_pixels(nullptr)
+TextureLoadTask::TextureLoadTask(const std::string &path, TextureFunc func) : m_pixels(nullptr)
 {
     if (func)
         m_functions.push_back(func);
 
-    Threadpool::AddTask(&TextureTask::doInBackground, this, path);
+    Threadpool::AddTask(&TextureLoadTask::doInBackground, this, path);
 }
 
-void TextureTask::addFunction(TextureFunc func)
+void TextureLoadTask::addFunction(TextureFunc func)
 {
     return m_functions.push_back(func);
 }
 
-void TextureTask::invoke(grr::gTexture *texture)
+void TextureLoadTask::invoke(grr::gTexture *texture)
 {
     for (auto func : m_functions)
     {
@@ -32,7 +32,7 @@ void TextureTask::invoke(grr::gTexture *texture)
     }
 }
 
-void TextureTask::upload(std::string path, int width, int height, TextureFormat format)
+void TextureLoadTask::upload(std::string path, int width, int height, TextureFormat format)
 {
     auto texture = AssetsManager::CreateTexture(path);
     texture->set_filtering(gTextureFlags_Filter_Trilinear);
@@ -44,12 +44,12 @@ void TextureTask::upload(std::string path, int width, int height, TextureFormat 
 
     invoke(texture);
 
-    Console::LogInfo("[ TextureTask ] Texture loaded: %s", path.c_str());
+    Console::LogInfo("[ TextureLoadTask ] Texture loaded: %s", path.c_str());
 
     AssetsManager::RemoveTask(path);
 }
 
-void TextureTask::doInBackground(std::string path)
+void TextureLoadTask::doInBackground(std::string path)
 {
     bool isHDR = stbi_is_hdr(path.c_str());
 
@@ -64,7 +64,7 @@ void TextureTask::doInBackground(std::string path)
 
     if (!m_pixels)
     {
-        Console::LogError("[ TextureTask ] Fail to load texture '%s'", path.c_str());
+        Console::LogError("[ TextureLoadTask ] Fail to load texture '%s'", path.c_str());
         return AssetsManager::RemoveTask(path);
     }
 
@@ -88,7 +88,7 @@ void TextureTask::doInBackground(std::string path)
         break;
     }
 
-    Event::Add(&TextureTask::upload, this, path, width, height, format);
+    Event::Add(&TextureLoadTask::upload, this, path, width, height, format);
 }
 
 

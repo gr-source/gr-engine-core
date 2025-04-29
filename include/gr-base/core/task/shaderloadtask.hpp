@@ -21,10 +21,10 @@ typedef struct
     grm::u32 count;
 } ShaderUniform;
 
-class ShaderTask
+class ShaderLoadTask
 {
 public:
-    ShaderTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader = nullptr);
+    ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader = nullptr);
 
     void addFunction(ShaderFunc func);
 

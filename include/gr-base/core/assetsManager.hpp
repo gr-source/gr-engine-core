@@ -23,7 +23,7 @@
 
 #include "gr-base/core/task/animationloadtask.hpp"
 #include "gr-base/core/task/gameObjectTask.hpp"
-#include "gr-base/core/task/textureTask.hpp"
+#include "gr-base/core/task/textureloadtask.hpp"
 #include "gr-base/core/task/sceneTask.hpp"
 
 class AssetsManager
@@ -123,7 +123,7 @@ private:
     static std::unordered_map<grr::gTexture *, std::string> mTextureRefToName;
 
     // multithread
-    static std::unordered_map<std::string, std::unique_ptr<TextureTask>> mTextureTaskMap;
+    static std::unordered_map<std::string, std::unique_ptr<TextureLoadTask>> mTextureLoadTaskMap;
     static std::mutex mTextureMutex;
 
     /***************** Animation *****************/

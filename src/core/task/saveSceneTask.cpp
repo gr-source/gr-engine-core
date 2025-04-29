@@ -67,7 +67,7 @@ int SaveSceneTask::writeData()
             return 1;
         }
         
-        DataSegment dataSegment = {gHeaderType_Metadata, static_cast<std::size_t>(m_stream->getDataSize())};
+        DataSegment dataSegment = {HeaderType::METADATA, static_cast<std::size_t>(m_stream->getDataSize())};
         if (!m_stream->writeS(&dataSegment, 1, false)) {
             return 2;
         }
@@ -81,7 +81,7 @@ int SaveSceneTask::writeData()
             return 3;
         }
     
-        DataSegment dataSegment = {gHeaderType_Texture, static_cast<std::size_t>(m_stream->getDataSize())};
+        DataSegment dataSegment = {HeaderType::TEXTURE, static_cast<std::size_t>(m_stream->getDataSize())};
         if (!m_stream->writeS(&dataSegment, 1, false)) {
             return 4;
         }
@@ -95,7 +95,7 @@ int SaveSceneTask::writeData()
             return 5;
         }
     
-        DataSegment dataSegment = {gHeaderType_Material, static_cast<std::size_t>(m_stream->getDataSize())};
+        DataSegment dataSegment = {HeaderType::MATERIAL, static_cast<std::size_t>(m_stream->getDataSize())};
         if (!m_stream->writeS(&dataSegment, 1, false)) {
             return 6;
         }
@@ -109,7 +109,7 @@ int SaveSceneTask::writeData()
             return 7;
         }
 
-        DataSegment dataSegment = {gHeaderType_Mesh, static_cast<std::size_t>(m_stream->getDataSize())};
+        DataSegment dataSegment = {HeaderType::MESH, static_cast<std::size_t>(m_stream->getDataSize())};
         if (!m_stream->writeS(&dataSegment, 1, false)) {
             return 8;
         }
@@ -123,7 +123,7 @@ int SaveSceneTask::writeData()
             return 9;
         }
         
-        DataSegment dataSegment = {gHeaderType_Object, static_cast<std::size_t>(m_stream->getDataSize())};
+        DataSegment dataSegment = {HeaderType::OBJECT, static_cast<std::size_t>(m_stream->getDataSize())};
         if (!m_stream->writeS(&dataSegment, 1, false)) {
             return 10;
         }
@@ -137,7 +137,7 @@ int SaveSceneTask::writeData()
             return 11;
         }
         
-        DataSegment dataSegment = {gHeaderType_Script, static_cast<std::size_t>(m_stream->getDataSize())};
+        DataSegment dataSegment = {HeaderType::SCRIPT, static_cast<std::size_t>(m_stream->getDataSize())};
         if (!m_stream->writeS(&dataSegment, 1, false)) {
             return 12;
         }
@@ -147,7 +147,7 @@ int SaveSceneTask::writeData()
 
     // end file
     {
-        DataSegment dataSegment{gHeaderType_None, 0};
+        DataSegment dataSegment{HeaderType::NONE, 0};
         if (!m_stream->writeS(&dataSegment, 1, false))
         {
             Console::LogError("[ Scene ] Failed to write scene: 1");

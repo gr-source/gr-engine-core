@@ -103,8 +103,8 @@ set(task
     src/core/task/gameObjectTask.cpp
     src/core/task/shaderProperty.cpp
     src/core/task/saveSceneTask.cpp
-    src/core/task/textureTask.cpp
-    src/core/task/shaderTask.cpp
+    src/core/task/textureloadtask.cpp
+    src/core/task/shaderloadtask.cpp
     src/core/task/sceneTask.cpp
 )
 

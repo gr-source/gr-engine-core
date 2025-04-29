@@ -10,9 +10,9 @@ using TextureLoadFlags_ = uint8_t;
 
 using TextureFunc = std::function<void (grr::gTexture *)>;
 
-class TextureTask {
+class TextureLoadTask {
 public:
-    TextureTask(const std::string &path, TextureFunc func);
+    TextureLoadTask(const std::string &path, TextureFunc func);
 
     void addFunction(TextureFunc func);
 
