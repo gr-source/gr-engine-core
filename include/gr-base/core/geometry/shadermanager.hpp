@@ -19,11 +19,13 @@ public:
 
     Shader *create(AssetShader type, ShaderOptimize_ optmize, const std::string &name);
 
-    Shader *find(AssetShader type, ShaderOptimize optmize, const std::string &name) const;
+    Shader *find(ShaderOptimize optmize, const std::string &name) const;
 
     const char *get_shader_name(const Shader *shader);
 
     std::vector<Shader *> get_shader(AssetShader type, ShaderOptimize_ optmize) const;
+
+    std::vector<Shader *> get_shader(AssetShader type) const;
 
     void create_shader_task(ShaderOptimize_ optmize, const std::string &path, Shader *shader, std::function<void(grr::gShader *)> func);
 
@@ -42,6 +44,10 @@ protected:
     std::unordered_map<std::string, std::unique_ptr<ShaderTask>> ShaderTaskMap;
 
     std::unordered_map<std::string, AssetShader_> ShaderTypeMap;
+
+    std::vector<Shader *> ShaderListFromType[IAssetShaderCount];
+
+    std::unordered_map<Shader *, std::tuple<AssetShader_, ShaderOptimize_>> ShaderInfo;
 };
 
 

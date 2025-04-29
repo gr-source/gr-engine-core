@@ -22,9 +22,6 @@
 /***************** Shader *****************/
 ShaderManager AssetsManager::mShaderManager;
 
-// shader update
-std::unordered_map<std::string, std::unique_ptr<ShaderTask>> AssetsManager::mShaderFromUpdate;
-
 // sshader property
 std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> AssetsManager::mShaderPropertyMap;
 
@@ -110,9 +107,9 @@ grr::gShader *AssetsManager::CreateShader(AssetShader type, ShaderOptimize_ optm
     return dynamic_cast<grr::gShader *>(mShaderManager.create(type, optmize, name));
 }
 
-grr::gShader *AssetsManager::FindShader(AssetShader type, const std::string &name)
+grr::gShader *AssetsManager::FindShader(ShaderOptimize optmize, const std::string &name)
 {
-    return dynamic_cast<grr::gShader *>(mShaderManager.find(type, ShaderOptimize_None, name));
+    return dynamic_cast<grr::gShader *>(mShaderManager.find(optmize, name));
 }
 
 std::string AssetsManager::GetShaderName(grr::gShader *shader)
@@ -127,6 +124,7 @@ std::string AssetsManager::GetShaderName(grr::gShader *shader)
 
 void AssetsManager::RemoveShader(grr::gShader *shader)
 {
+    std::cout << "Remove: " << GetShaderName(shader) << std::endl;
 }
 
 grr::gTexture *AssetsManager::CreateTexture(const std::string &name) {
@@ -305,6 +303,11 @@ Animation *AssetsManager::CreateAnimation(const std::string &name)
 std::vector<Shader *> AssetsManager::GetShaderList(AssetShader type, ShaderOptimize_ optimize)
 {
     return mShaderManager.get_shader(type, optimize);
+}
+
+std::vector<Shader *> AssetsManager::GetShaderList(AssetShader type)
+{
+    return mShaderManager.get_shader(type);
 }
 
 grm::size AssetsManager::GetTextureCount() {

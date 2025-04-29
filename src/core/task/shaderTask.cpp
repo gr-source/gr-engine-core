@@ -15,24 +15,27 @@
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
+#include <tuple>
 
-#define PRINT_ERROR(func) \
-    if (func == -1) { \
+#define PRINT_ERROR(func, property, type) \
+    if (func == InvalidUniformID) { \
         Console::LogError("[ ShaderTask ] Shader.Regiter uniform: %s", grr::error()); \
+    } else if (userfield.find(name) != userfield.end()) { \
+        property->addProperty(variablename, name, type); \
     }
 
-std::unordered_map<std::string, grr::UniformType> ShaderTask::mUniformNameToType =
+std::unordered_map<std::string, UniformVariable_> ShaderTask::mVariableNameToID =
 {
-    {"float",       grr::UniformType_float},
-    {"int",         grr::UniformType_int},
-    {"bool",        grr::UniformType_bool},
-    {"samplerCube", grr::UniformType_samplerCube},
-    {"sampler2D",   grr::UniformType_sampler2D},
-    {"mat3",        grr::UniformType_mat3},
-    {"mat4",        grr::UniformType_mat4},
-    {"vec2",        grr::UniformType_vec2},
-    {"vec3",        grr::UniformType_vec3},
-    {"vec4",        grr::UniformType_vec4},
+    {"float",       UniformVariable::FLOAT},
+    {"int",         UniformVariable::INT},
+    {"bool",        UniformVariable::BOOL},
+    {"samplerCube", UniformVariable::SAMPLERCUBE},
+    {"sampler2D",   UniformVariable::SAMPLER2D},
+    {"mat3",        UniformVariable::MAT3},
+    {"mat4",        UniformVariable::MAT4},
+    {"vec2",        UniformVariable::VEC2},
+    {"vec3",        UniformVariable::VEC3},
+    {"vec4",        UniformVariable::VEC4},
 };
 
 ShaderTask::ShaderTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr), task_name(path), shaderoptimize(optimize)
@@ -78,10 +81,6 @@ void ShaderTask::upload(std::string path)
 
 void ShaderTask::doInBackground(std::string path)
 {
-    auto macroList = extract_macros_from_string(path);
-
-    path = macroList.content;
-
     if (!gfile::exists(path))
     {
         Console::LogWarning("[ ShaderTask ] File not found: %s", path.c_str());
@@ -92,14 +91,9 @@ void ShaderTask::doInBackground(std::string path)
     m_asset_shader_type = get_shader_asset_type(path);
 
     m_shader = bShaderCreated ? AssetsManager::CreateShader(m_asset_shader_type, shaderoptimize, task_name) : m_shader;
-    if (!bShaderCreated)
-    {
-        auto property = AssetsManager::GetShaderProperty(m_shader);
-        property->clear();
-    }
 
     try {
-        bind_shader(macroList);
+        bind_shader(path);
     } catch (const std::exception &e)
     {
         Console::LogError("[ ShaderTask ] Failt to load shader %s: %s", path.c_str(), e.what());
@@ -148,17 +142,17 @@ AssetShader ShaderTask::get_shader_asset_type(const std::string &name)
     return type;
 }
 
-std::map<ShaderType, std::string> ShaderTask::LoadShaderBase(ShaderUser_ type)
+std::array<std::string, IShaderStage> ShaderTask::LoadShaderBase(ShaderType_ type)
 {
-    std::map<ShaderType, std::string> mShaderMap;
+    std::array<std::string, IShaderStage> mShaderMap;
 
     std::string path_to_base;
     switch (type)
     {
-        case ShaderUser_shader2D:
+        case ShaderType::SHADER2D:
             path_to_base = "/assets/shader/model/shader2D.glsl";
             break;
-        case ShaderUser_shader3D:
+        case ShaderType::SHADER3D:
             path_to_base = "/assets/shader/model/shader3D.glsl";
             break;
         default:
@@ -173,7 +167,7 @@ std::map<ShaderType, std::string> ShaderTask::LoadShaderBase(ShaderUser_ type)
         throw std::runtime_error("Fail to open file: " + path);
     }
 
-    ShaderType shaderType = ShaderType_None;
+    ShaderStage_ shaderstage = ShaderStage::FRAGMENT;
 
     std::string line;
     while (std::getline(is, line))
@@ -182,15 +176,15 @@ std::map<ShaderType, std::string> ShaderTask::LoadShaderBase(ShaderUser_ type)
         {
             if (line.find("frag") != std::string::npos)
             {
-                shaderType = ShaderType_Fragment;
+                shaderstage = ShaderStage::FRAGMENT;
             }
             else if (line.find("vert") != std::string::npos)
             {
-                shaderType = ShaderType_Vertex;
+                shaderstage = ShaderStage::VERTEX;
             }
             continue;
         }
-        mShaderMap[shaderType] += line + '\n';
+        mShaderMap[static_cast<std::uint8_t>(shaderstage)] += line + '\n';
     }
     is.close();
 
@@ -211,11 +205,11 @@ bool ShaderTask::ValidStr(const std::string &str, std::string *data, int count)
     return true;
 }
 
-std::vector<std::tuple<std::string, std::string>> ShaderTask::ReadStructField(const std::string &content)
+std::vector<std::tuple<std::string, std::string, bool>> ShaderTask::ReadStructField(const std::string &content)
 {
     std::stringstream iss(content);
     
-    std::vector<std::tuple<std::string, std::string>> fieldList;
+    std::vector<std::tuple<std::string, std::string, bool>> fieldList;
     std::string line;
     while (std::getline(iss, line))
     {
@@ -240,31 +234,27 @@ std::vector<std::tuple<std::string, std::string>> ShaderTask::ReadStructField(co
                 continue;
             }
 
-            auto &field = fieldList.emplace_back(params[0], params[1]);    
+            auto &&[name, variable] = params;
+
+            fieldList.emplace_back(name, variable, name.find('[') != std::string::npos && name.find(']') != std::string::npos);
         }
     }
     return fieldList;
 }
 
-std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> ShaderTask::ReadStuct(const std::string &content)
+std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> ShaderTask::ReadStuct(const std::string &content)
 {
-    std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> structMap;
-    std::size_t lastPos = 0;
+    std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> structMap;
+    std::size_t end = 0, start = 0;
 
-    while (true)
+    while ((start = content.find("struct", end)) != std::string::npos)
     {
-        auto pos = content.find("struct", lastPos);
-        if (pos == std::string::npos)
-        {
-            break;
-        }
-
-        auto start_struct_pos = content.find('{', pos);
+        auto start_struct_pos = content.find('{', start);
 
         std::string struct_name;
 
-        lastPos = pos + 6;
-        if (!ValidStr(content.substr(pos + 6, start_struct_pos - (pos + 6)), &struct_name, 1))
+        end = start + 6;
+        if (!ValidStr(content.substr(start + 6, start_struct_pos - (start + 6)), &struct_name, 1))
             continue;
         
         auto end_struct_pos = content.find('}', start_struct_pos);
@@ -309,9 +299,9 @@ std::size_t ShaderTask::GetArrayCount(const std::string &content, std::string &n
     return std::atoi(content.substr(start_array + 1, end_array - (start_array + 1)).c_str());
 }
 
-void ShaderTask::SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniform> &vector, bool makeArray)
+void ShaderTask::SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniform> &vector, bool isarray)
 {
-    if (IsArray(name) && !makeArray)
+    if (isarray)
     {
         std::string field_name;
 
@@ -320,14 +310,23 @@ void ShaderTask::SetUniformList(std::unordered_map<std::string, std::vector<std:
         bool bUserStruct = structMap.find(type) != structMap.end();
         if (bUserStruct)
         {
-            for (std::size_t i={};i<count;i++)
+            for (auto &&[name, variablename, isarray] : structMap[type])
             {
-                auto item_name(field_name + '[' + std::to_string(i) + ']');
+                if (isarray)
+                {
+                    continue;
+                }
 
-                vector.emplace_back(ShaderUniform{item_name, type, static_cast<grm::u32>(count)});
+                for (std::size_t i={};i<count;i++)
+                {
+                    auto item_name(field_name + '[' + std::to_string(i) + "]." + name);
+
+                    vector.emplace_back(ShaderUniform{item_name, variablename, 1});
+                }
             }
             return;
         }
+
 
         vector.emplace_back(ShaderUniform{field_name, type, static_cast<grm::u32>(count)});
         
@@ -343,116 +342,75 @@ void ShaderTask::SetUniformList(std::unordered_map<std::string, std::vector<std:
 
     for (auto &member : it->second)
     {
-        auto &&[field_name, type] = member;
+        auto &&[field_name, type, iaarray] = member;
 
-        SetUniformList(structMap, name + "." + field_name, type, vector, makeArray);
+        SetUniformList(structMap, name + "." + field_name, type, vector, isarray);
     }
 }
 
-std::vector<ShaderUniform> ShaderTask::GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, std::unordered_map<std::string, std::string> &uniformMap)
+std::vector<ShaderUniform> ShaderTask::GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, std::unordered_map<std::string, std::tuple<std::string, bool>> &uniformMap)
 {
     std::vector<ShaderUniform> uniformFromRegister;
-    for (auto &&[name, type] : uniformMap)
+    for (auto &&[name, tuple] : uniformMap)
     {
-        SetUniformList(structMap, name, type, uniformFromRegister);
+        auto &&[variablename, isarray] = tuple;
+
+        SetUniformList(structMap, name, variablename, uniformFromRegister, isarray);
     }
 
     return uniformFromRegister;
 }
 
-std::unordered_map<std::string, std::string> ShaderTask::ReadUniform(const std::string &content)
+std::unordered_map<std::string, std::tuple<std::string, bool>> ShaderTask::ReadUniform(const std::string &content)
 {
-    std::unordered_map<std::string, std::string> uniformMap;
+    std::unordered_map<std::string, std::tuple<std::string, bool>> uniformMap;
 
-    std::size_t lastUniform = 0;
-    while (true)
+    std::size_t end = 0, start = 0;
+    while ((start = content.find("uniform", end)) != std::string::npos)
     {
-        auto start_uniform = content.find("uniform", lastUniform);
-        if (start_uniform == std::string::npos)
-        {
-            break;
-        }
-        lastUniform = start_uniform + 7;
+        end = start + 7;
 
-        auto end_uniform = content.find(';', lastUniform);
+        auto end_uniform = content.find(';', end);
         if (end_uniform == std::string::npos)
         {
             continue;
         }
 
-        auto uniform_line = content.substr(lastUniform, end_uniform - lastUniform);
+        auto uniform_line = content.substr(end, end_uniform - end);
 
         std::string split[2];
         if (!ValidStr(uniform_line, split, 2))
         {
             continue;
         }
-        
-        if (uniformMap.find(split[0]) != uniformMap.end())
+
+        auto &&[name, variable] = split;
+
+        if (uniformMap.find(name) != uniformMap.end())
         {
             continue;
         }
 
-        uniformMap.emplace(split[0], split[1]);
+        uniformMap.emplace(name, std::make_tuple(variable, name.find('[') != std::string::npos && name.find(']') != std::string::npos));
     }
 
     return uniformMap;
 }
 
-std::string ShaderTask::RemoveCommenter(const std::string &source)
+void ShaderTask::bind_shader(const std::string &path)
 {
-    std::string result;
-    std::istringstream iss(source);
-
-    std::string line;
-    while (std::getline(iss, line))
-    {
-        auto start_comment = line.find("//");
-        if (start_comment != std::string::npos)
-        {
-            line = line.substr(0, start_comment);
-            if (line.empty())
-            {
-                continue;
-            }
-        }
-
-        result += line + '\n';
-    }
-
-    std::size_t lastBlockComment = 0;
-    while (true)
-    {
-        auto start_block_comment = result.find("/*", lastBlockComment);
-        if (start_block_comment == std::string::npos)
-        {
-            break;
-        }
-
-        auto end_block_comment = result.find("*/", start_block_comment);
-
-        result.erase(start_block_comment, (end_block_comment + 2) - start_block_comment);
-
-        lastBlockComment = start_block_comment + 2;
-    }
-    
-    return result;
-}
-
-void ShaderTask::bind_shader(const MacroLists &macroLists)
-{
-    std::ifstream is(macroLists.content);
+    std::ifstream is(path);
     if (!is.is_open())
     {
-        throw std::runtime_error("Fail to open file: " + macroLists.content);
+        throw std::runtime_error("Fail to open file: " + path);
     }
 
     std::vector<std::string> defineMap;
 
-    ShaderUser shaderUser = ShaderUser_none;
+    ShaderType_ shadertype = ShaderType::SHADER2D;
 
-    ShaderType shaderType = ShaderType_None;
-    std::map<ShaderType, std::string> mSourceMap;
+    ShaderStage_ shaderstage = ShaderStage::FRAGMENT;
+    std::array<std::string, IShaderStage> mSourceMap;
 
     bool isInDefineType = false;
 
@@ -463,10 +421,10 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
         {
             if (line.find("shader2D") != std::string::npos)
             {
-                shaderUser = ShaderUser_shader2D;
+                shadertype = ShaderType::SHADER2D;
             } else if (line.find("shader3D") != std::string::npos)
             {
-                shaderUser = ShaderUser_shader3D;
+                shadertype = ShaderType::SHADER3D;
             }
             isInDefineType = true;
             continue;
@@ -474,10 +432,10 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
         {
             if (line.find("frag") != std::string::npos)
             {
-                shaderType = ShaderType_Fragment;
+                shaderstage = ShaderStage::FRAGMENT;
             } else if (line.find("vert") != std::string::npos)
             {
-                shaderType = ShaderType_Vertex;
+                shaderstage = ShaderStage::VERTEX;
             }
             isInDefineType = false;
             continue;
@@ -489,82 +447,70 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
             continue;
         }
 
-        if (shaderType == ShaderType_None)
-        {
-            continue;
-        }
 
-        mSourceMap[shaderType] += line + '\n';
+        mSourceMap[shaderstage] += line + '\n';
     }
 
     is.close();
 
-    if (shaderUser == ShaderUser_none)
-    {
-        throw std::runtime_error("Shader do not define, please user '#define shader2D' or '#define shader3D'");
-    }
-
     // Create User property
     {
-        auto property = AssetsManager::GetShaderProperty(m_shader);
-        if (property == nullptr)
-        {
-            property = AssetsManager::CreateShaderProperty(m_shader);
-        }
-        grr::UniformType type = grr::UniformType_none;
+        UniformVariable_ variable = UniformVariable::NONE;
 
         // fragment
         {
-            for (auto &&[name, type_name] : ReadUniform(RemoveCommenter(mSourceMap[ShaderType_Fragment])))
+            for (auto &&[name, tuple] : ReadUniform(remove_comment(mSourceMap[ShaderStage::FRAGMENT])))
             {
-                auto it = mUniformNameToType.find(type_name);
-                if (it != mUniformNameToType.end())
+                auto &&[variablename, isarray] = tuple;
+
+                auto it = mVariableNameToID.find(variablename);
+                if (it != mVariableNameToID.end())
                 {
-                    type = it->second;
+                    variable = it->second;
                 }
 
-                property->addProperty(type_name, name, type);
+                userfield.emplace(name);
             }
         }
 
         // vertex
         {
-            for (auto &&[name, type_name] : ReadUniform(RemoveCommenter(mSourceMap[ShaderType_Vertex])))
+            for (auto &&[name, tuple] : ReadUniform(remove_comment(mSourceMap[ShaderStage::VERTEX])))
             {
-                auto it = mUniformNameToType.find(type_name);
-                if (it != mUniformNameToType.end())
+                auto &&[variablename, isarray] = tuple;
+
+                auto it = mVariableNameToID.find(variablename);
+                if (it != mVariableNameToID.end())
                 {
-                    type = it->second;
+                    variable = it->second;
                 }
 
-                property->addProperty(type_name, name, type);
+                userfield.emplace(name);
             }
         }
-        // if (mUniformNameToType.find)
-        // property->addProperty()
     }
 
     {
-        m_shaderSource[ShaderType_Fragment] += "#version 330 core\n";
-        m_shaderSource[ShaderType_Vertex]   += "#version 330 core\n";
+        m_shaderSource[ShaderStage::FRAGMENT] += "#version 330 core\n";
+        m_shaderSource[ShaderStage::VERTEX]   += "#version 330 core\n";
 
-        auto baseShaderSource = LoadShaderBase(shaderUser);
+        auto baseShaderSource = LoadShaderBase(shadertype);
 
         for (auto defination : defineMap)
         {
-            m_shaderSource[ShaderType_Fragment] += defination + '\n';
-            m_shaderSource[ShaderType_Vertex]   += defination + '\n';
+            m_shaderSource[ShaderStage::FRAGMENT] += defination + '\n';
+            m_shaderSource[ShaderStage::VERTEX]   += defination + '\n';
         }
 
-        m_shaderSource[ShaderType_Fragment] += baseShaderSource[ShaderType_Fragment];
-        m_shaderSource[ShaderType_Vertex]   += baseShaderSource[ShaderType_Vertex];
+        m_shaderSource[ShaderStage::FRAGMENT] += baseShaderSource[ShaderStage::FRAGMENT];
+        m_shaderSource[ShaderStage::VERTEX]   += baseShaderSource[ShaderStage::VERTEX];
     }
 
-    m_shaderSource[ShaderType_Fragment] += mSourceMap[ShaderType_Fragment];
-    m_shaderSource[ShaderType_Vertex]   += mSourceMap[ShaderType_Vertex];
+    m_shaderSource[ShaderStage::FRAGMENT] += mSourceMap[ShaderStage::FRAGMENT];
+    m_shaderSource[ShaderStage::VERTEX]   += mSourceMap[ShaderStage::VERTEX];
 
-    m_shaderSource[ShaderType_Fragment] = RemoveCommenter(m_shaderSource[ShaderType_Fragment]);
-    m_shaderSource[ShaderType_Vertex] = RemoveCommenter(m_shaderSource[ShaderType_Vertex]);
+    m_shaderSource[ShaderStage::FRAGMENT] = remove_comment(m_shaderSource[ShaderStage::FRAGMENT]);
+    m_shaderSource[ShaderStage::VERTEX] = remove_comment(m_shaderSource[ShaderStage::VERTEX]);
 
     std::unordered_set<std::string> macro_map;
     switch (shaderoptimize)
@@ -580,30 +526,30 @@ void ShaderTask::bind_shader(const MacroLists &macroLists)
             break;
     }
 
-    m_shaderSource[ShaderType_Fragment] = process_macro(m_shaderSource[ShaderType_Fragment], macro_map);
-    m_shaderSource[ShaderType_Vertex] = process_macro(m_shaderSource[ShaderType_Vertex], macro_map);
+    m_shaderSource[ShaderStage::FRAGMENT] = process_macro(m_shaderSource[ShaderStage::FRAGMENT], macro_map);
+    m_shaderSource[ShaderStage::VERTEX] = process_macro(m_shaderSource[ShaderStage::VERTEX], macro_map);
 
     // fragment
     {
-        auto structList = ReadStuct(m_shaderSource[ShaderType_Fragment]);
-        auto uniformMap = ReadUniform(m_shaderSource[ShaderType_Fragment]);
+        auto structList = ReadStuct(m_shaderSource[ShaderStage::FRAGMENT]);
+        auto uniformMap = ReadUniform(m_shaderSource[ShaderStage::FRAGMENT]);
 
-        mShaderUniformMapToList.emplace(ShaderType_Fragment, GetRegistryField(structList, uniformMap));
+        mShaderUniformMapToList[ShaderStage::FRAGMENT] = GetRegistryField(structList, uniformMap);
     }
 
     // vertex
     {
-        auto structList = ReadStuct(m_shaderSource[ShaderType_Vertex]);
-        auto uniformMap = ReadUniform(m_shaderSource[ShaderType_Vertex]);
+        auto structList = ReadStuct(m_shaderSource[ShaderStage::VERTEX]);
+        auto uniformMap = ReadUniform(m_shaderSource[ShaderStage::VERTEX]);
 
-        mShaderUniformMapToList.emplace(ShaderType_Vertex, GetRegistryField(structList, uniformMap));
+        mShaderUniformMapToList[ShaderStage::VERTEX] = GetRegistryField(structList, uniformMap);
     }
 }
 
 bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader)
 {
-    auto fragment_source = m_shaderSource[ShaderType_Fragment].c_str();
-    auto vertex_source = m_shaderSource[ShaderType_Vertex].c_str();
+    auto fragment_source = m_shaderSource[ShaderStage::FRAGMENT].c_str();
+    auto vertex_source = m_shaderSource[ShaderStage::VERTEX].c_str();
 
     shader->cleanUniform();
 
@@ -614,88 +560,36 @@ bool ShaderTask::buildShader(const std::string &name, grr::gShader *shader)
         return false;
     }
 
-    for (auto &&[name, type_name, count] : mShaderUniformMapToList[ShaderType_Fragment])
+    auto property = AssetsManager::GetShaderProperty(m_shader);
+    if (property == nullptr)
     {
-        auto it = mUniformNameToType.find(type_name);
-        if (it == mUniformNameToType.end())
+        property = AssetsManager::CreateShaderProperty(m_shader);
+    }
+    property->clear();
+
+    for (auto &&[name, variablename, count] : mShaderUniformMapToList[ShaderStage::FRAGMENT])
+    {
+        auto it = mVariableNameToID.find(variablename);
+        if (it == mVariableNameToID.end())
         {
-            Console::LogWarning("[ ShaderTask ] Fragment Shader uniform type do not is valid: %s, %s", name.c_str(), type_name.c_str());
+            Console::LogWarning("[ ShaderTask ] Fragment Shader uniform type do not is valid: %s, %s", name.c_str(), variablename.c_str());
             continue;
         }
 
-        PRINT_ERROR(shader->registry(name.c_str(), count, it->second));
+        PRINT_ERROR(shader->registry(name.c_str(), count, it->second), property, it->second);
     }
     
-    for (auto &&[name, type_name, count] : mShaderUniformMapToList[ShaderType_Vertex]) {
-        auto it = mUniformNameToType.find(type_name);
-        if (it == mUniformNameToType.end())
+    for (auto &&[name, variablename, count] : mShaderUniformMapToList[ShaderStage::VERTEX]) {
+        auto it = mVariableNameToID.find(variablename);
+        if (it == mVariableNameToID.end())
         {
-            Console::LogWarning("[ ShaderTask ] Vertex Shader uniform type do not is valid: %s, %s", name.c_str(), type_name.c_str());
+            Console::LogWarning("[ ShaderTask ] Vertex Shader uniform type do not is valid: %s, %s", name.c_str(), variablename.c_str());
             continue;
         }
 
-        PRINT_ERROR(shader->registry(name.c_str(), count, it->second));
+        PRINT_ERROR(shader->registry(name.c_str(), count, it->second), property, it->second);
     }
     return true;
-}
-
-MacroLists ShaderTask::extract_macros_from_string(const std::string &content)
-{
-    MacroLists macroLists;
-    std::size_t pos = 0, start = 0;
-
-    while ((start = content.find(';', pos)) != std::string::npos)
-    {
-        auto str = content.substr(pos, start - pos);
-
-        pos = start + 1;
-
-        auto sub = str.find('=');
-        if (sub == std::string::npos)
-        {
-            macroLists.content = str;
-            continue;
-        }
-
-        auto key = str.substr(0, sub);
-
-        std::vector<std::string> &vector = key == "define" ? macroLists.definedMacros : macroLists.undefinedMacros;
-        {
-            auto kstart = str.find('{');
-            if (kstart == std::string::npos)
-            {
-                continue;
-            }
-
-            auto kend = str.find('}');
-            if (kend == std::string::npos)
-            {
-                continue;
-            }
-
-            auto line = str.substr(kstart + 1, kend - (kstart + 1));
-
-            std::size_t vpos = 0, vstart = 0;
-
-            while ((vstart = line.find(',', vpos)) != std::string::npos)
-            {
-                vector.push_back(line.substr(vpos, vstart - vpos));
-                vpos = vstart + 1;
-            }
-
-            if (vpos > 0 && vpos != line.length())
-                vector.push_back(line.substr(vpos, line.length() - vpos));
-            else if (vpos == 0)
-                vector.push_back(line);
-        }
-    }
-
-    if (pos == 0)
-    {
-        macroLists.content = content;
-    }
-
-    return macroLists;
 }
 
 std::string ShaderTask::process_macro(const std::string &content, const std::unordered_set<std::string> &macro_map)
@@ -742,6 +636,47 @@ std::string ShaderTask::process_macro(const std::string &content, const std::uno
             output += line + '\n';
     }
     return output;
+}
+
+std::string ShaderTask::remove_comment(const std::string &str)
+{
+    std::string result;
+    bool is_in_block = false;
+
+    auto len = str.length();
+
+    for (std::size_t i=0;i<len;i++)
+    {
+        if (is_in_block)
+        {
+            if ((i + 1 < len) && str[i] == '*' && str[i + 1] == '/')
+            {
+                is_in_block = false;
+
+                i += 2;
+            }
+        } else
+        {
+            if ((i + 1 < len) && str[i] == '/' && str[i + 1] == '*')
+            {
+                is_in_block = true;
+
+                i += 2;
+            }
+
+            if ((i + 1 < len) && str[i] == '/' && str[i + 1] == '/')
+            {
+                while (i < len && str[i] != '\n')
+                    i++;
+            }
+        }
+
+        if (!is_in_block)
+        {
+            result += str[i];
+        }
+    }
+    return result;
 }
 
 

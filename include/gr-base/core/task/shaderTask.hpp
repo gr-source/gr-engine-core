@@ -8,8 +8,7 @@
 
 #include "gr-base/core/geometry/shader.hpp"
 
-#include <map>
-
+#include <unordered_set>
 
 using ShaderFunc = std::function<void (grr::gShader *)>;
 
@@ -17,19 +16,10 @@ typedef struct
 {
     std::string name;
 
-    std::string type_name;
+    std::string variable;
 
     grm::u32 count;
 } ShaderUniform;
-
-typedef struct MacroLists
-{
-    std::vector<std::string> definedMacros;
-
-    std::vector<std::string> undefinedMacros;
-
-    std::string content;
-} MacroLists;
 
 class ShaderTask
 {
@@ -39,11 +29,13 @@ public:
     void addFunction(ShaderFunc func);
 
 private:
-    std::map<ShaderType, std::vector<ShaderUniform>> mShaderUniformMapToList;
+    std::array<std::vector<ShaderUniform>, IShaderStage> mShaderUniformMapToList;
 
-    std::map<ShaderType, std::string> m_shaderSource;
+    std::array<std::string, IShaderStage> m_shaderSource;
 
     std::vector<ShaderFunc> m_functions;
+
+    std::unordered_set<std::string> userfield;
     
     ShaderOptimize_ shaderoptimize;
     
@@ -65,35 +57,33 @@ protected:
     static AssetShader get_shader_asset_type(const std::string &path);
 
 public:
-    static std::unordered_map<std::string, grr::UniformType> mUniformNameToType;
+    static std::unordered_map<std::string, UniformVariable_> mVariableNameToID;
 
-    static std::map<ShaderType, std::string> LoadShaderBase(ShaderUser_ type);
+    static std::array<std::string, IShaderStage> LoadShaderBase(ShaderType_ type);
 
     static bool ValidStr(const std::string &str, std::string *data, int count);
 
-    static std::vector<std::tuple<std::string, std::string>> ReadStructField(const std::string &content);
+    static std::vector<std::tuple<std::string, std::string, bool>> ReadStructField(const std::string &content);
 
-    static std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> ReadStuct(const std::string &content);
+    static std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> ReadStuct(const std::string &content);
 
     static bool IsArray(const std::string &content);
 
     static std::size_t GetArrayCount(const std::string &content, std::string &name);
 
-    static void SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniform> &vector, bool makeArray = false);
+    static void SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniform> &vector, bool isarray);
 
-    static std::vector<ShaderUniform> GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string>>> &structMap, std::unordered_map<std::string, std::string> &fieldMap);
+    static std::vector<ShaderUniform> GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, std::unordered_map<std::string, std::tuple<std::string, bool>> &fieldMap);
 
-    static std::unordered_map<std::string, std::string> ReadUniform(const std::string &content);
-
-    static std::string RemoveCommenter(const std::string &source);
+    static std::unordered_map<std::string, std::tuple<std::string, bool>> ReadUniform(const std::string &content);
 
     static std::string process_macro(const std::string &content, const std::unordered_set<std::string> &macro_map);
 
-    void bind_shader(const MacroLists &macroList);
+    void bind_shader(const std::string &path);
 
     bool buildShader(const std::string &name, grr::gShader *shader);
 
-    static MacroLists extract_macros_from_string(const std::string &content);
+    static std::string remove_comment(const std::string &str);
 };
 
 

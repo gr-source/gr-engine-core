@@ -4,18 +4,18 @@ ShaderProperty::ShaderProperty()
 {
 }
 
-void ShaderProperty::addProperty(const std::string &object, const std::string &name, grr::UniformType type)
+void ShaderProperty::addProperty(const std::string &object, const std::string &name, UniformVariable_ variable)
 {
     if (m_tabHash.find(name) != m_tabHash.end())
     {
         return;
     }
 
-    mUniformList.emplace_back(object, name, type);
+    mUniformList.emplace_back(object, name, variable);
     m_tabHash.emplace(name);
 }
 
-const std::vector<std::tuple<std::string, std::string, grr::UniformType>> &ShaderProperty::getProperty() const
+const std::vector<std::tuple<std::string, std::string, UniformVariable_>> &ShaderProperty::getProperty() const
 {
     return mUniformList;
 }

@@ -7,25 +7,36 @@
 
 #include <unordered_set>
 
-using ShaderUser_ = std::uint8_t;
+using ShaderStage_ = std::uint8_t;
+using ShaderType_ = std::uint8_t;
 
-enum ShaderUser : ShaderUser_
+typedef struct
 {
-    ShaderUser_none     = 1 << 0,
-    ShaderUser_shader3D = 1 << 1,
-    ShaderUser_shader2D = 1 << 2
-};
+    enum : ShaderType_
+    {
+        SHADER2D    = 0,
+        SHADER3D    = 1,
+        COUNT
+    };
+} ShaderType;
 
-enum ShaderType {
-    ShaderType_None     = 1 << 0,
-    ShaderType_Fragment = 1 << 1,
-    ShaderType_Vertex   = 1 << 2,
-};
+typedef struct
+{
+    enum : ShaderStage_
+    {
+        FRAGMENT    = 0,
+        VERTEX      = 1,
+        COUNT
+    };
+} ShaderStage;
+
+
+constexpr std::uint8_t IShaderStage = static_cast<std::uint8_t>(ShaderStage::COUNT);
 
 struct Uniform {
     std::string name;
-    std::string type_name;
-    grr::UniformType type;
+    std::string variablename;
+    UniformVariable variable;
     grm::u8 count;
 };
 
@@ -46,14 +57,14 @@ class ShaderProperty
 public:
     ShaderProperty();
 
-    void addProperty(const std::string &object, const std::string &name, grr::UniformType type);
+    void addProperty(const std::string &object, const std::string &name, UniformVariable_ variable);
 
-    const std::vector<std::tuple<std::string, std::string, grr::UniformType>> &getProperty() const;
+    const std::vector<std::tuple<std::string, std::string, UniformVariable_>> &getProperty() const;
 
     void clear();
 
 private:
-    std::vector<std::tuple<std::string, std::string, grr::UniformType>> mUniformList;
+    std::vector<std::tuple<std::string, std::string, UniformVariable_>> mUniformList;
     
     std::unordered_set<std::string> m_tabHash;
 };

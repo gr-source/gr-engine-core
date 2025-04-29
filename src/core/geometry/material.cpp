@@ -278,11 +278,6 @@ void Material::deserialize(Stream *stream)
             m_uniformMap.emplace(name, ptr);
         }
     }
-
-    // if (hasShader)
-    // {
-        // AssetsManager::LoadShader(ShaderOptimize_DYNAMIC, shader_path, &Material::setShader, this);
-    // }
 }
 
 void Material::flush() const
