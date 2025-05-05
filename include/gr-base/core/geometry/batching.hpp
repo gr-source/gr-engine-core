@@ -46,8 +46,6 @@ public:
 private:
     std::unordered_set<Transform *> mInstances;
 
-    std::vector<std::tuple<Transform *, const std::vector<Material *> *>> mInstanceRender;
-
     std::vector<std::tuple<Transform *, const std::vector<Material *> *, Animator *>> mInstanceSkinnedRender;
 
     std::vector<MeshData> mMeshData[2];
