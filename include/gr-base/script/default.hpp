@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <vector>
 
+class Component;
+
 class SkinnedMeshRender;
 class MeshCollider;
 class BoxCollider;

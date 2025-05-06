@@ -149,7 +149,7 @@ ModelHandle::ModelHandle(const std::string &name, std::unique_ptr<FbxScene> scen
     generateAnimation(scene.get());
 }
 
-#include "gr-base/core/task/saveGameObjectTask.hpp"
+#include "gr-base/core/task/gameobjectsavetask.hpp"
 void ModelHandle::run()
 {
     saveNode();
@@ -432,7 +432,7 @@ void ModelHandle::saveNode()
 
     for (auto go : rootNode)
     {
-        SaveGameObjectTask SaveGameObjectTask(go, File::GetAsset("/model/" + go->getName() + ".gmdx"));
+        GameObjectSaveTask SaveGameObjectTask(go, File::GetAsset("/model/" + go->getName() + ".gmdx"));
     }
 }
 

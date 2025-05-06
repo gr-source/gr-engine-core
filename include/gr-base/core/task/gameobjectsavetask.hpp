@@ -8,10 +8,10 @@
 
 #include <memory>
 
-class SaveGameObjectTask
+class GameObjectSaveTask
 {
 public:
-    SaveGameObjectTask(const GameObject *go, std::string path);
+    GameObjectSaveTask(const GameObject *go, std::string path);
 
 private:
     std::shared_ptr<Stream> m_stream;

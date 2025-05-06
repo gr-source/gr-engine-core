@@ -56,7 +56,7 @@ void GameObject::Rename(GameObject *go, std::string name)
         return;
     }
 
-    mNameManager.RemoveNameID(name);
+    mNameManager.RemoveNameID(go->getName());
 
     name = mNameManager.GenerateNameID(name);
 

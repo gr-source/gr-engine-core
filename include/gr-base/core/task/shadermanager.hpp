@@ -29,7 +29,7 @@ public:
 
     void create_shader_task(ShaderOptimize_ optmize, const std::string &path, Shader *shader, std::function<void(grr::gShader *)> func);
 
-    void remove_task(const std::string &name);
+    bool remove_task(const std::string &name);
 
     static std::mutex mutex;
 private:

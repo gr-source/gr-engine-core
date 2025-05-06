@@ -19,7 +19,8 @@
 #include <memory>
 #include <mutex>
 
-/***************** Shader *****************/
+AnimationManager AssetsManager::mAnimationManager;
+
 ShaderManager AssetsManager::mShaderManager;
 
 // sshader property
@@ -32,13 +33,8 @@ std::unordered_map<grr::gTexture *, std::string> AssetsManager::mTextureRefToNam
 std::unordered_map<std::string, std::unique_ptr<TextureLoadTask>> AssetsManager::mTextureLoadTaskMap;
 std::mutex AssetsManager::mTextureMutex;
 
-/***************** Animation *****************/
-std::unordered_map<std::string, std::unique_ptr<AnimationLoadTask>> AssetsManager::mAnimationLoadTask;
-std::unordered_map<std::string, std::unique_ptr<Animation>> AssetsManager::mAnimationList;
-std::mutex AssetsManager::mAnimationMutex;
-
 /***************** GameObject *****************/
-std::unordered_map<std::string, std::unique_ptr<GameObjectTask>> AssetsManager::mGameObjectTaskMap;
+std::unordered_map<std::string, std::unique_ptr<GameObjectLoadTask>> AssetsManager::mGameObjectTaskMap;
 std::mutex AssetsManager::mGameObjectTaskMutex;
 
 /***************** Mesh *****************/
@@ -52,7 +48,7 @@ std::unordered_map<Material *, std::string> AssetsManager::mMaterialRefToName;
 std::mutex AssetsManager::mMaterialMutex;
 
 /***************** Scene *****************/
-std::unordered_map<std::string, std::unique_ptr<SceneTask>> AssetsManager::mSceneTaskMap;
+std::unordered_map<std::string, std::unique_ptr<SceneLoadTask>> AssetsManager::mSceneTaskMap;
 std::unordered_map<std::string, std::unique_ptr<Scene>> AssetsManager::mSceneMap;
 std::mutex AssetsManager::mSceneMutex;
 
@@ -217,7 +213,7 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
         }
     }
 
-    mGameObjectTaskMap.emplace(path, std::make_unique<GameObjectTask>(path, func));
+    mGameObjectTaskMap.emplace(path, std::make_unique<GameObjectLoadTask>(path, func));
 }
 
 void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func)
@@ -255,6 +251,7 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
     mTextureLoadTaskMap.emplace(path, std::make_unique<TextureLoadTask>(path, func));
 }
 
+/*
 void AssetsManager::SetAnimationList(const std::string &path, const std::function<void (Animation *)> func)
 {
     std::lock_guard<std::mutex> lock(mAnimationMutex);
@@ -290,14 +287,22 @@ void AssetsManager::SetAnimationList(const std::string &path, const std::functio
 
     mAnimationLoadTask.emplace(path, std::make_unique<AnimationLoadTask>(path, func));
 }
+*/
 
 Animation *AssetsManager::CreateAnimation(const std::string &name)
 {
-    std::lock_guard<std::mutex> lock(mAnimationMutex);
+    return mAnimationManager.create(name);
+}
 
-    auto &&[it, badded] = mAnimationList.emplace(name, std::make_unique<Animation>(name));
+Animation *AssetsManager::FindAnimation(const std::string &name)
+{
+    return mAnimationManager.find(name);
+}
 
-    return &(*it->second);
+std::string AssetsManager::GetAnimationName(const Animation *animation)
+{
+    auto name = mAnimationManager.get_name(animation);
+    return name == nullptr ? "" : name;
 }
 
 std::vector<Shader *> AssetsManager::GetShaderList(AssetShader type, ShaderOptimize_ optimize)
@@ -373,7 +378,10 @@ void AssetsManager::RemoveTask(const std::string &name)
         }
     }
 
-    mShaderManager.remove_task(name);
+    if (mShaderManager.remove_task(name))
+    {
+        return;
+    }
 
     // Check in task of gameobject
     {
@@ -386,7 +394,11 @@ void AssetsManager::RemoveTask(const std::string &name)
     }
 
     // Chck task is on AnimationLoadTask
+    if (mAnimationManager.remove_task(name))
     {
+        return;
+    }
+    /*{
         std::lock_guard<std::mutex> lock(mAnimationMutex);
         auto it = mAnimationLoadTask.find(name);
         if (it != mAnimationLoadTask.end())
@@ -395,6 +407,7 @@ void AssetsManager::RemoveTask(const std::string &name)
             return;
         }
     }
+    */
 }
 
 void AssetsManager::SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void(Scene *)> func)
@@ -427,7 +440,7 @@ void AssetsManager::SetSceneList(const std::string &path, SceneLoadFlags flags, 
         return Console::LogError("[ AssetsManager ] Scene.LoadScene: file '%s' do not found.", path.c_str());
     }
 
-    mSceneTaskMap.emplace(path, std::make_unique<SceneTask>(path, flags, func));
+    mSceneTaskMap.emplace(path, std::make_unique<SceneLoadTask>(path, flags, func));
 }
 
 

@@ -1,5 +1,7 @@
-#include "gr-base/core/geometry/shadermanager.hpp"
+#include "gr-base/core/task/shadermanager.hpp"
+
 #include "gr-base/core/geometry/shader.hpp"
+
 #include <array>
 #include <cstddef>
 #include <mutex>
@@ -146,9 +148,15 @@ void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::strin
     ShaderTaskMap.emplace(path, std::make_unique<ShaderLoadTask>(optmize, path, func, shader));
 }
 
-void ShaderManager::remove_task(const std::string &name)
+bool ShaderManager::remove_task(const std::string &name)
 {
     std::lock_guard<std::mutex> lock(mutex);
-    ShaderTaskMap.erase(name);
+    auto it = ShaderTaskMap.find(name);
+    if (it == ShaderTaskMap.end())
+    {
+        return false;
+    }
+    ShaderTaskMap.erase(it);
+    return true;
 }
 

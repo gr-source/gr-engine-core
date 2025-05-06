@@ -1,4 +1,4 @@
-#include "gr-base/core/task/saveGameObjectTask.hpp"
+#include "gr-base/core/task/gameobjectsavetask.hpp"
 
 #include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/file/file.hpp"
@@ -18,7 +18,7 @@
 
 #include <filesystem>
 
-SaveGameObjectTask::SaveGameObjectTask(const GameObject *go, std::string path) : m_gameObject(go), m_stream(nullptr)
+GameObjectSaveTask::GameObjectSaveTask(const GameObject *go, std::string path) : m_gameObject(go), m_stream(nullptr)
 {
     auto filename = go->getName() + ".gmdx";
 
@@ -39,10 +39,10 @@ SaveGameObjectTask::SaveGameObjectTask(const GameObject *go, std::string path) :
     File::Copy(temp_file, path);
 }
 
-void SaveGameObjectTask::doInBackground(std::string path) {
+void GameObjectSaveTask::doInBackground(std::string path) {
     auto name = m_gameObject->getName();
 
-    Console::LogInfo("[ SaveGameObjectTask ] Initialize task for import: %s, %s", name.c_str(), path.c_str());
+    Console::LogInfo("[ GameObjectSaveTask ] Initialize task for import: %s, %s", name.c_str(), path.c_str());
 
     m_stream = std::make_shared<Stream>(path, std::ios_base::out | std::ios_base::binary);
 
@@ -50,7 +50,7 @@ void SaveGameObjectTask::doInBackground(std::string path) {
     {
         FileHeader header{{'g', 'r', 'm', 'x'}, 1.0f, 0};
         if (!m_stream->writeS(&header, 1, false)) {
-            return Console::LogError("[ SaveGameObjectTask ] Fail to write header.");
+            return Console::LogError("[ GameObjectSaveTask ] Fail to write header.");
         }
     }
 
@@ -58,14 +58,14 @@ void SaveGameObjectTask::doInBackground(std::string path) {
 
     int result = writeData();
     if (result != 0) {
-        return Console::LogError("[ SaveGameObjectTask ] Fail to write metadata: %d", result);
+        return Console::LogError("[ GameObjectSaveTask ] Fail to write metadata: %d", result);
     }
-    Console::LogInfo("[ SaveGameObjectTask ] Modelsaved sucesfuly: %s", name.c_str());
+    Console::LogInfo("[ GameObjectSaveTask ] Modelsaved sucesfuly: %s", name.c_str());
 
     m_stream->close();
 }
 
-int SaveGameObjectTask::writeData()
+int GameObjectSaveTask::writeData()
 {
     // write gameobject
     {
@@ -131,7 +131,7 @@ int SaveGameObjectTask::writeData()
     return 0;
 }
 
-int SaveGameObjectTask::writeGameObject(const GameObject *go)
+int GameObjectSaveTask::writeGameObject(const GameObject *go)
 {
     auto goname = go->getName();
     {
@@ -198,7 +198,7 @@ int SaveGameObjectTask::writeGameObject(const GameObject *go)
     return result;
 }
 
-int SaveGameObjectTask::writeTexture()
+int GameObjectSaveTask::writeTexture()
 {
     auto textureCount = m_textureMap.size();
     if (!m_stream->write(&textureCount, sizeof(std::size_t)))
@@ -253,7 +253,7 @@ int SaveGameObjectTask::writeTexture()
     return 0;
 }
 
-int SaveGameObjectTask::writeMaterial()
+int GameObjectSaveTask::writeMaterial()
 {
     auto materialCount = m_materialMap.size();
     if (!m_stream->write(&materialCount, sizeof(std::size_t)))
@@ -310,7 +310,7 @@ int SaveGameObjectTask::writeMaterial()
     return 0;
 }
 
-int SaveGameObjectTask::writeScript()
+int GameObjectSaveTask::writeScript()
 {
     auto scriptCount = m_scriptMap.size();
     if (!m_stream->write(&scriptCount, sizeof(std::size_t)))
@@ -364,7 +364,7 @@ int SaveGameObjectTask::writeScript()
     return 0;
 }
 
-void SaveGameObjectTask::readObjectSource(const GameObject *go)
+void GameObjectSaveTask::readObjectSource(const GameObject *go)
 {
     auto goname = go->getName();
     auto entity = go->getEntity();

@@ -1,4 +1,4 @@
-#include "gr-base/core/task/gameObjectTask.hpp"
+#include "gr-base/core/task/gameobjectloadtask.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/threadpool.hpp"
@@ -15,16 +15,16 @@
 
 #include "gr-base/core/binary/gHeader.hpp"
 
-GameObjectTask::GameObjectTask(const std::string &path, GameObjectFunc func) : m_function(func), m_stream(nullptr)
+GameObjectLoadTask::GameObjectLoadTask(const std::string &path, GameObjectFunc func) : m_function(func), m_stream(nullptr)
 {
-    Threadpool::AddTask(&GameObjectTask::doInBackground, this, path);
+    Threadpool::AddTask(&GameObjectLoadTask::doInBackground, this, path);
 }
 
-void GameObjectTask::upload(std::string path)
+void GameObjectLoadTask::upload(std::string path)
 {
     if (m_rootNode == nullptr)
     {
-        return Console::LogError("[ GameObjectTask ] Fail object loaded is invalid.");
+        return Console::LogError("[ GameObjectLoadTask ] Fail object loaded is invalid.");
     }
 
     auto scene = Scene::GetCurrentScene();
@@ -37,7 +37,7 @@ void GameObjectTask::upload(std::string path)
     
     Scene::Use(scene);
     
-    Console::LogInfo("[ GameObjectTask ] Model loaded sucessfuly %s.", go->getName().c_str());
+    Console::LogInfo("[ GameObjectLoadTask ] Model loaded sucessfuly %s.", go->getName().c_str());
 
     if (m_function) {
         m_function(go);
@@ -45,43 +45,43 @@ void GameObjectTask::upload(std::string path)
     AssetsManager::RemoveTask(path);
 }
 
-void GameObjectTask::doInBackground(std::string path)
+void GameObjectLoadTask::doInBackground(std::string path)
 {
     m_stream = std::make_unique<Stream>(path, std::ios_base::in | std::ios_base::binary);
     if (!m_stream->is_open())
     {
-        Console::LogError("[ GameObjectTask ] Falied to open file: %s", path.c_str());
+        Console::LogError("[ GameObjectLoadTask ] Falied to open file: %s", path.c_str());
 
         return AssetsManager::RemoveTask(path);
     }
 
-    Console::LogInfo("[ GameObjectTask ] Loading model: %s", path.c_str());
+    Console::LogInfo("[ GameObjectLoadTask ] Loading model: %s", path.c_str());
 
     FileHeader header;
     if (!m_stream->read(reinterpret_cast<char *>(&header), sizeof(FileHeader)))
     {
-        Console::LogError("[ GameObjectTask ] Falied to read header binary.");
+        Console::LogError("[ GameObjectLoadTask ] Falied to read header binary.");
         
         return AssetsManager::RemoveTask(path);
     }
     
     if (std::strcmp(header.signature, "grmx") != 0) {
-        Console::LogError("[ GameObjectTask ] Invalid binary type.");
+        Console::LogError("[ GameObjectLoadTask ] Invalid binary type.");
         return AssetsManager::RemoveTask(path);
     }
 
     auto result = readData();
     if (result != 0)
     {
-        Console::LogError("[ GameObjectTask ] Fail to read data %d", result);
+        Console::LogError("[ GameObjectLoadTask ] Fail to read data %d", result);
         
         return AssetsManager::RemoveTask(path);
     }
 
-    Event::Add(&GameObjectTask::upload, this, path);
+    Event::Add(&GameObjectLoadTask::upload, this, path);
 }
 
-int GameObjectTask::readData() {
+int GameObjectLoadTask::readData() {
     while (true) {
         DataSegment segment;
         if (!m_stream->read(reinterpret_cast<char *>(&segment), sizeof(DataSegment)))
@@ -136,7 +136,7 @@ int GameObjectTask::readData() {
     return 0;
 }
 
-int GameObjectTask::readGameObject(Transform *parent)
+int GameObjectLoadTask::readGameObject(Transform *parent)
 {
     // read name
     std::size_t gonsize = 0;
@@ -208,7 +208,7 @@ int GameObjectTask::readGameObject(Transform *parent)
     return result;
 }
 
-int GameObjectTask::readTexture()
+int GameObjectLoadTask::readTexture()
 {
     std::size_t textureCount = 0;
     if (!m_stream->read(reinterpret_cast<char *>(&textureCount), sizeof(std::size_t)))
@@ -262,7 +262,7 @@ int GameObjectTask::readTexture()
     return 0;
 }
 
-int GameObjectTask::readMaterial()
+int GameObjectLoadTask::readMaterial()
 {
     std::size_t sname = 0;
     if (!m_stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t)))
@@ -339,7 +339,7 @@ int GameObjectTask::readMaterial()
     return 0;
 }
 
-int GameObjectTask::readScript()
+int GameObjectLoadTask::readScript()
 {
     std::size_t gonsize = 0;
     if (!m_stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
@@ -391,14 +391,9 @@ int GameObjectTask::readScript()
         auto entity = it->second->getEntity();
 
         auto component = entity->hasComponent(scriptname) ? entity->getComponent(scriptname) : entity->addComponent(scriptname);
-        if (component != nullptr)
+        if (component != nullptr && data_size > 0)
         {
             component->Deserialize(m_stream.get());
-        }
-
-        if (data_size <= 0)
-        {
-            continue;
         }
 
         if (m_stream->tellg() != next)

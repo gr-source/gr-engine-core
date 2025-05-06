@@ -1,4 +1,4 @@
-#include "gr-base/core/task/saveSceneTask.hpp"
+#include "gr-base/core/task/scenesavetask.hpp"
 
 #include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/file/file.hpp"
@@ -15,7 +15,7 @@
 
 #include <filesystem>
 
-SaveSceneTask::SaveSceneTask(const Scene *scene) : m_scene(scene), m_stream(nullptr)
+SceneSaveTask::SceneSaveTask(const Scene *scene) : m_scene(scene), m_stream(nullptr)
 {
     auto filename = scene->getName() + ".scn";
 
@@ -32,7 +32,7 @@ SaveSceneTask::SaveSceneTask(const Scene *scene) : m_scene(scene), m_stream(null
     File::Copy(temp_file, to_scene_file);
 }
 
-void SaveSceneTask::doInBackground(std::string path)
+void SceneSaveTask::doInBackground(std::string path)
 {
     m_stream = std::make_shared<Stream>(path, std::ios_base::out | std::ios_base::binary);
 
@@ -58,7 +58,7 @@ void SaveSceneTask::doInBackground(std::string path)
     Console::LogInfo("[ Scene ] Scene saved: %s", name.c_str());
 }
 
-int SaveSceneTask::writeData()
+int SceneSaveTask::writeData()
 {
 
     // metadata
@@ -158,7 +158,7 @@ int SaveSceneTask::writeData()
     return 0;
 }
 
-int SaveSceneTask::writeMetadata()
+int SceneSaveTask::writeMetadata()
 {
     auto name = m_scene->getName();
 
@@ -187,7 +187,7 @@ int SaveSceneTask::writeMetadata()
     return 0;
 }
 
-int SaveSceneTask::writeTexture()
+int SceneSaveTask::writeTexture()
 {
     auto textureMap = AssetsManager::GetTextureRefMap();
 
@@ -214,7 +214,7 @@ int SaveSceneTask::writeTexture()
     return 0;
 }
 
-int SaveSceneTask::writeMaterial()
+int SceneSaveTask::writeMaterial()
 {
     auto materialMap = AssetsManager::GetMaterialRefMap();
 
@@ -256,12 +256,12 @@ int SaveSceneTask::writeMaterial()
     return 0;
 }
 
-int SaveSceneTask::writeMesh()
+int SceneSaveTask::writeMesh()
 {
     return 0;
 }
 
-int SaveSceneTask::writeObject()
+int SceneSaveTask::writeObject()
 {
     auto objectList = m_scene->getObjectList();
 
@@ -282,7 +282,7 @@ int SaveSceneTask::writeObject()
     return result;
 }
 
-int SaveSceneTask::writeScript()
+int SceneSaveTask::writeScript()
 {
     auto size = m_scriptCache.size();
 
@@ -332,7 +332,7 @@ int SaveSceneTask::writeScript()
     return 0;
 }
 
-int SaveSceneTask::writeGameObject(const GameObject *go)
+int SceneSaveTask::writeGameObject(const GameObject *go)
 {
     // write name
     {

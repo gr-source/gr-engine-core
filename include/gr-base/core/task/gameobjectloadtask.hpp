@@ -10,10 +10,10 @@
 
 using GameObjectFunc = std::function<void (GameObject *)>;
 
-class GameObjectTask
+class GameObjectLoadTask
 {
 public:
-    GameObjectTask(const std::string &path, GameObjectFunc func);
+    GameObjectLoadTask(const std::string &path, GameObjectFunc func);
 
 private:
     std::unordered_map<std::string, GameObject *> m_tempGameObjectMap;

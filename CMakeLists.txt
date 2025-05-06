@@ -18,7 +18,6 @@ set(ecs
 
 set(geometry
     src/core/geometry/batchingRender.cpp
-    src/core/geometry/shadermanager.cpp
     src/core/geometry/boneWeight.cpp
     src/core/geometry/vertex2D.cpp
     src/core/geometry/vertex3D.cpp
@@ -97,15 +96,20 @@ set(culling
 )
 
 set(task
-    src/core/task/saveGameObjectTask.cpp
+    src/core/task/gameobjectsavetask.cpp
+    src/core/task/gameobjectloadtask.cpp
+
     src/core/task/animationloadtask.cpp
     src/core/task/animationsavetask.cpp
-    src/core/task/gameObjectTask.cpp
+    src/core/task/animationmanager.cpp
+    
     src/core/task/shaderProperty.cpp
-    src/core/task/saveSceneTask.cpp
+    src/core/task/scenesavetask.cpp
+    src/core/task/sceneloadtask.cpp
     src/core/task/textureloadtask.cpp
+
     src/core/task/shaderloadtask.cpp
-    src/core/task/sceneTask.cpp
+    src/core/task/shadermanager.cpp
 )
 
 find_package(assimp QUIET)

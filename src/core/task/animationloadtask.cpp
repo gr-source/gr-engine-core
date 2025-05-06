@@ -32,7 +32,7 @@ void AnimationLoadTask::invoke(Animation *animation)
     }
 }
 
-void AnimationLoadTask::postExecute(Animation *animation, std::string path)
+void AnimationLoadTask::upload(Animation *animation, std::string path)
 {
     invoke(animation);
 
@@ -46,8 +46,7 @@ void AnimationLoadTask::doInBackground(std::string path)
     Stream stream(path, std::ios_base::in | std::ios_base::binary);
 
     {
-        FileHeader fileHeader{{'g', 'r', 'a', 'n'}, 1.0f};
-
+        FileHeader fileHeader;
         if (!stream.read(reinterpret_cast<char *>(&fileHeader), sizeof(FileHeader)))
         {
             stream.close();
@@ -74,7 +73,7 @@ void AnimationLoadTask::doInBackground(std::string path)
 
     stream.close();
 
-    Event::Add(&AnimationLoadTask::postExecute, this, animation, path);
+    Event::Add(&AnimationLoadTask::upload, this, animation, path);
 }
 
 

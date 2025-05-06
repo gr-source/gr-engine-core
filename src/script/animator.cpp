@@ -1,7 +1,7 @@
 #include "gr-base/script/animator.hpp"
 
 #include "gr-base/core/animation/keyframe.hpp"
-#include "gr-base/core/console.hpp"
+#include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/clock.hpp"
 
 #include "gr-base/core/animation/animation.hpp"
@@ -40,11 +40,49 @@ void Animator::Update()
 
 bool Animator::Serialize(Stream *stream)
 {
+    if (m_animation == nullptr)
+    {
+        return false;
+    }
+    
+    auto name = AssetsManager::GetAnimationName(m_animation);
+
+    auto nlen = name.size();
+    if (!stream->write(&nlen, sizeof(std::size_t)))
+    {
+        return false;
+    }
+
+    if (!stream->write(name.c_str(), nlen * sizeof(char)))
+    {
+        return false;
+    }
+
     return true;
 }
 
 bool Animator::Deserialize(Stream *stream)
 {
+    std::size_t nlen = {};
+    if (!stream->read(reinterpret_cast<char *>(&nlen), sizeof(std::size_t)))
+    {
+        return false;
+    }
+
+    std::string name(nlen, '\0');
+    if (!stream->read(name.data(), nlen * sizeof(char)))
+    {
+        return false;
+    }
+
+    auto animation = AssetsManager::FindAnimation(name);
+    if (animation != nullptr)
+    {
+        m_animation = animation;
+        return true;
+    }
+    
+    AssetsManager::LoadAnimation(name, &Animator::play, this, false);
     return true;
 }
 

@@ -9,6 +9,7 @@
 
 #include "gr-base/ecs/gameObject.hpp"
 
+#include <algorithm>
 #include <gr-render/gCommon.h>
 #include <gr-render/gShader.h>
 
@@ -37,11 +38,6 @@ Batching *Batching::Find(const std::string &name)
 
 void Batching::Render()
 {
-    if (mBatcheList.empty())
-    {
-        return;
-    }
-
     for (auto batche : mBatcheList)
     {
         batche->render();
@@ -58,16 +54,29 @@ void Batching::insert(Transform *transform, const std::vector<Material *> *mater
         return;
     }
 
-    if (index == 1)
+    /*if (index == 1)
         mInstanceSkinnedRender.emplace_back(transform, materialList, nullptr);
     else if (index == 2 && transform->getGameObject()->hasComponent<Animator>())
         mInstanceSkinnedRender.emplace_back(transform, materialList, transform->getGameObject()->getComponent<Animator>());
+    */
+    
+    renderentitylist.push_back({transform, static_cast<Animator *>(transform->getGameObject()->getComponent<Animator>()), materialList});
 
-    mInstances.emplace(transform);
+    mInstances.emplace(transform, index);
 }
 
 void Batching::erase(Transform *transform)
-{}
+{
+    auto it = mInstances.find(transform);
+    if (it == mInstances.end())
+    {
+        return;
+    }
+
+    renderentitylist.erase(std::remove(renderentitylist.begin(), renderentitylist.end(), transform), renderentitylist.end());
+
+    mInstances.erase(it);
+}
 
 void Batching::setMesh(std::vector<Mesh> *meshList)
 {
@@ -148,40 +157,38 @@ void Batching::setMesh(std::vector<Mesh> *meshList)
 
 void Batching::render()
 {
+    for (auto &&[transform, animator, materialList] : renderentitylist)
     {
-        for (auto &&[transform, materialList, animator] : mInstanceSkinnedRender)
-        {
-            auto &meshdata = mMeshData[animator == nullptr ? 0 : 1];
+        auto &meshdata = mMeshData[animator == nullptr ? 0 : 1];
             
-            if (materialList->size() != meshdata.size())
+        if (materialList->size() != meshdata.size())
+        {
+            continue;
+        }
+
+        auto matrix = transform->getGlobalMatrix();
+
+        for (std::size_t j=0;j<meshdata.size();j++)
+        {
+            auto material = (*materialList)[j];
+
+            auto shader = material->getShader();
+            if (shader == nullptr)
             {
                 continue;
             }
 
-            auto matrix = transform->getGlobalMatrix();
+            if (animator != nullptr)
+                shader->setUniform("u_boneMatrices", static_cast<Animator *>(animator)->m_FinalBoneMatrices.data());
+            shader->setUniform("u_model", &matrix);
 
-            for (std::size_t j=0;j<meshdata.size();j++)
-            {
-                auto material = (*materialList)[j];
+            shader->bind();
 
-                auto shader = material->getShader();
-                if (shader == nullptr)
-                {
-                    continue;
-                }
+            material->flush();
 
-                if (animator != nullptr)
-                    shader->setUniform("u_boneMatrices", animator->m_FinalBoneMatrices.data());
-                shader->setUniform("u_model", &matrix);
+            shader->flush();
 
-                shader->bind();
-
-                material->flush();
-
-                shader->flush();
-
-                meshdata[j].draw();
-            }
+            meshdata[j].draw();
         }
     }
 }

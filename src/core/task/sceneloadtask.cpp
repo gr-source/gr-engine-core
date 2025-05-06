@@ -1,4 +1,4 @@
-#include "gr-base/core/task/sceneTask.hpp"
+#include "gr-base/core/task/sceneloadtask.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
 
@@ -18,38 +18,38 @@
 
 #include "gr-base/core/task/taskStatus.hpp"
 
-std::mutex SceneTask::m_mutex;
+std::mutex SceneLoadTask::m_mutex;
 
-SceneTask::SceneTask(const std::string &path, SceneLoadFlags_ flags, SceneFunc func) : stream(nullptr), scene(nullptr), status(TaskStatus::NONE), m_camera(nullptr)
+SceneLoadTask::SceneLoadTask(const std::string &path, SceneLoadFlags_ flags, SceneFunc func) : stream(nullptr), scene(nullptr), status(TaskStatus::NONE), m_camera(nullptr)
 {
     if (func)
         function_list.push_back(func);
 
-    Threadpool::AddTask(&SceneTask::doInBackground, this, path, flags);
+    Threadpool::AddTask(&SceneLoadTask::doInBackground, this, path, flags);
 }
 
-void SceneTask::render()
+void SceneLoadTask::render()
 {
 }
 
-void SceneTask::addFunction(SceneFunc func)
+void SceneLoadTask::addFunction(SceneFunc func)
 {
     function_list.push_back(func);
 }
 
-TaskStatus SceneTask::getStatus() const
+TaskStatus SceneLoadTask::getStatus() const
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     return status;
 }
 
-void SceneTask::setStatus(TaskStatus s)
+void SceneLoadTask::setStatus(TaskStatus s)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     status = s;
 }
 
-void SceneTask::upload(std::string path)
+void SceneLoadTask::upload(std::string path)
 {
     auto current = Scene::AddScene(scene_name, std::move(scene));
     current->setName(scene_name);
@@ -84,7 +84,7 @@ void SceneTask::upload(std::string path)
     AssetsManager::RemoveTask(path);
 }
 
-void SceneTask::invoke(Scene *scene)
+void SceneLoadTask::invoke(Scene *scene)
 {
     for (auto func : function_list) {
         func(scene);
@@ -92,7 +92,7 @@ void SceneTask::invoke(Scene *scene)
 }
 
 /* ********** protected ********** */
-void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
+void SceneLoadTask::doInBackground(std::string path, SceneLoadFlags_ flags)
 {
 
     setStatus(TaskStatus::PROCESS);
@@ -101,7 +101,7 @@ void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
     if (!stream->is_open())
     {
         setStatus(TaskStatus::FAIL);
-        Console::LogError("[ SceneTask ] Faleid to open scene: ", path.c_str());
+        Console::LogError("[ SceneLoadTask ] Faleid to open scene: ", path.c_str());
         return AssetsManager::RemoveTask(path);
     }
 
@@ -111,11 +111,11 @@ void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
         if (!stream->read(reinterpret_cast<char *>(&header), sizeof(FileHeader)))
         {
             setStatus(TaskStatus::FAIL);
-            Console::LogError("[ SceneTask ] Failed to read binary header: %s", path.c_str());
+            Console::LogError("[ SceneLoadTask ] Failed to read binary header: %s", path.c_str());
             return AssetsManager::RemoveTask(path);
         }
 
-        Console::LogInfo("[ SceneTask ] loading scene version: %f", header.version);
+        Console::LogInfo("[ SceneLoadTask ] loading scene version: %f", header.version);
     }
 
     scene = std::make_unique<Scene>("");
@@ -127,7 +127,7 @@ void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
         if (!stream->read(reinterpret_cast<char *>(&data), sizeof(DataSegment)))
         {
             setStatus(TaskStatus::FAIL);
-            Console::LogError("[ SceneTask ] Scene file corrumped.");
+            Console::LogError("[ SceneLoadTask ] Scene file corrumped.");
             return AssetsManager::RemoveTask(path);
         }
         
@@ -178,32 +178,32 @@ void SceneTask::doInBackground(std::string path, SceneLoadFlags_ flags)
             }
         } catch (const std::exception &e)
         {
-            Console::LogError("[ SceneTask ] %s - %s", block_name, e.what());
+            Console::LogError("[ SceneLoadTask ] %s - %s", block_name, e.what());
         }
 
         if (result != 0)
         {
-            Console::LogError("[ SceneTask ] Falied to read segment data: %s code: %d", block_name, result);
+            Console::LogError("[ SceneLoadTask ] Falied to read segment data: %s code: %d", block_name, result);
         }
         
         if (stream->tellg() == nextPosition)
         {
             continue;
         }
-        Console::LogWarning("[ SceneTask ] Data segment: %s is not fully loaded.", block_name);
+        Console::LogWarning("[ SceneLoadTask ] Data segment: %s is not fully loaded.", block_name);
 
         stream->seekg(nextPosition, std::ios_base::beg);
     }
 
     setStatus(TaskStatus::SUCESS);
 
-    Console::LogInfo("[ SceneTask ] Scene loaded sucessfuly.");
+    Console::LogInfo("[ SceneLoadTask ] Scene loaded sucessfuly.");
 
-    Event::Add(&SceneTask::upload, this, path);
+    Event::Add(&SceneLoadTask::upload, this, path);
 }
 
 // TODO: Falta adicionar suporte a game object antes de deserializar
-int SceneTask::readMetadata()
+int SceneLoadTask::readMetadata()
 {
     std::size_t snsize = 0;
     if (!stream->read(reinterpret_cast<char *>(&snsize), sizeof(std::size_t))) {
@@ -239,7 +239,7 @@ int SceneTask::readMetadata()
     return 0;
 }
 
-int SceneTask::readTexture()
+int SceneLoadTask::readTexture()
 {
     std::size_t tcount = 0;
     if (!stream->read(reinterpret_cast<char *>(&tcount), sizeof(std::size_t)))
@@ -266,7 +266,7 @@ int SceneTask::readTexture()
 }
 
 // TODO: Falta ter o material se caso ela já tenha sido carregado antes
-int SceneTask::readMaterial()
+int SceneLoadTask::readMaterial()
 {
     std::size_t mcount = 0;
     if (!stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t)))
@@ -312,12 +312,12 @@ int SceneTask::readMaterial()
 }
 
 // TODO: Metodo ainda incompleto
-int SceneTask::readMesh()
+int SceneLoadTask::readMesh()
 {
     return 0;
 }
 
-int SceneTask::readObject()
+int SceneLoadTask::readObject()
 {
     std::size_t gocount = 0;
     if (!stream->read(reinterpret_cast<char *>(&gocount), sizeof(std::size_t)))
@@ -338,7 +338,7 @@ int SceneTask::readObject()
     return result;
 }
 
-int SceneTask::readObjectNode(Transform *parent, bool main)
+int SceneLoadTask::readObjectNode(Transform *parent, bool main)
 {
     std::size_t gonsize = 0;
     if (!stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
@@ -409,7 +409,7 @@ int SceneTask::readObjectNode(Transform *parent, bool main)
     return result;
 }
 
-int SceneTask::readScript()
+int SceneLoadTask::readScript()
 {
     std::size_t scount = 0;
     if (!stream->read(reinterpret_cast<char *>(&scount), sizeof(std::size_t)))
@@ -467,7 +467,7 @@ int SceneTask::readScript()
 
         if (stream->tellg() != next)
         {
-            Console::LogWarning("[ SceneTask ] %s script %s read data imcompleted!", goname.c_str(), componentName.c_str());
+            Console::LogWarning("[ SceneLoadTask ] %s script %s read data imcompleted!", goname.c_str(), componentName.c_str());
             
             stream->seekg(next, std::ios_base::beg);
         }

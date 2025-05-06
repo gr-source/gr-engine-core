@@ -12,6 +12,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "gr-base/script/default.hpp"
+
 typedef struct MeshData
 {
     grr::gVertexArray *vertexArray;
@@ -23,8 +25,21 @@ typedef struct MeshData
     grm::u32 count;
 
     void draw();
-
 } MeshData;
+
+struct RenderEntity
+{
+    Transform *transform;
+
+    Component *component;
+
+    const std::vector<Material *> *materiallist;
+
+    bool operator ==(const Transform *other) const
+    {
+        return transform == other;
+    }
+};
 
 class Batching
 {
@@ -44,9 +59,9 @@ public:
     void setMesh(std::vector<Mesh> *meshList);
 
 private:
-    std::unordered_set<Transform *> mInstances;
+    std::unordered_map<Transform *, int> mInstances;
 
-    std::vector<std::tuple<Transform *, const std::vector<Material *> *, Animator *>> mInstanceSkinnedRender;
+    std::vector<RenderEntity> renderentitylist;
 
     std::vector<MeshData> mMeshData[2];
 

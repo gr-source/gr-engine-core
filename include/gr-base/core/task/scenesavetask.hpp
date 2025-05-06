@@ -9,11 +9,11 @@
 #include <memory>
 #include <string>
 
-class SaveSceneTask
+class SceneSaveTask
 {
 public:
 
-    SaveSceneTask(const Scene *scene);
+    SceneSaveTask(const Scene *scene);
 
 private:
     const Scene *m_scene;

@@ -16,15 +16,16 @@
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include "gr-base/core/geometry/shader.hpp"
-#include "gr-base/core/geometry/shadermanager.hpp"
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/core/default.hpp"
 
-#include "gr-base/core/task/animationloadtask.hpp"
-#include "gr-base/core/task/gameObjectTask.hpp"
+#include "gr-base/core/task/animationmanager.hpp"
+#include "gr-base/core/task/shadermanager.hpp"
+
+#include "gr-base/core/task/gameobjectloadtask.hpp"
 #include "gr-base/core/task/textureloadtask.hpp"
-#include "gr-base/core/task/sceneTask.hpp"
+#include "gr-base/core/task/sceneloadtask.hpp"
 
 class AssetsManager
 {
@@ -65,6 +66,10 @@ public:
 
     static Animation *CreateAnimation(const std::string &name);
 
+    static Animation *FindAnimation(const std::string &name);
+
+    static std::string GetAnimationName(const Animation *animation);
+
     // ********** Texture ********** //
     static grr::gTexture *CreateTexture(const std::string &name);
 
@@ -94,8 +99,6 @@ public:
 
     static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
 
-    static void SetAnimationList(const std::string &path, std::function<void(Animation *)> func);
-
     static std::vector<Shader *> GetShaderList(AssetShader type, ShaderOptimize_ optimize);
 
     static std::vector<Shader *> GetShaderList(AssetShader type);
@@ -112,7 +115,8 @@ public:
     static void RemoveTask(const std::string &name);
 
 private:
-    /***************** Shader *****************/
+    static AnimationManager mAnimationManager;
+
     static ShaderManager mShaderManager;
 
     // sshader property
@@ -126,13 +130,8 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<TextureLoadTask>> mTextureLoadTaskMap;
     static std::mutex mTextureMutex;
 
-    /***************** Animation *****************/
-    static std::unordered_map<std::string, std::unique_ptr<AnimationLoadTask>> mAnimationLoadTask;
-    static std::unordered_map<std::string, std::unique_ptr<Animation>> mAnimationList;
-    static std::mutex mAnimationMutex;
-
     /***************** GameObject *****************/
-    static std::unordered_map<std::string, std::unique_ptr<GameObjectTask>> mGameObjectTaskMap;
+    static std::unordered_map<std::string, std::unique_ptr<GameObjectLoadTask>> mGameObjectTaskMap;
     static std::mutex mGameObjectTaskMutex;
 
     /***************** Mesh *****************/
@@ -146,7 +145,7 @@ private:
     static std::mutex mMaterialMutex;
 
     /***************** Scene *****************/
-    static std::unordered_map<std::string, std::unique_ptr<SceneTask>> mSceneTaskMap;
+    static std::unordered_map<std::string, std::unique_ptr<SceneLoadTask>> mSceneTaskMap;
     static std::unordered_map<std::string, std::unique_ptr<Scene>> mSceneMap;
     static std::mutex mSceneMutex;
 
@@ -221,13 +220,7 @@ inline Material *AssetsManager::CreateMaterial(const std::string &key, Args && .
 template <typename ...Args>
 void AssetsManager::LoadAnimation(const std::string &path, Args &&...args)
 {
-    std::function<void (Animation *)> func = nullptr;
-    if constexpr (sizeof...(Args) > 0)
-    {
-        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
-    }
-
-    SetAnimationList(path, func);
+    return mAnimationManager.load(path, std::forward<Args>(args)...);
 }
 
 

@@ -25,9 +25,10 @@ using SceneLoadFlags_ = uint8_t;
 
 using SceneFunc = std::function<void (Scene *)>;
 
-class SceneTask {
+class SceneLoadTask
+{
 public:
-    SceneTask(const std::string &path, SceneLoadFlags_ flags, SceneFunc func);
+    SceneLoadTask(const std::string &path, SceneLoadFlags_ flags, SceneFunc func);
 
     void render();
     

@@ -1,14 +1,6 @@
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/core/file/stream.hpp"
-#include "gr-base/core/file/file.hpp"
-
-#include "gr-base/core/binary/gHeader.hpp"
-
-#include "gr-base/core/assetsManager.hpp"
-#include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/event.hpp"
 
 #include "gr-base/script/baserender.hpp"
 #include "gr-base/script/meshRender.hpp"
@@ -234,10 +226,10 @@ std::string Scene::getName() const
     return m_name;
 }
 
-#include "gr-base/core/task/saveSceneTask.hpp"
+#include "gr-base/core/task/scenesavetask.hpp"
 void Scene::save(const std::string &path)
 {
-    SaveSceneTask saveSceneTask(this);
+    SceneSaveTask saveSceneTask(this);
 }
 
 GameObject *Scene::CreateGameObject(const std::string &name, const std::string &tag)
