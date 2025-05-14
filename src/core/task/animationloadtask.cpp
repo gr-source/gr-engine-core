@@ -11,12 +11,22 @@
 #include "gr-base/core/binary/gHeader.hpp"
 #include <cstring>
 
-AnimationLoadTask::AnimationLoadTask(const std::string &path, std::function<void (Animation *)> func)
+AnimationLoadTask::AnimationLoadTask(const std::string &path, std::function<void (Animation *)> func) : m_animation(nullptr)
 {
     if (func != nullptr)
         m_funlist.push_back(func);
 
     Threadpool::AddTask(&AnimationLoadTask::doInBackground, this, path);
+}
+
+AnimationLoadTask::~AnimationLoadTask()
+{
+    if (m_animation == nullptr)
+    {
+        return;
+    }
+
+    invoke(m_animation);
 }
 
 void AnimationLoadTask::addFunction(std::function<void (Animation *)> func)
@@ -32,13 +42,8 @@ void AnimationLoadTask::invoke(Animation *animation)
     }
 }
 
-void AnimationLoadTask::upload(Animation *animation, std::string path)
+void AnimationLoadTask::upload(std::string path)
 {
-    invoke(animation);
-
-    AssetsManager::RemoveTask(path);
-
-    Console::LogInfo("[ AnimationTask ] Animation loaded %s.", animation->getName().c_str());
 }
 
 void AnimationLoadTask::doInBackground(std::string path)
@@ -62,9 +67,9 @@ void AnimationLoadTask::doInBackground(std::string path)
         }
     }
 
-    auto animation = AssetsManager::CreateAnimation(path);
+    m_animation = AssetsManager::CreateAnimation(path);
 
-    if (!animation->deserialize(&stream))
+    if (!m_animation->deserialize(&stream))
     {
         stream.close();
         Console::LogError("[ AnimationTask ] Fail to load animation 2-%s.", path.c_str());
@@ -73,7 +78,9 @@ void AnimationLoadTask::doInBackground(std::string path)
 
     stream.close();
 
-    Event::Add(&AnimationLoadTask::upload, this, animation, path);
+    AssetsManager::RemoveTask(path);
+
+    Console::LogInfo("[ AnimationTask ] Animation loaded %s.", m_animation->getName().c_str());
 }
 
 

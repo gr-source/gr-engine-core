@@ -5,7 +5,7 @@
 
 #include <gr-render/gVertexArray.h>
 
-BatchingRender::BatchingRender(BatchingRenderFlags flags) : m_vertexBuffer(grr::gVertexArray::Create()), m_vbo(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_ebo(grr::gVertexArray::CreateBuffer(BufferType::EBO)), m_pbo(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_indexCount(0), m_flags(flags)
+BatchingRender::BatchingRender(BatchingRenderFlags flags) : m_vertexBuffer(new grr::gVertexArray()), m_vbo(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_ebo(grr::gVertexArray::CreateBuffer(BufferType::EBO)), m_pbo(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_indexCount(0), m_flags(flags)
 {
 }
 
@@ -13,7 +13,7 @@ BatchingRender::~BatchingRender()
 {
     if (m_vertexBuffer)
     {
-        grr::gVertexArray::Destroy(m_vertexBuffer);
+        delete m_vertexBuffer;
     }
 
     if (m_vbo)

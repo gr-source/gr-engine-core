@@ -10,15 +10,18 @@ class AnimationLoadTask
 {
 public:
     AnimationLoadTask(const std::string &path, std::function<void (Animation *)> func = nullptr);
+    ~AnimationLoadTask();
 
     void addFunction(std::function<void (Animation *)> func);
 
 private:
     std::vector<std::function<void (Animation *)>> m_funlist;
 
+    Animation *m_animation;
+
     void invoke(Animation *animation);
 
-    void upload(Animation *animation, std::string path);
+    void upload(std::string path);
 
 protected:
     void doInBackground(std::string path);

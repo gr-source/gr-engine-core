@@ -203,7 +203,7 @@ void Skybox::create_cube_mesh()
     m_ebo = grr::gVertexArray::CreateBuffer(BufferType::EBO, indices.data(), indices.size() * sizeof(std::uint32_t));
     assert(m_vbo && "Falied to create ebo.");
 
-    m_vertexarray = grr::gVertexArray::Create();
+    m_vertexarray = new grr::gVertexArray();
     assert(m_vertexarray && "Falied to create vao.");
 
     m_vertexarray->bind();

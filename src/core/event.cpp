@@ -20,7 +20,8 @@ void Event::Update()
         m_events.clear();
     }
 
-    for (const auto& event : events) {
+    for (const auto& event : events)
+    {
         try {
             event();
         } catch (const std::exception& e)

@@ -93,7 +93,7 @@ void Batching::setMesh(std::vector<Mesh> *meshList)
         auto vertices = mesh.getVertices();
 
         auto &meshRender = mMeshData[0][i];
-        meshRender.vertexArray = grr::gVertexArray::Create();
+        meshRender.vertexArray = new grr::gVertexArray();
         meshRender.vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
 
         meshRender.count = vertices.size();
@@ -122,7 +122,7 @@ void Batching::setMesh(std::vector<Mesh> *meshList)
         auto vertices = mesh.getVertices();
 
         auto &meshRender = mMeshData[1][i];
-        meshRender.vertexArray = grr::gVertexArray::Create();
+        meshRender.vertexArray = new grr::gVertexArray();
         meshRender.vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
         if (bHasBone)
         {
