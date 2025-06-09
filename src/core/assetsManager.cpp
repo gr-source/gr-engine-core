@@ -21,6 +21,8 @@
 
 AnimationManager AssetsManager::mAnimationManager;
 
+FilmboxManager AssetsManager::mFilmboxManager;
+
 ShaderManager AssetsManager::mShaderManager;
 
 // sshader property
@@ -66,9 +68,10 @@ void AssetsManager::Shutdown()
 #include "gr-base/core/window.hpp"
 #include <imgui.h>
 
-void AssetsManager::Render() {
-    auto bCreatMenu = !mSceneTaskMap.empty();
-    if (!bCreatMenu)
+void AssetsManager::Render()
+{
+    auto has_task_in_filmboxmanager = mFilmboxManager.has_task();
+    if (!has_task_in_filmboxmanager)
     {
         return;
     }
@@ -79,11 +82,13 @@ void AssetsManager::Render() {
     ImGui::SetNextWindowSize(beginSize);
     ImGui::SetNextWindowPos(ImVec2{static_cast<float>(mainWindowSize.x), static_cast<float>(mainWindowSize.y)} - (beginSize / 2.0f));
 
-    ImGui::Begin("TaskList", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings);
-
-    for (auto &&[name, sceneTask] : mSceneTaskMap)
+    if (ImGui::Begin("Task", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings))
     {
-        sceneTask->render();
+        if (has_task_in_filmboxmanager)
+        {
+
+            mFilmboxManager.render();
+        }
     }
 
     ImGui::End();
@@ -398,16 +403,11 @@ void AssetsManager::RemoveTask(const std::string &name)
     {
         return;
     }
-    /*{
-        std::lock_guard<std::mutex> lock(mAnimationMutex);
-        auto it = mAnimationLoadTask.find(name);
-        if (it != mAnimationLoadTask.end())
-        {
-            mAnimationLoadTask.erase(it);
-            return;
-        }
+
+    if (mFilmboxManager.remove_task(name))
+    {
+        return;
     }
-    */
 }
 
 void AssetsManager::SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void(Scene *)> func)

@@ -9,14 +9,21 @@
 #include <functional>
 #include <memory>
 
-class Filmbox {
+class Filmbox
+{
 public:
-    Filmbox() = delete;
-    ~Filmbox() = delete;
+    Filmbox();
+    ~Filmbox();
 
-    static void Load(const std::string &path, std::function<void(std::unique_ptr<FbxScene>)> func, bool bCallInMainThread = true);
+    void load(const std::string &path);
+
+    FbxScene *get_scene() const;
+
+    std::unique_ptr<FbxScene> get_scene();
 
 private:
+    std::unique_ptr<FbxScene> m_scene;
+
     static void SceneLoader(const aiScene *scene, FbxScene *fbxScene);
 
     static void ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap);

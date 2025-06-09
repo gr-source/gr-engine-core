@@ -11,6 +11,7 @@
 #include <gr-math/matrix4x4.hpp>
 #include <gr-math/quaternion.hpp>
 #include <gr-math/vector3.hpp>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 
@@ -18,39 +19,45 @@
 
 #define NORM(n) n > 6.0f ? n / 1e2f : n
 
-void Filmbox::Load(const std::string &path, std::function<void(std::unique_ptr<FbxScene>)> func, bool bCallInMainThread) {
-    if (!File::Exists(path)) {
-        return Console::LogError("[ Filmbox ] Falied open file: %s", path);
-    }
+Filmbox::Filmbox() : m_scene(nullptr)
+{
+}
 
+Filmbox::~Filmbox()
+{}
+
+void Filmbox::load(const std::string &path)
+{
     Assimp::Importer importer;
 
     auto scene = importer.ReadFile(path.c_str(), aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_PopulateArmatureData | aiProcess_Triangulate);
 
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        return Console::LogError("[ Filmbox ] Falied to load scene: %s", importer.GetErrorString());
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+    {
+        throw std::runtime_error("fail to load scene.");
     }
 
-    auto m_fbxScene = std::make_unique<FbxScene>(scene->mName.C_Str());
+    m_scene = std::make_unique<FbxScene>(scene->mName.C_Str());
 
-    SceneLoader(scene, &(*m_fbxScene));
+    SceneLoader(scene, m_scene.get());
 
     importer.FreeScene();
-
-    Console::LogInfo("[ Filmbox ] loaded sucess full.");
-
-    if (!func) {
-        return Console::LogWarning("[ Filmbox ] Callfunction is not valid.");
-    }
-
-    // if (bCallInMainThread)
-    //     return Event::Add(func, std::move(m_fbxScene));
-
-    func(std::move(m_fbxScene));
 }
 
-void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene) {
-    if (scene->HasMaterials()) {
+FbxScene *Filmbox::get_scene() const
+{
+    return m_scene.get();
+}
+
+std::unique_ptr<FbxScene> Filmbox::get_scene()
+{
+    return std::move(m_scene);
+}
+
+void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene)
+{
+    if (scene->HasMaterials())
+    {
         Console::log(Log::WARNING, "Loading material...");
         LoadMaterial(scene, fbxScene);
     }
@@ -58,12 +65,14 @@ void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene) {
     std::unordered_map<std::string, Matrix4x4> boneMap;
     std::unordered_map<std::string, int> boneIndex;
 
-    if (scene->HasMeshes()) {
+    if (scene->HasMeshes())
+    {
         Console::log(Log::WARNING, "Loading Mesh...");
         LoadMesh(scene, fbxScene, boneMap, boneIndex);
     }
 
-    if (scene->HasAnimations()) {
+    if (scene->HasAnimations())
+    {
         Console::log(Log::WARNING, "Loading Animations...");
         LoadAnimation(scene, fbxScene, boneIndex);
     }
@@ -73,7 +82,8 @@ void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene) {
     auto mRootNode = scene->mRootNode;
     auto& fRootNode = fbxScene->m_rootNode;
 
-    for (auto i=0;i<mRootNode->mNumChildren;++i) {
+    for (std::uint32_t i=0;i<mRootNode->mNumChildren;++i)
+    {
         ProcessNode(mRootNode->mChildren[i], fRootNode, scene, fbxScene, boneMap);
     }
 }

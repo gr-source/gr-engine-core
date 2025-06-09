@@ -19,8 +19,6 @@
 
 class ModelHandle {
 public:
-    static void ImportFBX(const std::string &path);
-
     static void Render();
 
     ModelHandle(const std::string &name, std::unique_ptr<FbxScene> scene);

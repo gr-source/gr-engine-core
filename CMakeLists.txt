@@ -110,6 +110,9 @@ set(task
 
     src/core/task/shaderloadtask.cpp
     src/core/task/shadermanager.cpp
+
+    src/core/task/filmboxmanager.cpp
+    src/core/task/filmboxtask.cpp
 )
 
 find_package(assimp QUIET)

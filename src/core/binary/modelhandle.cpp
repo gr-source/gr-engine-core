@@ -43,12 +43,6 @@ std::mutex ModelHandle::mutex;
 
 std::atomic<bool> ModelHandle::bHasTasks = false;
 
-void ModelHandle::ImportFBX(const std::string &path) {
-    std::function<void (std::unique_ptr<FbxScene>)> func = std::bind(&ModelHandle::SetupFBX, path, std::placeholders::_1);
-    if (func)
-        Threadpool::AddTask(&Filmbox::Load, path, func, true);
-}
-
 void ModelHandle::Render()
 {
     if (!bHasTasks)
