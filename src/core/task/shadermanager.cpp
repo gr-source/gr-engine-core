@@ -1,6 +1,7 @@
 #include "gr-base/core/task/shadermanager.hpp"
 
 #include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/core/thread/taskmanager.hpp"
 
 #include <array>
 #include <cstddef>
@@ -33,7 +34,7 @@ std::array<const char *, IShaderOptmize> ShaderOptimizeName = {
     "ANIMATION_INSTANCED",
 };
 
-Shader *ShaderManager::create(AssetShader type, ShaderOptimize_ optmize, const std::string &name)
+grr::gShader *ShaderManager::create(AssetShader type, ShaderOptimize_ optmize, const std::string &name)
 {
     std::unique_lock<std::mutex> lock(mutex);
 
@@ -41,7 +42,7 @@ Shader *ShaderManager::create(AssetShader type, ShaderOptimize_ optmize, const s
         auto it = ShaderMap[type].find(name);
         if (it == ShaderMap[type].end())
         {
-            auto &&[its, added] = ShaderMap[type].emplace(name, std::array<std::unique_ptr<Shader>, IShaderOptmize>());
+            auto &&[its, added] = ShaderMap[type].emplace(name, std::array<std::unique_ptr<grr::gShader>, IShaderOptmize>());
             for (std::size_t i=0;i<IShaderOptmize;i++)
                 its->second[i] = nullptr;
         }
@@ -50,7 +51,7 @@ Shader *ShaderManager::create(AssetShader type, ShaderOptimize_ optmize, const s
 
     bool bexists = ShaderOpt[optmize] != nullptr;
 
-    ShaderOpt[optmize] = std::make_unique<Shader>(type, optmize);
+    ShaderOpt[optmize] = std::make_unique<grr::gShader>();
 
     if (!bexists)
     {
@@ -67,18 +68,35 @@ Shader *ShaderManager::create(AssetShader type, ShaderOptimize_ optmize, const s
     return &(*ShaderOpt[optmize]);
 }
 
-Shader *ShaderManager::find(ShaderOptimize optmize, const std::string &name) const
+void ShaderManager::destroy(grr::gShader *shader)
 {
-    std::lock_guard<std::mutex> lock(mutex);
-    auto it = ShaderTypeMap.find(name);
-    if (it == ShaderTypeMap.end())
+    std::cout << "destroy: " << get_shader_name(shader) << std::endl;
+}
+
+grr::gShader *ShaderManager::find(ShaderOptimize optmize, const std::string &name) const
+{
+    std::unique_lock<std::mutex> lock(mutex);
+    auto it_type = ShaderTypeMap.find(name);
+    if (it_type == ShaderTypeMap.end())
     {
         return nullptr;
     }
-    return &(*ShaderMap[it->second].at(name)[optmize]);
+
+    auto it = ShaderMap[it_type->second].find(name);
+    if (it == ShaderMap[it_type->second].end())
+    {
+        return nullptr;
+    }
+
+    if (it->second[optmize] == nullptr)
+    {
+        return nullptr;
+    }
+
+    return &(*it->second[optmize]);
 }
 
-const char *ShaderManager::get_shader_name(const Shader *shader)
+const char *ShaderManager::get_shader_name(const grr::gShader *shader)
 {
     std::lock_guard<std::mutex> lock(mutex);
     auto it = ShaderNameMap.find(shader);
@@ -89,32 +107,37 @@ const char *ShaderManager::get_shader_name(const Shader *shader)
     return it->second.c_str();
 }
 
-std::vector<Shader *> ShaderManager::get_shader(AssetShader type, ShaderOptimize_ optmize) const
+std::vector<grr::gShader *> ShaderManager::get_shader(AssetShader_ type, ShaderOptimize_ optmize) const
 {
     std::lock_guard<std::mutex> lock(mutex);
     return ShaderList[type][optmize];
 }
 
-std::vector<Shader *> ShaderManager::get_shader(AssetShader type) const
+std::vector<grr::gShader *> ShaderManager::get_shader(AssetShader_ type) const
 {
     std::lock_guard<std::mutex> lock(mutex);
     return ShaderListFromType[type];
 }
 
-void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::string &path, Shader *shader, std::function<void(grr::gShader *)> func)
+void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func)
 {
     std::unique_lock<std::mutex> lock(mutex);
+
     // check has task
     {
         auto it = ShaderTaskMap.find(path);
         if (it != ShaderTaskMap.end())
         {
             if (func == nullptr)
-            {
                 return;
-            }
 
-            return it->second->addFunction(func);
+            lock.unlock();
+
+            dynamic_cast<ShaderLoadTask *>(&(*it->second))->addFunction(func);
+
+            lock.lock();
+
+            return;
         }
     }
 
@@ -130,7 +153,13 @@ void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::strin
                 {
                     auto &&[t, o] = itsw->second;
 
-                    ShaderTaskMap.emplace(path, std::make_unique<ShaderLoadTask>(o, path, func, shader));
+                    lock.lock();
+
+                    auto info = TaskManager::Add<ShaderLoadTask>(o, path, func, shader);
+
+                    lock.unlock();
+
+                    ShaderTaskMap.emplace(path, info->task);
                     return;
                 }
             } else
@@ -139,13 +168,23 @@ void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::strin
                 if (its != ShaderMap[it->second].end())
                 {
                     if (func != nullptr && its->second[optmize] != nullptr)
-                        return func(&(*its->second[optmize]));
+                    {
+                        auto shader = &(*its->second[optmize]);
+
+                        lock.unlock();
+
+                        return func(shader);
+                    }
                 }
             }
         }
     }
 
-    ShaderTaskMap.emplace(path, std::make_unique<ShaderLoadTask>(optmize, path, func, shader));
+    lock.unlock();
+    auto info = TaskManager::Add<ShaderLoadTask>(optmize, path, func, shader);
+    lock.lock();
+
+    ShaderTaskMap.emplace(path, info->task);
 }
 
 bool ShaderManager::remove_task(const std::string &name)

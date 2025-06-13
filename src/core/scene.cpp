@@ -12,6 +12,8 @@
 
 #include "gr-base/ecs/componentRegistry.hpp"
 
+#include "gr-base/core/task/runtime/scenesavetask.hpp"
+
 #include <algorithm>
 
 std::unordered_map<std::string, std::unique_ptr<Scene>> Scene::m_scenes;
@@ -226,7 +228,6 @@ std::string Scene::getName() const
     return m_name;
 }
 
-#include "gr-base/core/task/scenesavetask.hpp"
 void Scene::save(const std::string &path)
 {
     SceneSaveTask saveSceneTask(this);

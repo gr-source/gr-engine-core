@@ -1,7 +1,6 @@
 #pragma once
 
-#include "gr-base/core/geometry/shader.hpp"
-#include "gr-base/core/task/shaderloadtask.hpp"
+#include "gr-base/core/task/runtime/shaderloadtask.hpp"
 
 #include <array>
 #include <unordered_map>
@@ -17,17 +16,19 @@ public:
     ShaderManager();
     ~ShaderManager();
 
-    Shader *create(AssetShader type, ShaderOptimize_ optmize, const std::string &name);
+    grr::gShader *create(AssetShader type, ShaderOptimize_ optmize, const std::string &name);
 
-    Shader *find(ShaderOptimize optmize, const std::string &name) const;
+    void destroy(grr::gShader *shader);
 
-    const char *get_shader_name(const Shader *shader);
+    grr::gShader *find(ShaderOptimize optmize, const std::string &name) const;
 
-    std::vector<Shader *> get_shader(AssetShader type, ShaderOptimize_ optmize) const;
+    const char *get_shader_name(const grr::gShader *shader);
 
-    std::vector<Shader *> get_shader(AssetShader type) const;
+    std::vector<grr::gShader *> get_shader(AssetShader_ type, ShaderOptimize_ optmize) const;
 
-    void create_shader_task(ShaderOptimize_ optmize, const std::string &path, Shader *shader, std::function<void(grr::gShader *)> func);
+    std::vector<grr::gShader *> get_shader(AssetShader_ type) const;
+
+    void create_shader_task(ShaderOptimize_ optmize, const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func);
 
     bool remove_task(const std::string &name);
 
@@ -35,19 +36,19 @@ public:
 private:
 
 protected:
-    std::unordered_map<std::string, std::array<std::unique_ptr<Shader>, IShaderOptmize>> ShaderMap[IAssetShaderCount];
+    std::unordered_map<std::string, std::array<std::unique_ptr<grr::gShader>, IShaderOptmize>> ShaderMap[IAssetShaderCount];
 
-    std::unordered_map<const Shader *, std::string> ShaderNameMap;
+    std::unordered_map<const grr::gShader *, std::string> ShaderNameMap;
 
-    std::vector<Shader *> ShaderList[IAssetShaderCount][IShaderOptmize];
+    std::vector<grr::gShader *> ShaderList[IAssetShaderCount][IShaderOptmize];
 
-    std::unordered_map<std::string, std::unique_ptr<ShaderLoadTask>> ShaderTaskMap;
+    std::unordered_map<std::string, std::shared_ptr<AsyncTask>> ShaderTaskMap;
 
     std::unordered_map<std::string, AssetShader_> ShaderTypeMap;
 
-    std::vector<Shader *> ShaderListFromType[IAssetShaderCount];
+    std::vector<grr::gShader *> ShaderListFromType[IAssetShaderCount];
 
-    std::unordered_map<Shader *, std::tuple<AssetShader_, ShaderOptimize_>> ShaderInfo;
+    std::unordered_map<grr::gShader *, std::tuple<AssetShader_, ShaderOptimize_>> ShaderInfo;
 };
 
 

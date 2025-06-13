@@ -29,6 +29,8 @@ protected:
 
     int writeMetadata();
 
+    int write_shader();
+
     int writeTexture();
 
     int writeMaterial();

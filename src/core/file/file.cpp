@@ -14,7 +14,8 @@ std::string File::m_userPath;
 
 std::stringstream File::m_error;
 
-void File::SetCurrentProject(const std::string &path) {
+void File::SetCurrentProject(const std::string &path)
+{
     m_currentPath = path;
 }
 
@@ -159,6 +160,9 @@ void File::rename(const std::string &from, const std::string &to) {
 }
 
 // ********** gfile ********** //
+
+std::string gfile::AssetStreamPath;
+
 std::string gfile::create_temp_file(const std::string &name)
 {
     return std::filesystem::temp_directory_path().string() + "/" + name;

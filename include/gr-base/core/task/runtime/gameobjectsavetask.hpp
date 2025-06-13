@@ -11,6 +11,7 @@
 class GameObjectSaveTask
 {
 public:
+    GameObjectSaveTask() = delete;
     GameObjectSaveTask(const GameObject *go, std::string path);
 
 private:

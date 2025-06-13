@@ -18,6 +18,8 @@ public:
 
     void render();
 
+    void save();
+
 private:
     std::vector<std::unique_ptr<GameObject>> m_objectlist;
 
@@ -40,6 +42,8 @@ private:
     void load_object(const FbxScene *scene);
 
     GameObject *create_from(const FbxNode &node, Transform *parent = nullptr);
+
+    void generateMesh(const FbxNode *node, GameObject *go);
 };
 
 

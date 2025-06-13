@@ -82,13 +82,20 @@ void AssetsManager::Render()
     ImGui::SetNextWindowSize(beginSize);
     ImGui::SetNextWindowPos(ImVec2{static_cast<float>(mainWindowSize.x), static_cast<float>(mainWindowSize.y)} - (beginSize / 2.0f));
 
-    if (ImGui::Begin("Task", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings))
+    bool isOpen = true;
+
+    if (ImGui::Begin("Task", &isOpen, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings))
     {
         if (has_task_in_filmboxmanager)
         {
 
             mFilmboxManager.render();
         }
+    }
+
+    if (!isOpen)
+    {
+        mFilmboxManager.clear();
     }
 
     ImGui::End();
@@ -115,7 +122,7 @@ grr::gShader *AssetsManager::FindShader(ShaderOptimize optmize, const std::strin
 
 std::string AssetsManager::GetShaderName(grr::gShader *shader)
 {
-    auto name = mShaderManager.get_shader_name(static_cast<const Shader *>(shader));
+    auto name = mShaderManager.get_shader_name(shader);
     if (name == nullptr)
     {
         throw std::runtime_error("[ AssetsManager.Shader ] Fail to get shader name, pointer is not valid.");
@@ -125,7 +132,7 @@ std::string AssetsManager::GetShaderName(grr::gShader *shader)
 
 void AssetsManager::RemoveShader(grr::gShader *shader)
 {
-    std::cout << "Remove: " << GetShaderName(shader) << std::endl;
+    return mShaderManager.destroy(shader);
 }
 
 grr::gTexture *AssetsManager::CreateTexture(const std::string &name) {
@@ -310,12 +317,12 @@ std::string AssetsManager::GetAnimationName(const Animation *animation)
     return name == nullptr ? "" : name;
 }
 
-std::vector<Shader *> AssetsManager::GetShaderList(AssetShader type, ShaderOptimize_ optimize)
+std::vector<grr::gShader *> AssetsManager::GetShaderList(AssetShader_ type, ShaderOptimize_ optimize)
 {
     return mShaderManager.get_shader(type, optimize);
 }
 
-std::vector<Shader *> AssetsManager::GetShaderList(AssetShader type)
+std::vector<grr::gShader *> AssetsManager::GetShaderList(AssetShader_ type)
 {
     return mShaderManager.get_shader(type);
 }

@@ -1,10 +1,11 @@
-#include "gr-base/core/task/scenesavetask.hpp"
+#include "gr-base/core/task/runtime/scenesavetask.hpp"
 
 #include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/file/file.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
@@ -63,15 +64,33 @@ int SceneSaveTask::writeData()
 
     // metadata
     {
-        if (writeMetadata() != 0) {
+        if (writeMetadata() != 0)
+        {
             return 1;
         }
         
         DataSegment dataSegment = {HeaderType::METADATA, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false)) {
+        if (!m_stream->writeS(&dataSegment, 1, false))
+        {
             return 2;
         }
     
+        m_stream->flush();
+    }
+
+    // shader
+    {
+        if (write_shader() != 0)
+        {
+            return 2;
+        }
+
+        DataSegment dataSegment = {HeaderType::SHADER, static_cast<std::size_t>(m_stream->getDataSize())};
+        if (!m_stream->writeS(&dataSegment, 1, false))
+        {
+            return 4;
+        }
+
         m_stream->flush();
     }
 
@@ -184,6 +203,42 @@ int SceneSaveTask::writeMetadata()
     }
     m_scriptCache.clear();
     
+    return 0;
+}
+
+int SceneSaveTask::write_shader()
+{
+    for (std::size_t i=0;i<IAssetShaderCount;i++)
+    {
+        for (std::size_t j=0;j<IShaderOptmize;j++)
+        {
+            auto shaderList = AssetsManager::GetShaderList(i, j);
+
+            auto size = shaderList.size();
+            if (!m_stream->write(&size, sizeof(std::size_t)))
+            {
+                return 3;
+            }
+
+            for (auto &shader : shaderList)
+            {
+
+                auto name = AssetsManager::GetShaderName(shader);
+
+                auto len = name.length();
+                if (!m_stream->write(&len, sizeof(std::size_t)))
+                {
+                    return 4;
+                }
+
+                if (!m_stream->write(name.c_str(), len * sizeof(char)))
+                {
+                    return 5;
+                }
+            }
+        }
+    }
+
     return 0;
 }
 

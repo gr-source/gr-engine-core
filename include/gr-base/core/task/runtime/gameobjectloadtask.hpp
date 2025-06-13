@@ -1,12 +1,12 @@
 #pragma once
 
-#include "taskStatus.hpp"
-
 #include "gr-base/core/file/default.hpp"
 
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/script/default.hpp"
+
+#include "default.hpp"
 
 using GameObjectFunc = std::function<void (GameObject *)>;
 

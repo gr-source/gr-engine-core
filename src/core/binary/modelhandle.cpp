@@ -6,8 +6,9 @@
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/geometry/shader.hpp"
-#include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/window.hpp"
+
+#include "gr-base/core/thread/threadpool.hpp"
 
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshFilter.hpp"
@@ -24,7 +25,8 @@
 #include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/file/file.hpp"
 
-#include "gr-base/core/task/animationsavetask.hpp"
+#include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
+#include "gr-base/core/task/runtime/animationsavetask.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
 
@@ -143,7 +145,6 @@ ModelHandle::ModelHandle(const std::string &name, std::unique_ptr<FbxScene> scen
     generateAnimation(scene.get());
 }
 
-#include "gr-base/core/task/gameobjectsavetask.hpp"
 void ModelHandle::run()
 {
     saveNode();
@@ -355,12 +356,15 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
         }
     }
 
+    // AssetsManager::LoadShader(m_bones.empty() ? ShaderOptimize_DYNAMIC : ShaderOptimize_ANIMATION_DYNAMIC, File::GetAsset("/shader/model/simple_model.glsl"), &Material::setShader, material);
+
+    /*
     for (auto &fbxMaterial : materialList) {
         auto material = renderer->createMaterial(fbxMaterial.getName());
 
         if (material->getShader() == nullptr)
         {
-            AssetsManager::LoadShader(m_bones.empty() ? ShaderOptimize_DYNAMIC : ShaderOptimize_ANIMATION_DYNAMIC, File::GetAsset("/shader/model/simple_model.glsl"), &Material::setShader, material);
+
         }
 
         for (auto &&[type, path] : fbxMaterial.getTextures()) {
@@ -373,6 +377,7 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
             }
         }
     }
+    */
 }
 
 void ModelHandle::generateAnimation(FbxScene *fbxScene)

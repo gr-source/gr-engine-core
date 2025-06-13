@@ -17,14 +17,14 @@ constexpr auto IAssetShaderCount = AssetShader_Count;
 
 enum ShaderOptimize : ShaderOptimize_
 {
-    ShaderOptimize_None             = 0,
-    ShaderOptimize_DYNAMIC             = 1,
-    ShaderOptimize_STATIC              = 2,
-    ShaderOptimize_INSTANCED_DYNAMIC   = 3,
-    ShaderOptimize_INSTANCED_STATIC    = 4,
-    ShaderOptimize_ANIMATION_DYNAMIC   = 5,
-    ShaderOptimize_ANIMATION_STATIC    = 6,
-    ShaderOptimize_ANIMATION_INSTANCED = 7,
+    ShaderOptimize_None                 = 0,
+    ShaderOptimize_DYNAMIC              = 1,
+    ShaderOptimize_STATIC               = 2,
+    ShaderOptimize_INSTANCED_DYNAMIC    = 3,
+    ShaderOptimize_INSTANCED_STATIC     = 4,
+    ShaderOptimize_ANIMATION_DYNAMIC    = 5,
+    ShaderOptimize_ANIMATION_STATIC     = 6,
+    ShaderOptimize_ANIMATION_INSTANCED  = 7,
     ShaderOptimize_Count
 };
 

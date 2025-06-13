@@ -1,10 +1,10 @@
-#include "gr-base/core/task/sceneloadtask.hpp"
+#include "gr-base/core/task/runtime/sceneloadtask.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/core/file/stream.hpp"
 
-#include "gr-base/core/threadpool.hpp"
+#include "gr-base/core/thread/threadpool.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
@@ -15,8 +15,6 @@
 #include "gr-base/script/camera.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
-
-#include "gr-base/core/task/taskStatus.hpp"
 
 std::mutex SceneLoadTask::m_mutex;
 
@@ -94,7 +92,6 @@ void SceneLoadTask::invoke(Scene *scene)
 /* ********** protected ********** */
 void SceneLoadTask::doInBackground(std::string path, SceneLoadFlags_ flags)
 {
-
     setStatus(TaskStatus::PROCESS);
 
     stream = std::make_shared<Stream>(path, std::ios_base::in | std::ios_base::binary);
@@ -152,6 +149,10 @@ void SceneLoadTask::doInBackground(std::string path, SceneLoadFlags_ flags)
                 case HeaderType::METADATA:
                     if (flags & SceneLoadFlags_Metadata)
                         result = readMetadata();
+                    break;
+                case HeaderType::SHADER:
+                    if (flags & SceneLoadFlags_Shader)
+                        result = read_shader();
                     break;
                 case HeaderType::TEXTURE:
                     if (flags & SceneLoadFlags_Texture)
@@ -239,6 +240,40 @@ int SceneLoadTask::readMetadata()
     return 0;
 }
 
+int SceneLoadTask::read_shader()
+{
+    for (std::size_t i=0;i<IAssetShaderCount;i++)
+    {
+        for (std::size_t j=0;j<IShaderOptmize;j++)
+        {
+            std::size_t size = {};
+            if (!stream->read(reinterpret_cast<char *>(&size), sizeof(std::size_t)))
+            {
+                return 3;
+            }
+
+            for (std::size_t i=0;i<size;i++)
+            {
+                std::size_t len = {};
+                if (!stream->read(reinterpret_cast<char *>(&len), sizeof(std::size_t)))
+                {
+                    return 4;
+                }
+
+                std::string name(len, '\0');
+                if (!stream->read(name.data(), len * sizeof(char)))
+                {
+                    return 5;
+                }
+
+                AssetsManager::LoadShader(j, name);
+            }
+        }
+    }
+
+    return 0;
+}
+
 int SceneLoadTask::readTexture()
 {
     std::size_t tcount = 0;
@@ -299,7 +334,7 @@ int SceneLoadTask::readMaterial()
         auto material = AssetsManager::FindMaterial(name);
         if (material == nullptr)
         {
-            material = AssetsManager::CreateMaterial(name);
+            material = AssetsManager::CreateMaterial(name, nullptr);
             material->deserialize(stream.get());
         }
 

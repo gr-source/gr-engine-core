@@ -5,6 +5,7 @@
 #include <array>
 
 #include <gr-render/gRender.h>
+#include <unordered_map>
 
 class Stream;
 
@@ -17,7 +18,8 @@ typedef struct
 class Material
 {
 public:
-    Material();
+    Material() = delete;
+    Material(grr::gShader *shader);
     ~Material();
     
     void setTexture(int idx, grr::gTexture *texture);
@@ -46,9 +48,16 @@ public:
     void flush() const;
 
 private:
+    std::unordered_map<std::string, std::tuple<void *, std::size_t>> m_field_data;
+
+
+    std::vector<std::tuple<void *, int>> m_field_list;
+
+    /*
     std::vector<std::tuple<int, const void *>> m_uniformList;
     
     std::unordered_map<std::string, void *> m_uniformMap;
+    */
     
     std::array<grr::gTexture *, 10> m_textures;
 
@@ -62,7 +71,7 @@ private:
 template <typename T>
 inline T *Material::getValue(const std::string &name)
 {
-    return reinterpret_cast<T *>(m_uniformMap[name]);
+    return reinterpret_cast<T *>(std::get<0>(m_field_data[name]));
 }
 
 template <typename T>

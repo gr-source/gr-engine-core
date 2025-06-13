@@ -23,9 +23,9 @@
 #include "gr-base/core/task/animationmanager.hpp"
 #include "gr-base/core/task/shadermanager.hpp"
 
-#include "gr-base/core/task/gameobjectloadtask.hpp"
-#include "gr-base/core/task/textureloadtask.hpp"
-#include "gr-base/core/task/sceneloadtask.hpp"
+#include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
+#include "gr-base/core/task/runtime/textureloadtask.hpp"
+#include "gr-base/core/task/runtime/sceneloadtask.hpp"
 
 #include "gr-base/core/task/filmboxmanager.hpp"
 
@@ -47,7 +47,7 @@ public:
     static void LoadShader(const std::string &path, grr::gShader *shader, Args &&...args);
 
     template <typename ...Args>
-    static void LoadShader(ShaderOptimize optimize, const std::string &path, Args &&...args);
+    static void LoadShader(ShaderOptimize_ optimize, const std::string &path, Args &&...args);
 
     static grr::gShader *CreateShader(AssetShader type, ShaderOptimize_ optmize, const std::string &name);
 
@@ -104,9 +104,9 @@ public:
 
     static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
 
-    static std::vector<Shader *> GetShaderList(AssetShader type, ShaderOptimize_ optimize);
+    static std::vector<grr::gShader *> GetShaderList(AssetShader_ type, ShaderOptimize_ optimize);
 
-    static std::vector<Shader *> GetShaderList(AssetShader type);
+    static std::vector<grr::gShader *> GetShaderList(AssetShader_ type);
 
     template <typename ...Args>
     static Material *CreateMaterial(const std::string &key, Args &&...args);
@@ -202,7 +202,7 @@ inline void AssetsManager::LoadShader(const std::string &path, grr::gShader *sha
 }
 
 template <typename... Args>
-inline void AssetsManager::LoadShader(ShaderOptimize optimize, const std::string &path, Args &&...args)
+inline void AssetsManager::LoadShader(ShaderOptimize_ optimize, const std::string &path, Args &&...args)
 {
     std::function<void(grr::gShader *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)

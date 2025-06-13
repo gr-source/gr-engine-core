@@ -8,16 +8,14 @@
 
 #include <gr-render/gShader.h>
 
-Material::Material() : m_shader(nullptr)
+Material::Material(grr::gShader *shader) : m_shader(shader)
 {
-    for (int i=0;i<10;i++)
-    {
-        m_textures[i] = nullptr;
-    }
+    m_textures.fill(nullptr);
 }
 
 Material::~Material()
 {
+    /*
     for (auto &&[name, ptr] : m_uniformMap)
     {
         if (ptr != nullptr)
@@ -25,6 +23,7 @@ Material::~Material()
             std::free(ptr);
         }
     }
+    */
 }
 
 void Material::setTexture(int idx, grr::gTexture *texture)
@@ -49,8 +48,8 @@ grr::gShader *Material::getShader() const
 
 void Material::setShader(grr::gShader *shader)
 {
-
     m_shader = shader;
+    /*
 
     std::vector<std::tuple<std::string, std::unique_ptr<uint8_t>>> temp;
 
@@ -71,6 +70,7 @@ void Material::setShader(grr::gShader *shader)
 
         Console::LogError("[ Material ] Fail to set value: %s", name.c_str());
     }
+    */
 }
 
 void Material::serialize(Stream *stream) const
@@ -140,13 +140,13 @@ void Material::serialize(Stream *stream) const
     }
 
     // write shader uniform
-    auto usize = m_uniformList.size();
+    auto usize = m_field_list.size();
     if (!stream->write(&usize, sizeof(std::size_t)))
     {
         return;
     }
-    
-    for (auto &&[id, data] : m_uniformList)
+
+    for (auto &&[data, id] : m_field_list)
     {
         auto &uniform = m_shader->getUniform()[id];
 
@@ -184,7 +184,6 @@ void Material::deserialize(Stream *stream)
         return;
     }
 
-    std::string shader_path;
     if (hasShader)
     {
         std::size_t nsize = 0;
@@ -198,9 +197,6 @@ void Material::deserialize(Stream *stream)
         {
             return;
         }
-
-        shader_path = shader_name;
-
     }
 
     std::size_t tCount = 0;
@@ -265,24 +261,13 @@ void Material::deserialize(Stream *stream)
             return;
         }
 
-        auto it = m_uniformMap.find(name);
-        if (it != m_uniformMap.end())
-        {
-            std::memcpy(it->second, data, stride);
-        } else
-        {
-            auto ptr = std::malloc(stride);
-            
-            std::memcpy(ptr, data, stride);
-            
-            m_uniformMap.emplace(name, ptr);
-        }
+        internal_set_value(name.c_str(), 1, data);
     }
 }
 
 void Material::flush() const
 {
-    for (auto &&[id, data] : m_uniformList)
+    for (auto &&[data, id] : m_field_list)
     {
         m_shader->setUniform(id, data);
     }
@@ -296,36 +281,29 @@ bool Material::setupTexture(int id, grr::gTexture *texture)
 
 void *Material::internal_set_value(const char *name, grm::u8 count, const void *data)
 {
-    auto id = m_shader->findUniform(name);
-    if (id == -1)
+    auto it = m_field_data.find(name);
+    if (it == m_field_data.end())
     {
-        return nullptr;
-    }
-
-    auto &uniform = m_shader->getUniform()[id];
-
-    void *ptr = nullptr;
-    auto it = m_uniformMap.find(name);
-    if (it == m_uniformMap.end())
-    {
-        ptr = std::malloc(uniform.stride);
-
-        m_uniformList.emplace_back(id, ptr);
-
-        m_uniformMap.emplace(name, ptr);
-
-    } else
-    {
-        ptr = it->second;
-
-        if (!ptr)
+        auto id = m_shader->findUniform(name);
+        if (id == -1)
         {
-            m_uniformMap.erase(it);
-            return internal_set_value(name, count, data);
+            return nullptr;
         }
+        auto &uniform = m_shader->getUniform()[id];
+
+        auto ptr = std::malloc(uniform.stride);
+        
+        m_field_data.emplace(name, std::make_tuple(ptr, uniform.stride));
+
+        m_field_list.emplace_back(ptr, id);
     }
- 
-    std::memcpy(ptr, data, uniform.stride);
+
+    auto &&[ptr, stride] = m_field_data[name];
+
+    if (data != nullptr)
+    {
+        std::memcpy(ptr, data, stride);
+    }
 
     return ptr;
 }

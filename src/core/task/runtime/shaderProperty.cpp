@@ -1,4 +1,4 @@
-#include "gr-base/core/task/shaderProperty.hpp"
+#include "gr-base/core/task/runtime/shaderProperty.hpp"
 
 ShaderProperty::ShaderProperty()
 {

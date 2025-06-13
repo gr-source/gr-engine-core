@@ -39,11 +39,15 @@ set(file
     src/core/file/file.cpp
 )
 
+set(thread
+    src/core/thread/taskmanager.cpp
+    src/core/thread/threadpool.cpp
+)
+
 set(core
     src/core/assetsManager.cpp
     src/core/rendertarget.cpp
     src/core/nameManager.cpp
-    src/core/threadpool.cpp
     src/core/display.cpp
     src/core/console.cpp
     src/core/window.cpp
@@ -96,23 +100,23 @@ set(culling
 )
 
 set(task
-    src/core/task/gameobjectsavetask.cpp
-    src/core/task/gameobjectloadtask.cpp
+    src/core/task/runtime/gameobjectsavetask.cpp
+    src/core/task/runtime/gameobjectloadtask.cpp
 
-    src/core/task/animationloadtask.cpp
-    src/core/task/animationsavetask.cpp
+    src/core/task/runtime/animationloadtask.cpp
+    src/core/task/runtime/animationsavetask.cpp
     src/core/task/animationmanager.cpp
     
-    src/core/task/shaderProperty.cpp
-    src/core/task/scenesavetask.cpp
-    src/core/task/sceneloadtask.cpp
-    src/core/task/textureloadtask.cpp
+    src/core/task/runtime/shaderProperty.cpp
+    src/core/task/runtime/scenesavetask.cpp
+    src/core/task/runtime/sceneloadtask.cpp
+    src/core/task/runtime/textureloadtask.cpp
 
-    src/core/task/shaderloadtask.cpp
+    src/core/task/runtime/shaderloadtask.cpp
     src/core/task/shadermanager.cpp
 
     src/core/task/filmboxmanager.cpp
-    src/core/task/filmboxtask.cpp
+    src/core/task/runtime/filmboxtask.cpp
 )
 
 find_package(assimp QUIET)
@@ -127,7 +131,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${culling} ${filmbox} ${task} ${binary} ${animation} ${physics})
+add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${culling} ${filmbox} ${task} ${binary} ${animation} ${physics} ${thread})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

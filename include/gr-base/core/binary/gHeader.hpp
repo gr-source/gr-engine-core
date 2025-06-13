@@ -16,11 +16,12 @@ typedef struct
     {
         NONE     = 0,
         METADATA = 1,
-        TEXTURE  = 2,
-        MATERIAL = 3,
-        MESH     = 4,
-        OBJECT   = 5,
-        SCRIPT   = 6,
+        SHADER   = 2,
+        TEXTURE  = 3,
+        MATERIAL = 4,
+        MESH     = 5,
+        OBJECT   = 6,
+        SCRIPT   = 7,
         COUNT
     };
 } HeaderType;

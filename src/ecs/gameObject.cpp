@@ -6,6 +6,8 @@
 
 #include "gr-base/script/transform.hpp"
 
+#include "gr-base/core/file/stream.hpp"
+
 std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::mGoCache;
 
 NameManager GameObject::mNameManager;
@@ -46,27 +48,6 @@ GameObject *GameObject::Instantiate(const GameObject *go)
     Scene::Init(gameObject);
 
     return gameObject;
-}
-
-void GameObject::Rename(GameObject *go, std::string name)
-{
-    auto it = mGoCache.find(go->getName());
-    if (it == mGoCache.end())
-    {
-        return;
-    }
-
-    mNameManager.RemoveNameID(go->getName());
-
-    name = mNameManager.GenerateNameID(name);
-
-    auto ptr = std::move(it->second);
-
-    mGoCache.erase(it);
-
-    mGoCache.emplace(name, std::move(ptr));
-    
-    go->setName(name);
 }
 
 GameObject *GameObject::Find(const std::string &name)
@@ -125,8 +106,23 @@ GameObject::~GameObject() {
     Manager::DestroyEntity(m_entity);
 }
 
-void GameObject::setName(const std::string &str) {
-    m_name = str;
+void GameObject::setName(const std::string &name)
+{
+    auto it = mGoCache.find(m_name);
+    if (it == mGoCache.end())
+    {
+        return;
+    }
+
+    mNameManager.RemoveNameID(m_name);
+
+    m_name = mNameManager.GenerateNameID(name);
+
+    auto ptr = std::move(it->second);
+
+    mGoCache.erase(it);
+
+    mGoCache.emplace(name, std::move(ptr));
 }
 
 std::string GameObject::getName() const {
@@ -168,3 +164,102 @@ void GameObject::setStatic(bool b) {
 bool GameObject::getStatic() const {
     return m_static;
 }
+
+bool  GameObject::serialize(Stream *stream) const
+{
+    // name
+    {
+        auto len = m_name.length();
+
+        if (!stream->write(&len, sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        if (!stream->write(m_name.c_str(), len * sizeof(char)))
+        {
+            return false;
+        }
+    }
+
+    // tag
+    {
+        auto len = m_tag.length();
+
+        if (!stream->write(&len, sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        if (!stream->write(m_tag.c_str(), len * sizeof(char)))
+        {
+            return false;
+        }
+    }
+
+    if (!stream->write(&m_active, sizeof(bool)))
+    {
+        return false;
+    }
+
+    if (!stream->write(&m_static, sizeof(bool)))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool GameObject::deserialize(Stream *stream)
+{
+    // name
+    {
+        std::size_t len = {};
+        if (!stream->read(reinterpret_cast<char *>(&len), sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        m_name.resize(len, '\0');
+        if (!stream->read(m_name.data(), len * sizeof(char)))
+        {
+            return false;
+        }
+    }
+
+    // tag
+    {
+        std::size_t len = {};
+        if (!stream->read(reinterpret_cast<char *>(&len), sizeof(std::size_t)))
+        {
+            return false;
+        }
+
+        m_tag.resize(len, '\0');
+        if (!stream->read(m_tag.data(), len * sizeof(char)))
+        {
+            return false;
+        }
+    }
+
+    if (!stream->read(reinterpret_cast<char *>(&m_active), sizeof(bool)))
+    {
+        return false;
+    }
+
+    if (!stream->read(reinterpret_cast<char *>(&m_static), sizeof(bool)))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+
+
+
+
+
+
+
+

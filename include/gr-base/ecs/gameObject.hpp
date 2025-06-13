@@ -1,20 +1,18 @@
 #pragma once
 
 #include "gr-base/core/nameManager.hpp"
-#include <unordered_map>
-#include <string>
-#include <memory>
 
-class Transform;
-class Entity;
+#include "gr-base/core/file/default.hpp"
+
+#include "gr-base/script/default.hpp"
+
+#include "default.hpp"
 
 class GameObject {
 public:
     static GameObject *Create(const std::string &name, const std::string &tag = "unttaged");
 
     static GameObject *Instantiate(const GameObject *go);
-
-    static void Rename(GameObject *go, std::string name);
 
     static GameObject *Find(const std::string &name);
 
@@ -28,7 +26,7 @@ public:
     GameObject(const std::string &name, const std::string &tag = "untagged");
     ~GameObject();
 
-    void setName(const std::string &str);
+    void setName(const std::string &name);
 
     std::string getName() const;
 
@@ -61,6 +59,10 @@ public:
     
     template <typename T>
     void destroy();
+
+    bool serialize(Stream *stream) const;
+
+    bool deserialize(Stream *stream);
     
 private:
     Transform *m_transform;
@@ -84,21 +86,28 @@ protected:
 #include "entity.hpp"
 
 template <typename T>
-inline T *GameObject::addComponent() {
+inline T *GameObject::addComponent()
+{
     return m_entity->addComponent<T>();
 }
 
 template <typename T>
-inline T *GameObject::getComponent() const {
+inline T *GameObject::getComponent() const
+{
     return m_entity->getComponent<T>();
 }
 
 template <typename T>
-inline bool GameObject::hasComponent() const {
+inline bool GameObject::hasComponent() const
+{
     return m_entity->hasComponent<T>();
 }
 
 template <typename T>
-inline void GameObject::destroy() {
+inline void GameObject::destroy()
+{
     return m_entity->destroy<T>();
 }
+
+
+

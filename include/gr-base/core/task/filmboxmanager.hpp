@@ -1,9 +1,10 @@
 #pragma once
 
-#include "gr-base/core/task/filmboxtask.hpp"
+#include "gr-base/core/task/runtime/filmboxtask.hpp"
 
 #include <unordered_map>
 #include <mutex>
+#include <vector>
 
 class FilmboxManager
 {
@@ -19,12 +20,20 @@ public:
 
     bool remove_task(const std::string &name);
 
+    bool remove_task(const FilmboxTask *task);
+
     void render();
 
     bool has_task() const;
 
+    void clear();
+
 private:
     std::unordered_map<std::string, std::unique_ptr<FilmboxTask>> filmboxtaskmap;
+
+    std::unordered_map<const FilmboxTask *, const std::string> taskpointertoname;
+
+    std::vector<FilmboxTask *> tasklist;
 
     std::atomic<std::uint32_t> taskcount;
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "taskStatus.hpp"
-
 #include <gr-render/gRender.h>
+
+#include "default.hpp"
 
 enum class TextureLoadFlags {};
 

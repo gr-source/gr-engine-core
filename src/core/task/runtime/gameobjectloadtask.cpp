@@ -1,7 +1,6 @@
-#include "gr-base/core/task/gameobjectloadtask.hpp"
+#include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
-#include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/event.hpp"
 
@@ -14,6 +13,8 @@
 #include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
+
+#include "gr-base/core/thread/threadpool.hpp"
 
 GameObjectLoadTask::GameObjectLoadTask(const std::string &path, GameObjectFunc func) : m_function(func), m_stream(nullptr)
 {
@@ -309,7 +310,8 @@ int GameObjectLoadTask::readMaterial()
         auto material = AssetsManager::FindMaterial(mname);
         if (material == nullptr)
         {
-            material = AssetsManager::CreateMaterial(mname);
+            throw std::runtime_error("Falta corrigir aqui: linha: 312 em gameobjectload");
+            material = AssetsManager::CreateMaterial(mname, nullptr);
             material->deserialize(m_stream.get());
         }
 

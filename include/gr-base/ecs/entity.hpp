@@ -48,6 +48,10 @@ public:
     void destroy();
 
     void copy(const Entity *entity);
+
+    void serialize(Stream *stream) const;
+
+    void deserialize(Stream *stream);
     
 private:
     std::unordered_map<std::string, Component *> m_componentPtr;
@@ -88,3 +92,7 @@ inline void Entity::destroy() {
 
     return destroy(String::RemoveNumber(typeid(T).name()));
 }
+
+
+
+

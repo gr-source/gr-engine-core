@@ -1,7 +1,11 @@
 #include "gr-base/core/task/animationmanager.hpp"
+
 #include "gr-base/core/animation/animation.hpp"
+
 #include "gr-base/core/console.hpp"
+
 #include "gr-base/core/file/file.hpp"
+
 #include <memory>
 
 // ********** protected ********** //

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "taskStatus.hpp"
+#include "default.hpp"
 
 #include "gr-base/core/file/default.hpp"
 
@@ -13,12 +13,13 @@
 
 enum SceneLoadFlags {
     SceneLoadFlags_Metadata = 1 << 1,
-    SceneLoadFlags_Texture  = 1 << 2,
-    SceneLoadFlags_Material = 1 << 3,
-    SceneLoadFlags_Mesh     = 1 << 4,
-    SceneLoadFlags_Script   = 1 << 5,
-    SceneLoadFlags_Object   = 1 << 6,
-    SceneLoadFlags_Load     = SceneLoadFlags_Metadata | SceneLoadFlags_Texture | SceneLoadFlags_Material | SceneLoadFlags_Mesh | SceneLoadFlags_Script | SceneLoadFlags_Object,
+    SceneLoadFlags_Shader   = 1 << 2,
+    SceneLoadFlags_Texture  = 1 << 3,
+    SceneLoadFlags_Material = 1 << 4,
+    SceneLoadFlags_Mesh     = 1 << 5,
+    SceneLoadFlags_Script   = 1 << 6,
+    SceneLoadFlags_Object   = 1 << 7,
+    SceneLoadFlags_Load     = SceneLoadFlags_Metadata | SceneLoadFlags_Shader | SceneLoadFlags_Texture | SceneLoadFlags_Material | SceneLoadFlags_Mesh | SceneLoadFlags_Script | SceneLoadFlags_Object,
 };
 
 using SceneLoadFlags_ = uint8_t;
@@ -67,6 +68,8 @@ protected:
     void doInBackground(std::string path, SceneLoadFlags_ flags);
 
     int readMetadata();
+
+    int read_shader();
 
     int readTexture();
 

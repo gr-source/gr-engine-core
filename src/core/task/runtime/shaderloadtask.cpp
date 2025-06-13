@@ -1,19 +1,23 @@
-#include "gr-base/core/task/shaderloadtask.hpp"
+#include "gr-base/core/task/runtime/shaderloadtask.hpp"
+
+
+#include "gr-base/core/task/runtime/shaderProperty.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/geometry/shader.hpp"
-#include "gr-base/core/task/shaderProperty.hpp"
-#include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/event.hpp"
 
 #include "gr-base/core/file/file.hpp"
+
+#include "gr-base/core/thread/threadpool.hpp"
 
 #include <gr-render/gShader.h>
 #include <gr-render/gError.h>
 
 #include <filesystem>
 #include <fstream>
+#include <mutex>
 #include <stdexcept>
 #include <tuple>
 
@@ -38,23 +42,41 @@ std::unordered_map<std::string, UniformVariable_> ShaderLoadTask::mVariableNameT
     {"vec4",        UniformVariable::VEC4},
 };
 
-ShaderLoadTask::ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr), task_name(path), shaderoptimize(optimize)
+ShaderLoadTask::ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr), m_path(path), shaderoptimize(optimize)
 {
-    if (func != nullptr)
-        m_functions.push_back(func);
+    addFunction(func);
+}
 
-    Threadpool::AddTask(&ShaderLoadTask::doInBackground, this, path);
+ShaderLoadTask::~ShaderLoadTask()
+{
+    if (m_shader == nullptr)
+    {
+        return;
+    }
+    
+    invoke(m_shader);
 }
 
 void ShaderLoadTask::addFunction(ShaderFunc func)
 {
+    if (func == nullptr)
+        return;
+
+    std::lock_guard<std::mutex> lock(mutex);
     m_functions.push_back(func);
 }
 
 void ShaderLoadTask::invoke(grr::gShader *shader)
 {
-    for (auto func : m_functions)
+    std::unique_lock<std::mutex> lock(mutex);
+    for (auto &func : m_functions)
+    {
+        lock.unlock();
+
         func(shader);
+
+        lock.lock();
+    }
 }
 
 void ShaderLoadTask::upload(std::string path)
@@ -65,47 +87,48 @@ void ShaderLoadTask::upload(std::string path)
         if (bShaderCreated)
         {
             AssetsManager::RemoveShader(m_shader);
+            m_shader = nullptr;
         }
 
         Console::LogError("[ ShaderLoadTask ] Fail to build shader: %s", path.c_str());
 
-        return AssetsManager::RemoveTask(task_name);
+        return AssetsManager::RemoveTask(m_path);
     }
 
     Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name.c_str());
-    
-    invoke(m_shader);
 
-    AssetsManager::RemoveTask(task_name);
+    AssetsManager::RemoveTask(m_path);
 }
 
-void ShaderLoadTask::doInBackground(std::string path)
+void ShaderLoadTask::doInBackground()
 {
-    if (!gfile::exists(path))
+    if (!gfile::exists(m_path))
     {
-        Console::LogWarning("[ ShaderLoadTask ] File not found: %s", path.c_str());
+        Console::LogWarning("[ ShaderLoadTask ] File not found: %s", m_path.c_str());
 
-        return AssetsManager::RemoveTask(task_name);
+        return AssetsManager::RemoveTask(m_path);
     }
 
-    m_asset_shader_type = get_shader_asset_type(path);
+    m_asset_shader_type = get_shader_asset_type(m_path);
 
-    m_shader = bShaderCreated ? AssetsManager::CreateShader(m_asset_shader_type, shaderoptimize, task_name) : m_shader;
+    m_shader = bShaderCreated ? AssetsManager::CreateShader(m_asset_shader_type, shaderoptimize, m_path) : m_shader;
 
-    try {
-        bind_shader(path);
+    try
+    {
+        bind_shader(m_path);
     } catch (const std::exception &e)
     {
-        Console::LogError("[ ShaderLoadTask ] Failt to load shader %s: %s", path.c_str(), e.what());
+        Console::LogError("[ ShaderLoadTask ] Failt to load shader %s: %s", m_path.c_str(), e.what());
         if (bShaderCreated)
         {
             AssetsManager::RemoveShader(m_shader);
+            m_shader = nullptr;
         }
 
-        return AssetsManager::RemoveTask(task_name);
+        return AssetsManager::RemoveTask(m_path);
     }
- 
-    Event::Add(&ShaderLoadTask::upload, this, path);
+
+    Event::Add(&ShaderLoadTask::upload, this, m_path);
 }
 
 AssetShader ShaderLoadTask::get_shader_asset_type(const std::string &name)

@@ -63,6 +63,8 @@ private:
 
 class gfile {
 public:
+    static std::string AssetStreamPath;
+
     static std::string create_temp_file(const std::string& name);
 
     static std::string get_home_directory();

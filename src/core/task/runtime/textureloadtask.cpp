@@ -1,10 +1,11 @@
-#include "gr-base/core/task/textureloadtask.hpp"
+#include "gr-base/core/task/runtime/textureloadtask.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
-#include "gr-base/core/threadpool.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/event.hpp"
 #include <gr-render/gCommon.h>
+
+#include "gr-base/core/thread/threadpool.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "gr-base/core/stb/stb_image.h"

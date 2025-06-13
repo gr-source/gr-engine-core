@@ -1,6 +1,9 @@
 #pragma once
 
+#include "gr-base/core/thread/asynctask.hpp"
 #include "shaderProperty.hpp"
+
+#include "default.hpp"
 
 #include <gr-math/types.hpp>
 
@@ -21,10 +24,11 @@ typedef struct
     grm::u32 count;
 } ShaderUniform;
 
-class ShaderLoadTask
+class ShaderLoadTask : public AsyncTask
 {
 public:
     ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader = nullptr);
+    ~ShaderLoadTask();
 
     void addFunction(ShaderFunc func);
 
@@ -37,22 +41,24 @@ private:
 
     std::unordered_set<std::string> userfield;
     
-    ShaderOptimize_ shaderoptimize;
+    const ShaderOptimize_ shaderoptimize;
     
     AssetShader m_asset_shader_type;
 
     grr::gShader *m_shader;
 
-    std::string task_name;
+    const std::string m_path;
 
-    bool bShaderCreated;
+    const bool bShaderCreated;
 
     void invoke(grr::gShader *shader);
     
     void upload(std::string path);
 
 protected:
-    void doInBackground(std::string path);
+    void doInBackground() override;
+
+    // void doInBackground(std::string path);
 
     static AssetShader get_shader_asset_type(const std::string &path);
 
