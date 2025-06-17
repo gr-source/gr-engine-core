@@ -121,7 +121,12 @@ bool MeshRender::Deserialize(Stream *stream)
         auto material = AssetsManager::FindMaterial(mname);
         if (material != nullptr)
         {
-            AssetsManager::LoadShader(ShaderOptimize_DYNAMIC, sname, &Material::setShader, material);
+            ShaderParams shaderParams;
+            shaderParams.name = "simple_model";
+            shaderParams.flags = ShaderOptimize_dynamic;
+
+            AssetsManager::LoadShader(shaderParams, sname, &Material::setShader, material);
+            // AssetsManager::LoadShader(ShaderOptimize_DYNAMIC, sname, &Material::setShader, material);
         }
     }
 
@@ -161,8 +166,15 @@ void MeshRender::build()
         }
 
         auto path = AssetsManager::GetShaderName(shader);
+
+
+        ShaderParams shaderParams;
+        shaderParams.name = "simple_model";
+        shaderParams.flags = ShaderOptimize_dynamic;
+
+        AssetsManager::LoadShader(shaderParams, path, &Material::setShader, material);
         
-        AssetsManager::LoadShader(ShaderOptimize_DYNAMIC, path, &Material::setShader, material);
+        // AssetsManager::LoadShader(ShaderOptimize_DYNAMIC, path, &Material::setShader, material);
     }
 
     batching->insert(GetGameObject()->getTransform(), &m_material, 1);

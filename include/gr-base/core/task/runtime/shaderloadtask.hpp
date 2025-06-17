@@ -20,12 +20,14 @@ class ShaderLoadTask : public AsyncTask
 {
 public:
     ShaderLoadTask() = delete;
-    ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, grr::gShader *shader);
+    ShaderLoadTask(ShaderParams shaderParams, const std::string &path, grr::gShader *shader);
 
     void addFunction(std::function<void (grr::gShader *)> func);
 
 private:
     std::vector<std::function<void (grr::gShader *)>> m_func_list;
+
+    ShaderParams m_shaderParams;
 
     const std::string m_path;
 
@@ -36,23 +38,19 @@ private:
 protected:
     std::array<std::vector<ShaderUniform>, IShaderStage> mShaderUniformMapToList;
 
-    AssetShader m_asset_shader_type;
-
     grr::gShader *m_shader;
 
     const bool bShaderCreated;
-
-    const ShaderOptimize_ shaderoptimize;
 
     std::unordered_set<std::string> userfield;
 
     std::array<std::string, IShaderStage> m_shaderSource;
 
-    static AssetShader get_shader_asset_type(const std::string &path);
+    static ShaderType get_shader_asset_type(const std::string &path);
 
     static std::unordered_map<std::string, UniformVariable_> mVariableNameToID;
 
-    static std::array<std::string, IShaderStage> LoadShaderBase(ShaderType_ type);
+    static std::array<std::string, IShaderStage> LoadShaderBase(ShaderType type);
 
     static bool ValidStr(const std::string &str, std::string *data, int count);
 

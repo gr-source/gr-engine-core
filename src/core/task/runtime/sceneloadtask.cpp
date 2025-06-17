@@ -242,6 +242,7 @@ int SceneLoadTask::readMetadata()
 
 int SceneLoadTask::read_shader()
 {
+    /*
     for (std::size_t i=0;i<IAssetShaderCount;i++)
     {
         for (std::size_t j=0;j<IShaderOptmize;j++)
@@ -270,6 +271,7 @@ int SceneLoadTask::read_shader()
             }
         }
     }
+    */
 
     return 0;
 }

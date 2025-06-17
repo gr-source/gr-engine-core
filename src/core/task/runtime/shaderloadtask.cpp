@@ -5,6 +5,7 @@
 #include "gr-base/core/file/file.hpp"
 
 #include <gr-render/gError.h>
+#include <stdexcept>
 
 #define PRINT_ERROR(func, property, type) \
     if (func == InvalidUniformID) { \
@@ -28,7 +29,7 @@ std::unordered_map<std::string, UniformVariable_> ShaderLoadTask::mVariableNameT
 };
 
 // public
-ShaderLoadTask::ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, grr::gShader *shader) : shaderoptimize(optimize), m_path(path), m_shader(shader), bShaderCreated(shader == nullptr)
+ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams, const std::string &path, grr::gShader *shader) : m_shaderParams(shaderParams), m_path(path), m_shader(shader), bShaderCreated(shader == nullptr)
 {}
 
 void ShaderLoadTask::addFunction(std::function<void (grr::gShader *)> func)
@@ -45,9 +46,10 @@ void ShaderLoadTask::doInBackground()
         return Console::LogError("[ ShaderLoadTask ] file %s, do not found", m_path.c_str());
     }
 
-    m_asset_shader_type = get_shader_asset_type(m_path);
+    auto type = get_shader_asset_type(m_path);
+    m_shaderParams.type = type;
 
-    m_shader = bShaderCreated ? AssetsManager::CreateShader(m_asset_shader_type, shaderoptimize, m_path) : m_shader;
+    m_shader = bShaderCreated ? AssetsManager::CreateShader(m_shaderParams) : m_shader;
 
     try
     {
@@ -98,7 +100,7 @@ void ShaderLoadTask::onPostExecute()
     AssetsManager::RemoveTask(m_path);
 }
 
-AssetShader ShaderLoadTask::get_shader_asset_type(const std::string &name)
+ShaderType ShaderLoadTask::get_shader_asset_type(const std::string &name)
 {
     std::ifstream is(name);
     if (!is.is_open())
@@ -106,7 +108,7 @@ AssetShader ShaderLoadTask::get_shader_asset_type(const std::string &name)
         throw std::runtime_error("File do not open.");
     }
 
-    AssetShader type = AssetShader_None;
+    ShaderType type = ShaderType::SHADER2D;
 
     std::string line;
     while (std::getline(is, line))
@@ -118,10 +120,10 @@ AssetShader ShaderLoadTask::get_shader_asset_type(const std::string &name)
 
         if (line.find("shader2D") != std::string::npos)
         {
-            type = AssetShader_Shader2D;
+            type = ShaderType::SHADER2D;
         } else if (line.find("shader3D") != std::string::npos)
         {
-            type = AssetShader_Shader3D;
+            type = ShaderType::SHADER3D;
         }
 
         break;
@@ -132,7 +134,7 @@ AssetShader ShaderLoadTask::get_shader_asset_type(const std::string &name)
     return type;
 }
 
-std::array<std::string, IShaderStage> ShaderLoadTask::LoadShaderBase(ShaderType_ type)
+std::array<std::string, IShaderStage> ShaderLoadTask::LoadShaderBase(ShaderType type)
 {
     std::array<std::string, IShaderStage> mShaderMap;
 
@@ -397,7 +399,7 @@ void ShaderLoadTask::bind_shader(const std::string &path)
 
     std::vector<std::string> defineMap;
 
-    ShaderType_ shadertype = ShaderType::SHADER2D;
+    ShaderType shadertype = ShaderType::SHADER2D;
 
     ShaderStage_ shaderstage = ShaderStage::FRAGMENT;
     std::array<std::string, IShaderStage> mSourceMap;
@@ -503,6 +505,15 @@ void ShaderLoadTask::bind_shader(const std::string &path)
     m_shaderSource[ShaderStage::VERTEX] = remove_comment(m_shaderSource[ShaderStage::VERTEX]);
 
     std::unordered_set<std::string> macro_map;
+    if (m_shaderParams.flags & ShaderOptimize_dynamic)
+    {
+        macro_map.emplace("USE_MODEL");
+    }
+    if (m_shaderParams.flags & ShaderOptimize_animated)
+    {
+        macro_map.emplace("ENABLE_ANIMATION");
+    }
+    /*
     switch (shaderoptimize)
     {
         case ShaderOptimize_DYNAMIC:
@@ -515,6 +526,7 @@ void ShaderLoadTask::bind_shader(const std::string &path)
         default:
             break;
     }
+    */
 
     m_shaderSource[ShaderStage::FRAGMENT] = process_macro(m_shaderSource[ShaderStage::FRAGMENT], macro_map);
     m_shaderSource[ShaderStage::VERTEX] = process_macro(m_shaderSource[ShaderStage::VERTEX], macro_map);

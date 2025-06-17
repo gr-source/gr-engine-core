@@ -108,15 +108,17 @@ std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
     return it->second;
 }
 
-grr::gShader *AssetsManager::CreateShader(AssetShader type, ShaderOptimize_ optmize, const std::string &name)
+grr::gShader *AssetsManager::CreateShader(ShaderParams shaderParams)
 {
-    return dynamic_cast<grr::gShader *>(GetShaderManager().create(type, optmize, name));
+    return dynamic_cast<grr::gShader *>(GetShaderManager().create(shaderParams));
 }
 
+/*
 grr::gShader *AssetsManager::FindShader(ShaderOptimize optmize, const std::string &name)
 {
     return dynamic_cast<grr::gShader *>(GetShaderManager().find(optmize, name));
 }
+*/
 
 std::string AssetsManager::GetShaderName(grr::gShader *shader)
 {
@@ -185,7 +187,7 @@ void AssetsManager::RemoveMesh(const std::string &name)
 
 ShaderProperty *AssetsManager::CreateShaderProperty(grr::gShader *shader)
 {
-    std::lock_guard<std::mutex> lock(GetShaderManager().mutex);
+    std::lock_guard<std::mutex> lock(GetShaderManager().s_Mutex);
     mShaderPropertyMap.emplace(shader, std::make_unique<ShaderProperty>());
     
     return &(*mShaderPropertyMap[shader]);
@@ -193,7 +195,7 @@ ShaderProperty *AssetsManager::CreateShaderProperty(grr::gShader *shader)
 
 ShaderProperty *AssetsManager::GetShaderProperty(grr::gShader *shader)
 {
-    std::lock_guard<std::mutex> lock(GetShaderManager().mutex);
+    std::lock_guard<std::mutex> lock(GetShaderManager().s_Mutex);
     auto it = mShaderPropertyMap.find(shader);
     if (it == mShaderPropertyMap.end())
     {
@@ -315,6 +317,7 @@ std::string AssetsManager::GetAnimationName(const Animation *animation)
     return name == nullptr ? "" : name;
 }
 
+/*
 std::vector<grr::gShader *> AssetsManager::GetShaderList(AssetShader_ type, ShaderOptimize_ optimize)
 {
     return GetShaderManager().get_shader(type, optimize);
@@ -324,6 +327,7 @@ std::vector<grr::gShader *> AssetsManager::GetShaderList(AssetShader_ type)
 {
     return GetShaderManager().get_shader(type);
 }
+*/
 
 grm::size AssetsManager::GetTextureCount() {
     std::lock_guard<std::mutex> lock(mTextureMutex);

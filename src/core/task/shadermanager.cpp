@@ -2,19 +2,158 @@
 
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
-
-#include <array>
-#include <cstddef>
 #include <mutex>
-#include <tuple>
+#include <stdexcept>
+#include <string>
 
 ShaderManager::ShaderManager()
 {}
 
 ShaderManager::~ShaderManager()
+{}
+
+grr::gShader *ShaderManager::create(ShaderParams shaderParams)
 {
+    int id = 0;
+
+    if (shaderParams.flags & ShaderOptimize_static)
+    {
+        id |= ShaderOptimize_static;
+    } else if (shaderParams.flags & ShaderOptimize_dynamic)
+    {
+        id |= ShaderOptimize_dynamic;
+    }
+
+    if (shaderParams.flags & ShaderOptimize_instanced)
+    {
+        id |= ShaderOptimize_instanced;
+    }
+
+    if (shaderParams.flags & ShaderOptimize_animated)
+    {
+        id |= ShaderOptimize_animated;
+    }
+
+    auto name = shaderParams.name + '_' + std::to_string(static_cast<int>(shaderParams.type)) + '_' + std::to_string(id);
+
+    std::unique_lock<std::mutex> lock(s_Mutex);
+    {
+        auto it = s_ShaderMap.find(name);
+        if (it != s_ShaderMap.end())
+        {
+            std::cout << "Get: " << name << std::endl;
+            return it->second.get();
+        }
+    }
+
+    std::cout << "Create: " << name << std::endl;
+
+    s_ShaderMap.emplace(name, std::make_unique<grr::gShader>());
+
+    return s_ShaderMap[name].get();
 }
 
+void ShaderManager::destroy(const grr::gShader *shader)
+{
+    throw std::runtime_error("Falta corrigir aqui: 55 em ShaderManager.cpp");
+}
+
+const char *ShaderManager::get_shader_name(const grr::gShader *shader)
+{
+    return nullptr;
+}
+
+std::shared_ptr<TaskInfo> ShaderManager::create_shader_task_load(ShaderParams shaderParams, const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func)
+{
+    int id = 0;
+
+    if (shaderParams.flags & ShaderOptimize_static)
+    {
+        id |= ShaderOptimize_static;
+    } else if (shaderParams.flags & ShaderOptimize_dynamic)
+    {
+        id |= ShaderOptimize_dynamic;
+    }
+
+    if (shaderParams.flags & ShaderOptimize_instanced)
+    {
+        id |= ShaderOptimize_instanced;
+    }
+
+    if (shaderParams.flags & ShaderOptimize_animated)
+    {
+        id |= ShaderOptimize_animated;
+    }
+
+    auto name = shaderParams.name + '_' + std::to_string(static_cast<int>(shaderParams.type)) + '_' + std::to_string(id);
+
+    std::unique_lock<std::mutex> lock(s_Mutex);
+
+    // Verifica se já existe uma task de caregamento, se ouver adiciona a func em func list
+    {
+        auto it = s_ShaderTaskMap.find(name);
+        if (it != s_ShaderTaskMap.end())
+        {
+            if (func == nullptr)
+            {
+                return it->second;
+            }
+
+            auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(it->second->task.get());
+
+            lock.unlock();
+            shaderLoadTask->addFunction(func);
+
+            return it->second;
+        }
+    }
+
+    { // Verifica se já foi carregado e está na lista principal
+        auto it = s_ShaderMap.find(name);
+        if (it != s_ShaderMap.end())
+        {
+            if (func == nullptr)
+            {
+                return nullptr;
+            }
+
+            auto shader = it->second.get();
+
+            lock.unlock();
+            
+            func(shader);
+
+            return nullptr;
+        }
+    }
+
+    // cria uma nova task
+    auto taskInfo = TaskManager::Add<ShaderLoadTask>(shaderParams, path, shader);
+    s_ShaderTaskMap.emplace(name, taskInfo);
+
+    auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(taskInfo->task.get());
+    if (func != nullptr)
+    {
+        shaderLoadTask->addFunction(func);
+    }
+
+    return taskInfo;
+}
+
+bool ShaderManager::remove_task(const std::string &name)
+{
+    std::lock_guard<std::mutex> lock(s_Mutex);
+    auto it = s_ShaderTaskMap.find(name);
+    if (it == s_ShaderTaskMap.end())
+    {
+        return false;
+    }
+    s_ShaderTaskMap.erase(it);
+
+    return true;
+}
+
+/*
 std::array<const char *, IAssetShaderCount> AssetShaderName = {
     "None",
     "Shader2D",
@@ -217,4 +356,7 @@ bool ShaderManager::remove_task(const std::string &name)
     ShaderTaskMap.erase(it);
     return true;
 }
+*/
+
+
 

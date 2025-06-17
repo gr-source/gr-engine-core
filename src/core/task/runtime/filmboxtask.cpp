@@ -255,10 +255,18 @@ void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
         }
     }
 
-    auto shader = AssetsManager::FindShader(m_bones.empty() ? ShaderOptimize_DYNAMIC : ShaderOptimize_ANIMATION_DYNAMIC, File::GetAsset("/shader/model/simple_model.glsl"));
-    if (shader == nullptr)
+    // auto shader = AssetsManager::FindShader(m_bones.empty() ? ShaderOptimize_DYNAMIC : ShaderOptimize_ANIMATION_DYNAMIC, File::GetAsset("/shader/model/simple_model.glsl"));
+    // if (shader == nullptr)
     {
-        auto info = AssetsManager::LoadShader(File::GetAsset("/shader/model/simple_model.glsl"), nullptr);
+        ShaderParams shaderParams;
+        shaderParams.name = "simple_model";
+        shaderParams.flags = ShaderOptimize_dynamic;
+        if (!m_bones.empty())
+        {
+            shaderParams.flags |= ShaderOptimize_animated;
+        }
+
+        auto info = AssetsManager::LoadShader(shaderParams, File::GetAsset("/shader/model/simple_model.glsl"));
         // info->wait();
         
         /*

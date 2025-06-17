@@ -1,14 +1,7 @@
 #pragma once
 
-#include <functional>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-#include <mutex>
-#include <list>
-
 #include <gr-render/gRender.h>
+#include <utility>
 
 #include "gr-base/core/animation/animation.hpp"
 
@@ -44,12 +37,12 @@ public:
     static std::string GetRefTextureName(grr::gTexture *texture);
 
     template <typename ...Args>
-    static std::shared_ptr<TaskInfo> LoadShader(const std::string &path, grr::gShader *shader, Args &&...args);
+    static std::shared_ptr<TaskInfo> LoadShader(ShaderParams shaderParams, const std::string &path, Args &&...args);
 
     template <typename ...Args>
-    static std::shared_ptr<TaskInfo> LoadShader(ShaderOptimize_ optimize, const std::string &path, Args &&...args);
+    static std::shared_ptr<TaskInfo> LoadShader(ShaderParams shaderParams, const std::string &path, grr::gShader *shader, Args &&...args);
 
-    static grr::gShader *CreateShader(AssetShader type, ShaderOptimize_ optmize, const std::string &name);
+    static grr::gShader *CreateShader(ShaderParams shaderParams);
 
     static grr::gShader *FindShader(ShaderOptimize optmize, const std::string &name);
 
@@ -104,9 +97,9 @@ public:
 
     static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
 
-    static std::vector<grr::gShader *> GetShaderList(AssetShader_ type, ShaderOptimize_ optimize);
+    // static std::vector<grr::gShader *> GetShaderList(AssetShader_ type, ShaderOptimize_ optimize);
 
-    static std::vector<grr::gShader *> GetShaderList(AssetShader_ type);
+    // static std::vector<grr::gShader *> GetShaderList(AssetShader_ type);
 
     template <typename ...Args>
     static Material *CreateMaterial(const std::string &key, Args &&...args);
@@ -191,19 +184,7 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
 
 // ***** Shader ***** //
 template <typename ...Args>
-inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(const std::string &path, grr::gShader *shader, Args &&...args)
-{
-    std::function<void (grr::gShader *)> func = nullptr;
-    if constexpr (sizeof...(Args) > 0)
-    {
-        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
-    }
-
-    return GetShaderManager().create_shader_task(ShaderOptimize_None, path, static_cast<Shader *>(shader), func);
-}
-
-template <typename... Args>
-inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderOptimize_ optimize, const std::string &path, Args &&...args)
+inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderParams, const std::string &path, Args &&...args)
 {
     std::function<void(grr::gShader *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
@@ -211,7 +192,19 @@ inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderOptimize_ optim
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
     
-    return GetShaderManager().create_shader_task(optimize, path, nullptr, func);
+    return GetShaderManager().create_shader_task_load(shaderParams, path, nullptr, func);
+}
+
+template <typename... Args>
+inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderParams, const std::string &path, grr::gShader *shader, Args &&...args)
+{
+    std::function<void(grr::gShader *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0)
+    {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
+    
+    return GetShaderManager().create_shader_task_load(shaderParams, path, shader, func);
 }
 
 // ***** Material ***** //

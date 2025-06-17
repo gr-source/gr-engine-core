@@ -155,7 +155,13 @@ bool SkinnedMeshRender::Deserialize(Stream *stream)
         auto material = AssetsManager::FindMaterial(mname);
         if (material != nullptr)
         {
-            AssetsManager::LoadShader(ShaderOptimize_ANIMATION_DYNAMIC, sname, &Material::setShader, material);
+            ShaderParams shaderParams;
+            shaderParams.name = "simple_model";
+            shaderParams.flags = ShaderOptimize_dynamic | ShaderOptimize_animated;
+
+            AssetsManager::LoadShader(shaderParams, sname, &Material::setShader, material);
+
+            // AssetsManager::LoadShader(ShaderOptimize_ANIMATION_DYNAMIC, sname, &Material::setShader, material);
         }
     }
 
@@ -190,7 +196,13 @@ void SkinnedMeshRender::build()
         {
             continue;
         }
-        AssetsManager::LoadShader(ShaderOptimize_ANIMATION_DYNAMIC, path, &Material::setShader, material);
+
+        ShaderParams shaderParams;
+        shaderParams.name = "simple_model";
+        shaderParams.flags = ShaderOptimize_dynamic | ShaderOptimize_animated;
+
+        AssetsManager::LoadShader(shaderParams, path, &Material::setShader, material);
+        // AssetsManager::LoadShader(ShaderOptimize_ANIMATION_DYNAMIC, path, &Material::setShader, material);
     }
 
     batching->insert(GetGameObject()->getTransform(), &m_material, 2);

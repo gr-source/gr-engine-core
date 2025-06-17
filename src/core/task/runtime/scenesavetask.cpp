@@ -208,6 +208,7 @@ int SceneSaveTask::writeMetadata()
 
 int SceneSaveTask::write_shader()
 {
+    /*
     for (std::size_t i=0;i<IAssetShaderCount;i++)
     {
         for (std::size_t j=0;j<IShaderOptmize;j++)
@@ -238,6 +239,7 @@ int SceneSaveTask::write_shader()
             }
         }
     }
+    */
 
     return 0;
 }

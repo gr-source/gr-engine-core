@@ -6,17 +6,6 @@
 #include <unordered_set>
 
 using ShaderStage_ = std::uint8_t;
-using ShaderType_ = std::uint8_t;
-
-typedef struct
-{
-    enum : ShaderType_
-    {
-        SHADER2D    = 0,
-        SHADER3D    = 1,
-        COUNT
-    };
-} ShaderType;
 
 typedef struct
 {

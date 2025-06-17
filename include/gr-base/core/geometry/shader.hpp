@@ -3,42 +3,28 @@
 #include <gr-render/gShader.h>
 
 using ShaderOptimize_ = std::uint8_t;
-using AssetShader_ = std::uint8_t;
 
-enum AssetShader : AssetShader_
+enum class ShaderType
 {
-    AssetShader_None        = 0,
-    AssetShader_Shader2D    = 1,
-    AssetShader_Shader3D    = 2,
-    AssetShader_Count
+    SHADER2D,
+    SHADER3D,
 };
-
-constexpr auto IAssetShaderCount = AssetShader_Count;
 
 enum ShaderOptimize : ShaderOptimize_
 {
-    ShaderOptimize_None                 = 0,
-    ShaderOptimize_DYNAMIC              = 1,
-    ShaderOptimize_STATIC               = 2,
-    ShaderOptimize_INSTANCED_DYNAMIC    = 3,
-    ShaderOptimize_INSTANCED_STATIC     = 4,
-    ShaderOptimize_ANIMATION_DYNAMIC    = 5,
-    ShaderOptimize_ANIMATION_STATIC     = 6,
-    ShaderOptimize_ANIMATION_INSTANCED  = 7,
-    ShaderOptimize_Count
+    ShaderOptimize_static       = 1 << 0,
+    ShaderOptimize_dynamic      = 1 << 1,
+    ShaderOptimize_animated     = 1 << 2,
+    ShaderOptimize_instanced    = 1 << 3,
 };
 
-constexpr auto IShaderOptmize = ShaderOptimize_Count;
-
-class Shader : public grr::gShader
+struct ShaderParams
 {
-public:
-    Shader(AssetShader_ type, ShaderOptimize_ optimize);
-
-    const AssetShader_ type;
-
-    const ShaderOptimize_ optimize;
+    std::string name;
+    ShaderType type;
+    ShaderOptimize_ flags;
 };
+
 
 
 
