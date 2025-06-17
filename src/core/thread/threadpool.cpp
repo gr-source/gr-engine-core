@@ -1,32 +1,40 @@
 #include "gr-base/core/thread/threadpool.hpp"
-#include <iostream>
+
+#include "gr-base/core/console.hpp"
+
 #include <mutex>
 #include <thread>
-
-Threadpool Threadpool::s_Threadpool(std::thread::hardware_concurrency());
 
 std::mutex Threadpool::m_mutex;
 
 // static
 bool Threadpool::IsMainThread()
 {
-    return s_Threadpool.isMainThread();
+    return GetInstance().isMainThread();
 }
 
 std::size_t Threadpool::GetCount()
 {
-    return s_Threadpool.m_threads.size();
+    return GetInstance().m_threads.size();
 }
 
 std::size_t Threadpool::GetUsage()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
-    return s_Threadpool.m_available;
+    return GetInstance().m_available;
 }
 
 // private
+Threadpool &Threadpool::GetInstance()
+{
+    static Threadpool instance(std::thread::hardware_concurrency());
+    return instance;
+}
+
 Threadpool::Threadpool(std::uint32_t maxThread) : m_bStop(false), m_available(0), m_mainThreadID(std::this_thread::get_id())
 {
+    Console::LogInfo("[ Threadpool ] Initialize");
+
     for (std::uint32_t i=0;i<maxThread;i++)
     {
         m_threads.emplace_back(&Threadpool::update, this);
@@ -35,6 +43,7 @@ Threadpool::Threadpool(std::uint32_t maxThread) : m_bStop(false), m_available(0)
 
 Threadpool::~Threadpool()
 {
+    Console::LogInfo("[ Threadpool ] Shutdown");
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_cv.wait(lock, [&] { return m_available == 0 && m_task.empty(); });
@@ -54,6 +63,8 @@ Threadpool::~Threadpool()
             thread.join();
         }
     }
+
+    Console::LogInfo("[ Threadpool ] Threadpool stoped.");
 }
 
 bool Threadpool::isMainThread() const
@@ -63,6 +74,8 @@ bool Threadpool::isMainThread() const
 
 void Threadpool::update()
 {
+    Console::LogInfo("[ Threadpool ] thread %ld, in background...", std::this_thread::get_id());
+
     while (true)
     {
         std::unique_lock<std::mutex> lock(m_mutex);
@@ -87,7 +100,7 @@ void Threadpool::update()
                 task();
         } catch (const std::exception &e)
         {
-            std::cerr << "Threadpool: " << e.what() << std::endl;
+            Console::LogError("[ Threadpool ] Exception detected: %s", e.what());
         }
 
         lock.lock();

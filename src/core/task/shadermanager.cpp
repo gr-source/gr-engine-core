@@ -8,8 +8,6 @@
 #include <mutex>
 #include <tuple>
 
-std::mutex ShaderManager::mutex;
-
 ShaderManager::ShaderManager()
 {}
 
@@ -73,7 +71,7 @@ void ShaderManager::destroy(grr::gShader *shader)
     std::cout << "destroy: " << get_shader_name(shader) << std::endl;
 }
 
-grr::gShader *ShaderManager::find(ShaderOptimize optmize, const std::string &name) const
+grr::gShader *ShaderManager::find(ShaderOptimize optmize, const std::string &name)
 {
     std::unique_lock<std::mutex> lock(mutex);
     auto it_type = ShaderTypeMap.find(name);
@@ -107,21 +105,22 @@ const char *ShaderManager::get_shader_name(const grr::gShader *shader)
     return it->second.c_str();
 }
 
-std::vector<grr::gShader *> ShaderManager::get_shader(AssetShader_ type, ShaderOptimize_ optmize) const
+std::vector<grr::gShader *> ShaderManager::get_shader(AssetShader_ type, ShaderOptimize_ optmize)
 {
     std::lock_guard<std::mutex> lock(mutex);
     return ShaderList[type][optmize];
 }
 
-std::vector<grr::gShader *> ShaderManager::get_shader(AssetShader_ type) const
+std::vector<grr::gShader *> ShaderManager::get_shader(AssetShader_ type)
 {
     std::lock_guard<std::mutex> lock(mutex);
     return ShaderListFromType[type];
 }
 
-void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func)
+std::shared_ptr<TaskInfo> ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func)
 {
     std::unique_lock<std::mutex> lock(mutex);
+    std::cout << "Create Task: " << path << std::endl;
 
     // check has task
     {
@@ -129,15 +128,17 @@ void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::strin
         if (it != ShaderTaskMap.end())
         {
             if (func == nullptr)
-                return;
+                return it->second;
 
             lock.unlock();
 
-            dynamic_cast<ShaderLoadTask *>(&(*it->second))->addFunction(func);
+            dynamic_cast<ShaderLoadTask *>(&(*it->second->task))->addFunction(func);
 
-            lock.lock();
+            std::cout << "Task Found: " << path << ", Added func" << std::endl;
 
-            return;
+            // lock.lock();
+
+            return it->second;
         }
     }
 
@@ -153,14 +154,16 @@ void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::strin
                 {
                     auto &&[t, o] = itsw->second;
 
-                    lock.lock();
-
-                    auto info = TaskManager::Add<ShaderLoadTask>(o, path, func, shader);
+                    auto info = TaskManager::Add<ShaderLoadTask>(o, path, shader);
+                    auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(info->task.get());
+                    ShaderTaskMap.emplace(path, info);
 
                     lock.unlock();
 
-                    ShaderTaskMap.emplace(path, info->task);
-                    return;
+                    if (func != nullptr)
+                        shaderLoadTask->addFunction(func);
+
+                    return info;
                 }
             } else
             {
@@ -173,18 +176,33 @@ void ShaderManager::create_shader_task(ShaderOptimize_ optmize, const std::strin
 
                         lock.unlock();
 
-                        return func(shader);
+                        std::cout << "Task has bee loaded: " << path << std::endl;
+
+                        func(shader);
+
+                        return nullptr;
                     }
                 }
+
+                std::cout << "GOOOOOOO" << std::endl;
+                return nullptr;
             }
         }
     }
 
-    lock.unlock();
-    auto info = TaskManager::Add<ShaderLoadTask>(optmize, path, func, shader);
-    lock.lock();
+    std::cout << "Emplace task: " << path << std::endl;
 
-    ShaderTaskMap.emplace(path, info->task);
+    auto info = TaskManager::Add<ShaderLoadTask>(optmize, path, shader);
+    ShaderTaskMap.emplace(path, info);
+    auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(info->task.get());
+    lock.unlock();
+
+    if (func != nullptr)
+    {
+        shaderLoadTask->addFunction(func);
+    }
+
+    return info;
 }
 
 bool ShaderManager::remove_task(const std::string &name)
@@ -195,6 +213,7 @@ bool ShaderManager::remove_task(const std::string &name)
     {
         return false;
     }
+    std::cout << "Deleted Task: " << name << std::endl;
     ShaderTaskMap.erase(it);
     return true;
 }

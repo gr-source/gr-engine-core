@@ -16,8 +16,7 @@ void Event::Update()
     std::list<std::function<void()>> events;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        events = m_events;
-        m_events.clear();
+        events = std::move(m_events);
     }
 
     for (const auto& event : events)

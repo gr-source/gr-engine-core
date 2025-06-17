@@ -21,7 +21,7 @@ public:
     static std::size_t GetUsage();
 
 private:
-    static Threadpool s_Threadpool;
+    static Threadpool &GetInstance();
 
     std::list<std::function<void()>> m_task;
 
@@ -53,7 +53,7 @@ private:
 template <typename... Args>
 inline void Threadpool::AddTask(Args &&...args)
 {
-    return s_Threadpool.add(std::forward<Args>(args)...);
+    return GetInstance().add(std::forward<Args>(args)...);
 }
 
 // private

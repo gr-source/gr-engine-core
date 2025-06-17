@@ -258,27 +258,21 @@ void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
     auto shader = AssetsManager::FindShader(m_bones.empty() ? ShaderOptimize_DYNAMIC : ShaderOptimize_ANIMATION_DYNAMIC, File::GetAsset("/shader/model/simple_model.glsl"));
     if (shader == nullptr)
     {
-        std::cout << "Shader do not found, loading..." << std::endl;
-        std::mutex mutex;
-        std::condition_variable cv;
-        bool loaded = false;
-
-        AssetsManager::LoadShader(File::GetAsset("/shader/model/simple_model.glsl"), nullptr, [&mutex, &cv, &shader, &loaded](grr::gShader *current) {
-                std::cout << "Load" << std::endl;
-            std::lock_guard<std::mutex> lock(mutex);
-            shader = current;
-            loaded = true;
-            cv.notify_all();
-        });
-
+        auto info = AssetsManager::LoadShader(File::GetAsset("/shader/model/simple_model.glsl"), nullptr);
+        // info->wait();
+        
+        /*
         std::cout << "Lock Thread" << std::endl;
+        if (info != nullptr)
+            info->wait();
 
-        std::unique_lock<std::mutex> lock(mutex);
-        cv.wait(lock, [&loaded]{ return loaded; });
+shader = AssetsManager::FindShader(m_bones.empty() ? ShaderOptimize_DYNAMIC : ShaderOptimize_ANIMATION_DYNAMIC, File::GetAsset("/shader/model/simple_model.glsl"));
 
         std::cout << "Continue" << std::endl;
+        */
     }
 
+    /*
     for (auto &fbxMaterial : materialList)
     {
         auto material = renderer->createMaterial(fbxMaterial.getName(), shader);
@@ -296,6 +290,7 @@ void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
             }
         }
     }
+    */
 }
 
 

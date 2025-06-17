@@ -4,6 +4,7 @@
 #include <mutex>
 #include <list>
 
+// MainThreadDispatcher
 class Event {
 public:
     template <typename ...Args>

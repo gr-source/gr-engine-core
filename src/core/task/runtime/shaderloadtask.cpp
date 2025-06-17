@@ -1,25 +1,10 @@
 #include "gr-base/core/task/runtime/shaderloadtask.hpp"
 
-
-#include "gr-base/core/task/runtime/shaderProperty.hpp"
-
 #include "gr-base/core/assetsManager.hpp"
-#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/event.hpp"
-
 #include "gr-base/core/file/file.hpp"
 
-#include "gr-base/core/thread/threadpool.hpp"
-
-#include <gr-render/gShader.h>
 #include <gr-render/gError.h>
-
-#include <filesystem>
-#include <fstream>
-#include <mutex>
-#include <stdexcept>
-#include <tuple>
 
 #define PRINT_ERROR(func, property, type) \
     if (func == InvalidUniformID) { \
@@ -42,71 +27,22 @@ std::unordered_map<std::string, UniformVariable_> ShaderLoadTask::mVariableNameT
     {"vec4",        UniformVariable::VEC4},
 };
 
-ShaderLoadTask::ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr), m_path(path), shaderoptimize(optimize)
-{
-    addFunction(func);
-}
+// public
+ShaderLoadTask::ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, grr::gShader *shader) : shaderoptimize(optimize), m_path(path), m_shader(shader), bShaderCreated(shader == nullptr)
+{}
 
-ShaderLoadTask::~ShaderLoadTask()
+void ShaderLoadTask::addFunction(std::function<void (grr::gShader *)> func)
 {
-    if (m_shader == nullptr)
-    {
-        return;
-    }
-    
-    invoke(m_shader);
-}
-
-void ShaderLoadTask::addFunction(ShaderFunc func)
-{
-    if (func == nullptr)
-        return;
-
     std::lock_guard<std::mutex> lock(mutex);
-    m_functions.push_back(func);
+    m_func_list.push_back(func);
 }
 
-void ShaderLoadTask::invoke(grr::gShader *shader)
-{
-    std::unique_lock<std::mutex> lock(mutex);
-    for (auto &func : m_functions)
-    {
-        lock.unlock();
-
-        func(shader);
-
-        lock.lock();
-    }
-}
-
-void ShaderLoadTask::upload(std::string path)
-{
-    auto name = std::filesystem::path(path).filename().string();
-    if (!buildShader(name, m_shader))
-    {
-        if (bShaderCreated)
-        {
-            AssetsManager::RemoveShader(m_shader);
-            m_shader = nullptr;
-        }
-
-        Console::LogError("[ ShaderLoadTask ] Fail to build shader: %s", path.c_str());
-
-        return AssetsManager::RemoveTask(m_path);
-    }
-
-    Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name.c_str());
-
-    AssetsManager::RemoveTask(m_path);
-}
-
+// private
 void ShaderLoadTask::doInBackground()
 {
     if (!gfile::exists(m_path))
     {
-        Console::LogWarning("[ ShaderLoadTask ] File not found: %s", m_path.c_str());
-
-        return AssetsManager::RemoveTask(m_path);
+        return Console::LogError("[ ShaderLoadTask ] file %s, do not found", m_path.c_str());
     }
 
     m_asset_shader_type = get_shader_asset_type(m_path);
@@ -127,8 +63,39 @@ void ShaderLoadTask::doInBackground()
 
         return AssetsManager::RemoveTask(m_path);
     }
+}
 
-    Event::Add(&ShaderLoadTask::upload, this, m_path);
+#include <filesystem>
+void ShaderLoadTask::onPostExecute()
+{
+    std::vector<std::function<void (grr::gShader *)>> funclist;
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        funclist = std::move(m_func_list);
+    }
+
+    auto name = std::filesystem::path(m_path).filename().string();
+    if (!buildShader(name, m_shader))
+    {
+        if (bShaderCreated)
+        {
+            AssetsManager::RemoveShader(m_shader);
+            m_shader = nullptr;
+        }
+
+        Console::LogError("[ ShaderLoadTask ] Fail to build shader: %s", m_path.c_str());
+
+        return AssetsManager::RemoveTask(m_path);
+    }
+
+    Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name.c_str());
+
+    for (auto &func : funclist)
+    {
+        func(m_shader);
+    }
+
+    AssetsManager::RemoveTask(m_path);
 }
 
 AssetShader ShaderLoadTask::get_shader_asset_type(const std::string &name)
@@ -702,5 +669,92 @@ std::string ShaderLoadTask::remove_comment(const std::string &str)
     return result;
 }
 
+/*
+#define PRINT_ERROR(func, property, type) \
+    if (func == InvalidUniformID) { \
+        Console::LogError("[ ShaderLoadTask ] Shader.Regiter uniform: %s", grr::error()); \
+    } else if (userfield.find(name) != userfield.end()) { \
+        property->addProperty(variablename, name, type); \
+    }
+
+std::unordered_map<std::string, UniformVariable_> ShaderLoadTask::mVariableNameToID =
+{
+    {"float",       UniformVariable::FLOAT},
+    {"int",         UniformVariable::INT},
+    {"bool",        UniformVariable::BOOL},
+    {"samplerCube", UniformVariable::SAMPLERCUBE},
+    {"sampler2D",   UniformVariable::SAMPLER2D},
+    {"mat3",        UniformVariable::MAT3},
+    {"mat4",        UniformVariable::MAT4},
+    {"vec2",        UniformVariable::VEC2},
+    {"vec3",        UniformVariable::VEC3},
+    {"vec4",        UniformVariable::VEC4},
+};
+
+ShaderLoadTask::ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader) : m_shader(shader), bShaderCreated(shader == nullptr), m_path(path), shaderoptimize(optimize)
+{
+    addFunction(func);
+}
+
+ShaderLoadTask::~ShaderLoadTask()
+{
+    if (m_shader == nullptr)
+    {
+        return;
+    }
+    
+    Event::Add(&ShaderLoadTask::invoke, this, m_shader);
+}
+
+void ShaderLoadTask::addFunction(ShaderFunc func)
+{
+    if (func == nullptr)
+        return;
+
+    std::lock_guard<std::mutex> lock(mutex);
+    m_functions.push_back(func);
+}
+
+void ShaderLoadTask::invoke(grr::gShader *shader)
+{
+    std::unique_lock<std::mutex> lock(mutex);
+    for (auto &func : m_functions)
+    {
+        lock.unlock();
+
+        func(shader);
+
+        lock.lock();
+    }
+}
+
+void ShaderLoadTask::upload(std::string path)
+{
+    auto name = std::filesystem::path(path).filename().string();
+    if (!buildShader(name, m_shader))
+    {
+        if (bShaderCreated)
+        {
+            AssetsManager::RemoveShader(m_shader);
+            m_shader = nullptr;
+        }
+
+        Console::LogError("[ ShaderLoadTask ] Fail to build shader: %s", path.c_str());
+
+        return AssetsManager::RemoveTask(m_path);
+    }
+
+    Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name.c_str());
+
+    AssetsManager::RemoveTask(m_path);
+}
+
+void ShaderLoadTask::doInBackground()
+{
+
+    Event::Add(&ShaderLoadTask::upload, this, m_path);
+}
+
+*/
 
 
