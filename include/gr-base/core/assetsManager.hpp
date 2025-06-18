@@ -44,7 +44,7 @@ public:
 
     static grr::gShader *CreateShader(ShaderParams shaderParams);
 
-    static grr::gShader *FindShader(ShaderOptimize optmize, const std::string &name);
+    static grr::gShader *FindShader(const std::string &name);
 
     static std::string GetShaderName(grr::gShader *shader);
 

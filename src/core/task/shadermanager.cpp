@@ -14,39 +14,16 @@ ShaderManager::~ShaderManager()
 
 grr::gShader *ShaderManager::create(ShaderParams shaderParams)
 {
-    int id = 0;
-
-    if (shaderParams.flags & ShaderOptimize_static)
-    {
-        id |= ShaderOptimize_static;
-    } else if (shaderParams.flags & ShaderOptimize_dynamic)
-    {
-        id |= ShaderOptimize_dynamic;
-    }
-
-    if (shaderParams.flags & ShaderOptimize_instanced)
-    {
-        id |= ShaderOptimize_instanced;
-    }
-
-    if (shaderParams.flags & ShaderOptimize_animated)
-    {
-        id |= ShaderOptimize_animated;
-    }
-
-    auto name = shaderParams.name + '_' + std::to_string(static_cast<int>(shaderParams.type)) + '_' + std::to_string(id);
+    auto name = GetShaderParamsName(shaderParams);
 
     std::unique_lock<std::mutex> lock(s_Mutex);
     {
         auto it = s_ShaderMap.find(name);
         if (it != s_ShaderMap.end())
         {
-            std::cout << "Get: " << name << std::endl;
             return it->second.get();
         }
     }
-
-    std::cout << "Create: " << name << std::endl;
 
     s_ShaderMap.emplace(name, std::make_unique<grr::gShader>());
 
@@ -60,32 +37,24 @@ void ShaderManager::destroy(const grr::gShader *shader)
 
 const char *ShaderManager::get_shader_name(const grr::gShader *shader)
 {
+    throw std::runtime_error("Falta corrigir aqui: 60 em ShaderManager.cpp");
     return nullptr;
+}
+
+grr::gShader *ShaderManager::find(const std::string &name)
+{
+    std::lock_guard<std::mutex> lock(s_Mutex);
+    auto it = s_ShaderMap.find(name);
+    if (it == s_ShaderMap.end())
+    {
+        return nullptr;
+    }
+    return it->second.get();
 }
 
 std::shared_ptr<TaskInfo> ShaderManager::create_shader_task_load(ShaderParams shaderParams, const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func)
 {
-    int id = 0;
-
-    if (shaderParams.flags & ShaderOptimize_static)
-    {
-        id |= ShaderOptimize_static;
-    } else if (shaderParams.flags & ShaderOptimize_dynamic)
-    {
-        id |= ShaderOptimize_dynamic;
-    }
-
-    if (shaderParams.flags & ShaderOptimize_instanced)
-    {
-        id |= ShaderOptimize_instanced;
-    }
-
-    if (shaderParams.flags & ShaderOptimize_animated)
-    {
-        id |= ShaderOptimize_animated;
-    }
-
-    auto name = shaderParams.name + '_' + std::to_string(static_cast<int>(shaderParams.type)) + '_' + std::to_string(id);
+    auto name = GetShaderParamsName(shaderParams);
 
     std::unique_lock<std::mutex> lock(s_Mutex);
 

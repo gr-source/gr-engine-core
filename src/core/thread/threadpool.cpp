@@ -1,27 +1,15 @@
 #include "gr-base/core/thread/threadpool.hpp"
 
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/thread/default.hpp"
 
 #include <mutex>
 #include <thread>
-
-std::mutex Threadpool::m_mutex;
 
 // static
 bool Threadpool::IsMainThread()
 {
     return GetInstance().isMainThread();
-}
-
-std::size_t Threadpool::GetCount()
-{
-    return GetInstance().m_threads.size();
-}
-
-std::size_t Threadpool::GetUsage()
-{
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return GetInstance().m_available;
 }
 
 // private
@@ -86,6 +74,25 @@ void Threadpool::update()
             break;
         }
 
+
+        if (m_available >= 3)
+        {
+            bool haspriority = false;
+            for (auto &&[priority, task] : m_task)
+            {
+                if (priority == TaskPriority::HIGH)
+                {
+                    haspriority = true;
+                    break;
+                }
+            }
+
+            if (!haspriority)
+            {
+                continue;
+            }
+        }
+
         {
             m_available++;
             m_cv.notify_all();
@@ -94,9 +101,11 @@ void Threadpool::update()
         auto temp = std::move(m_task);
         lock.unlock();
 
+        temp.sort([](auto &lhs, auto &rhs) { return std::get<0>(lhs) > std::get<0>(rhs); });
+
         try
         {
-            for (auto &task : temp)
+            for (auto &&[priority, task] : temp)
                 task();
         } catch (const std::exception &e)
         {

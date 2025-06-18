@@ -9,14 +9,20 @@ public:
     template <class T, typename ...Args>
     static std::shared_ptr<TaskInfo> Add(Args &&...args);
 
+    static TaskInfo *Current();
+
     template <class T, typename ...Args>
     std::shared_ptr<TaskInfo> add(Args &&...args);
 
 private:
-    TaskManager() = default;
+    TaskManager();
     ~TaskManager() = default;
 
     static TaskManager &GetInstance();
+
+    TaskInfo *current;
+
+    TaskInfo *getCurrent();
 
     void update(std::shared_ptr<TaskInfo> info);
 
@@ -39,7 +45,7 @@ inline std::shared_ptr<TaskInfo> TaskManager::add(Args &&...args)
     auto info = std::make_shared<TaskInfo>();
     info->task = std::make_shared<T>(std::forward<Args>(args)...);
 
-    Threadpool::AddTask(&TaskManager::update, this, info);
+    Threadpool::AddTask(info->task->priority, &TaskManager::update, this, info);
 
     return info;
 }

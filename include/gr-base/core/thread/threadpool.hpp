@@ -8,28 +8,29 @@
 #include <mutex>
 #include <list>
 
+#include "default.hpp"
+
 class Threadpool
 {
 public:
     template <typename ...Args>
     static void AddTask(Args &&...args);
 
+    template <typename ...Args>
+    static void AddTask(TaskPriority priority, Args &&...args);
+
     static bool IsMainThread();
-
-    static std::size_t GetCount();
-
-    static std::size_t GetUsage();
 
 private:
     static Threadpool &GetInstance();
 
-    std::list<std::function<void()>> m_task;
+    std::list<std::tuple<TaskPriority, std::function<void()>>> m_task;
 
     std::vector<std::thread> m_threads;
 
     std::condition_variable m_cv;
 
-    static std::mutex m_mutex;
+    std::mutex m_mutex;
 
     bool m_bStop;
 
@@ -43,7 +44,7 @@ private:
     bool isMainThread() const;
 
     template <typename ...Args>
-    void add(Args &&...args);
+    void add(TaskPriority priority, Args &&...args);
 
     void update();
 
@@ -53,16 +54,22 @@ private:
 template <typename... Args>
 inline void Threadpool::AddTask(Args &&...args)
 {
-    return GetInstance().add(std::forward<Args>(args)...);
+    return GetInstance().add(TaskPriority::LOW, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+inline void Threadpool::AddTask(TaskPriority priority, Args &&...args)
+{
+    return GetInstance().add(priority, std::forward<Args>(args)...);
 }
 
 // private
 template <typename ...Args>
-inline void Threadpool::add(Args &&...args)
+inline void Threadpool::add(TaskPriority priority, Args &&...args)
 {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_task.emplace_back(std::bind(std::forward<Args>(args)...));
+        m_task.emplace_back(priority, std::bind(std::forward<Args>(args)...));
     }
     m_cv.notify_one();
 }

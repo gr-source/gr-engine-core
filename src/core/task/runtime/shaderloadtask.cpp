@@ -3,6 +3,7 @@
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/file/file.hpp"
+#include "gr-base/core/thread/asynctask.hpp"
 
 #include <gr-render/gError.h>
 #include <stdexcept>
@@ -29,7 +30,7 @@ std::unordered_map<std::string, UniformVariable_> ShaderLoadTask::mVariableNameT
 };
 
 // public
-ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams, const std::string &path, grr::gShader *shader) : m_shaderParams(shaderParams), m_path(path), m_shader(shader), bShaderCreated(shader == nullptr)
+ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams, const std::string &path, grr::gShader *shader) : m_shaderParams(shaderParams), m_path(path), m_shader(shader), bShaderCreated(shader == nullptr), AsyncTask(TaskPriority::HIGH)
 {}
 
 void ShaderLoadTask::addFunction(std::function<void (grr::gShader *)> func)
@@ -70,12 +71,6 @@ void ShaderLoadTask::doInBackground()
 #include <filesystem>
 void ShaderLoadTask::onPostExecute()
 {
-    std::vector<std::function<void (grr::gShader *)>> funclist;
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        funclist = std::move(m_func_list);
-    }
-
     auto name = std::filesystem::path(m_path).filename().string();
     if (!buildShader(name, m_shader))
     {
@@ -91,6 +86,13 @@ void ShaderLoadTask::onPostExecute()
     }
 
     Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name.c_str());
+
+
+    std::vector<std::function<void (grr::gShader *)>> funclist;
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        funclist = std::move(m_func_list);
+    }
 
     for (auto &func : funclist)
     {

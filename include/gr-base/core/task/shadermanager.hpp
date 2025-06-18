@@ -16,6 +16,8 @@ public:
 
     const char *get_shader_name(const grr::gShader *shader);
 
+    grr::gShader *find(const std::string &name);
+
     std::shared_ptr<TaskInfo> create_shader_task_load(ShaderParams shaderParams, const std::string &path, grr::gShader *shader, std::function<void(grr::gShader *)> func);
 
     bool remove_task(const std::string &name);

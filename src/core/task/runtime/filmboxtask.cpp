@@ -1,5 +1,6 @@
 #include "gr-base/core/task/runtime/filmboxtask.hpp"
 
+#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
@@ -9,6 +10,7 @@
 
 #include "gr-base/core/filmbox/filmbox.hpp"
 
+#include "gr-base/core/thread/taskmanager.hpp"
 #include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/script/skinnedMeshRender.hpp"
@@ -255,29 +257,40 @@ void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
         }
     }
 
-    // auto shader = AssetsManager::FindShader(m_bones.empty() ? ShaderOptimize_DYNAMIC : ShaderOptimize_ANIMATION_DYNAMIC, File::GetAsset("/shader/model/simple_model.glsl"));
-    // if (shader == nullptr)
+    ShaderParams shaderParams;
+    shaderParams.name = "simple_model";
+    shaderParams.flags = ShaderOptimize_dynamic;
+    shaderParams.type = ShaderType::SHADER3D;
+
+    if (!m_bones.empty())
     {
-        ShaderParams shaderParams;
-        shaderParams.name = "simple_model";
-        shaderParams.flags = ShaderOptimize_dynamic;
-        if (!m_bones.empty())
+        shaderParams.flags |= ShaderOptimize_animated;
+    }
+
+    auto name = GetShaderParamsName(shaderParams);
+
+    auto shader = AssetsManager::FindShader(name);
+    if (shader == nullptr)
+    {
         {
-            shaderParams.flags |= ShaderOptimize_animated;
+
+        auto info = AssetsManager::LoadShader(shaderParams, File::GetAsset("/shader/model/simple_model.glsl"),
+                [&](grr::gShader *current)
+                {
+                    auto taskInfo = TaskManager::Current();
+                    if (taskInfo != nullptr)
+                    {
+                        std::lock_guard<std::mutex> lock(taskInfo->task->mutex);
+                        shader = current;
+                    } 
+                });
+        info->wait();
         }
 
-        auto info = AssetsManager::LoadShader(shaderParams, File::GetAsset("/shader/model/simple_model.glsl"));
-        // info->wait();
-        
-        /*
-        std::cout << "Lock Thread" << std::endl;
-        if (info != nullptr)
-            info->wait();
-
-shader = AssetsManager::FindShader(m_bones.empty() ? ShaderOptimize_DYNAMIC : ShaderOptimize_ANIMATION_DYNAMIC, File::GetAsset("/shader/model/simple_model.glsl"));
-
-        std::cout << "Continue" << std::endl;
-        */
+        if (shader == nullptr)
+        {
+            std::cout << "err" << std::endl;
+        }
     }
 
     /*

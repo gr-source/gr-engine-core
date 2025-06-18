@@ -25,6 +25,8 @@ struct ShaderParams
     ShaderOptimize_ flags;
 };
 
+std::string GetShaderParamsName(ShaderParams shaderParams);
+
 
 
 

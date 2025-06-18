@@ -113,12 +113,10 @@ grr::gShader *AssetsManager::CreateShader(ShaderParams shaderParams)
     return dynamic_cast<grr::gShader *>(GetShaderManager().create(shaderParams));
 }
 
-/*
-grr::gShader *AssetsManager::FindShader(ShaderOptimize optmize, const std::string &name)
+grr::gShader *AssetsManager::FindShader(const std::string &name)
 {
-    return dynamic_cast<grr::gShader *>(GetShaderManager().find(optmize, name));
+    return dynamic_cast<grr::gShader *>(GetShaderManager().find(name));
 }
-*/
 
 std::string AssetsManager::GetShaderName(grr::gShader *shader)
 {

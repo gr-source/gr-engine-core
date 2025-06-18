@@ -9,6 +9,19 @@ TaskManager &TaskManager::GetInstance()
     return instance;
 }
 
+TaskInfo *TaskManager::Current()
+{
+    return GetInstance().getCurrent();
+}
+
+TaskManager::TaskManager() : current(nullptr)
+{}
+
+TaskInfo *TaskManager::getCurrent()
+{
+    return current;
+}
+
 void TaskManager::update(std::shared_ptr<TaskInfo> info)
 {
     info->task->doInBackground();
@@ -18,7 +31,11 @@ void TaskManager::update(std::shared_ptr<TaskInfo> info)
 
 void TaskManager::finish(std::shared_ptr<TaskInfo> info)
 {
+    current = info.get();
+
     info->task->onPostExecute();
+
+    current = nullptr;
 
     info->finish();
 }
