@@ -9,8 +9,6 @@ public:
     template <class T, typename ...Args>
     static std::shared_ptr<TaskInfo> Add(Args &&...args);
 
-    static TaskInfo *Current();
-
     template <class T, typename ...Args>
     std::shared_ptr<TaskInfo> add(Args &&...args);
 
@@ -19,10 +17,6 @@ private:
     ~TaskManager() = default;
 
     static TaskManager &GetInstance();
-
-    TaskInfo *current;
-
-    TaskInfo *getCurrent();
 
     void update(std::shared_ptr<TaskInfo> info);
 
@@ -33,7 +27,7 @@ private:
 template <class T, typename ...Args>
 inline std::shared_ptr<TaskInfo> TaskManager::Add(Args &&...args)
 {
-    static_assert(std::is_base_of<AsyncTask, T>(), "This class does not inherit from AsyncTask!");
+    static_assert(std::is_base_of<ITask, T>(), "This class does not inherit from ITask!");
 
     return GetInstance().add<T>(std::forward<Args>(args)...);
 }

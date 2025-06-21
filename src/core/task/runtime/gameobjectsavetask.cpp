@@ -8,13 +8,14 @@ GameObjectSaveTask::GameObjectSaveTask(const std::string &path, const GameObject
 {}
 
 // private
-void GameObjectSaveTask::doInBackground()
+int GameObjectSaveTask::doInBackground()
 {
     Console::LogError("Save: %s", m_gameObject->getName().c_str());
     Console::LogError("In: %s", m_path.c_str());
+    return 0;
 }
 
-void GameObjectSaveTask::onPostExecute()
+void GameObjectSaveTask::onPostExecute(int result)
 {}
 
 /*

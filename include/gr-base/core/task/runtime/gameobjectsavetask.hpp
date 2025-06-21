@@ -8,7 +8,7 @@
 
 #include "gr-base/ecs/default.hpp"
 
-class GameObjectSaveTask : public AsyncTask
+class GameObjectSaveTask : public IAsyncTask<int>
 {
 public:
     GameObjectSaveTask() = delete;
@@ -19,9 +19,9 @@ private:
 
     const GameObject *m_gameObject;
 
-    void doInBackground() override;
+    int doInBackground() override;
 
-    void onPostExecute() override;
+    void onPostExecute(int result) override;
 };
 
 /*

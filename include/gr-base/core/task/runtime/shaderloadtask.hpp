@@ -16,7 +16,7 @@ typedef struct
     grm::u32 count;
 } ShaderUniform;
 
-class ShaderLoadTask : public AsyncTask
+class ShaderLoadTask : public IAsyncTask<int>
 {
 public:
     ShaderLoadTask() = delete;
@@ -31,9 +31,9 @@ private:
 
     const std::string m_path;
 
-    void doInBackground() override;
+    int doInBackground() override;
 
-    void onPostExecute() override;
+    void onPostExecute(int result) override;
 
 protected:
     std::array<std::vector<ShaderUniform>, IShaderStage> mShaderUniformMapToList;

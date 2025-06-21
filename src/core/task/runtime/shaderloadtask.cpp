@@ -30,7 +30,7 @@ std::unordered_map<std::string, UniformVariable_> ShaderLoadTask::mVariableNameT
 };
 
 // public
-ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams, const std::string &path, grr::gShader *shader) : m_shaderParams(shaderParams), m_path(path), m_shader(shader), bShaderCreated(shader == nullptr), AsyncTask(TaskPriority::HIGH)
+ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams, const std::string &path, grr::gShader *shader) : m_shaderParams(shaderParams), m_path(path), m_shader(shader), bShaderCreated(shader == nullptr), IAsyncTask(TaskPriority::HIGH)
 {}
 
 void ShaderLoadTask::addFunction(std::function<void (grr::gShader *)> func)
@@ -40,11 +40,12 @@ void ShaderLoadTask::addFunction(std::function<void (grr::gShader *)> func)
 }
 
 // private
-void ShaderLoadTask::doInBackground()
+int ShaderLoadTask::doInBackground()
 {
     if (!gfile::exists(m_path))
     {
-        return Console::LogError("[ ShaderLoadTask ] file %s, do not found", m_path.c_str());
+        Console::LogError("[ ShaderLoadTask ] file %s, do not found", m_path.c_str());
+        return 1;
     }
 
     auto type = get_shader_asset_type(m_path);
@@ -64,13 +65,20 @@ void ShaderLoadTask::doInBackground()
             m_shader = nullptr;
         }
 
-        return AssetsManager::RemoveTask(m_path);
+        AssetsManager::RemoveTask(m_path);
+        return 2;
     }
+    return 0;
 }
 
 #include <filesystem>
-void ShaderLoadTask::onPostExecute()
+void ShaderLoadTask::onPostExecute(int result)
 {
+    if (result != 0)
+    {
+        return AssetsManager::RemoveTask(m_path);
+    }
+
     auto name = std::filesystem::path(m_path).filename().string();
     if (!buildShader(name, m_shader))
     {

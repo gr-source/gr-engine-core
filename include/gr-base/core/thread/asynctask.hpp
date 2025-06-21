@@ -6,28 +6,60 @@
 
 #include "default.hpp"
 
-class AsyncTask
+class ITask
 {
 public:
+    TaskPriority priority;
+    
     std::mutex mutex;
 
-    TaskPriority priority;
+    ITask(TaskPriority taskPriority) : priority(taskPriority) {}
 
-    AsyncTask(TaskPriority taskPriority = TaskPriority::LOW) : priority(taskPriority) {}
+    virtual ~ITask() = default;
 
-    virtual ~AsyncTask() {}
+    virtual void run() = 0;
 
-    virtual void doInBackground() = 0;
-
-    virtual void onPostExecute() {}
+    virtual void finish() = 0;
 };
+
+template <typename R>
+class IAsyncTask : public ITask
+{
+public:
+    R result;
+
+    IAsyncTask(TaskPriority taskPriority = TaskPriority::LOW) : ITask(taskPriority) {}
+
+    virtual ~IAsyncTask() = default;
+
+    virtual R doInBackground() = 0;
+
+    virtual void onPostExecute(R result) {}
+
+private:
+    void run() override;
+
+    void finish() override;
+};
+
+template <typename R>
+inline void IAsyncTask<R>::run()
+{
+    result = doInBackground();
+}
+
+template <typename R>
+inline void IAsyncTask<R>::finish()
+{
+    return onPostExecute(result);
+}
 
 struct TaskInfo
 {
     bool bFinish;
     std::condition_variable cv;
 
-    std::shared_ptr<AsyncTask> task;
+    std::shared_ptr<ITask> task;
 
     TaskInfo() : bFinish(false), task(nullptr) {}
 

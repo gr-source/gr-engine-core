@@ -12,7 +12,6 @@
 class SceneSaveTask
 {
 public:
-
     SceneSaveTask(const Scene *scene);
 
 private:

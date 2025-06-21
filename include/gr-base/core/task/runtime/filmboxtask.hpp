@@ -4,7 +4,7 @@
 
 #include "gr-base/core/thread/asynctask.hpp"
 
-class FilmboxTask : public AsyncTask
+class FilmboxTask : public IAsyncTask<int>
 {
 public:
     FilmboxTask(const std::string &path);
@@ -12,9 +12,9 @@ public:
 private:
     const std::string m_path;
 
-    void doInBackground() override;
+    int doInBackground() override;
 
-    void onPostExecute() override;
+    void onPostExecute(int result) override;
 };
 
 /*

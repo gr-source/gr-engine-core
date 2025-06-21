@@ -6,12 +6,14 @@
 FilmboxTask::FilmboxTask(const std::string &path) : m_path(path)
 {}
 
-void FilmboxTask::doInBackground()
+int FilmboxTask::doInBackground()
 {
     Console::LogInfo("[ FilmboxTask ] Loading: %s", m_path.c_str());
+
+    return 0;
 }
 
-void FilmboxTask::onPostExecute()
+void FilmboxTask::onPostExecute(int result)
 {
     Console::LogInfo("Loaded: %s", m_path.c_str());
 }
