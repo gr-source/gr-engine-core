@@ -1,5 +1,22 @@
 #include "gr-base/core/task/runtime/filmboxtask.hpp"
 
+#include "gr-base/core/console.hpp"
+#include <thread>
+
+FilmboxTask::FilmboxTask(const std::string &path) : m_path(path)
+{}
+
+void FilmboxTask::doInBackground()
+{
+    Console::LogInfo("[ FilmboxTask ] Loading: %s", m_path.c_str());
+}
+
+void FilmboxTask::onPostExecute()
+{
+    Console::LogInfo("Loaded: %s", m_path.c_str());
+}
+
+/*
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 
@@ -75,12 +92,10 @@ void FilmboxTask::save()
 {
     for (auto &go : m_objectroot)
     {
-        auto name = go->getName();
-
-        GameObjectSaveTask GameObjectSaveTask(go, gfile::AssetStreamPath + "/model/" + name + ".gmdx");
+        TaskManager::Add<GameObjectSaveTask>(File::GetAsset("/model"), go);
     }
 
-    AssetsManager::RemoveTask(m_name);
+    // AssetsManager::RemoveTask(m_name);
 }
 
 void FilmboxTask::render_hierarchy(GameObject *go)
@@ -272,34 +287,20 @@ void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
     auto shader = AssetsManager::FindShader(name);
     if (shader == nullptr)
     {
-        {
-
         auto info = AssetsManager::LoadShader(shaderParams, File::GetAsset("/shader/model/simple_model.glsl"),
                 [&](grr::gShader *current)
                 {
-                    auto taskInfo = TaskManager::Current();
-                    if (taskInfo != nullptr)
-                    {
-                        std::lock_guard<std::mutex> lock(taskInfo->task->mutex);
-                        shader = current;
-                    } 
+                    shader = current;
                 });
         info->wait();
-        }
-
-        if (shader == nullptr)
-        {
-            std::cout << "err" << std::endl;
-        }
     }
 
-    /*
     for (auto &fbxMaterial : materialList)
     {
         auto material = renderer->createMaterial(fbxMaterial.getName(), shader);
         material->setValue("albedo", fbxMaterial.getColor());
         // material->setValue()
-
+        
         for (auto &&[type, path] : fbxMaterial.getTextures())
         {
             switch (type) {
@@ -311,8 +312,7 @@ void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
             }
         }
     }
-    */
 }
-
+*/
 
 

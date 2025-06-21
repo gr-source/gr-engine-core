@@ -1,4 +1,6 @@
 #include "gr-base/core/task/filmboxmanager.hpp"
+#include "gr-base/core/task/runtime/filmboxtask.hpp"
+#include "gr-base/core/thread/taskmanager.hpp"
 
 #include <imgui.h>
 
@@ -6,59 +8,43 @@
 #include <mutex>
 
 // ********** public ********** //
-std::mutex FilmboxManager::mutex;
-
-// ********** public ********** //
 FilmboxManager::FilmboxManager()
 {}
 
 FilmboxManager::~FilmboxManager()
+{}
+
+std::shared_ptr<TaskInfo> FilmboxManager::create_task_load(const std::string &path, std::function<void ()> func)
 {
-    clear();
+    std::unique_lock<std::mutex> lock(mutex);
+    auto it = m_filmbox_task_map.find(path);
+    if (it != m_filmbox_task_map.end())
+    {
+        return it->second;
+    }
+
+    auto info = TaskManager::Add<FilmboxTask>(path);
+
+    m_filmbox_task_map.emplace(path, info);
+
+    return info;
 }
 
 bool FilmboxManager::remove_task(const std::string &path)
 {
-    std::unique_lock<std::mutex> lock(mutex);
-    auto it = filmboxtaskmap.find(path);
-    if (it == filmboxtaskmap.end())
+    std::lock_guard<std::mutex> lock(mutex);
+    auto it = m_filmbox_task_map.find(path);
+    if (it == m_filmbox_task_map.end())
     {
         return false;
     }
-
-    taskcount--;
-
-    tasklist.erase(std::remove(tasklist.begin(), tasklist.end(), &(*it->second)), tasklist.end());
-
-    taskpointertoname.erase(&(*it->second));
-
-    filmboxtaskmap.erase(it);
-
-    return true;
-}
-
-bool FilmboxManager::remove_task(const FilmboxTask *task)
-{
-    std::unique_lock<std::mutex> lock(mutex);
-    auto it = taskpointertoname.find(task);
-    if (it == taskpointertoname.end())
-    {
-        return false;
-    }
-
-    taskcount--;
-
-    tasklist.erase(std::remove(tasklist.begin(), tasklist.end(), it->first), tasklist.end());
-
-    filmboxtaskmap.erase(it->second);
-
-    taskpointertoname.erase(it);
-
+    m_filmbox_task_map.erase(it);
     return true;
 }
 
 void FilmboxManager::render()
 {
+    /*
     auto avail = ImGui::GetContentRegionAvail();
 
     std::unique_lock<std::mutex> lock(mutex);
@@ -90,52 +76,8 @@ void FilmboxManager::render()
             lock.lock();
         }
     }
+    */
 }
-
-bool FilmboxManager::has_task() const
-{
-    return taskcount > 0;
-}
-
-void FilmboxManager::clear()
-{
-    std::lock_guard<std::mutex> lock(mutex);
-
-    taskcount = 0;
-
-    tasklist.clear();
-
-    taskpointertoname.clear();
-
-    filmboxtaskmap.clear();
-}
-
-// ********** private ********** //
-void FilmboxManager::load(const std::string &path, std::function<void ()> func)
-{
-    std::unique_lock<std::mutex> lock(mutex);
-    {
-        auto it = filmboxtaskmap.find(path);
-        if (it != filmboxtaskmap.end())
-        {
-            if (func == nullptr)
-            {
-                return;
-            }
-
-            return it->second->add_function(func);
-        }
-    }
-
-    filmboxtaskmap.emplace(path, std::make_unique<FilmboxTask>(path, func));
-
-    taskpointertoname.emplace(&(*filmboxtaskmap[path]), path);
-
-    tasklist.push_back(&(*filmboxtaskmap[path]));
-
-    taskcount++;
-}
-
 
 
 

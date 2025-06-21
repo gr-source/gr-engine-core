@@ -21,8 +21,6 @@
 
 AnimationManager AssetsManager::mAnimationManager;
 
-FilmboxManager AssetsManager::mFilmboxManager;
-
 // sshader property
 std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> AssetsManager::mShaderPropertyMap;
 
@@ -68,6 +66,7 @@ void AssetsManager::Shutdown()
 
 void AssetsManager::Render()
 {
+    /*
     auto has_task_in_filmboxmanager = mFilmboxManager.has_task();
     if (!has_task_in_filmboxmanager)
     {
@@ -97,6 +96,7 @@ void AssetsManager::Render()
     }
 
     ImGui::End();
+    */
 }
 
 std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
@@ -411,7 +411,7 @@ void AssetsManager::RemoveTask(const std::string &name)
         return;
     }
 
-    if (mFilmboxManager.remove_task(name))
+    if (GetFilmboxManager().remove_task(name))
     {
         return;
     }
@@ -421,6 +421,12 @@ void AssetsManager::RemoveTask(const std::string &name)
 ShaderManager &AssetsManager::GetShaderManager()
 {
     static ShaderManager instance;
+    return instance;
+}
+
+FilmboxManager &AssetsManager::GetFilmboxManager()
+{
+    static FilmboxManager instance;
     return instance;
 }
 

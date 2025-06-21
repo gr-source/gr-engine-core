@@ -2,6 +2,22 @@
 
 #include "default.hpp"
 
+#include "gr-base/core/thread/asynctask.hpp"
+
+class FilmboxTask : public AsyncTask
+{
+public:
+    FilmboxTask(const std::string &path);
+
+private:
+    const std::string m_path;
+
+    void doInBackground() override;
+
+    void onPostExecute() override;
+};
+
+/*
 #include "gr-base/core/filmbox/fbxScene.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
@@ -45,7 +61,7 @@ private:
 
     void generateMesh(const FbxNode *node, GameObject *go);
 };
-
+*/
 
 
 

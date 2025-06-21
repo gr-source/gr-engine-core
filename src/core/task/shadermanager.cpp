@@ -27,6 +27,8 @@ grr::gShader *ShaderManager::create(ShaderParams shaderParams)
 
     s_ShaderMap.emplace(name, std::make_unique<grr::gShader>());
 
+    s_ShaderNameMap.emplace(s_ShaderMap[name].get(), name);
+
     return s_ShaderMap[name].get();
 }
 
@@ -37,8 +39,13 @@ void ShaderManager::destroy(const grr::gShader *shader)
 
 const char *ShaderManager::get_shader_name(const grr::gShader *shader)
 {
-    throw std::runtime_error("Falta corrigir aqui: 60 em ShaderManager.cpp");
-    return nullptr;
+    std::lock_guard<std::mutex> lock(s_Mutex);
+    auto it = s_ShaderNameMap.find(shader);
+    if (it == s_ShaderNameMap.end())
+    {
+        return nullptr;
+    }
+    return it->second.c_str();
 }
 
 grr::gShader *ShaderManager::find(const std::string &name)

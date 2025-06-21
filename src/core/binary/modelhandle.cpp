@@ -1,5 +1,5 @@
 #include "gr-base/core/binary/modelhandle.hpp"
-
+/*
 #include "gr-base/core/animation/keyframe.hpp"
 #include "gr-base/core/filmbox/fbxScene.hpp"
 #include "gr-base/core/filmbox/filmbox.hpp"
@@ -377,7 +377,6 @@ void ModelHandle::generateMesh(const FbxScene *scene, const FbxNode *node, GameO
             }
         }
     }
-    */
 }
 
 void ModelHandle::generateAnimation(FbxScene *fbxScene)
@@ -475,4 +474,4 @@ void ModelHandle::saveAnimation()
     }
 }
 
-
+*/

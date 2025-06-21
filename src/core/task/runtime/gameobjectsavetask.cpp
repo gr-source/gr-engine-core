@@ -1,5 +1,23 @@
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 
+#include "gr-base/core/console.hpp"
+
+#include "gr-base/ecs/gameObject.hpp"
+
+GameObjectSaveTask::GameObjectSaveTask(const std::string &path, const GameObject *gameObject) : m_path(path), m_gameObject(gameObject)
+{}
+
+// private
+void GameObjectSaveTask::doInBackground()
+{
+    Console::LogError("Save: %s", m_gameObject->getName().c_str());
+    Console::LogError("In: %s", m_path.c_str());
+}
+
+void GameObjectSaveTask::onPostExecute()
+{}
+
+/*
 #include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/file/file.hpp"
 
@@ -419,7 +437,7 @@ void GameObjectSaveTask::readObjectSource(const GameObject *go)
         readObjectSource(child->getGameObject());
     }
 }
-
+*/
 
 
 

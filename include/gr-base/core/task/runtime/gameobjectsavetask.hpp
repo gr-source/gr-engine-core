@@ -4,10 +4,27 @@
 
 #include "gr-base/core/file/default.hpp"
 
+#include "gr-base/core/thread/asynctask.hpp"
+
 #include "gr-base/ecs/default.hpp"
 
-#include <memory>
+class GameObjectSaveTask : public AsyncTask
+{
+public:
+    GameObjectSaveTask() = delete;
+    GameObjectSaveTask(const std::string &dir, const GameObject *gameObject);
 
+private:
+    const std::string m_path;
+
+    const GameObject *m_gameObject;
+
+    void doInBackground() override;
+
+    void onPostExecute() override;
+};
+
+/*
 class GameObjectSaveTask
 {
 public:
@@ -40,7 +57,7 @@ protected:
 
     void readObjectSource(const GameObject *go);
 };
-
+*/
 
 
 

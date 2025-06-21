@@ -60,7 +60,7 @@ public:
     static void LoadAnimation(const std::string &path, Args &&...args);
 
     template <typename ...Args>
-    static void LoadFilmbox(const std::string &path, Args &&...args);
+    static std::shared_ptr<TaskInfo> LoadFilmbox(const std::string &path, Args &&...args);
 
     static Animation *CreateAnimation(const std::string &name);
 
@@ -115,8 +115,6 @@ public:
 private:
     static AnimationManager mAnimationManager;
 
-    static FilmboxManager mFilmboxManager;
-
     // sshader property
     static std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> mShaderPropertyMap;
 
@@ -147,8 +145,9 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> mSceneMap;
     static std::mutex mSceneMutex;
 
-    
     static ShaderManager &GetShaderManager();
+
+    static FilmboxManager& GetFilmboxManager();
 
     static void SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void (Scene *)> func);
 };
@@ -225,9 +224,15 @@ void AssetsManager::LoadAnimation(const std::string &path, Args &&...args)
 }
 
 template <typename ...Args>
-void AssetsManager::LoadFilmbox(const std::string &path, Args &&...args)
+std::shared_ptr<TaskInfo> AssetsManager::LoadFilmbox(const std::string &path, Args &&...args)
 {
-    return mFilmboxManager.load(path, std::forward<Args>(args)...);
+    std::function<void ()> func = nullptr;
+    if constexpr (sizeof...(Args) > 0)
+    {
+        func = std::bind(std::forward<Args>(args)...);
+    }
+
+    return GetFilmboxManager().create_task_load(path, func);
 }
 
 
