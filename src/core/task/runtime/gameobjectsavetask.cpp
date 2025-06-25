@@ -1,112 +1,108 @@
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 
+#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/binary/gHeader.hpp"
+
+#include "gr-base/core/file/stream.hpp"
+
+#include "gr-base/core/geometry/material.hpp"
+
 #include "gr-base/core/console.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
 
-GameObjectSaveTask::GameObjectSaveTask(const std::string &path, const GameObject *gameObject) : m_path(path), m_gameObject(gameObject)
+#include "gr-base/script/skinnedMeshRender.hpp"
+#include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/transform.hpp"
+
+GameObjectSaveTask::GameObjectSaveTask(const std::string &path, const GameObject *gameObject, std::function<void (const GameObject *)> func) : m_path(path), m_gameObject(gameObject), m_stream(nullptr), m_func(func)
 {}
 
 // private
 int GameObjectSaveTask::doInBackground()
 {
-    Console::LogError("Save: %s", m_gameObject->getName().c_str());
-    Console::LogError("In: %s", m_path.c_str());
+    m_stream = std::make_shared<Stream>(m_path + "/" + m_gameObject->getName() + ".gmdx", std::ios_base::out | std::ios_base::binary);
+
+    // Header file
+    {
+        FileHeader header{{'g', 'm', 'd', 'x'}, 1.0f, 0};
+        if (!m_stream->writeS(&header, 1, false))
+        {
+            Console::LogError("[ GameObjectSaveTask ] Fail to write header.");
+            return 1;
+        }
+    }
+
+    remape_gameobject(m_gameObject);
+
+    int result = write_data();
+    if (result != 0)
+    {
+        return 2;
+    }
+
     return 0;
 }
 
 void GameObjectSaveTask::onPostExecute(int result)
-{}
-
-/*
-#include "gr-base/core/file/stream.hpp"
-#include "gr-base/core/file/file.hpp"
-
-#include "gr-base/core/binary/gHeader.hpp"
-
-#include "gr-base/script/skinnedMeshRender.hpp"
-#include "gr-base/script/baserender.hpp"
-#include "gr-base/script/meshRender.hpp"
-#include "gr-base/script/transform.hpp"
-
-#include "gr-base/core/geometry/material.hpp"
-
-#include "gr-base/ecs/gameObject.hpp"
-
-#include "gr-base/core/console.hpp"
-
-#include <filesystem>
-
-GameObjectSaveTask::GameObjectSaveTask(const GameObject *go, std::string path) : m_gameObject(go), m_stream(nullptr)
 {
-    auto filename = go->getName() + ".gmdx";
-
-    auto temp_file = std::filesystem::temp_directory_path() / filename;
-
-    doInBackground(temp_file);
-
-    if (std::filesystem::is_directory(path))
-    {
-        path += "/" + filename;
-    }
-
-    if (File::Exists(path))
-    {
-        File::Delete(path);
-    }
-
-    File::Copy(temp_file, path);
-}
-
-void GameObjectSaveTask::doInBackground(std::string path) {
-    auto name = m_gameObject->getName();
-
-    Console::LogInfo("[ GameObjectSaveTask ] Initialize task for import: %s, %s", name.c_str(), path.c_str());
-
-    m_stream = std::make_shared<Stream>(path, std::ios_base::out | std::ios_base::binary);
-
-    // Header file
-    {
-        FileHeader header{{'g', 'r', 'm', 'x'}, 1.0f, 0};
-        if (!m_stream->writeS(&header, 1, false)) {
-            return Console::LogError("[ GameObjectSaveTask ] Fail to write header.");
-        }
-    }
-
-    readObjectSource(m_gameObject);
-
-    int result = writeData();
-    if (result != 0) {
-        return Console::LogError("[ GameObjectSaveTask ] Fail to write metadata: %d", result);
-    }
-    Console::LogInfo("[ GameObjectSaveTask ] Modelsaved sucesfuly: %s", name.c_str());
-
     m_stream->close();
+
+    if (m_func != nullptr)
+    {
+        m_func(m_gameObject);
+    }
+
+    if (result != 0)
+    {
+        return;
+    }
+
+    Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", m_path.c_str());
 }
 
-int GameObjectSaveTask::writeData()
+int GameObjectSaveTask::write_data()
 {
     // write gameobject
     {
-        if (writeGameObject(m_gameObject) != 0) {
+        if (write_gameobject(m_gameObject) != 0)
+        {
             return 1;
         }
 
         DataSegment dataSegment = {HeaderType::OBJECT, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false)) {
+        if (!m_stream->writeS(&dataSegment, 1, false))
+        {
             return 2;
+        }
+        m_stream->flush();
+    }
+
+    // write shader
+    {
+        if (write_shader() != 0)
+        {
+            return 5;
+        }
+
+        DataSegment dataSegment = {HeaderType::SHADER, static_cast<std::size_t>(m_stream->getDataSize())};
+        if (!m_stream->writeS(&dataSegment, 1, false))
+        {
+            return 6;
         }
         m_stream->flush();
     }
 
     // write material
     {
-        if (writeMaterial() != 0) {
+        if (write_material() != 0)
+        {
             return 5;
         }
 
         DataSegment dataSegment = {HeaderType::MATERIAL, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false)) {
+        if (!m_stream->writeS(&dataSegment, 1, false))
+        {
             return 6;
         }
         m_stream->flush();
@@ -114,12 +110,14 @@ int GameObjectSaveTask::writeData()
 
     // write script
     {
-        if (writeScript() != 0) {
+        if (write_script() != 0)
+        {
             return 7;
         }
 
         DataSegment dataSegment = {HeaderType::SCRIPT, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false)) {
+        if (!m_stream->writeS(&dataSegment, 1, false))
+        {
             return 8;
         }
         m_stream->flush();
@@ -127,12 +125,14 @@ int GameObjectSaveTask::writeData()
 
     // write texture
     {
-        if (writeTexture() != 0) {
+        if (write_texture() != 0)
+        {
             return 3;
         }
         
         DataSegment dataSegment = {HeaderType::TEXTURE, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false)) {
+        if (!m_stream->writeS(&dataSegment, 1, false))
+        {
             return 4;
         }
         m_stream->flush(); 
@@ -141,7 +141,8 @@ int GameObjectSaveTask::writeData()
     // end file
     {
         DataSegment dataSegment = {HeaderType::NONE, 0};
-        if (!m_stream->writeS(&dataSegment, 1, false)) {
+        if (!m_stream->writeS(&dataSegment, 1, false))
+        {
             return 9;
         }
 
@@ -150,7 +151,7 @@ int GameObjectSaveTask::writeData()
     return 0;
 }
 
-int GameObjectSaveTask::writeGameObject(const GameObject *go)
+int GameObjectSaveTask::write_gameobject(const GameObject *go)
 {
     auto goname = go->getName();
     {
@@ -207,8 +208,9 @@ int GameObjectSaveTask::writeGameObject(const GameObject *go)
     }
 
     int result = 0;
-    for (auto &child : children) {
-        result = writeGameObject(child->getGameObject());
+    for (auto &child : children)
+    {
+        result = write_gameobject(child->getGameObject());
         if (result != 0)
         {
             break;
@@ -217,7 +219,50 @@ int GameObjectSaveTask::writeGameObject(const GameObject *go)
     return result;
 }
 
-int GameObjectSaveTask::writeTexture()
+int GameObjectSaveTask::write_shader()
+{
+    auto length = m_shaderMap.size();
+    if (!m_stream->write(&length, sizeof(std::size_t)))
+    {
+        return 1;
+    }
+
+    for (auto &&[materialname, tuple] : m_shaderMap)
+    {
+        auto &&[shadername, shader] = tuple;
+
+        // write material name
+        {
+            auto len = materialname.length();
+            if (!m_stream->write(&len, sizeof(std::size_t)))
+            {
+                return 2;
+            }
+
+            if (!m_stream->write(materialname.c_str(), len * sizeof(char)))
+            {
+                return 3;
+            }
+        }
+
+        // write shader name
+        {
+            auto len = shadername.length();
+            if (!m_stream->write(&len, sizeof(std::size_t)))
+            {
+                return 4;
+            }
+
+            if (!m_stream->write(shadername.c_str(), len * sizeof(char)))
+            {
+                return 5;
+            }
+        }
+    }
+    return 0;
+}
+
+int GameObjectSaveTask::write_texture()
 {
     auto textureCount = m_textureMap.size();
     if (!m_stream->write(&textureCount, sizeof(std::size_t)))
@@ -272,7 +317,7 @@ int GameObjectSaveTask::writeTexture()
     return 0;
 }
 
-int GameObjectSaveTask::writeMaterial()
+int GameObjectSaveTask::write_material()
 {
     auto materialCount = m_materialMap.size();
     if (!m_stream->write(&materialCount, sizeof(std::size_t)))
@@ -320,7 +365,8 @@ int GameObjectSaveTask::writeMaterial()
             temp.close();
         }
 
-        if (!m_stream->write(&bufferSize, sizeof(std::size_t))) {
+        if (!m_stream->write(&bufferSize, sizeof(std::size_t)))
+        {
             return 6;
         }
 
@@ -329,7 +375,7 @@ int GameObjectSaveTask::writeMaterial()
     return 0;
 }
 
-int GameObjectSaveTask::writeScript()
+int GameObjectSaveTask::write_script()
 {
     auto scriptCount = m_scriptMap.size();
     if (!m_stream->write(&scriptCount, sizeof(std::size_t)))
@@ -383,7 +429,7 @@ int GameObjectSaveTask::writeScript()
     return 0;
 }
 
-void GameObjectSaveTask::readObjectSource(const GameObject *go)
+void GameObjectSaveTask::remape_gameobject(const GameObject *go)
 {
     auto goname = go->getName();
     auto entity = go->getEntity();
@@ -427,7 +473,17 @@ void GameObjectSaveTask::readObjectSource(const GameObject *go)
                     
                     m_textureMap.emplace_back(goname, mname, tpath);
                 }
+
                 m_materialMap.emplace_back(goname, mname, material);
+
+                auto name = AssetsManager::GetRefMaterialToName(material);
+                {
+                    auto it = m_shaderMap.find(name);
+                    if (it == m_shaderMap.end())
+                    {
+                        m_shaderMap.emplace(name, std::make_tuple(AssetsManager::GetShaderName(material->getShader()), material->getShader()));
+                    }
+                }
             }
         }
     }
@@ -435,10 +491,9 @@ void GameObjectSaveTask::readObjectSource(const GameObject *go)
     
     for (auto child : transform->getChildren())
     {
-        readObjectSource(child->getGameObject());
+        remape_gameobject(child->getGameObject());
     }
 }
-*/
 
 
 

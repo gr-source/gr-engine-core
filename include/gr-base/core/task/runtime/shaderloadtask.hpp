@@ -20,7 +20,7 @@ class ShaderLoadTask : public IAsyncTask<int>
 {
 public:
     ShaderLoadTask() = delete;
-    ShaderLoadTask(ShaderParams shaderParams, const std::string &path, grr::gShader *shader);
+    ShaderLoadTask(ShaderParams shaderParams, grr::gShader *shader);
 
     void addFunction(std::function<void (grr::gShader *)> func);
 

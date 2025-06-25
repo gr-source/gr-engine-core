@@ -71,7 +71,12 @@ private:
 template <typename T>
 inline T *Material::getValue(const std::string &name)
 {
-    return reinterpret_cast<T *>(std::get<0>(m_field_data[name]));
+    auto it = m_field_data.find(name);
+    if (it == m_field_data.end())
+    {
+        return nullptr;
+    }
+    return reinterpret_cast<T *>(std::get<0>(it->second));
 }
 
 template <typename T>

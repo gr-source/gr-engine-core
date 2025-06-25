@@ -21,11 +21,14 @@ enum ShaderOptimize : ShaderOptimize_
 struct ShaderParams
 {
     std::string name;
+    std::string base;
     ShaderType type;
     ShaderOptimize_ flags;
 };
 
 std::string GetShaderParamsName(ShaderParams shaderParams);
+
+ShaderParams GetShaderParamsFromName(const std::string &name);
 
 
 

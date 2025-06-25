@@ -8,6 +8,8 @@
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/scene.hpp"
 
+#include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
+#include "gr-base/core/thread/taskmanager.hpp"
 #include "gr-base/ecs/gameObject.hpp"
 
 #include <cassert>
@@ -30,10 +32,6 @@ std::unordered_map<grr::gTexture *, std::string> AssetsManager::mTextureRefToNam
 
 std::unordered_map<std::string, std::unique_ptr<TextureLoadTask>> AssetsManager::mTextureLoadTaskMap;
 std::mutex AssetsManager::mTextureMutex;
-
-/***************** GameObject *****************/
-std::unordered_map<std::string, std::unique_ptr<GameObjectLoadTask>> AssetsManager::mGameObjectTaskMap;
-std::mutex AssetsManager::mGameObjectTaskMutex;
 
 /***************** Mesh *****************/
 std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> AssetsManager::mMeshMapList;
@@ -66,6 +64,7 @@ void AssetsManager::Shutdown()
 
 void AssetsManager::Render()
 {
+    GetFilmboxManager().render();
     /*
     auto has_task_in_filmboxmanager = mFilmboxManager.has_task();
     if (!has_task_in_filmboxmanager)
@@ -110,12 +109,12 @@ std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
 
 grr::gShader *AssetsManager::CreateShader(ShaderParams shaderParams)
 {
-    return dynamic_cast<grr::gShader *>(GetShaderManager().create(shaderParams));
+    return GetShaderManager().create(shaderParams);
 }
 
 grr::gShader *AssetsManager::FindShader(const std::string &name)
 {
-    return dynamic_cast<grr::gShader *>(GetShaderManager().find(name));
+    return GetShaderManager().find(name);
 }
 
 std::string AssetsManager::GetShaderName(grr::gShader *shader)
@@ -214,16 +213,7 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
         return Console::LogError("[ AssetsManager::GameObject ] File not found: %s", path.c_str());
     }
 
-    std::lock_guard<std::mutex> lock(mGameObjectTaskMutex);
-    // check has be loading
-    {
-        auto it = mGameObjectTaskMap.find(path);
-        if (it != mGameObjectTaskMap.end()) {
-            return;
-        }
-    }
-
-    mGameObjectTaskMap.emplace(path, std::make_unique<GameObjectLoadTask>(path, func));
+    TaskManager::Add<GameObjectLoadTask>(path, func);
 }
 
 void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func)
@@ -320,12 +310,12 @@ std::vector<grr::gShader *> AssetsManager::GetShaderList(AssetShader_ type, Shad
 {
     return GetShaderManager().get_shader(type, optimize);
 }
+*/
 
-std::vector<grr::gShader *> AssetsManager::GetShaderList(AssetShader_ type)
+std::vector<grr::gShader *> AssetsManager::GetShaderList(ShaderType type)
 {
     return GetShaderManager().get_shader(type);
 }
-*/
 
 grm::size AssetsManager::GetTextureCount() {
     std::lock_guard<std::mutex> lock(mTextureMutex);
@@ -393,16 +383,6 @@ void AssetsManager::RemoveTask(const std::string &name)
     if (GetShaderManager().remove_task(name))
     {
         return;
-    }
-
-    // Check in task of gameobject
-    {
-        std::lock_guard<std::mutex> lock(mGameObjectTaskMutex);
-        auto it = mGameObjectTaskMap.find(name);
-        if (it != mGameObjectTaskMap.end()) {
-            mGameObjectTaskMap.erase(it);
-            return;
-        }
     }
 
     // Chck task is on AnimationLoadTask

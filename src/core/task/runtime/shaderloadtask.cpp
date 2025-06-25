@@ -30,7 +30,7 @@ std::unordered_map<std::string, UniformVariable_> ShaderLoadTask::mVariableNameT
 };
 
 // public
-ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams, const std::string &path, grr::gShader *shader) : m_shaderParams(shaderParams), m_path(path), m_shader(shader), bShaderCreated(shader == nullptr), IAsyncTask(TaskPriority::HIGH)
+ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams, grr::gShader *shader) : m_shaderParams(shaderParams), m_path(shaderParams.base), m_shader(shader), bShaderCreated(shader == nullptr), IAsyncTask(TaskPriority::HIGH)
 {}
 
 void ShaderLoadTask::addFunction(std::function<void (grr::gShader *)> func)

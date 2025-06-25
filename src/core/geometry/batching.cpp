@@ -173,10 +173,6 @@ void Batching::render()
             auto material = (*materialList)[j];
 
             auto shader = material->getShader();
-            if (shader == nullptr)
-            {
-                continue;
-            }
 
             if (animator != nullptr)
                 shader->setUniform("u_boneMatrices", static_cast<Animator *>(animator)->m_FinalBoneMatrices.data());

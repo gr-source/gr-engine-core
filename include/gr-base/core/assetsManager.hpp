@@ -37,10 +37,10 @@ public:
     static std::string GetRefTextureName(grr::gTexture *texture);
 
     template <typename ...Args>
-    static std::shared_ptr<TaskInfo> LoadShader(ShaderParams shaderParams, const std::string &path, Args &&...args);
+    static std::shared_ptr<TaskInfo> LoadShader(ShaderParams shaderParams, Args &&...args);
 
     template <typename ...Args>
-    static std::shared_ptr<TaskInfo> LoadShader(ShaderParams shaderParams, const std::string &path, grr::gShader *shader, Args &&...args);
+    static std::shared_ptr<TaskInfo> LoadShader(ShaderParams shaderParams, grr::gShader *shader, Args &&...args);
 
     static grr::gShader *CreateShader(ShaderParams shaderParams);
 
@@ -99,7 +99,7 @@ public:
 
     // static std::vector<grr::gShader *> GetShaderList(AssetShader_ type, ShaderOptimize_ optimize);
 
-    // static std::vector<grr::gShader *> GetShaderList(AssetShader_ type);
+    static std::vector<grr::gShader *> GetShaderList(ShaderType type);
 
     template <typename ...Args>
     static Material *CreateMaterial(const std::string &key, Args &&...args);
@@ -126,10 +126,6 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<TextureLoadTask>> mTextureLoadTaskMap;
     static std::mutex mTextureMutex;
 
-    /***************** GameObject *****************/
-    static std::unordered_map<std::string, std::unique_ptr<GameObjectLoadTask>> mGameObjectTaskMap;
-    static std::mutex mGameObjectTaskMutex;
-
     /***************** Mesh *****************/
     static std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> mMeshMapList;
     static std::unordered_map<std::vector<Mesh> *, std::string> mMeshListRefToName;
@@ -153,7 +149,8 @@ private:
 };
 
 template <typename... Args>
-inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...args) {
+inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...args)
+{
     std::function<void(GameObject *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0) {
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
@@ -183,7 +180,7 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
 
 // ***** Shader ***** //
 template <typename ...Args>
-inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderParams, const std::string &path, Args &&...args)
+inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderParams, Args &&...args)
 {
     std::function<void(grr::gShader *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
@@ -191,11 +188,11 @@ inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderPa
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
     
-    return GetShaderManager().create_shader_task_load(shaderParams, path, nullptr, func);
+    return GetShaderManager().create_shader_task_load(shaderParams, nullptr, func);
 }
 
 template <typename... Args>
-inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderParams, const std::string &path, grr::gShader *shader, Args &&...args)
+inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderParams, grr::gShader *shader, Args &&...args)
 {
     std::function<void(grr::gShader *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
@@ -203,7 +200,7 @@ inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderPa
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
     
-    return GetShaderManager().create_shader_task_load(shaderParams, path, shader, func);
+    return GetShaderManager().create_shader_task_load(shaderParams, shader, func);
 }
 
 // ***** Material ***** //

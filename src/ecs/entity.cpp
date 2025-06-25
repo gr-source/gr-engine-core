@@ -160,7 +160,8 @@ void Entity::init() {
     }
 }
 
-void Entity::destroy() {
+void Entity::destroy()
+{
     std::vector<std::tuple<std::string, Component *>> temp;
     for (auto &&[name, component] : m_componentPtr) {
         temp.emplace_back(name, &(*component));
@@ -172,9 +173,11 @@ void Entity::destroy() {
         }
     );
 
-    for (auto [name, component] : temp) {
+    for (auto [name, component] : temp)
+    {
         auto pool = ComponentRegistry::Find(name);
-        if (pool) {
+        if (pool)
+        {
             pool->destroy(component);
         }
     }
@@ -182,8 +185,10 @@ void Entity::destroy() {
 
 void Entity::copy(const Entity *entity)
 {
-    for (auto &&[name, component] : entity->m_componentPtr) {
-        if (hasComponent(name)) {
+    for (auto &&[name, component] : entity->m_componentPtr)
+    {
+        if (hasComponent(name))
+        {
             continue;
         }
 
@@ -193,43 +198,36 @@ void Entity::copy(const Entity *entity)
     auto go = entity->getGameObject();
 
     auto targetTransform = go->getTransform();
+    
     auto localTransform = m_gameObject->getTransform();
+    localTransform->setLocalScale(targetTransform->getLocalScale());
+    localTransform->setLocalRotation(targetTransform->getLocalRotation());
+    localTransform->setLocalPosition(targetTransform->getLocalPosition());
 
-    if (targetTransform)
+    if (!targetTransform->hasParent())
     {
-        localTransform->setLocalScale(targetTransform->getLocalScale());
-        localTransform->setLocalRotation(targetTransform->getLocalRotation());
-        localTransform->setLocalPosition(targetTransform->getLocalPosition());
+        auto scene = Scene::GetCurrentScene();
+        if (scene != nullptr)
+        {
+            scene->insert(getGameObject());
+        }
+    } else
+    {
+        localTransform->setParent(targetTransform->getParent());
+    }
 
-        if (!targetTransform->hasParent())
+    for (const auto& child : targetTransform->getChildren())
+    {
+        auto childGameObject = child->getGameObject();
+        auto clonedObject = GameObject::Instantiate(childGameObject);
+        if (!clonedObject)
         {
-            auto scene = Scene::GetCurrentScene();
-            if (scene != nullptr)
-            {
-                scene->insert(getGameObject());
-            }
-        } else
-        {
-            localTransform->setParent(targetTransform->getParent());
+            Console::LogError("[ Entity ] Failed to create child object %s->%s.", go->getName().c_str(), childGameObject->getName().c_str());
+            continue;
         }
 
-        for (const auto& child : targetTransform->getChildren())
-        {
-            auto childGameObject = child->getGameObject();
-            auto clonedObject = GameObject::Instantiate(childGameObject);
-            if (!clonedObject)
-            {
-                Console::LogError("[ Entity ] Failed to create child object %s->%s.", go->getName().c_str(), childGameObject->getName().c_str());
-                continue;
-            }
-
-            auto clonedTransform = clonedObject->getTransform();
-            if (clonedTransform) {
-                clonedTransform->setParent(localTransform);
-            }
-        }
-    } else {
-        Console::LogError("[ Entity ] Target game object does not have a transform.");
+        auto clonedTransform = clonedObject->getTransform();
+        clonedTransform->setParent(localTransform);
     }
 }
 

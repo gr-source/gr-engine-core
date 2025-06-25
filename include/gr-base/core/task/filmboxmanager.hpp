@@ -3,6 +3,8 @@
 #include "gr-base/core/task/runtime/filmboxtask.hpp"
 
 #include <atomic>
+#include <unordered_set>
+#include <vector>
 
 class FilmboxManager
 {
@@ -16,14 +18,16 @@ public:
 
     void render();
 
+    void create_save(const std::string &name, std::vector<GameObject *> root, std::vector<std::unique_ptr<GameObject>> gameObjectList);
+
 private:
-    std::unordered_map<std::string, std::shared_ptr<TaskInfo>> m_filmbox_task_map;
+    std::vector<std::tuple<std::string, std::vector<GameObject *>, std::vector<std::unique_ptr<GameObject>>>> resultTask;
 
-    std::unordered_map<const FilmboxTask *, const std::string> taskpointertoname;
-
-    std::vector<FilmboxTask *> tasklist;
+    std::unordered_set<std::string> taskResultMap;
     
     std::mutex mutex;
+
+    void GameObjectSave(const GameObject *go);
 };
 
 

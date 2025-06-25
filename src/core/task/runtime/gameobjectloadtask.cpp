@@ -1,32 +1,59 @@
 #include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
 
-#include "gr-base/core/assetsManager.hpp"
-#include "gr-base/core/console.hpp"
-#include "gr-base/core/event.hpp"
+#include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/core/file/stream.hpp"
+
+#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/console.hpp"
+
+#include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
+#include <gr-render/gShader.h>
+#include <stdexcept>
 
-#include "gr-base/ecs/gameObject.hpp"
+GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObject *)> func) : m_path(path), m_func(func), m_stream(nullptr), m_rootNode(nullptr)
+{}
 
-#include "gr-base/core/binary/gHeader.hpp"
-
-#include "gr-base/core/thread/threadpool.hpp"
-
-GameObjectLoadTask::GameObjectLoadTask(const std::string &path, GameObjectFunc func) : m_function(func), m_stream(nullptr)
+// ***** private ***** //
+int GameObjectLoadTask::doInBackground()
 {
-    Threadpool::AddTask(&GameObjectLoadTask::doInBackground, this, path);
+    Console::LogInfo("[ GameObjectLoadTask ] Loading file: %s...", m_path.c_str());
+
+    m_stream = std::make_shared<Stream>(m_path, std::ios_base::in | std::ios_base::binary);
+
+    FileHeader fileHeader;
+    if (!m_stream->read(reinterpret_cast<char *>(&fileHeader), sizeof(FileHeader)))
+    {
+        return 1;
+    }
+
+    if (std::strcmp(fileHeader.signature, "gmdx") != 0)
+    {
+        Console::LogError("[ GameObjectLoadTask ] file is not gmdx: %s", m_path.c_str());
+        return 2;
+    }
+
+    int result = read_data();
+    if (result != 0)
+    {
+        return 3;
+    }
+    return 0;
 }
 
-void GameObjectLoadTask::upload(std::string path)
+void GameObjectLoadTask::onPostExecute(int result)
 {
-    if (m_rootNode == nullptr)
+    m_stream->close();
+    if (result != 0)
     {
-        return Console::LogError("[ GameObjectLoadTask ] Fail object loaded is invalid.");
+        return;
     }
+    Console::LogInfo("[ GameObjectLoadTask ] Loaded: %s", m_path.c_str());
 
     auto scene = Scene::GetCurrentScene();
     if (scene != nullptr)
@@ -40,104 +67,79 @@ void GameObjectLoadTask::upload(std::string path)
     
     Console::LogInfo("[ GameObjectLoadTask ] Model loaded sucessfuly %s.", go->getName().c_str());
 
-    if (m_function) {
-        m_function(go);
+    if (m_func)
+    {
+        m_func(go);
     }
-    AssetsManager::RemoveTask(path);
+
+    /*if (m_func != nullptr)
+    {
+        m_func(m_gameObject);
+    }
+    */
 }
 
-void GameObjectLoadTask::doInBackground(std::string path)
+int GameObjectLoadTask::read_data()
 {
-    m_stream = std::make_unique<Stream>(path, std::ios_base::in | std::ios_base::binary);
-    if (!m_stream->is_open())
+    while (true)
     {
-        Console::LogError("[ GameObjectLoadTask ] Falied to open file: %s", path.c_str());
-
-        return AssetsManager::RemoveTask(path);
-    }
-
-    Console::LogInfo("[ GameObjectLoadTask ] Loading model: %s", path.c_str());
-
-    FileHeader header;
-    if (!m_stream->read(reinterpret_cast<char *>(&header), sizeof(FileHeader)))
-    {
-        Console::LogError("[ GameObjectLoadTask ] Falied to read header binary.");
-        
-        return AssetsManager::RemoveTask(path);
-    }
-    
-    if (std::strcmp(header.signature, "grmx") != 0) {
-        Console::LogError("[ GameObjectLoadTask ] Invalid binary type.");
-        return AssetsManager::RemoveTask(path);
-    }
-
-    auto result = readData();
-    if (result != 0)
-    {
-        Console::LogError("[ GameObjectLoadTask ] Fail to read data %d", result);
-        
-        return AssetsManager::RemoveTask(path);
-    }
-
-    Event::Add(&GameObjectLoadTask::upload, this, path);
-}
-
-int GameObjectLoadTask::readData() {
-    while (true) {
-        DataSegment segment;
-        if (!m_stream->read(reinterpret_cast<char *>(&segment), sizeof(DataSegment)))
-        {
-            return 1;
-        }
-
-        if (segment.type == HeaderType::NONE && segment.sizeData == 0)
+        DataSegment dataSegment;
+        if (!m_stream->read(reinterpret_cast<char *>(&dataSegment), sizeof(DataSegment)))
         {
             break;
         }
 
-        auto segment_name = HeaderName[segment.type];
-
-        auto next_position = m_stream->tellg() + static_cast<std::streampos>(segment.sizeData);
-        if (segment.sizeData <= 0)
+        if (dataSegment.type == HeaderType::NONE && dataSegment.sizeData == 0)
         {
-            m_stream->seekg(next_position, std::ios_base::beg);
+            break;
+        }
+
+        auto next = m_stream->tellg() + static_cast<std::streampos>(dataSegment.sizeData);
+        if (dataSegment.sizeData <= 0)
+        {
+            m_stream->seekg(next, std::ios_base::beg);
             continue;
         }
 
-        int result = -1;
-        switch (segment.type)
+        auto name = HeaderName[dataSegment.type];
+
+        Console::LogWarning("segment: %s", HeaderName[dataSegment.type].c_str());
+
+        int result = 0;
+
+        switch (dataSegment.type)
         {
             case HeaderType::OBJECT:
-                result = readGameObject();
+                result = read_gameobject();
+                break;
+            case HeaderType::SHADER:
+                result = read_shader();
                 break;
             case HeaderType::SCRIPT:
-                result = readScript();
+                result = read_script();
                 break;
             case HeaderType::MATERIAL:
-                result = readMaterial();
+                result = read_material();
                 break;
             case HeaderType::TEXTURE:
-                result = readTexture();
+                result = read_texture();
                 break;
             default:
                 break;
         }
 
-        if (result != 0) {
-            Console::LogError("[ AssetsManager ] Falied to load segment: %s code: %d", HeaderName[segment.type], result);
+        if (result != 0)
+        {
+            Console::LogWarning("[ GameObjectLoadTask ] Segment %s do not ready", name.c_str());
         }
 
-        if (m_stream->tellg() != next_position) {
-            m_stream->seekg(next_position, std::ios_base::beg);
-
-            Console::LogWarning("[ AssetsManager ] Block position is invalid");
-        }
+        if (m_stream->tellg() != next)
+            m_stream->seekg(next, std::ios_base::beg);
     }
-
     return 0;
 }
 
-int GameObjectLoadTask::readGameObject(Transform *parent)
+int GameObjectLoadTask::read_gameobject(Transform *parent)
 {
     // read name
     std::size_t gonsize = 0;
@@ -168,11 +170,13 @@ int GameObjectLoadTask::readGameObject(Transform *parent)
 
     // read status
     {
-        if (!m_stream->read(reinterpret_cast<char *>(&bActive), sizeof(bool))) {
+        if (!m_stream->read(reinterpret_cast<char *>(&bActive), sizeof(bool)))
+        {
             return 5;
         }
 
-        if (!m_stream->read(reinterpret_cast<char *>(&bEnable), sizeof(bool))) {
+        if (!m_stream->read(reinterpret_cast<char *>(&bEnable), sizeof(bool)))
+        {
             return 6;
         }
     }
@@ -199,7 +203,7 @@ int GameObjectLoadTask::readGameObject(Transform *parent)
     
     int result = 0;
     for (int i=0;i<ccount;i++) {
-        result = readGameObject(transform);
+        result = read_gameobject(transform);
         if (result != 0) {
             break;
         }
@@ -209,7 +213,55 @@ int GameObjectLoadTask::readGameObject(Transform *parent)
     return result;
 }
 
-int GameObjectLoadTask::readTexture()
+int GameObjectLoadTask::read_shader()
+{
+    std::size_t length = {};
+    if (!m_stream->read(reinterpret_cast<char *>(&length), sizeof(std::size_t)))
+    {
+        return 1;
+    }
+
+    for (std::size_t i={};i<length;i++)
+    {
+        std::string name_material, name_shader;
+
+        // read material
+        {
+            std::size_t len = {};
+            if (!m_stream->read(reinterpret_cast<char *>(&len), sizeof(std::size_t)))
+            {
+                return 2;
+            }
+
+            name_material = std::string(len, '\0');
+            if (!m_stream->read(name_material.data(), len * sizeof(char)))
+            {
+                return 3;
+            }
+        }
+
+        // read script
+        {
+            std::size_t len = {};
+            if (!m_stream->read(reinterpret_cast<char *>(&len), sizeof(std::size_t)))
+            {
+                return 2;
+            }
+
+            name_shader = std::string(len, '\0');
+            if (!m_stream->read(name_shader.data(), len * sizeof(char)))
+            {
+                return 3;
+            }
+        }
+
+        auto info = AssetsManager::LoadShader(GetShaderParamsFromName(name_shader), &GameObjectLoadTask::emplace, this, name_material);
+        info->wait();
+    }
+    return 0;
+}
+
+int GameObjectLoadTask::read_texture()
 {
     std::size_t textureCount = 0;
     if (!m_stream->read(reinterpret_cast<char *>(&textureCount), sizeof(std::size_t)))
@@ -257,13 +309,11 @@ int GameObjectLoadTask::readTexture()
         {
             return 5;
         }
-
-        // std::cout << "SetMaterial: " << goname << " " << mname << " " << tpath << std::endl;
     }
     return 0;
 }
 
-int GameObjectLoadTask::readMaterial()
+int GameObjectLoadTask::read_material()
 {
     std::size_t sname = 0;
     if (!m_stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t)))
@@ -307,11 +357,17 @@ int GameObjectLoadTask::readMaterial()
 
         auto next = m_stream->tellg() + static_cast<std::streampos>(bufferSize);
 
+        auto shader_it = m_ShaderToMaterial.find(mname);
+        if (shader_it == m_ShaderToMaterial.end())
+        {
+            m_stream->seekg(next, std::ios_base::beg);
+            continue;
+        }
+
         auto material = AssetsManager::FindMaterial(mname);
         if (material == nullptr)
         {
-            throw std::runtime_error("Falta corrigir aqui: linha: 312 em gameobjectload");
-            material = AssetsManager::CreateMaterial(mname, nullptr);
+            material = AssetsManager::CreateMaterial(mname, shader_it->second);
             material->deserialize(m_stream.get());
         }
 
@@ -341,7 +397,7 @@ int GameObjectLoadTask::readMaterial()
     return 0;
 }
 
-int GameObjectLoadTask::readScript()
+int GameObjectLoadTask::read_script()
 {
     std::size_t gonsize = 0;
     if (!m_stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
@@ -410,8 +466,11 @@ int GameObjectLoadTask::readScript()
     return 0;
 }
 
-
-
+void GameObjectLoadTask::emplace(std::string name, grr::gShader *shader)
+{
+    std::cout << "Emplace: " << name << std::endl;
+    m_ShaderToMaterial.emplace(name, shader);
+}
 
 
 

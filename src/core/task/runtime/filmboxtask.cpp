@@ -1,21 +1,61 @@
 #include "gr-base/core/task/runtime/filmboxtask.hpp"
 
-#include "gr-base/core/console.hpp"
-#include <thread>
+#include "gr-base/core/filmbox/filmbox.hpp"
 
-FilmboxTask::FilmboxTask(const std::string &path) : m_path(path)
+#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/console.hpp"
+
+#include "gr-base/core/file/file.hpp"
+
+#include "gr-base/core/geometry/mesh.hpp"
+
+#include "gr-base/ecs/gameObject.hpp"
+
+#include "gr-base/script/skinnedMeshRender.hpp"
+#include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/meshFilter.hpp"
+#include "gr-base/script/transform.hpp"
+#include "gr-base/script/animator.hpp"
+
+FilmboxTask::FilmboxTask(const std::string &path, FilmboxManager *filmboxManager) : m_path(path), m_filmboxManager(filmboxManager)
 {}
 
 int FilmboxTask::doInBackground()
 {
     Console::LogInfo("[ FilmboxTask ] Loading: %s", m_path.c_str());
 
+    Filmbox filmbox;
+    try
+    {
+        filmbox.load(m_path);
+    }
+    catch (const std::exception &e)
+    {
+        Console::LogError("[ FilmboxTask ] %s.", e.what());
+        return 1;
+    }
+
+    m_scene = filmbox.get_scene();
+
+    load_object(m_scene.get());
+
     return 0;
 }
 
+#include <filesystem>
 void FilmboxTask::onPostExecute(int result)
 {
+    if (result != 0)
+    {
+        return;
+    }
     Console::LogInfo("Loaded: %s", m_path.c_str());
+
+    std::filesystem::path path = m_path;
+
+    m_filmboxManager->create_save(path.filename().c_str(), m_objectroot, std::move(m_objectlist));
+
+    AssetsManager::RemoveTask(m_path);
 }
 
 /*
@@ -125,24 +165,11 @@ void FilmboxTask::invoke()
 
 void FilmboxTask::doInBackground()
 {
-    Filmbox filmbox;
-    try
-    {
-        filmbox.load(m_name);
-    }
-    catch (const std::exception &e)
-    {
-        AssetsManager::RemoveTask(m_name);
 
-        return Console::LogError("[ FilmboxTask ] %s.", e.what());
-    }
-
-    m_scene = filmbox.get_scene();
-
-    load_object(m_scene.get());
 
     bcanrender = true;
 }
+*/
 
 void FilmboxTask::load_object(const FbxScene *fbxscene)
 {
@@ -276,6 +303,7 @@ void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
 
     ShaderParams shaderParams;
     shaderParams.name = "simple_model";
+    shaderParams.base = File::GetAsset("/shader/model/simple_model.glsl");
     shaderParams.flags = ShaderOptimize_dynamic;
     shaderParams.type = ShaderType::SHADER3D;
 
@@ -289,7 +317,7 @@ void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
     auto shader = AssetsManager::FindShader(name);
     if (shader == nullptr)
     {
-        auto info = AssetsManager::LoadShader(shaderParams, File::GetAsset("/shader/model/simple_model.glsl"),
+        auto info = AssetsManager::LoadShader(shaderParams,
                 [&](grr::gShader *current)
                 {
                     shader = current;
@@ -315,6 +343,8 @@ void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
         }
     }
 }
-*/
+
+
+
 
 

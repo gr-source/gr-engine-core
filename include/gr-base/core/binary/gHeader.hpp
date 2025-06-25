@@ -29,13 +29,14 @@ typedef struct
 constexpr HeaderType_ IHeaderType = HeaderType::COUNT;
 
 static const std::array<std::string, IHeaderType> HeaderName = {
-    "None",
-    "Metadata",
-    "Texture",
-    "Material",
-    "Mesh",
-    "Object",
-    "Script"
+    "NONE",
+    "METADATA",
+    "SHADER",
+    "TEXTURE",
+    "MATERIAL",
+    "MESH",
+    "OBJECT",
+    "SCRIPT"
 };
 
 struct FileHeader {
@@ -44,11 +45,11 @@ struct FileHeader {
     size_t sizeData;
 };
 
-typedef struct
+typedef struct DataSegment
 {
     HeaderType_ type;
     std::size_t sizeData;
-}  DataSegment;
+} DataSegment;
 
 enum gStructType {
     gStructType_None     = 1 << 0,

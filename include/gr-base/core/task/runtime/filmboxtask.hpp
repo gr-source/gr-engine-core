@@ -4,17 +4,41 @@
 
 #include "gr-base/core/thread/asynctask.hpp"
 
+#include "gr-base/core/filmbox/filmbox.hpp"
+
+#include "gr-base/ecs/default.hpp"
+
+#include "gr-base/script/default.hpp"
+
+#include "gr-base/ecs/gameObject.hpp"
+
+class FilmboxManager;
+
 class FilmboxTask : public IAsyncTask<int>
 {
 public:
-    FilmboxTask(const std::string &path);
+    FilmboxTask(const std::string &path, FilmboxManager *filmboxManager);
 
 private:
     const std::string m_path;
 
+    std::unique_ptr<FbxScene> m_scene;
+
+    std::vector<std::unique_ptr<GameObject>> m_objectlist;
+
+    std::vector<GameObject *> m_objectroot;
+
+    FilmboxManager *m_filmboxManager;
+
     int doInBackground() override;
 
     void onPostExecute(int result) override;
+
+    void load_object(const FbxScene *scene);
+
+    GameObject *create_from(const FbxNode &node, Transform *parent = nullptr);
+
+    void generateMesh(const FbxNode *node, GameObject *go);
 };
 
 /*

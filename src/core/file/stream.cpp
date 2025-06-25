@@ -56,11 +56,13 @@ bool Stream::is_open() const
     return std::fstream::is_open();
 }
 
-std::streampos Stream::tellg() {
+std::streampos Stream::tellg()
+{
     return std::fstream::tellg();
 }
 
-std::istream &Stream::seekg(std::streamoff position, std::ios_base::seekdir mode) {
+std::istream &Stream::seekg(std::streamoff position, std::ios_base::seekdir mode)
+{
     return std::fstream::seekg(position, mode);
 }
 

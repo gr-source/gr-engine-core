@@ -285,7 +285,7 @@ void *Material::internal_set_value(const char *name, grm::u8 count, const void *
     if (it == m_field_data.end())
     {
         auto id = m_shader->findUniform(name);
-        if (id == -1)
+        if (id == InvalidUniformID)
         {
             return nullptr;
         }
