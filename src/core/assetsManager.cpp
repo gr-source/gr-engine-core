@@ -9,6 +9,7 @@
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
+#include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 #include "gr-base/ecs/gameObject.hpp"
 
@@ -42,11 +43,6 @@ std::mutex AssetsManager::m_meshMutex;
 std::unordered_map<std::string, std::unique_ptr<Material>> AssetsManager::mMaterialMap;
 std::unordered_map<Material *, std::string> AssetsManager::mMaterialRefToName;
 std::mutex AssetsManager::mMaterialMutex;
-
-/***************** Scene *****************/
-std::unordered_map<std::string, std::unique_ptr<SceneLoadTask>> AssetsManager::mSceneTaskMap;
-std::unordered_map<std::string, std::unique_ptr<Scene>> AssetsManager::mSceneMap;
-std::mutex AssetsManager::mSceneMutex;
 
 #include "gr-base/core/stb/stb_image.h"
 
@@ -359,14 +355,9 @@ std::unordered_map<Material *, std::string> AssetsManager::GetMaterialRefMap() {
 void AssetsManager::RemoveTask(const std::string &name)
 {
     // Check if task on the scene
+    if (GetSceneTaskManager().remove_task(name))
     {
-        std::lock_guard<std::mutex> lock(mSceneMutex);
-        auto it = mSceneTaskMap.find(name);
-        if (it != mSceneTaskMap.end())
-        {
-            mSceneTaskMap.erase(it);
-            return;
-        }
+        return;
     }
 
     // Check if task on the texture
@@ -410,38 +401,12 @@ FilmboxManager &AssetsManager::GetFilmboxManager()
     return instance;
 }
 
-void AssetsManager::SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void(Scene *)> func)
+SceneTaskManager &AssetsManager::GetSceneTaskManager()
 {
-    std::lock_guard<std::mutex> lock(mSceneMutex);
-    // Check in list has bee loaded
-    {
-        auto it = mSceneMap.find(path);
-        if (it != mSceneMap.end())
-        {
-            if (func == nullptr)
-                return;
-            return func(&(*it->second));
-        }
-    }
-
-    // Check in list of task
-    {
-        auto it = mSceneTaskMap.find(path);
-        if (it != mSceneTaskMap.end())
-        {
-            if (func == nullptr)
-                return;
-            return it->second->addFunction(func);
-        }
-    }
-
-    if (!File::Exists(path))
-    {
-        return Console::LogError("[ AssetsManager ] Scene.LoadScene: file '%s' do not found.", path.c_str());
-    }
-
-    mSceneTaskMap.emplace(path, std::make_unique<SceneLoadTask>(path, flags, func));
+    static SceneTaskManager instance;
+    return instance;
 }
+
 
 
 

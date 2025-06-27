@@ -20,8 +20,6 @@ private:
 
     std::function<void (GameObject *)> m_func;
 
-    std::shared_ptr<Stream> m_stream;
-
     // GameObject *m_gameObject;
     //
     GameObject *m_rootNode;
@@ -36,17 +34,17 @@ private:
 
     void onPostExecute(int result);
 
-    int read_data();
+    int read_data(Stream *stream);
 
-    int read_gameobject(Transform *parent = nullptr);
+    int read_gameobject(Stream *stream, Transform *parent = nullptr);
 
-    int read_shader();
+    int read_shader(Stream *stream);
 
-    int read_texture();
+    int read_texture(Stream *stream);
 
-    int read_material();
+    int read_material(Stream *stream);
 
-    int read_script();
+    int read_script(Stream *stream);
 
     void emplace(std::string name, grr::gShader *shader);
 };

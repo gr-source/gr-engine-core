@@ -1,46 +1,318 @@
 #include "gr-base/core/task/runtime/sceneloadtask.hpp"
 
-#include "gr-base/core/binary/gHeader.hpp"
-
-#include "gr-base/core/file/stream.hpp"
-
-#include "gr-base/core/thread/threadpool.hpp"
-
 #include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/scenemanager.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/scene.hpp"
-#include "gr-base/core/event.hpp"
 
-#include "gr-base/script/transform.hpp"
-#include "gr-base/script/camera.hpp"
+#include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
 
-std::mutex SceneLoadTask::m_mutex;
+#include "gr-base/script/transform.hpp"
 
-SceneLoadTask::SceneLoadTask(const std::string &path, SceneLoadFlags_ flags, SceneFunc func) : stream(nullptr), scene(nullptr), status(TaskStatus::NONE), m_camera(nullptr)
+// ***** public ***** //
+SceneLoadTask::SceneLoadTask(const std::string &path) : m_path(path)
+{}
+
+void SceneLoadTask::addFunction(std::function<void (Scene *)> func)
 {
-    if (func)
-        function_list.push_back(func);
+    if (func == nullptr)
+        return;
 
-    Threadpool::AddTask(&SceneLoadTask::doInBackground, this, path, flags);
+    std::lock_guard<std::mutex> lock(mutex);
+    m_funcList.push_back(func);
 }
 
-void SceneLoadTask::render()
+// ***** private ***** //
+int SceneLoadTask::doInBackground()
 {
+    auto stream = std::make_shared<Stream>(m_path, std::ios_base::in | std::ios_base::binary);
+    if (!stream->is_open())
+    {
+        Console::LogError("[ SceneLoadTask ] Faleid to open scene: ", m_path.c_str());
+        return 1;
+    }
+
+    // read header data
+    {
+        FileHeader header;
+        if (!stream->read(reinterpret_cast<char *>(&header), sizeof(FileHeader)))
+        {
+            Console::LogError("[ SceneLoadTask ] Failed to read binary header: %s", m_path.c_str());
+            return 2;
+        }
+
+        Console::LogInfo("[ SceneLoadTask ] loading scene version: %f", header.version);
+    }
+
+
+    if (read_metadata(stream.get()) != 0)
+    {
+        return 3;
+    }
+
+    // read segment
+    while (true)
+    {
+        DataSegment dataSegment;
+        if (!stream->read(reinterpret_cast<char *>(&dataSegment), sizeof(DataSegment)))
+        {
+            return 3;
+        }
+        
+        if (dataSegment.type == HeaderType::NONE && dataSegment.sizeData == 0)
+        {
+            break;
+        }
+        
+        auto nextPosition = stream->tellg() + static_cast<std::streampos>(dataSegment.sizeData);
+        auto headerName = HeaderName[dataSegment.type];
+
+        std::cout << "HeaderName: " << headerName << std::endl;
+
+        if (dataSegment.sizeData <= 0)
+        {
+            continue;
+        }
+
+        int result = 0;
+        switch (dataSegment.type)
+        {
+            case HeaderType::SHADER:
+                // if (flags & SceneLoadFlags_Shader)
+                    result = read_shader(stream.get());
+                break;
+            case HeaderType::TEXTURE:
+                // if (flags & SceneLoadFlags_Texture)
+                    result = read_texture(stream.get());
+                break;
+            case HeaderType::MATERIAL:
+                // if (flags & SceneLoadFlags_Material)
+                    result = read_material(stream.get());
+                break;
+            case HeaderType::MESH:
+                // if (flags & SceneLoadFlags_Mesh)
+                    result = read_mesh(stream.get());
+                break;
+            case HeaderType::OBJECT:
+                // if (flags & SceneLoadFlags_Object)
+                    result = read_gameobject(stream.get());
+                break;
+            case HeaderType::SCRIPT:
+                // if (flags & SceneLoadFlags_Script)
+                    result = read_script(stream.get());
+                break;
+            default:
+                break;
+        }
+ 
+        if (stream->tellg() != nextPosition)
+        {
+
+            if (result != 0)
+            {
+                Console::LogError("[ SceneLoadTask ] Falied to read segment data: %s code: %d", headerName.c_str(), result);
+            } else
+            {
+                Console::LogWarning("[ SceneLoadTask ] Data segment: %s is not fully loaded.", headerName.c_str());
+            }
+            stream->seekg(nextPosition, std::ios_base::beg);
+            continue;
+        }
+    }
+    return 0;
 }
 
-void SceneLoadTask::addFunction(SceneFunc func)
+void SceneLoadTask::onPostExecute(int result)
 {
-    function_list.push_back(func);
+    if (result != 0)
+    {
+        Console::LogError("[ SceneLoadTask ] Fail to load scene");
+    } else
+    {
+        Console::LogError("[ SceneLoadTask ] Scene loaded sucessfuly");
+
+        auto scene = SceneManager::Create(m_name);
+
+        for (auto &go : m_rootList)
+        {
+            std::cout << "Root: " << go->getName() << std::endl;
+
+            GameObject::Instantiate(go);
+
+            GameObject::Destroy(go);
+        }
+
+        scene->init();
+
+        for (auto &func : m_funcList)
+        {
+            func(scene);
+        }
+    }
+
+    AssetsManager::RemoveTask(m_path);
 }
 
-TaskStatus SceneLoadTask::getStatus() const
+int SceneLoadTask::read_metadata(Stream *stream)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return status;
+    if (!stream->read(m_name))
+    {
+        return 1;
+    }
+
+    return 0;
 }
 
+
+int SceneLoadTask::read_shader(Stream *stream)
+{
+    return 0;
+}
+
+int SceneLoadTask::read_material(Stream *stream)
+{
+    return 0;
+}
+
+int SceneLoadTask::read_texture(Stream *stream)
+{
+    return 0;
+}
+
+int SceneLoadTask::read_mesh(Stream *stream)
+{
+    return 0;
+}
+
+int SceneLoadTask::read_gameobject(Stream *stream)
+{
+    std::size_t count = {};
+    if (!stream->read(count))
+    {
+        return 1;
+    }
+
+    for (std::size_t i={};i<count;i++)
+    {
+        auto gameObject = deserialize(stream);
+        if (gameObject == nullptr)
+        {
+            return 2;
+        }
+        m_rootList.push_back(gameObject);
+    }
+
+    return 0;
+}
+
+int SceneLoadTask::read_script(Stream *stream)
+{
+    std::size_t count = {};
+    if (!stream->read(count))
+    {
+        return 1;
+    }
+
+    for (std::size_t i=0;i<count;i++)
+    {
+        std::string go_name, component_name;
+        if (!stream->read(go_name))
+        {
+            return 2;
+        }
+
+        if (!stream->read(component_name))
+        {
+            return 2;
+        }
+
+        std::size_t bufferlength = {};
+        if (!stream->read(bufferlength))
+        {
+            return 4;
+        }
+
+        auto next = stream->tellg() + static_cast<std::streampos>(bufferlength);
+
+        auto it = m_gameobjectmap.find(go_name);
+        if (it != m_gameobjectmap.end())
+        {
+            auto pool = ComponentRegistry::Find(component_name);
+            if (pool != nullptr)
+            {
+                auto entity = it->second->getEntity();
+
+                auto component = entity->hasComponent(component_name) ? entity->getComponent(component_name) : entity->addComponent(component_name);
+
+                pool->deserialize(component, stream);
+            }
+        }
+
+        if (stream->tellg() != next)
+        {
+            stream->seekg(next, std::ios_base::beg);
+        }
+    }
+    return 0;
+}
+
+GameObject *SceneLoadTask::deserialize(Stream *stream, Transform *parent)
+{
+    std::string name, tag;
+    bool bactive, bstatic;
+
+    if (!stream->read(name))
+    {
+        return nullptr;
+    }
+
+    if (!stream->read(tag))
+    {
+        return nullptr;
+    }
+    
+    if (!stream->read(bactive))
+    {
+        return nullptr;
+    }
+
+    if (!stream->read(bstatic))
+    {
+        return nullptr;
+    }
+
+    auto gameObject = GameObject::Create(name, tag);
+    gameObject->setActive(bactive);
+    gameObject->setStatic(bstatic);
+
+    m_gameobjectmap.emplace(name, gameObject);
+
+    auto transform = gameObject->getTransform();
+    if (parent != nullptr)
+    {
+        transform->setParent(parent);
+    }
+
+    std::size_t count = {};
+    if (!stream->read(count))
+    {
+        return nullptr;
+    }
+
+    for (std::size_t i={};i<count;i++)
+    {
+        if (!deserialize(stream, transform))
+        {
+            return nullptr;
+        }
+    }
+
+    return gameObject;
+}
+
+/*
 void SceneLoadTask::setStatus(TaskStatus s)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -89,7 +361,7 @@ void SceneLoadTask::invoke(Scene *scene)
     }
 }
 
-/* ********** protected ********** */
+
 void SceneLoadTask::doInBackground(std::string path, SceneLoadFlags_ flags)
 {
     setStatus(TaskStatus::PROCESS);
@@ -271,7 +543,6 @@ int SceneLoadTask::read_shader()
             }
         }
     }
-    */
 
     return 0;
 }
@@ -511,3 +782,8 @@ int SceneLoadTask::readScript()
     }
     return 0;
 }
+*/
+
+
+
+

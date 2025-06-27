@@ -21,8 +21,6 @@ private:
 
     const GameObject *m_gameObject;
 
-    std::shared_ptr<Stream> m_stream;
-
     std::function<void (const GameObject *)> m_func;
 
     std::vector<std::tuple<std::string, std::string, std::string>> m_textureMap;

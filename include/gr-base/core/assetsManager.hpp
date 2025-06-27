@@ -9,6 +9,7 @@
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/core/default.hpp"
@@ -54,7 +55,7 @@ public:
     static void LoadGameObject(const std::string &path, Args &&...args);
 
     template <typename ...Args>
-    static void LoadScene(const std::string &path, Args &&...args);
+    static std::shared_ptr<TaskInfo> LoadScene(const std::string &path, Args &&...args);
 
     template <typename ...Args>
     static void LoadAnimation(const std::string &path, Args &&...args);
@@ -136,16 +137,11 @@ private:
     static std::unordered_map<Material *, std::string> mMaterialRefToName;
     static std::mutex mMaterialMutex;
 
-    /***************** Scene *****************/
-    static std::unordered_map<std::string, std::unique_ptr<SceneLoadTask>> mSceneTaskMap;
-    static std::unordered_map<std::string, std::unique_ptr<Scene>> mSceneMap;
-    static std::mutex mSceneMutex;
-
     static ShaderManager &GetShaderManager();
 
-    static FilmboxManager& GetFilmboxManager();
+    static FilmboxManager &GetFilmboxManager();
 
-    static void SetSceneList(const std::string &path, SceneLoadFlags flags, std::function<void (Scene *)> func);
+    static SceneTaskManager &GetSceneTaskManager();
 };
 
 template <typename... Args>
@@ -160,12 +156,15 @@ inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...arg
 }
 
 template <typename... Args>
-inline void AssetsManager::LoadScene(const std::string &path, Args &&...args) {
+inline std::shared_ptr<TaskInfo> AssetsManager::LoadScene(const std::string &path, Args &&...args)
+{
     std::function<void (Scene *)> func = nullptr;
-    if constexpr (sizeof...(Args) > 0) {
+    if constexpr (sizeof...(Args) > 0)
+    {
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
-    SetSceneList(path, SceneLoadFlags_Load, func);
+
+    return GetSceneTaskManager().create_task(path, func);
 }
 
 template <typename ...Args>

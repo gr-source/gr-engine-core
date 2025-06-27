@@ -4,7 +4,8 @@
 #include <string>
 #include <mutex>
 
-class NameManager {
+class NameManager
+{
 public:
     std::string GenerateNameID(std::string name);
 
@@ -18,7 +19,7 @@ private:
     static std::size_t FindDelimiter(char delimiter, const std::string &name);
 
 protected:
-    static std::mutex mutex;
+    std::mutex mutex;
 };
 
 

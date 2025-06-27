@@ -6,17 +6,19 @@
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/scene.hpp"
 
 #include "gr-base/core/geometry/shader.hpp"
+
 #include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
-#include <gr-render/gShader.h>
-#include <stdexcept>
 
-GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObject *)> func) : m_path(path), m_func(func), m_stream(nullptr), m_rootNode(nullptr)
+#include <gr-render/gShader.h>
+
+GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObject *)> func) : m_path(path), m_func(func), m_rootNode(nullptr)
 {}
 
 // ***** private ***** //
@@ -24,10 +26,10 @@ int GameObjectLoadTask::doInBackground()
 {
     Console::LogInfo("[ GameObjectLoadTask ] Loading file: %s...", m_path.c_str());
 
-    m_stream = std::make_shared<Stream>(m_path, std::ios_base::in | std::ios_base::binary);
+    auto stream = std::make_shared<Stream>(m_path, std::ios_base::in | std::ios_base::binary);
 
     FileHeader fileHeader;
-    if (!m_stream->read(reinterpret_cast<char *>(&fileHeader), sizeof(FileHeader)))
+    if (!stream->read(reinterpret_cast<char *>(&fileHeader), sizeof(FileHeader)))
     {
         return 1;
     }
@@ -38,7 +40,7 @@ int GameObjectLoadTask::doInBackground()
         return 2;
     }
 
-    int result = read_data();
+    int result = read_data(stream.get());
     if (result != 0)
     {
         return 3;
@@ -48,12 +50,13 @@ int GameObjectLoadTask::doInBackground()
 
 void GameObjectLoadTask::onPostExecute(int result)
 {
-    m_stream->close();
     if (result != 0)
     {
         return;
     }
     Console::LogInfo("[ GameObjectLoadTask ] Loaded: %s", m_path.c_str());
+
+    /*
 
     auto scene = Scene::GetCurrentScene();
     if (scene != nullptr)
@@ -71,20 +74,15 @@ void GameObjectLoadTask::onPostExecute(int result)
     {
         m_func(go);
     }
-
-    /*if (m_func != nullptr)
-    {
-        m_func(m_gameObject);
-    }
     */
 }
 
-int GameObjectLoadTask::read_data()
+int GameObjectLoadTask::read_data(Stream *stream)
 {
     while (true)
     {
         DataSegment dataSegment;
-        if (!m_stream->read(reinterpret_cast<char *>(&dataSegment), sizeof(DataSegment)))
+        if (!stream->read(reinterpret_cast<char *>(&dataSegment), sizeof(DataSegment)))
         {
             break;
         }
@@ -94,10 +92,10 @@ int GameObjectLoadTask::read_data()
             break;
         }
 
-        auto next = m_stream->tellg() + static_cast<std::streampos>(dataSegment.sizeData);
+        auto next = stream->tellg() + static_cast<std::streampos>(dataSegment.sizeData);
         if (dataSegment.sizeData <= 0)
         {
-            m_stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next, std::ios_base::beg);
             continue;
         }
 
@@ -109,6 +107,7 @@ int GameObjectLoadTask::read_data()
 
         switch (dataSegment.type)
         {
+            /*
             case HeaderType::OBJECT:
                 result = read_gameobject();
                 break;
@@ -124,6 +123,7 @@ int GameObjectLoadTask::read_data()
             case HeaderType::TEXTURE:
                 result = read_texture();
                 break;
+                */
             default:
                 break;
         }
@@ -133,35 +133,35 @@ int GameObjectLoadTask::read_data()
             Console::LogWarning("[ GameObjectLoadTask ] Segment %s do not ready", name.c_str());
         }
 
-        if (m_stream->tellg() != next)
-            m_stream->seekg(next, std::ios_base::beg);
+        if (stream->tellg() != next)
+            stream->seekg(next, std::ios_base::beg);
     }
     return 0;
 }
 
-int GameObjectLoadTask::read_gameobject(Transform *parent)
+int GameObjectLoadTask::read_gameobject(Stream *stream, Transform *parent)
 {
     // read name
     std::size_t gonsize = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
+    if (!stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
     {
         return 1;
     }
 
     std::string goname(gonsize, '\0');
-    if (!m_stream->read(goname.data(), gonsize * sizeof(char)))
+    if (!stream->read(goname.data(), gonsize * sizeof(char)))
     {
         return 2;
     }
 
     // read tag
     std::size_t gotsize = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&gotsize), sizeof(std::size_t))) {
+    if (!stream->read(reinterpret_cast<char *>(&gotsize), sizeof(std::size_t))) {
         return 3;
     }
 
     std::string gotag(gotsize, '\0');
-    if (!m_stream->read(gotag.data(), gotsize * sizeof(char))) {
+    if (!stream->read(gotag.data(), gotsize * sizeof(char))) {
         return 4;
     }
 
@@ -170,12 +170,12 @@ int GameObjectLoadTask::read_gameobject(Transform *parent)
 
     // read status
     {
-        if (!m_stream->read(reinterpret_cast<char *>(&bActive), sizeof(bool)))
+        if (!stream->read(reinterpret_cast<char *>(&bActive), sizeof(bool)))
         {
             return 5;
         }
 
-        if (!m_stream->read(reinterpret_cast<char *>(&bEnable), sizeof(bool)))
+        if (!stream->read(reinterpret_cast<char *>(&bEnable), sizeof(bool)))
         {
             return 6;
         }
@@ -197,13 +197,13 @@ int GameObjectLoadTask::read_gameobject(Transform *parent)
     }
 
     std::size_t ccount = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
+    if (!stream->read(reinterpret_cast<char *>(&ccount), sizeof(std::size_t))) {
         return 7;
     }
     
     int result = 0;
     for (int i=0;i<ccount;i++) {
-        result = read_gameobject(transform);
+        result = read_gameobject(stream, transform);
         if (result != 0) {
             break;
         }
@@ -213,10 +213,10 @@ int GameObjectLoadTask::read_gameobject(Transform *parent)
     return result;
 }
 
-int GameObjectLoadTask::read_shader()
+int GameObjectLoadTask::read_shader(Stream *stream)
 {
     std::size_t length = {};
-    if (!m_stream->read(reinterpret_cast<char *>(&length), sizeof(std::size_t)))
+    if (!stream->read(reinterpret_cast<char *>(&length), sizeof(std::size_t)))
     {
         return 1;
     }
@@ -228,13 +228,13 @@ int GameObjectLoadTask::read_shader()
         // read material
         {
             std::size_t len = {};
-            if (!m_stream->read(reinterpret_cast<char *>(&len), sizeof(std::size_t)))
+            if (!stream->read(reinterpret_cast<char *>(&len), sizeof(std::size_t)))
             {
                 return 2;
             }
 
             name_material = std::string(len, '\0');
-            if (!m_stream->read(name_material.data(), len * sizeof(char)))
+            if (!stream->read(name_material.data(), len * sizeof(char)))
             {
                 return 3;
             }
@@ -243,13 +243,13 @@ int GameObjectLoadTask::read_shader()
         // read script
         {
             std::size_t len = {};
-            if (!m_stream->read(reinterpret_cast<char *>(&len), sizeof(std::size_t)))
+            if (!stream->read(reinterpret_cast<char *>(&len), sizeof(std::size_t)))
             {
                 return 2;
             }
 
             name_shader = std::string(len, '\0');
-            if (!m_stream->read(name_shader.data(), len * sizeof(char)))
+            if (!stream->read(name_shader.data(), len * sizeof(char)))
             {
                 return 3;
             }
@@ -261,10 +261,10 @@ int GameObjectLoadTask::read_shader()
     return 0;
 }
 
-int GameObjectLoadTask::read_texture()
+int GameObjectLoadTask::read_texture(Stream *stream)
 {
     std::size_t textureCount = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&textureCount), sizeof(std::size_t)))
+    if (!stream->read(reinterpret_cast<char *>(&textureCount), sizeof(std::size_t)))
     {
         return 1;
     }
@@ -273,39 +273,39 @@ int GameObjectLoadTask::read_texture()
     {
         // read game object name
         std::size_t gonsize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
+        if (!stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
         {
             return 2;
         }
 
         std::string goname(gonsize, '\0');
-        if (!m_stream->read(goname.data(), gonsize * sizeof(char)))
+        if (!stream->read(goname.data(), gonsize * sizeof(char)))
         {
             return 3;
         }
 
         // read material name
         std::size_t mnsize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&mnsize), sizeof(std::size_t)))
+        if (!stream->read(reinterpret_cast<char *>(&mnsize), sizeof(std::size_t)))
         {
             return 4;
         }
 
         std::string mname(mnsize, '\0');
-        if (!m_stream->read(mname.data(), mnsize * sizeof(char)))
+        if (!stream->read(mname.data(), mnsize * sizeof(char)))
         {
             return 5;
         }
 
         // read texture path
         std::size_t tpsize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&tpsize), sizeof(std::size_t)))
+        if (!stream->read(reinterpret_cast<char *>(&tpsize), sizeof(std::size_t)))
         {
             return 4;
         }
 
         std::string tpath(tpsize, '\0');
-        if (!m_stream->read(tpath.data(), tpsize * sizeof(char)))
+        if (!stream->read(tpath.data(), tpsize * sizeof(char)))
         {
             return 5;
         }
@@ -313,10 +313,10 @@ int GameObjectLoadTask::read_texture()
     return 0;
 }
 
-int GameObjectLoadTask::read_material()
+int GameObjectLoadTask::read_material(Stream *stream)
 {
     std::size_t sname = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t)))
+    if (!stream->read(reinterpret_cast<char *>(&sname), sizeof(std::size_t)))
     {
         return 1;
     }
@@ -325,42 +325,42 @@ int GameObjectLoadTask::read_material()
     {
         // read game object name
         std::size_t gonsize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
+        if (!stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
         {
             return 2;
         }
 
         std::string goname(gonsize, '\0');
-        if (!m_stream->read(goname.data(), gonsize * sizeof(char)))
+        if (!stream->read(goname.data(), gonsize * sizeof(char)))
         {
             return 3;
         }
 
         // read material name
         std::size_t mnsize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&mnsize), sizeof(std::size_t)))
+        if (!stream->read(reinterpret_cast<char *>(&mnsize), sizeof(std::size_t)))
         {
             return 4;
         }
 
         std::string mname(mnsize, '\0');
-        if (!m_stream->read(mname.data(), mnsize * sizeof(char)))
+        if (!stream->read(mname.data(), mnsize * sizeof(char)))
         {
             return 5;
         }
 
         // deserialize material
         std::size_t bufferSize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&bufferSize), sizeof(std::size_t))) {
+        if (!stream->read(reinterpret_cast<char *>(&bufferSize), sizeof(std::size_t))) {
             return 6;
         }
 
-        auto next = m_stream->tellg() + static_cast<std::streampos>(bufferSize);
+        auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
 
         auto shader_it = m_ShaderToMaterial.find(mname);
         if (shader_it == m_ShaderToMaterial.end())
         {
-            m_stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next, std::ios_base::beg);
             continue;
         }
 
@@ -368,7 +368,7 @@ int GameObjectLoadTask::read_material()
         if (material == nullptr)
         {
             material = AssetsManager::CreateMaterial(mname, shader_it->second);
-            material->deserialize(m_stream.get());
+            material->deserialize(stream);
         }
 
         auto it = m_tempGameObjectMap.find(goname);
@@ -389,18 +389,18 @@ int GameObjectLoadTask::read_material()
 
         }
 
-        if (m_stream->tellg() != next)
+        if (stream->tellg() != next)
         {
-            m_stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next, std::ios_base::beg);
         }
     }
     return 0;
 }
 
-int GameObjectLoadTask::read_script()
+int GameObjectLoadTask::read_script(Stream *stream)
 {
     std::size_t gonsize = 0;
-    if (!m_stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
+    if (!stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
     {
         return 1;
     }
@@ -408,41 +408,41 @@ int GameObjectLoadTask::read_script()
     for (std::size_t i={};i<gonsize;i++)
     {
         std::size_t gonsize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
+        if (!stream->read(reinterpret_cast<char *>(&gonsize), sizeof(std::size_t)))
         {
             return 2;
         }
 
         std::string goname(gonsize, '\0');
-        if (!m_stream->read(goname.data(), gonsize * sizeof(char)))
+        if (!stream->read(goname.data(), gonsize * sizeof(char)))
         {
             return 3;
         }
 
         // read material name
         std::size_t cnsize = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&cnsize), sizeof(std::size_t)))
+        if (!stream->read(reinterpret_cast<char *>(&cnsize), sizeof(std::size_t)))
         {
             return 4;
         }
 
         std::string scriptname(cnsize, '\0');
-        if (!m_stream->read(scriptname.data(), cnsize * sizeof(char)))
+        if (!stream->read(scriptname.data(), cnsize * sizeof(char)))
         {
             return 5;
         }
 
         std::size_t data_size = 0;
-        if (!m_stream->read(reinterpret_cast<char *>(&data_size), sizeof(std::size_t))) {
+        if (!stream->read(reinterpret_cast<char *>(&data_size), sizeof(std::size_t))) {
             return 6;
         }
 
-        auto next = m_stream->tellg() + static_cast<std::streampos>(data_size);
+        auto next = stream->tellg() + static_cast<std::streampos>(data_size);
 
         auto it = m_tempGameObjectMap.find(goname);
         if (it == m_tempGameObjectMap.end())
         {
-            m_stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next, std::ios_base::beg);
             continue;
         }
         
@@ -451,14 +451,14 @@ int GameObjectLoadTask::read_script()
         auto component = entity->hasComponent(scriptname) ? entity->getComponent(scriptname) : entity->addComponent(scriptname);
         if (component != nullptr && data_size > 0)
         {
-            component->Deserialize(m_stream.get());
+            component->Deserialize(stream);
         }
 
-        if (m_stream->tellg() != next)
+        if (stream->tellg() != next)
         {
             Console::LogWarning("[ SceneTask ] %s script %s read data imcompleted!", goname.c_str(), scriptname.c_str());
             
-            m_stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next, std::ios_base::beg);
             continue;
         }
     }

@@ -28,6 +28,31 @@ void Stream::flush()
     m_data.clear();
 }
 
+// ********** write template ********** //
+template <>
+bool Stream::write(const std::string &value)
+{
+    auto len = value.length();
+    if (!write(&len, sizeof(std::size_t)))
+    {
+        return false;
+    }
+
+    return write(value.c_str(), len);
+}
+
+template <>
+bool Stream::write(const bool &value)
+{
+    return write(&value, sizeof(bool));
+}
+
+template <>
+bool Stream::write(const std::size_t &value)
+{
+    return write(&value, sizeof(std::size_t));
+}
+
 bool Stream::write(const void *data, std::size_t size)
 {
     if (!data || size <= 0) {
@@ -42,6 +67,32 @@ bool Stream::write(const void *data, std::size_t size)
     m_data.emplace_back(ptr, static_cast<std::streamsize>(size));
 
     return true;
+}
+
+// ********** write template ********** //
+template <>
+bool Stream::read(std::string &value)
+{
+    std::size_t len = {};
+    if (!read(reinterpret_cast<char *>(&len), sizeof(std::size_t)))
+    {
+        return false;
+    }
+    value.resize(len, '\0');
+
+    return read(value.data(), len);
+}
+
+template <>
+bool Stream::read(bool &value)
+{
+    return read(reinterpret_cast<char *>(&value), sizeof(bool));
+}
+
+template <>
+bool Stream::read(std::size_t &value)
+{
+    return read(reinterpret_cast<char *>(&value), sizeof(std::size_t));
 }
 
 bool Stream::read(char *data, std::streamsize size)

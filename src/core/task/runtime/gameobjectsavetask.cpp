@@ -21,12 +21,12 @@ GameObjectSaveTask::GameObjectSaveTask(const std::string &path, const GameObject
 // private
 int GameObjectSaveTask::doInBackground()
 {
-    m_stream = std::make_shared<Stream>(m_path + "/" + m_gameObject->getName() + ".gmdx", std::ios_base::out | std::ios_base::binary);
+    auto stream = std::make_unique<Stream>(m_path + "/" + m_gameObject->getName() + ".gmdx", std::ios_base::out | std::ios_base::binary);
 
     // Header file
     {
         FileHeader header{{'g', 'm', 'd', 'x'}, 1.0f, 0};
-        if (!m_stream->writeS(&header, 1, false))
+        if (!stream->writeS(&header, 1, false))
         {
             Console::LogError("[ GameObjectSaveTask ] Fail to write header.");
             return 1;
@@ -46,8 +46,6 @@ int GameObjectSaveTask::doInBackground()
 
 void GameObjectSaveTask::onPostExecute(int result)
 {
-    m_stream->close();
-
     if (m_func != nullptr)
     {
         m_func(m_gameObject);

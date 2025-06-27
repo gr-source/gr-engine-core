@@ -24,18 +24,10 @@ public:
     static bool HasScene();
 
     static void Use(Scene *scene);
-    
-    static void Initialize();
-
-    static void Shutdown();
-
-    static Scene *Create(const std::string &name);
 
     static void DestroyScript();
 
     static void CheckRequestReinstanceScript();
-
-    static std::unordered_map<std::string, std::unique_ptr<Scene>> &GetScenes();
 
     static void InitializeEngineScript();
 
@@ -47,17 +39,12 @@ public:
 
     static void Init(GameObject *gameObject);
 
-    static Scene *AddScene(const std::string &name, std::unique_ptr<Scene> scene);
-
-    Scene(const std::string &name);
-    
+    Scene();
     ~Scene();
 
-    void setName(const std::string &name);
+    void init();
 
-    std::string getName() const;
-    
-    void save(const std::string &path);
+    void create_main_camra();
 
     GameObject *CreateGameObject(const std::string &name, const std::string &tag = "untagged");
 
@@ -86,17 +73,9 @@ public:
     std::vector<GameObject *> get_object_selected() const;
 
 private:
-    static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;
-
     static std::hash<std::string> hash;
 
-    static std::condition_variable cv;
-
-    static std::mutex m_mutex;
-
     static Scene *m_current;
-
-    static bool bQuit;
 
     std::vector<std::tuple<std::string, std::string, Component *>> m_componentCache; 
 
@@ -107,8 +86,6 @@ private:
     std::unordered_set<GameObject *> u_object_has_been_selected;
 
     std::vector<GameObject *> v_object_selected_list;
-
-    std::string m_name;
 
     GameObject *m_goCamera;
 
@@ -123,8 +100,6 @@ private:
     void setEnable(bool value);
 
     void setDisableEntity(Transform *transform, bool value);
-
-    static void SetupScene(Scene *scene);
 
     bool remove(GameObject *gameObject);
 

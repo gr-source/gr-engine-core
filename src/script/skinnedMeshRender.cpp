@@ -1,17 +1,19 @@
 #include "gr-base/script/skinnedMeshRender.hpp"
 
-#include "gr-base/core/assetsManager.hpp"
-#include "gr-base/core/file/file.hpp"
+#include "gr-base/core/geometry/material.hpp"
+#include "gr-base/core/geometry/batching.hpp"
 #include "gr-base/core/geometry/shader.hpp"
+
 #include "gr-base/script/meshFilter.hpp"
+
+#include "gr-base/core/assetsManager.hpp"
 
 #include "gr-base/core/animation/bone.hpp"
 
 #include "gr-base/core/file/stream.hpp"
+#include "gr-base/core/file/file.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
-
-#include "gr-base/core/geometry/batching.hpp"
 
 SkinnedMeshRender::SkinnedMeshRender()
 {}

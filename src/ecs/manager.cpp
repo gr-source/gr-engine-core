@@ -16,7 +16,8 @@ grm::size Manager::mEntityCount = 0;
 
 std::mutex Manager::mMutex;
 
-Entity *Manager::CreateEntity(GameObject *go) {
+Entity *Manager::CreateEntity(GameObject *go)
+{
     std::lock_guard<std::mutex> lock(mMutex);
     auto hasAvailable = !mAvailable.empty();
 
@@ -30,7 +31,8 @@ Entity *Manager::CreateEntity(GameObject *go) {
     return mEntities.emplace_back(&(*entity));
 }
 
-Entity *Manager::GetEntityFromID(EntityID id) {
+Entity *Manager::GetEntityFromID(EntityID id)
+{
     auto it = mMapEntities.find(id);
     if (it == mMapEntities.end()) {
         return nullptr;
@@ -38,7 +40,8 @@ Entity *Manager::GetEntityFromID(EntityID id) {
     return &(*it->second);
 }
 
-void Manager::DestroyEntity(Entity *entity) {
+void Manager::DestroyEntity(Entity *entity)
+{
     auto id = entity->getEntityID();
 
     std::lock_guard<std::mutex> lock(mMutex);

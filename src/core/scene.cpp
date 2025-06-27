@@ -14,19 +14,9 @@
 
 #include "gr-base/core/task/runtime/scenesavetask.hpp"
 
-#include <algorithm>
-
-std::unordered_map<std::string, std::unique_ptr<Scene>> Scene::m_scenes;
-
 std::hash<std::string> Scene::hash;
 
-std::condition_variable Scene::cv;
-
-std::mutex Scene::m_mutex;
-
 Scene *Scene::m_current = nullptr;
-
-bool Scene::bQuit = false;
 
 void Scene::SetCurrent(Scene *scene)
 {
@@ -57,23 +47,7 @@ void Scene::Use(Scene *scene)
     m_current = scene;
 }
 
-void Scene::Initialize()
-{
-}
-
-void Scene::Shutdown()
-{
-    m_scenes.clear();
-
-    m_current = nullptr;
-
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        bQuit = true;
-    }
-    cv.notify_all();
-}
-
+/*
 Scene *Scene::Create(const std::string &name)
 {
     auto &&[it, added] = m_scenes.emplace(name, std::make_unique<Scene>(name));
@@ -102,6 +76,7 @@ Scene *Scene::Create(const std::string &name)
 
     return &(*it->second);
 }
+*/
 
 void DestroyComponnet(Transform *transform)
 {
@@ -130,7 +105,7 @@ void Scene::DestroyScript()
 
 void Scene::CheckRequestReinstanceScript()
 {
-    // /*
+    /*
     auto script = ComponentRegistry::getInstance().getScriptRequestReinstance();
     if (script.empty())
     {
@@ -146,7 +121,7 @@ void Scene::CheckRequestReinstanceScript()
             ComponentRegistry::getInstance().removeScriptNeedsUpdate(scriptname);
         }
     }
-    // */
+    */
 }
 
 void Scene::Remove(GameObject *gameObject)
@@ -200,37 +175,39 @@ void Scene::Init(GameObject *gameObject)
     }
 }
 
-Scene *Scene::AddScene(const std::string &name, std::unique_ptr<Scene> scene)
-{
-    m_scenes[name] = std::move(scene);
-
-    return &(*m_scenes[name]);
-}
-
-Scene::Scene(const std::string &name) : m_name(name), m_enable(true), m_goCamera(nullptr), m_camera(nullptr) {}
+// public
+Scene::Scene() : m_enable(true), m_goCamera(nullptr), m_camera(nullptr) {}
 
 Scene::~Scene()
 {
+    /*
     auto temp = m_objects;
     for (auto gameObject : temp)
     {
         GameObject::Destroy(gameObject);
     }
+    */
 }
 
-void Scene::setName(const std::string &name)
+void Scene::init()
 {
-    m_name = name;
+    m_goCamera = CreateEngineCamera();
+
+    m_camera = m_goCamera->getComponent<Camera>();    
 }
 
-std::string Scene::getName() const
+void Scene::create_main_camra()
 {
-    return m_name;
-}
+    auto go = GameObject::Create("MainCamera_");
+    go->addComponent<Camera>();
 
-void Scene::save(const std::string &path)
-{
-    SceneSaveTask saveSceneTask(this);
+    auto MainCamera = GameObject::Instantiate(go);
+    if (MainCamera)
+    {
+        MainCamera->setName("MainCamera");
+    }
+
+    GameObject::Destroy(go);
 }
 
 GameObject *Scene::CreateGameObject(const std::string &name, const std::string &tag)
@@ -318,12 +295,6 @@ bool Scene::object_has_been_selected(GameObject *go) const
 std::vector<GameObject *> Scene::get_object_selected() const
 {
     return v_object_selected_list;
-}
-
-
-std::unordered_map<std::string, std::unique_ptr<Scene>> &Scene::GetScenes()
-{
-    return m_scenes;
 }
 
 void Scene::InitializeEngineScript()
@@ -435,6 +406,7 @@ void Scene::setDisableEntity(Transform *transform, bool value)
     }
 }
 
+/*
 void Scene::SetupScene(Scene *scene)
 {
     auto it = m_scenes.find(scene->getName());
@@ -446,6 +418,7 @@ void Scene::SetupScene(Scene *scene)
         Scene::Init(go);
     }
 }
+*/
 
 bool Scene::remove(GameObject *gameObject)
 {

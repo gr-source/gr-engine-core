@@ -2,8 +2,6 @@
 
 static const char delimiter = '.';
 
-std::mutex NameManager::mutex;
-
 std::string NameManager::GenerateNameID(std::string name)
 {
     auto end = FindDelimiter(delimiter, name);
@@ -14,7 +12,6 @@ std::string NameManager::GenerateNameID(std::string name)
     }
 
     std::lock_guard<std::mutex> lock(mutex);
-
     auto it = m_nameID.find(name);
     if (it == m_nameID.end())
     {
@@ -35,7 +32,6 @@ void NameManager::RemoveNameID(std::string name)
     }
 
     std::lock_guard<std::mutex> lock(mutex);
-
     auto it = m_nameID.find(name);
     if (it == m_nameID.end())
     {

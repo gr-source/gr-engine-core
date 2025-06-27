@@ -1,14 +1,13 @@
 #pragma once
 
-#include "gr-base/core/nameManager.hpp"
-
 #include "gr-base/core/file/default.hpp"
 
 #include "gr-base/script/default.hpp"
 
 #include "default.hpp"
 
-class GameObject {
+class GameObject
+{
 public:
     static GameObject *Create(const std::string &name, const std::string &tag = "unttaged");
 
@@ -25,6 +24,8 @@ public:
     GameObject() = delete;
     GameObject(const std::string &name, const std::string &tag = "untagged");
     ~GameObject();
+
+    void init();
 
     void setName(const std::string &name);
 
@@ -76,11 +77,6 @@ private:
     bool m_active;
 
     bool m_static;
-
-protected:
-    static std::unordered_map<std::string, std::unique_ptr<GameObject>> mGoCache;
-
-    static NameManager mNameManager;
 };
 
 #include "entity.hpp"

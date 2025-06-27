@@ -2,17 +2,14 @@
 
 #include "gr-base/core/assetsManager.hpp"
 
+#include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/batching.hpp"
 
 #include "gr-base/core/geometry/shader.hpp"
+
 #include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
-
-#include "gr-base/core/file/file.hpp"
-#include <cstddef>
-#include <tuple>
-#include <vector>
 
 MeshRender::MeshRender()
 {}
@@ -118,7 +115,6 @@ bool MeshRender::Deserialize(Stream *stream)
             return false;
         }
 
-        // /*
         auto material = AssetsManager::FindMaterial(mname);
         if (material != nullptr)
         {
@@ -127,7 +123,6 @@ bool MeshRender::Deserialize(Stream *stream)
 
             AssetsManager::LoadShader(shaderParams, &Material::setShader, material);
         }
-        // */
     }
 
     return true;

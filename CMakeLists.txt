@@ -5,6 +5,7 @@ project(gr-base VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 set(ecs
+    src/ecs/gameobjectmanager.cpp
     src/ecs/componentRegistry.cpp
     src/ecs/scriptpriority.cpp
     src/ecs/chunkManager.cpp
@@ -47,6 +48,7 @@ set(thread
 set(core
     src/core/assetsManager.cpp
     src/core/rendertarget.cpp
+    src/core/scenemanager.cpp
     src/core/nameManager.cpp
     src/core/display.cpp
     src/core/console.cpp
@@ -113,6 +115,7 @@ set(task
     src/core/task/runtime/textureloadtask.cpp
 
     src/core/task/runtime/shaderloadtask.cpp
+    src/core/task/scenetaskmanager.cpp
     src/core/task/shadermanager.cpp
 
     src/core/task/filmboxmanager.cpp

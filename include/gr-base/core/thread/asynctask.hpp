@@ -2,6 +2,7 @@
 
 #include <condition_variable>
 #include <functional>
+#include <string>
 #include <mutex>
 
 #include "default.hpp"

@@ -1,5 +1,56 @@
 #pragma once
 
+#include "gr-base/core/thread/asynctask.hpp"
+
+#include "gr-base/core/default.hpp"
+
+#include "gr-base/core/file/default.hpp"
+
+#include "gr-base/ecs/default.hpp"
+
+#include "gr-base/script/default.hpp"
+
+class SceneLoadTask : public IAsyncTask<int>
+{
+public:
+    SceneLoadTask() = delete;
+    SceneLoadTask(const std::string &path);
+
+    void addFunction(std::function<void (Scene *)> func);
+
+private:
+    const std::string m_path;
+
+    std::vector<std::function<void (Scene *)>> m_funcList;
+
+    std::vector<GameObject *> m_rootList;
+
+    std::unordered_map<std::string, GameObject *> m_gameobjectmap;
+
+    std::string m_name;
+
+    int doInBackground() override;
+
+    void onPostExecute(int result) override;
+
+    int read_metadata(Stream *stream);
+
+    int read_shader(Stream *stream);
+
+    int read_material(Stream *stream);
+
+    int read_texture(Stream *stream);
+
+    int read_mesh(Stream *stream);
+
+    int read_gameobject(Stream *stream);
+
+    int read_script(Stream *stream);
+
+    GameObject *deserialize(Stream *stream, Transform *parent = nullptr);
+};
+
+/*
 #include "default.hpp"
 
 #include "gr-base/core/file/default.hpp"
@@ -83,6 +134,6 @@ protected:
 
     int readScript();
 };
-
+*/
 
 

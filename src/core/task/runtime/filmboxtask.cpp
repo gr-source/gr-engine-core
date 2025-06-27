@@ -7,6 +7,7 @@
 
 #include "gr-base/core/file/file.hpp"
 
+#include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"

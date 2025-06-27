@@ -22,7 +22,13 @@ public:
 
     void flush();
 
+    template <typename T>
+    bool write(const T &value);
+
     bool write(const void *data, std::size_t size);
+
+    template <typename T>
+    bool read(T &value);
 
 	bool read(char *data, std::streamsize size);
 
