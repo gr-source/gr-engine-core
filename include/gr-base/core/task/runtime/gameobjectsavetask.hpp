@@ -9,45 +9,48 @@
 #include "gr-base/ecs/default.hpp"
 
 #include <gr-render/gCommon.h>
+#include <unordered_set>
 
 class GameObjectSaveTask : public IAsyncTask<int>
 {
 public:
     GameObjectSaveTask() = delete;
-    GameObjectSaveTask(const std::string &dir, const GameObject *gameObject, std::function<void (const GameObject *)> func);
+    GameObjectSaveTask(const std::string &dir, GameObject *gameObject, std::function<void (GameObject *)> func);
 
 private:
     const std::string m_path;
 
-    const GameObject *m_gameObject;
+    GameObject *m_gameObject;
 
-    std::function<void (const GameObject *)> m_func;
+    std::function<void (GameObject *)> m_func;
 
     std::vector<std::tuple<std::string, std::string, std::string>> m_textureMap;
 
-    std::vector<std::tuple<std::string, std::string, Material *>> m_materialMap;
+    std::vector<std::tuple<std::string, std::string, const Component *>> m_componentdata;
 
-    std::unordered_map<std::string, std::tuple<std::string, grr::gShader *>> m_shaderMap;
+    std::unordered_map<std::string, const Material *> m_materialmap;
 
-    std::vector<std::tuple<std::string, std::string, Component *>> m_scriptMap;
+    std::unordered_set<std::string> m_shadermap;
 
     int doInBackground() override;
 
     void onPostExecute(int result) override;
 
-    int write_data();
+    int write_metadata(Stream *stream);
 
-    int write_gameobject(const GameObject *go);
+    int write_data(Stream *stream);
 
-    int write_shader();
+    int write_shader(Stream *stream);
 
-    int write_texture();
+    int write_texture(Stream *stream);
 
-    int write_material();
+    int write_material(Stream *stream);
 
-    int write_script();
+    int write_gameobject(Stream *stream, const GameObject *go);
 
-    void remape_gameobject(const GameObject *go);
+    int write_script(Stream *stream);
+
+    void read_gameobject(const GameObject *gameObject = nullptr);
 };
 
 

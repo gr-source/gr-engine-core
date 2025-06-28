@@ -164,7 +164,7 @@ void Scene::Init(GameObject *gameObject)
 
     if (baseRender != nullptr)
     {
-        baseRender->build();
+        // baseRender->build();
     }
 
     auto transform = entity->getComponent<Transform>();
@@ -193,7 +193,9 @@ void Scene::init()
 {
     m_goCamera = CreateEngineCamera();
 
-    m_camera = m_goCamera->getComponent<Camera>();    
+    m_camera = m_goCamera->getComponent<Camera>();
+
+    m_camera->setActive(true);
 }
 
 void Scene::create_main_camra()

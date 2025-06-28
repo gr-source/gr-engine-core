@@ -15,7 +15,7 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 
-GameObjectSaveTask::GameObjectSaveTask(const std::string &path, const GameObject *gameObject, std::function<void (const GameObject *)> func) : m_path(path), m_gameObject(gameObject), m_stream(nullptr), m_func(func)
+GameObjectSaveTask::GameObjectSaveTask(const std::string &path, GameObject *gameObject, std::function<void (GameObject *)> func) : m_path(path), m_gameObject(gameObject), m_func(func)
 {}
 
 // private
@@ -33,12 +33,15 @@ int GameObjectSaveTask::doInBackground()
         }
     }
 
-    remape_gameobject(m_gameObject);
-
-    int result = write_data();
-    if (result != 0)
+    if (write_metadata(stream.get()) != 0)
     {
         return 2;
+    }
+
+    int result = write_data(stream.get());
+    if (result != 0)
+    {
+        return 3;
     }
 
     return 0;
@@ -46,224 +49,138 @@ int GameObjectSaveTask::doInBackground()
 
 void GameObjectSaveTask::onPostExecute(int result)
 {
+    if (result != 0)
+    {
+        return Console::LogError("[ GameObjectSaveTask ] Fail to save gameObject");
+    }
+
+    Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", m_path.c_str());
+
     if (m_func != nullptr)
     {
         m_func(m_gameObject);
     }
-
-    if (result != 0)
-    {
-        return;
-    }
-
-    Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", m_path.c_str());
 }
 
-int GameObjectSaveTask::write_data()
+int GameObjectSaveTask::write_metadata(Stream *stream)
 {
-    // write gameobject
+    read_gameobject(m_gameObject);
+    return 0;
+}
+
+int GameObjectSaveTask::write_data(Stream *stream)
+{
+    // write shader
     {
-        if (write_gameobject(m_gameObject) != 0)
+        if (write_shader(stream) != 0)
         {
             return 1;
         }
 
-        DataSegment dataSegment = {HeaderType::OBJECT, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false))
+        DataSegment dataSegment = {HeaderType::SHADER, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&dataSegment, 1, false))
         {
             return 2;
         }
-        m_stream->flush();
-    }
-
-    // write shader
-    {
-        if (write_shader() != 0)
-        {
-            return 5;
-        }
-
-        DataSegment dataSegment = {HeaderType::SHADER, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false))
-        {
-            return 6;
-        }
-        m_stream->flush();
-    }
-
-    // write material
-    {
-        if (write_material() != 0)
-        {
-            return 5;
-        }
-
-        DataSegment dataSegment = {HeaderType::MATERIAL, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false))
-        {
-            return 6;
-        }
-        m_stream->flush();
-    }
-
-    // write script
-    {
-        if (write_script() != 0)
-        {
-            return 7;
-        }
-
-        DataSegment dataSegment = {HeaderType::SCRIPT, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false))
-        {
-            return 8;
-        }
-        m_stream->flush();
+        stream->flush();
     }
 
     // write texture
     {
-        if (write_texture() != 0)
+        if (write_texture(stream) != 0)
         {
             return 3;
         }
         
-        DataSegment dataSegment = {HeaderType::TEXTURE, static_cast<std::size_t>(m_stream->getDataSize())};
-        if (!m_stream->writeS(&dataSegment, 1, false))
+        DataSegment dataSegment = {HeaderType::TEXTURE, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&dataSegment, 1, false))
         {
             return 4;
         }
-        m_stream->flush(); 
+        stream->flush(); 
+    }
+
+    // write material
+    {
+        if (write_material(stream) != 0)
+        {
+            return 5;
+        }
+
+        DataSegment dataSegment = {HeaderType::MATERIAL, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&dataSegment, 1, false))
+        {
+            return 6;
+        }
+        stream->flush();
+    }
+
+    // write gameobject
+    {
+        if (write_gameobject(stream, m_gameObject) != 0)
+        {
+            return 7;
+        }
+
+        DataSegment dataSegment = {HeaderType::OBJECT, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&dataSegment, 1, false))
+        {
+            return 8;
+        }
+        stream->flush();
+    }
+
+    // write script
+    {
+        if (write_script(stream) != 0)
+        {
+            return 9;
+        }
+
+        DataSegment dataSegment = {HeaderType::SCRIPT, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&dataSegment, 1, false))
+        {
+            return 10;
+        }
+        stream->flush();
     }
 
     // end file
     {
         DataSegment dataSegment = {HeaderType::NONE, 0};
-        if (!m_stream->writeS(&dataSegment, 1, false))
+        if (!stream->writeS(&dataSegment, 1, false))
         {
-            return 9;
+            return 11;
         }
 
-        m_stream->flush();
+        stream->flush();
     }
     return 0;
 }
 
-int GameObjectSaveTask::write_gameobject(const GameObject *go)
+int GameObjectSaveTask::write_shader(Stream *stream)
 {
-    auto goname = go->getName();
-    {
-        auto gonsize = goname.size();
-        if (!m_stream->write(&gonsize, sizeof(std::size_t)))
-        {
-            return 1;
-        }
-
-        if (!m_stream->write(goname.c_str(), gonsize * sizeof(char)))
-        {
-            return 2;
-        }
-    }
-
-    auto gotag = go->getTag();
-    {
-        auto gotsize = gotag.size();
-
-        if (!m_stream->write(&gotsize, sizeof(std::size_t)))
-        {
-            return 3;
-        }
-        if (!m_stream->write(gotag.c_str(),  gotsize * sizeof(char)))
-        {
-            return 4;
-        }
-    }
-
-
-    auto active = go->getActive();
-    {
-        if (!m_stream->write(&active,  sizeof(bool)))
-        {
-            return 5;
-        }
-
-    }
-    auto enable = go->getStatic();
-    {
-        if (!m_stream->write(&enable,  sizeof(bool)))
-        {
-            return 6;
-        }
-    }
-
-    auto transform = go->getTransform();
-    auto children = transform->getChildren();
-
-    auto ccount = children.size();
-    if (!m_stream->write(&ccount, sizeof(std::size_t)))
-    {
-        return 7;
-    }
-
-    int result = 0;
-    for (auto &child : children)
-    {
-        result = write_gameobject(child->getGameObject());
-        if (result != 0)
-        {
-            break;
-        }
-    }
-    return result;
-}
-
-int GameObjectSaveTask::write_shader()
-{
-    auto length = m_shaderMap.size();
-    if (!m_stream->write(&length, sizeof(std::size_t)))
+    auto length = m_shadermap.size();
+    if (!stream->write(length))
     {
         return 1;
     }
 
-    for (auto &&[materialname, tuple] : m_shaderMap)
+    for (auto &shadername : m_shadermap)
     {
-        auto &&[shadername, shader] = tuple;
-
-        // write material name
+        if (!stream->write(shadername))
         {
-            auto len = materialname.length();
-            if (!m_stream->write(&len, sizeof(std::size_t)))
-            {
-                return 2;
-            }
-
-            if (!m_stream->write(materialname.c_str(), len * sizeof(char)))
-            {
-                return 3;
-            }
-        }
-
-        // write shader name
-        {
-            auto len = shadername.length();
-            if (!m_stream->write(&len, sizeof(std::size_t)))
-            {
-                return 4;
-            }
-
-            if (!m_stream->write(shadername.c_str(), len * sizeof(char)))
-            {
-                return 5;
-            }
+            return 2;
         }
     }
     return 0;
 }
 
-int GameObjectSaveTask::write_texture()
+int GameObjectSaveTask::write_texture(Stream *stream)
 {
+    /*
     auto textureCount = m_textureMap.size();
-    if (!m_stream->write(&textureCount, sizeof(std::size_t)))
+    if (!stream->write(&textureCount, sizeof(std::size_t)))
     {
         return 1;
     }
@@ -273,12 +190,12 @@ int GameObjectSaveTask::write_texture()
         // write game object name
         {
             auto gonsize = goname.size();
-            if (!m_stream->write(&gonsize, sizeof(std::size_t)))
+            if (!stream->write(&gonsize, sizeof(std::size_t)))
             {
                 return 2;
             }
 
-            if (!m_stream->write(goname.c_str(), gonsize * sizeof(char)))
+            if (!stream->write(goname.c_str(), gonsize * sizeof(char)))
             {
                 return 3;
             }
@@ -287,12 +204,12 @@ int GameObjectSaveTask::write_texture()
         // write material name
         {
             auto mnsize = mname.size();
-            if (!m_stream->write(&mnsize, sizeof(std::size_t)))
+            if (!stream->write(&mnsize, sizeof(std::size_t)))
             {
                 return 4;
             }
 
-            if (!m_stream->write(mname.c_str(), mnsize * sizeof(char)))
+            if (!stream->write(mname.c_str(), mnsize * sizeof(char)))
             {
                 return 5;
             }
@@ -301,56 +218,40 @@ int GameObjectSaveTask::write_texture()
         // write texture path
         {
             auto tpsize = tpath.size();
-            if (!m_stream->write(&tpsize, sizeof(std::size_t)))
+            if (!stream->write(&tpsize, sizeof(std::size_t)))
             {
                 return 4;
             }
 
-            if (!m_stream->write(tpath.c_str(), tpsize * sizeof(char)))
+            if (!stream->write(tpath.c_str(), tpsize * sizeof(char)))
             {
                 return 5;
             }
         }
     }
+    */
     return 0;
 }
 
-int GameObjectSaveTask::write_material()
+int GameObjectSaveTask::write_material(Stream *stream)
 {
-    auto materialCount = m_materialMap.size();
-    if (!m_stream->write(&materialCount, sizeof(std::size_t)))
+    auto length = m_materialmap.size();
+    if (!stream->write(length))
     {
         return 1;
     }
 
-    for (auto [goname, mname, material] : m_materialMap)
+    for (auto &&[name, material] : m_materialmap)
     {
-        // write game object name
+        if (!stream->write(name))
         {
-            auto gonsize = goname.size();
-            if (!m_stream->write(&gonsize, sizeof(std::size_t)))
-            {
-                return 2;
-            }
-
-            if (!m_stream->write(goname.c_str(), gonsize * sizeof(char)))
-            {
-                return 3;
-            }
+            return 2;
         }
 
-        // write material name
+        auto shadername = AssetsManager::GetShaderName(material->getShader());
+        if (!stream->write(shadername))
         {
-            auto mnsize = mname.size();
-            if (!m_stream->write(&mnsize, sizeof(std::size_t)))
-            {
-                return 4;
-            }
-
-            if (!m_stream->write(mname.c_str(), mnsize * sizeof(char)))
-            {
-                return 5;
-            }
+            return 3;
         }
 
         // deserialize material
@@ -363,133 +264,139 @@ int GameObjectSaveTask::write_material()
             temp.close();
         }
 
-        if (!m_stream->write(&bufferSize, sizeof(std::size_t)))
+        if (!stream->write(bufferSize))
         {
-            return 6;
+            return 4;
         }
 
-        material->serialize(m_stream.get());
+        material->serialize(stream);
     }
     return 0;
 }
 
-int GameObjectSaveTask::write_script()
+int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
 {
-    auto scriptCount = m_scriptMap.size();
-    if (!m_stream->write(&scriptCount, sizeof(std::size_t)))
+    if (!stream->write(go->getName()))
     {
         return 1;
     }
 
-    for (auto &&[goname, scriptname, script] : m_scriptMap)
+    if (!stream->write(go->getTag()))
     {
-        // write game object name
-        {
-            auto gonsize = goname.size();
-            if (!m_stream->write(&gonsize, sizeof(std::size_t)))
-            {
-                return 2;
-            }
+        return 2;
+    }
 
-            if (!m_stream->write(goname.c_str(), gonsize * sizeof(char)))
-            {
-                return 3;
-            }
+    if (!stream->write(go->getActive()))
+    {
+        return 3;
+    }
+
+    if (!stream->write(go->getStatic()))
+    {
+        return 4;
+    }
+
+    auto transform = go->getTransform();
+
+    auto children = transform->getChildren();
+
+    auto ccount = children.size();
+    if (!stream->write(ccount))
+    {
+        return 5;
+    }
+
+    for (auto &child : children)
+    {
+        int result = write_gameobject(stream, child->getGameObject());
+        if (result != 0)
+        {
+            return 6;
+        }
+    }
+
+    return 0;
+}
+
+int GameObjectSaveTask::write_script(Stream *stream)
+{
+    auto count = m_componentdata.size();
+    if (!stream->write(count))
+    {
+        return 1;
+    }
+
+    for (auto &&[go_name, component_name, component] : m_componentdata)
+    {
+        if (!stream->write(go_name))
+        {
+            return 2;
         }
 
-        // write script data
+        if (!stream->write(component_name))
         {
-            auto cnsize = scriptname.size();
-            if (!m_stream->write(&cnsize, sizeof(std::size_t)))
-            {
-                return 4;
-            }
+            return 2;
+        }
 
-            if (!m_stream->write(scriptname.c_str(), cnsize * sizeof(char)))
-            {
-                return 5;
-            }
+        auto pool = ComponentRegistry::Find(component_name);
+        if (pool == nullptr)
+        {
+            return 3;
+        }
 
-            auto pool = ComponentRegistry::Find(scriptname);
-
+        std::size_t bufferlength = {};
+        {
             Stream temp;
-            pool->serialize(script, &temp);
-            std::size_t data_size = temp.getDataSize();
+            pool->serialize((Component *)component, &temp);
+            bufferlength = temp.getDataSize();
             temp.close();
-
-            if (!m_stream->write(&data_size, sizeof(std::size_t))) {
-                return 6;
-            }
-            
-            pool->serialize(script, m_stream.get());
         }
+
+        if (!stream->write(bufferlength))
+        {
+            return 4;
+        }
+
+        pool->serialize((Component *)component, stream);
     }
     return 0;
 }
 
-void GameObjectSaveTask::remape_gameobject(const GameObject *go)
+void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
 {
-    auto goname = go->getName();
-    auto entity = go->getEntity();
-    // copy script
-    {
-        for (auto &&[name, component] : entity->getComponentMap())
-        {
-            m_scriptMap.emplace_back(goname, name, component);
-        }
-    }
+    auto entity = gameObject->getEntity();
 
-    // copy material
-    {
-        BaseRender *baseRender = nullptr;
-        if (go->hasComponent<SkinnedMeshRender>())
-        {
-            baseRender = static_cast<BaseRender *>(go->getComponent<SkinnedMeshRender>());
-        } else if (go->hasComponent<MeshRender>())
-        {
-            baseRender = static_cast<BaseRender *>(go->getComponent<MeshRender>());
-        }
+    for (auto &&[name, component] : entity->getComponentMap())
+        m_componentdata.emplace_back(gameObject->getName(), name, component);
 
-        if (baseRender != nullptr)
+    if (gameObject->hasComponent<MeshRender>() || gameObject->hasComponent<SkinnedMeshRender>())
+    {
+        auto baseRender = gameObject->hasComponent<MeshRender>() ? static_cast<BaseRender *>(gameObject->getComponent<MeshRender>()) : static_cast<BaseRender *>(gameObject->getComponent<SkinnedMeshRender>());
+        
+        for (auto material : baseRender->getMaterial())
         {
-            for (auto material : baseRender->getMaterial())
+            auto material_name = AssetsManager::GetRefMaterialToName(material);
+
+            auto shader_name = AssetsManager::GetShaderName(material->getShader());
+
             {
-                auto mname = AssetsManager::GetRefMaterialToName(material);
-                if (mname.empty())
-                {
-                    continue;
-                }
+                auto it = m_shadermap.find(shader_name);
+                if (it == m_shadermap.end())
+                    m_shadermap.emplace(shader_name);
+            }
 
-                for (auto texture : material->getTextures())
-                {
-                    if (texture == nullptr)
-                    {
-                        continue;
-                    }
-
-                    auto tpath = AssetsManager::GetRefTextureName(texture);
-                    
-                    m_textureMap.emplace_back(goname, mname, tpath);
-                }
-
-                m_materialMap.emplace_back(goname, mname, material);
-
-                auto name = AssetsManager::GetRefMaterialToName(material);
-                {
-                    auto it = m_shaderMap.find(name);
-                    if (it == m_shaderMap.end())
-                    {
-                        m_shaderMap.emplace(name, std::make_tuple(AssetsManager::GetShaderName(material->getShader()), material->getShader()));
-                    }
-                }
+            {
+                auto it = m_materialmap.find(material_name);
+                if (it == m_materialmap.end())
+                    m_materialmap.emplace(material_name, material);
             }
         }
     }
-    auto transform = go->getTransform();
-    
-    for (auto child : transform->getChildren())
+
+    auto transform = gameObject->getTransform();
+    for (auto &child : transform->getChildren())
     {
-        remape_gameobject(child->getGameObject());
+        read_gameobject(child->getGameObject());
     }
 }
 

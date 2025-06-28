@@ -16,7 +16,11 @@ MeshRender::MeshRender()
 
 void MeshRender::Init()
 {
-    return BaseRender::Init();
+    BaseRender::Init();
+
+    std::cout << "Init" << std::endl;
+
+    build();
 }
 
 void MeshRender::Destroy()
@@ -30,7 +34,7 @@ bool MeshRender::Serialize(Stream *stream)
     {
         return false;
     }
-
+    /*
     auto mcount = m_material.size();
 
     std::vector<std::tuple<std::string, std::string>> material_shader(mcount);
@@ -72,7 +76,7 @@ bool MeshRender::Serialize(Stream *stream)
             return false;
         }
     }
-
+    */
     return true;
 }
 
@@ -82,6 +86,7 @@ bool MeshRender::Deserialize(Stream *stream)
     {
         return false;
     }
+    /*
 
     std::size_t mcount = 0;
     if (!stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t)))
@@ -124,7 +129,7 @@ bool MeshRender::Deserialize(Stream *stream)
             AssetsManager::LoadShader(shaderParams, &Material::setShader, material);
         }
     }
-
+    */
     return true;
 }
 

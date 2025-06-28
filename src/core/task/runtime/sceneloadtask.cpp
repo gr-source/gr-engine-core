@@ -137,8 +137,6 @@ void SceneLoadTask::onPostExecute(int result)
 
         for (auto &go : m_rootList)
         {
-            std::cout << "Root: " << go->getName() << std::endl;
-
             GameObject::Instantiate(go);
 
             GameObject::Destroy(go);
@@ -168,16 +166,80 @@ int SceneLoadTask::read_metadata(Stream *stream)
 
 int SceneLoadTask::read_shader(Stream *stream)
 {
-    return 0;
-}
+    std::size_t length = {};
+    if (!stream->read(length))
+    {
+        return 1;
+    }
 
-int SceneLoadTask::read_material(Stream *stream)
-{
+    for (std::size_t i={};i<length;i++)
+    {
+        std::string shadername;
+        if (!stream->read(shadername))
+        {
+            return 2;
+        }
+        auto shader = AssetsManager::FindShader(shadername);
+        if (shader == nullptr)
+        {
+            auto info = AssetsManager::LoadShader(GetShaderParamsFromName(shadername), [&shader](auto current) { shader = current; });
+            info->wait();
+        }
+
+        m_shadermap.emplace(shadername, shader);
+    }
     return 0;
 }
 
 int SceneLoadTask::read_texture(Stream *stream)
 {
+    return 0;
+}
+
+int SceneLoadTask::read_material(Stream *stream)
+{
+    std::size_t length = {};
+    if (!stream->read(length))
+    {
+        return 1;
+    }
+
+    for (std::size_t i=0;i<length;i++)
+    {
+        std::string name, shadername;
+        if (!stream->read(name))
+        {
+            return 2;
+        }
+
+        if (!stream->read(shadername))
+        {
+            return 3;
+        }
+
+        std::cout << name << ": " << shadername << std::endl;
+
+        // deserialize material
+        std::size_t bufferSize = {};
+        if (!stream->read(bufferSize))
+        {
+            return 4;
+        }
+
+        auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
+
+        auto it = m_materialmap.find(name);
+        if (it == m_materialmap.end())
+        {
+            auto material = AssetsManager::CreateMaterial(name, m_shadermap[shadername]);
+            material->deserialize(stream);
+
+            m_materialmap.emplace(name, material);
+        }
+
+        if (stream->tellg() != next)
+            stream->seekg(next, std::ios_base::beg);
+    }
     return 0;
 }
 

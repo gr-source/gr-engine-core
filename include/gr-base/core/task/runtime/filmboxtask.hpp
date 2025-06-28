@@ -22,10 +22,6 @@ public:
 private:
     const std::string m_path;
 
-    std::unique_ptr<FbxScene> m_scene;
-
-    std::vector<std::unique_ptr<GameObject>> m_objectlist;
-
     std::vector<GameObject *> m_objectroot;
 
     FilmboxManager *m_filmboxManager;
@@ -34,11 +30,11 @@ private:
 
     void onPostExecute(int result) override;
 
-    void load_object(const FbxScene *scene);
+    void load_object(FbxScene *scene);
 
-    GameObject *create_from(const FbxNode &node, Transform *parent = nullptr);
+    GameObject *create_from(FbxScene *scene, const FbxNode &node, Transform *parent = nullptr);
 
-    void generateMesh(const FbxNode *node, GameObject *go);
+    void generateMesh(FbxScene *scene, const FbxNode *node, GameObject *go);
 };
 
 /*

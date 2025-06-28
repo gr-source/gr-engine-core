@@ -31,7 +31,7 @@ void BaseRender::Destroy()
 bool BaseRender::Serialize(Stream *stream)
 {
     auto mcount = m_material.size();
-    if (!stream->write(&mcount, sizeof(std::size_t)))
+    if (!stream->write(mcount))
     {
         return false;
     }
@@ -39,14 +39,7 @@ bool BaseRender::Serialize(Stream *stream)
     for (auto material : m_material)
     {
         auto name = AssetsManager::GetRefMaterialToName(material);
-
-        auto ncount = name.size();
-        if (!stream->write(&ncount, sizeof(std::size_t)))
-        {
-            return false;
-        }
-
-        if (!stream->write(name.c_str(), ncount * sizeof(char)))
+        if (!stream->write(name))
         {
             return false;
         }
@@ -56,22 +49,16 @@ bool BaseRender::Serialize(Stream *stream)
 
 bool BaseRender::Deserialize(Stream *stream)
 {
-    std::size_t mcount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t)))
+    std::size_t mcount = {};
+    if (!stream->read(mcount))
     {
         return false;
     }
 
     for (std::size_t i=0;i<mcount;i++)
     {
-        std::size_t ncount = 0;
-        if (!stream->read(reinterpret_cast<char *>(&ncount), sizeof(std::size_t)))
-        {
-            return false;
-        }
-
-        std::string name(ncount, '\0');
-        if (!stream->read(name.data(), ncount * sizeof(char)))
+        std::string name;
+        if (!stream->read(name))
         {
             return false;
         }

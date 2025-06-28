@@ -31,6 +31,8 @@ GameObject *GameObject::Instantiate(const GameObject *go)
 
     gameObject->getEntity()->copy(go->getEntity());
 
+    scene->Init(gameObject);
+
     scene->insert(gameObject);
 
     return gameObject;

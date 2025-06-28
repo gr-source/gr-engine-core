@@ -44,7 +44,7 @@ bool SkinnedMeshRender::Serialize(Stream *stream)
     {
         return false;
     }
-
+    /*
     auto boneMapCount = m_bones.size();
     if (!stream->write(&boneMapCount, sizeof(std::size_t)))
     {
@@ -98,7 +98,7 @@ bool SkinnedMeshRender::Serialize(Stream *stream)
             return false;
         }
     }
-
+    */
     return true;
 }
 
@@ -108,7 +108,7 @@ bool SkinnedMeshRender::Deserialize(Stream *stream)
     {
         return false;
     }
-
+    /*
     std::size_t boneMapCount = 0;
     if (!stream->read(reinterpret_cast<char *>(&boneMapCount), sizeof(std::size_t)))
     {
@@ -165,7 +165,7 @@ bool SkinnedMeshRender::Deserialize(Stream *stream)
             AssetsManager::LoadShader(shaderParams, &Material::setShader, material);
         }
     }
-
+    */
     return true;
 }
 

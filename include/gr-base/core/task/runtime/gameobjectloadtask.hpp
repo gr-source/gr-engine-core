@@ -8,6 +8,8 @@
 
 #include "gr-base/script/default.hpp"
 
+#include "gr-base/core/geometry/default.hpp"
+
 #include <gr-render/gCommon.h>
 
 class GameObjectLoadTask : public IAsyncTask<int>
@@ -20,23 +22,21 @@ private:
 
     std::function<void (GameObject *)> m_func;
 
-    // GameObject *m_gameObject;
-    //
-    GameObject *m_rootNode;
+    GameObject *m_gameObject;
 
-    std::unordered_map<std::string, GameObject *> m_tempGameObjectMap;
+    std::unordered_map<std::string, GameObject *> m_gameobjectmap;
 
-    std::unordered_map<std::string, grr::gShader *> m_ShaderToMaterial;
+    std::unordered_map<std::string, grr::gShader *> m_shadermap;
 
-    std::vector<std::shared_ptr<GameObject>> m_tempGameObject;
+    std::unordered_map<std::string, Material *> m_materialmap;
 
     int doInBackground();
 
     void onPostExecute(int result);
 
-    int read_data(Stream *stream);
+    int read_metadata(Stream *stream);
 
-    int read_gameobject(Stream *stream, Transform *parent = nullptr);
+    int read_data(Stream *stream);
 
     int read_shader(Stream *stream);
 
@@ -44,9 +44,9 @@ private:
 
     int read_material(Stream *stream);
 
-    int read_script(Stream *stream);
+    int read_gameobject(Stream *stream, Transform *parent = nullptr);
 
-    void emplace(std::string name, grr::gShader *shader);
+    int read_script(Stream *stream);
 };
 
 

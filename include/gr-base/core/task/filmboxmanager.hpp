@@ -18,16 +18,18 @@ public:
 
     void render();
 
-    void create_save(const std::string &name, std::vector<GameObject *> root, std::vector<std::unique_ptr<GameObject>> gameObjectList);
+    void create_save(const std::string &name, std::vector<GameObject *> root);
 
 private:
-    std::vector<std::tuple<std::string, std::vector<GameObject *>, std::vector<std::unique_ptr<GameObject>>>> resultTask;
+    std::vector<std::tuple<std::string, std::vector<GameObject *>>> resultTask;
 
     std::unordered_set<std::string> taskResultMap;
     
     std::mutex mutex;
 
-    void GameObjectSave(const GameObject *go);
+    void render_tree_node(const GameObject *gameObject);
+
+    void GameObjectSave(GameObject *go);
 };
 
 

@@ -10,6 +10,10 @@
 
 #include "gr-base/script/default.hpp"
 
+#include "gr-base/core/geometry/default.hpp"
+
+#include <gr-render/gCommon.h>
+
 class SceneLoadTask : public IAsyncTask<int>
 {
 public:
@@ -27,6 +31,10 @@ private:
 
     std::unordered_map<std::string, GameObject *> m_gameobjectmap;
 
+    std::unordered_map<std::string, grr::gShader *> m_shadermap;
+
+    std::unordered_map<std::string, Material *> m_materialmap;
+
     std::string m_name;
 
     int doInBackground() override;
@@ -37,9 +45,9 @@ private:
 
     int read_shader(Stream *stream);
 
-    int read_material(Stream *stream);
-
     int read_texture(Stream *stream);
+
+    int read_material(Stream *stream);
 
     int read_mesh(Stream *stream);
 

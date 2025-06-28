@@ -36,9 +36,9 @@ int FilmboxTask::doInBackground()
         return 1;
     }
 
-    m_scene = filmbox.get_scene();
+    auto scene = filmbox.get_scene();
 
-    load_object(m_scene.get());
+    load_object(scene.get());
 
     return 0;
 }
@@ -48,13 +48,13 @@ void FilmboxTask::onPostExecute(int result)
 {
     if (result != 0)
     {
-        return;
+        return Console::LogError("[ FilmboxTask ] Fail to load fbx!");
     }
     Console::LogInfo("Loaded: %s", m_path.c_str());
 
     std::filesystem::path path = m_path;
 
-    m_filmboxManager->create_save(path.filename().c_str(), m_objectroot, std::move(m_objectlist));
+    m_filmboxManager->create_save(path.filename().c_str(), m_objectroot);
 
     AssetsManager::RemoveTask(m_path);
 }
@@ -172,19 +172,19 @@ void FilmboxTask::doInBackground()
 }
 */
 
-void FilmboxTask::load_object(const FbxScene *fbxscene)
+void FilmboxTask::load_object(FbxScene *fbxscene)
 {
     auto &root = fbxscene->getRootNode();
     
     for (auto &node : root.getChildren())
     {
-        m_objectroot.push_back(create_from(node));
+        m_objectroot.push_back(create_from(fbxscene, node));
     }
 }
 
-GameObject *FilmboxTask::create_from(const FbxNode &node, Transform *parent)
+GameObject *FilmboxTask::create_from(FbxScene *scene, const FbxNode &node, Transform *parent)
 {
-    auto go = &(*m_objectlist.emplace_back(std::make_unique<GameObject>(node.getName())));
+    auto go = GameObject::Create(node.getName());
     
     auto transform = go->getTransform();
     if (parent != nullptr)
@@ -198,12 +198,12 @@ GameObject *FilmboxTask::create_from(const FbxNode &node, Transform *parent)
 
     if (node.hasMeshe())
     {
-        generateMesh(&node, go);
+        generateMesh(scene, &node, go);
     }
 
     for (auto &children : node.getChildren())
     {
-        auto child = create_from(children, transform);
+        auto child = create_from(scene, children, transform);
         if (child == nullptr)
         {
             break;
@@ -212,7 +212,7 @@ GameObject *FilmboxTask::create_from(const FbxNode &node, Transform *parent)
     return go;
 }
 
-void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
+void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject *go)
 {
     std::unordered_map<std::string, FbxBone> m_bones;
     std::vector<FbxBone> bonesList;
@@ -228,7 +228,7 @@ void FilmboxTask::generateMesh(const FbxNode *node, GameObject *go)
         if (mesh_name.empty())
             mesh_name = fbxMesh->getName();
 
-        materialList.push_back(m_scene->getMaterials()[fbxMesh->getMaterialIndex()]);
+        materialList.push_back(scene->getMaterials()[fbxMesh->getMaterialIndex()]);
 
         for (auto &vertice : fbxMesh->getVertices()) {
             mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord);

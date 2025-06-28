@@ -1,12 +1,17 @@
 #include "gr-base/core/task/filmboxmanager.hpp"
 
-#include "gr-base/core/file/file.hpp"
-#include "gr-base/core/task/runtime/filmboxtask.hpp"
-
-#include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
+#include "gr-base/core/file/file.hpp"
+
+
 #include "gr-base/core/window.hpp"
+
+#include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
+#include "gr-base/core/task/runtime/filmboxtask.hpp"
+
+#include "gr-base/ecs/gameObject.hpp"
+#include "gr-base/script/transform.hpp"
 
 #include <imgui.h>
 
@@ -44,10 +49,13 @@ void FilmboxManager::render()
 
     if (ImGui::Begin("FilmboxManager", &isOpen))
     {
-        for (auto &&[name, root, go] : resultTask)
+        for (auto &&[name, root] : resultTask)
         {
             if (ImGui::CollapsingHeader(name.c_str()))
-            {}
+            {
+                for (auto &go : root)
+                render_tree_node(go);
+            }
         }
 
         auto avail = ImGui::GetContentRegionAvail();
@@ -56,7 +64,7 @@ void FilmboxManager::render()
         {
             auto dir = File::GetAsset("/model");
 
-            for (auto &&[name, root, gameObjectList] : resultTask)
+            for (auto &&[name, root] : resultTask)
             {
                 for (auto &go : root)
                     TaskManager::Add<GameObjectSaveTask>(dir, go, std::bind(&FilmboxManager::GameObjectSave, this, std::placeholders::_1));
@@ -67,26 +75,46 @@ void FilmboxManager::render()
 
     if (!isOpen)
     {
+        for (auto &&[name, root] : resultTask)
+        {
+            for (auto &go : root)
+                GameObject::Destroy(go);
+        }
         resultTask.clear();
 
         taskResultMap.clear();
     }
 }
 
-void FilmboxManager::create_save(const std::string &name, std::vector<GameObject *> root, std::vector<std::unique_ptr<GameObject>> gameObjectList)
+void FilmboxManager::create_save(const std::string &name, std::vector<GameObject *> root)
 {
     if (taskResultMap.find(name) != taskResultMap.end())
     {
         return;
     }
 
-    resultTask.emplace_back(name, root, std::move(gameObjectList));
+    resultTask.emplace_back(name, root);
 
     taskResultMap.emplace(name);
 }
 
+void FilmboxManager::render_tree_node(const GameObject *gameObject)
+{
+    auto transform = gameObject->getTransform();
 
-void FilmboxManager::GameObjectSave(const GameObject *go)
+    auto isOpen = ImGui::TreeNodeEx(gameObject->getName().c_str(), !transform->hasChildren() ? ImGuiTreeNodeFlags_Leaf : 0);
+    if (!isOpen)
+    {
+        return;
+    }
+
+    for (auto &child : transform->getChildren())
+        render_tree_node(child->getGameObject());
+
+    ImGui::TreePop();
+}
+
+void FilmboxManager::GameObjectSave(GameObject *go)
 {
     resultTask.erase(std::remove_if(resultTask.begin(), resultTask.end(),
                 [go](auto &tuple) {
@@ -95,6 +123,9 @@ void FilmboxManager::GameObjectSave(const GameObject *go)
 
                     return rootList.empty();
                 }), resultTask.end());
+
+
+    GameObject::Destroy(go);
 }
 
 
