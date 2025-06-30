@@ -4,6 +4,7 @@
 
 #include "gr-base/core/geometry/material.hpp"
 
+#include "gr-base/core/thread/threadpool.hpp"
 #include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/core/geometry/batching.hpp"
@@ -23,7 +24,9 @@ void BaseRender::Destroy()
     {
         return;
     }
-    m_batching->erase(GetGameObject()->getTransform());
+
+    if (Threadpool::IsMainThread())
+        m_batching->erase(GetGameObject()->getTransform());
 
     m_batching = nullptr;
 }

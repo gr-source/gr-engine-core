@@ -17,20 +17,16 @@ class Stream;
 // TODO: Causando crash quando d aplya na cena e para o jogo, motivo esta nos objetos que nao foram reacceragdos das cenas
 class Scene {
 public:
-    static void DestroyScript();
-
     static void CheckRequestReinstanceScript();
-
-    static void InitializeEngineScript();
-
-    static void InitializeAllScript();
-
-    static void Remove(GameObject *gameObject);
 
     Scene();
     ~Scene();
 
     void init();
+
+    void play();
+
+    void stop();
 
     void create_main_camra();
 
@@ -39,6 +35,8 @@ public:
     std::vector<GameObject *> getObjectList() const;
 
     void insert(GameObject *gameObject);
+
+    void remove(GameObject *gameObject);
 
     void Clear();
 
@@ -81,15 +79,15 @@ private:
 
     bool m_enable;
 
-    static void InitializeInternalScript(Transform *transorm);
-
     static GameObject *CreateEngineCamera();
+
+    static void Start(GameObject *go);
+
+    static void Stop(GameObject *go);
 
     void setEnable(bool value);
 
     void setDisableEntity(Transform *transform, bool value);
-
-    bool remove(GameObject *gameObject);
 
     void for_each(std::function<void (GameObject *)> func);
 

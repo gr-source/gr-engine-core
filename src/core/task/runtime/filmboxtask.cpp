@@ -59,119 +59,6 @@ void FilmboxTask::onPostExecute(int result)
     AssetsManager::RemoveTask(m_path);
 }
 
-/*
-#include "gr-base/core/geometry/shader.hpp"
-#include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
-
-#include "gr-base/core/assetsManager.hpp"
-#include "gr-base/core/file/file.hpp"
-#include "gr-base/core/console.hpp"
-#include "gr-base/core/event.hpp"
-
-#include "gr-base/core/filmbox/filmbox.hpp"
-
-#include "gr-base/core/thread/taskmanager.hpp"
-#include "gr-base/ecs/gameObject.hpp"
-
-#include "gr-base/script/skinnedMeshRender.hpp"
-#include "gr-base/script/meshRender.hpp"
-#include "gr-base/script/meshFilter.hpp"
-#include "gr-base/script/transform.hpp"
-#include "gr-base/script/animator.hpp"
-
-#include "imgui.h"
-#include <condition_variable>
-#include <mutex>
-#include <stdexcept>
-
-#include "gr-base/core/thread/threadpool.hpp"
-
-// ********** public ********** //
-FilmboxTask::FilmboxTask(const std::string &path, std::function<void ()> func) : m_name(path), bcanrender(false)
-{
-    add_function(func);
-
-        Threadpool::AddTask(&FilmboxTask::doInBackground, this);
-}
-
-FilmboxTask::~FilmboxTask()
-{
-    invoke();
-}
-
-void FilmboxTask::add_function(std::function<void ()> func)
-{
-    if (func == nullptr)
-    {
-        return;
-    }
-
-    funclist.push_back(func);
-}
-
-void FilmboxTask::render()
-{
-    if (!bcanrender)
-    {
-        return;
-    }
-
-    if (!m_objectroot.empty())
-    {
-        if (ImGui::CollapsingHeader("Node"))
-        {
-            for (auto go : m_objectroot)
-            {
-                render_hierarchy(go);
-            }
-        }
-    }
-
-    if (ImGui::CollapsingHeader("Animation"))
-    {}
-}
-
-void FilmboxTask::save()
-{
-    for (auto &go : m_objectroot)
-    {
-        TaskManager::Add<GameObjectSaveTask>(File::GetAsset("/model"), go);
-    }
-
-    // AssetsManager::RemoveTask(m_name);
-}
-
-void FilmboxTask::render_hierarchy(GameObject *go)
-{
-    auto transform = go->getTransform();
-
-    if (ImGui::TreeNodeEx(go->getName().c_str(), transform->hasChildren() ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf))
-    {
-        for (auto children : transform->getChildren())
-        {
-            render_hierarchy(children->getGameObject());
-        }
-        ImGui::TreePop();
-    }
-}
-
-// ********** private ********** //
-void FilmboxTask::invoke()
-{
-    for (auto &func : funclist)
-    {
-        func();
-    }
-}
-
-void FilmboxTask::doInBackground()
-{
-
-
-    bcanrender = true;
-}
-*/
-
 void FilmboxTask::load_object(FbxScene *fbxscene)
 {
     auto &root = fbxscene->getRootNode();
@@ -330,7 +217,11 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
     {
         auto material = renderer->createMaterial(fbxMaterial.getName(), shader);
         material->setValue("albedo", fbxMaterial.getColor());
-        // material->setValue()
+        material->setValue("metallic", fbxMaterial.metallic);
+        material->setValue("roughness", fbxMaterial.roughness);
+        material->setValue("ambientocclusion", fbxMaterial.ao);
+
+        // material->setValue("");
         
         for (auto &&[type, path] : fbxMaterial.getTextures())
         {

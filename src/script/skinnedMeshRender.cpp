@@ -4,6 +4,7 @@
 #include "gr-base/core/geometry/batching.hpp"
 #include "gr-base/core/geometry/shader.hpp"
 
+#include "gr-base/core/thread/threadpool.hpp"
 #include "gr-base/script/meshFilter.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
@@ -20,7 +21,10 @@ SkinnedMeshRender::SkinnedMeshRender()
 
 void SkinnedMeshRender::Init()
 {
-    return BaseRender::Init();
+    BaseRender::Init();
+
+    if (Threadpool::IsMainThread())
+        build();
 }
 
 void SkinnedMeshRender::Destroy()

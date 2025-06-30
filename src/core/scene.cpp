@@ -2,6 +2,7 @@
 
 #include "gr-base/core/console.hpp"
 
+#include "gr-base/core/scenemanager.hpp"
 #include "gr-base/script/baserender.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/skinnedMeshRender.hpp"
@@ -22,33 +23,15 @@ void DestroyComponnet(Transform *transform)
     }
 }
 
-void Scene::DestroyScript()
-{
-    /*
-    auto scene = GetCurrentScene();
-    if (!scene)
-    {
-        return;
-    }
-
-    for (auto go : scene->m_tempInitObjects)
-    {
-        DestroyComponnet(go->getTransform());
-    }
-    scene->m_tempInitObjects.clear();
-    */
-}
-
 void Scene::CheckRequestReinstanceScript()
 {
-    /*
     auto script = ComponentRegistry::getInstance().getScriptRequestReinstance();
     if (script.empty())
     {
         return;
     }
 
-    for (auto &&[scenename, scene] : m_scenes)
+    for (auto &scene : SceneManager::GetScenes())
     {
         for (auto scriptname : script)
         {
@@ -57,51 +40,36 @@ void Scene::CheckRequestReinstanceScript()
             ComponentRegistry::getInstance().removeScriptNeedsUpdate(scriptname);
         }
     }
-    */
 }
 
-void Scene::Remove(GameObject *gameObject)
-{
-    /*
-    auto scene = GetCurrentScene();
-    if (!scene)
-    {
-        return;
-    }
-
-    scene->remove(gameObject);
-    */
-}
-/*
-void Scene::Init(GameObject *gameObject)
+void Scene::Start(GameObject *gameObject)
 {
     auto entity = gameObject->getEntity();
 
-    entity->init();
-
-    BaseRender *baseRender = nullptr;
-
-    if (entity->hasComponent<MeshRender>())
-    {
-        baseRender = static_cast<BaseRender *>(entity->getComponent<MeshRender>());
-    } else if (entity->hasComponent<SkinnedMeshRender>())
-    {
-        baseRender = static_cast<BaseRender *>(entity->getComponent<SkinnedMeshRender>());
-    }
-
-    if (baseRender != nullptr)
-    {
-        // baseRender->build();
-    }
+    entity->start();
 
     auto transform = entity->getComponent<Transform>();
 
     for (auto child : transform->getChildren())
     {
-        Scene::Init(child->getGameObject());
+        Scene::Start(child->getGameObject());
     }
 }
-*/
+
+void Scene::Stop(GameObject *gameObject)
+{
+    auto entity = gameObject->getEntity();
+
+    entity->destroy();
+
+    auto transform = entity->getComponent<Transform>();
+
+    for (auto child : transform->getChildren())
+    {
+        Scene::Stop(child->getGameObject());
+    }
+}
+
 // public
 Scene::Scene() : m_enable(true), m_goCamera(nullptr), m_camera(nullptr) {}
 
@@ -121,6 +89,22 @@ void Scene::init()
     m_goCamera = CreateEngineCamera();
 
     m_camera = m_goCamera->getComponent<Camera>();
+}
+
+void Scene::play()
+{
+    for (auto &go : getObjectList())
+    {
+        Scene::Start(go);
+    }
+}
+
+void Scene::stop()
+{
+    for (auto &go : getObjectList())
+    {
+        Scene::Stop(go);
+    }
 }
 
 void Scene::create_main_camra()
@@ -164,6 +148,13 @@ void Scene::insert(GameObject *gameObject)
     }
 
     m_objects.push_back(gameObject);
+}
+
+void Scene::remove(GameObject *gameObject)
+{
+    m_tempInitObjects.erase(std::remove(m_tempInitObjects.begin(), m_tempInitObjects.end(), gameObject), m_tempInitObjects.end());
+
+    m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObject), m_objects.end());
 }
 
 void Scene::Clear()
@@ -226,90 +217,10 @@ std::vector<GameObject *> Scene::get_object_selected() const
 
 bool Scene::destroy(GameObject *gameObject)
 {
-    if (!remove(gameObject))
-    {
-        Console::LogWarning("[ Scene ] GameObject don't has in scene.");
-        return false;
-    }
+    remove(gameObject);
 
     GameObject::Destroy(gameObject);
     return true;
-}
-
-void Scene::InitializeEngineScript()
-{
-    /*
-    auto scene = GetCurrentScene();
-    if (!scene)
-    {
-        return;
-    }
-
-    for (auto go : scene->getObjectList())
-    {
-        Scene::InitializeInternalScript(go->getTransform());
-    }
-    */
-}
-
-void Scene::InitializeAllScript()
-{
-    /*
-    auto scene = Scene::GetCurrentScene();
-    if (!scene)
-    {
-        return;
-    }
-
-    for (auto go : scene->getObjectList())
-    {
-        Scene::Init(go);
-        scene->m_tempInitObjects.push_back(go);
-    }
-    */
-}
-
-static std::array<std::string, 5> Scripts = {"MeshRender", "SkinnedMeshRender", "MeshFilter", "Light", "Camera"};
-
-void Scene::InitializeInternalScript(Transform *transform)
-{
-    auto go = transform->getGameObject();
-
-    auto entity = go->getEntity();
-    for (auto script : Scripts)
-    {
-        // auto pool = ComponentRegistry::Find(script);
-
-        if (entity->hasComponent(script))
-        {
-            auto component = entity->getComponent(script);
-
-            component->Init();
-
-            // pool->init(component);
-            //
-            BaseRender *baseRender = nullptr;
-
-            if (script == "MeshRender")
-            {
-                baseRender = static_cast<BaseRender *>(component);
-            } else if (script == "SkinnedMeshRender")
-            {
-                baseRender = static_cast<BaseRender *>(component);
-            }
-
-            if (baseRender != nullptr)
-            {
-                baseRender->build();
-            }
-        }
-    }
-
-    for (auto child : transform->getChildren())
-    {
-        InitializeInternalScript(child);
-    }
-    // */
 }
 
 GameObject *Scene::CreateEngineCamera()
@@ -362,13 +273,6 @@ void Scene::SetupScene(Scene *scene)
 }
 */
 
-bool Scene::remove(GameObject *gameObject)
-{
-    m_tempInitObjects.erase(std::remove(m_tempInitObjects.begin(), m_tempInitObjects.end(), gameObject), m_tempInitObjects.end());
-
-    m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObject), m_objects.end());
-    return true;
-}
 
 void Scene::for_each(std::function<void(GameObject *)> func)
 {

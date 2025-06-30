@@ -20,6 +20,8 @@ public:
 
     void Init() override;
 
+    void Start() override;
+
     void Destroy() override;
 
     void Enable() override;

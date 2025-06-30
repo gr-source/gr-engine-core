@@ -19,8 +19,13 @@
 
 #define BTQUAT_TO_QUAT(q) Quaternion(q.w(), q.x(), q.y(), q.z())
 
-Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_lastTransform(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f)
+Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f)
 {}
+
+void Rigidbody::Init()
+{
+    bCanUseUpdate = true;
+}
 
 void Rigidbody::Start()
 {
@@ -36,11 +41,6 @@ void Rigidbody::Start()
         return Console::LogError("[ Rigidbody ] Shape not found: %s", GetGameObject()->getName().c_str());
     }
 
-    m_lastTransform = std::make_shared<Transform>();
-    m_lastTransform->setLocalPosition(m_transform->getPosition());
-    m_lastTransform->setLocalRotation(m_transform->getRotation());
-    m_lastTransform->setLocalScale(m_transform->getLocalScale());
-
     m_DefaultMotionState = std::make_shared<btDefaultMotionState>(
 		btTransform(
 			QUAT_TO_BTQUAT(m_transform->getRotation()),
@@ -52,13 +52,12 @@ void Rigidbody::Start()
     m_collisionShape->calculateLocalInertia(m_mass, fallInertia);
 
     btRigidBody::btRigidBodyConstructionInfo pRigidBodyConstructionInfo(m_mass, &(*m_DefaultMotionState), m_collisionShape, fallInertia);
-    pRigidBodyConstructionInfo.m_friction = 0.5f;
-    pRigidBodyConstructionInfo.m_restitution = 0.1f;
-
-    if (m_body) {
-        Destroy();
-        m_body = nullptr;
-    }
+    pRigidBodyConstructionInfo.m_friction = 0.6f;
+    pRigidBodyConstructionInfo.m_restitution = 0.0f;
+    pRigidBodyConstructionInfo.m_rollingFriction = 0.0f;
+    pRigidBodyConstructionInfo.m_spinningFriction = 0.0f;
+    pRigidBodyConstructionInfo.m_linearDamping = 0.0f;
+    pRigidBodyConstructionInfo.m_angularDamping = 0.05f;
 
     m_body = std::make_shared<btRigidBody>(pRigidBodyConstructionInfo);
 	m_body->setAngularFactor(VEC3_TO_BTVEC3(m_lookRotation));
@@ -71,8 +70,6 @@ void Rigidbody::Start()
         m_body->setCcdSweptSphereRadius(fSweptSphereRadius);
 
     PhysicsScene::AddRigidbody(&(*m_body));
-
-    bCanUseUpdate = true;
 }
 
 void Rigidbody::Destroy() {
@@ -80,14 +77,9 @@ void Rigidbody::Destroy() {
         return;
     }
 
-    if (m_transform != nullptr && m_lastTransform != nullptr)
-    {
-        m_transform->setLocalPosition(m_lastTransform->getPosition());
-        m_transform->setLocalRotation(m_lastTransform->getRotation());
-        m_transform->setLocalScale(m_lastTransform->getLocalScale());
-    }
-
     PhysicsScene::RemoveRigidbody(&(*m_body));
+
+    m_body = nullptr;
 }
 
 void Rigidbody::Update() {

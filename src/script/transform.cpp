@@ -6,7 +6,24 @@
 
 #include <algorithm>
 
-Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix) {}
+Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix)
+{}
+
+void Transform::Start()
+{
+    m_lastposition = m_position;
+    m_lastrotation = m_rotation;
+    m_lastscale = m_scale;
+}
+
+void Transform::Destroy()
+{
+    m_position = m_lastposition;
+    m_rotation = m_lastrotation;
+    m_scale = m_lastscale;
+
+    updateLocalMatrix();
+}
 
 void Transform::setLocalScale(const Vector3 &value) {
     m_scale = value;

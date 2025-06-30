@@ -11,6 +11,8 @@ class Rigidbody : public Component {
 public:
     Rigidbody();
 
+    void Init() override;
+
     void Start() override;
 
     void Destroy() override;
@@ -76,8 +78,6 @@ public:
 private:
     std::shared_ptr<btDefaultMotionState> m_DefaultMotionState;
 
-    std::shared_ptr<Transform> m_lastTransform;
-    
     std::shared_ptr<btRigidBody> m_body;
     
     btCollisionShape *m_collisionShape;

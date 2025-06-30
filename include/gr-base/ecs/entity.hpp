@@ -43,7 +43,7 @@ public:
 
     void setEnable(bool value);
 
-    void init();
+    void start();
 
     void destroy();
 

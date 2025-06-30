@@ -131,7 +131,8 @@ void Entity::setEnable(bool value) {
 }
 
 
-void Entity::init() {
+void Entity::start()
+{
     std::vector<std::tuple<std::string, Component *>> temp;
     for (auto &&[name, component] : m_componentPtr)
     {
@@ -154,7 +155,7 @@ void Entity::init() {
 
         try
         {
-            pool->init(component);
+            pool->start(component);
         } catch (const std::exception &e)
         {
             throw std::runtime_error("Fail to initialize " + name + ", " + e.what());

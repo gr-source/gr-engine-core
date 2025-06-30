@@ -12,6 +12,8 @@ public:
 
     void shutdown();
 
+    bool is_valid() const;
+
     void bind();
 
     void unbind();
@@ -32,6 +34,8 @@ private:
     std::uint32_t width;
 
     std::uint32_t height;
+
+    bool bvalid;
 };
 
 

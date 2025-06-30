@@ -154,12 +154,16 @@ void Filmbox::LoadMaterial(const aiScene *scene, FbxScene *fbxScene) {
         }
 
         float value = 0.0f;
-        if (vMaterial->Get(AI_MATKEY_REFLECTIVITY, value) == AI_SUCCESS) {
+        if (vMaterial->Get(AI_MATKEY_METALLIC_FACTOR, value) == AI_SUCCESS) {
             material.metallic = value;
         }
 
-        if (vMaterial->Get(AI_MATKEY_SHININESS, value) == AI_SUCCESS) {
-            material.roughness = NORM(value);
+        if (vMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, value) == AI_SUCCESS) {
+            material.roughness = value;
+        }
+
+        if (vMaterial->Get(AI_MATKEY_USE_AO_MAP, value) == AI_SUCCESS) {
+            material.ao = value;
         }
     }
 }

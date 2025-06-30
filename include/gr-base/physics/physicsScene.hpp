@@ -23,15 +23,9 @@ public:
     Vector3 hitPoint;
 };
 
-class PhysicsScene {
+class PhysicsScene
+{
 public:
-    PhysicsScene() = delete;
-    ~PhysicsScene() = delete;
-
-    static void Initialize();
-
-    static void Shutdown();
-
     static void AddRigidbody(btRigidBody* body);
 
     static void RemoveRigidbody(btRigidBody* body);
@@ -40,21 +34,26 @@ public:
 
     static bool Raycast(const Vector3 &rayStart, const Vector3 &rayEnd, Hit &hit);
 
-    static void contactTest(btCollisionObject *colObj, btCollisionWorld::ContactResultCallback &resultCallback);
+    static void ContactTest(btCollisionObject *colObj, btCollisionWorld::ContactResultCallback &resultCallback);
 
     static Vector3 gravity;
 
-protected:
-    static std::unique_ptr<btDefaultCollisionConfiguration> collisionConfiguration;
+private:
+    std::unique_ptr<btDefaultCollisionConfiguration> collisionConfiguration;
 
-    static std::unique_ptr<btSequentialImpulseConstraintSolver> solver;
+    std::unique_ptr<btSequentialImpulseConstraintSolver> solver;
 
-    static std::unique_ptr<btDiscreteDynamicsWorld> dynamicsWorld;
+    std::unique_ptr<btDiscreteDynamicsWorld> dynamicsWorld;
 
-    static std::unique_ptr<btBroadphaseInterface> broadphase;
+    std::unique_ptr<btBroadphaseInterface> broadphase;
 
-    static std::unique_ptr<btCollisionDispatcher> dispatcher;
+    std::unique_ptr<btCollisionDispatcher> dispatcher;
 
-    static std::mutex m_mutex;
+    std::mutex m_mutex;
+
+    static PhysicsScene &GetInstance();
+
+    PhysicsScene();
+    ~PhysicsScene();
 };
 

@@ -41,13 +41,6 @@ void Camera::Init()
 {
     m_transform = entity->getComponent<Transform>();
 
-    addInGlobalCam();
-
-    if (!s_current)
-    {
-        s_current = this;
-    }
-    
     auto rect = Display::GetDisplayRect();
     
     m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
@@ -58,12 +51,30 @@ void Camera::Init()
         rendertarget.init();
 }
 
+void Camera::Start()
+{
+    if (s_current == nullptr)
+        s_current = this;
+
+    addInGlobalCam();
+
+    auto rect = Display::GetDisplayRect();
+    
+    m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
+
+    updateProjection();
+
+    if (Threadpool::IsMainThread() && !rendertarget.is_valid())
+        rendertarget.init();
+}
+
 void Camera::Destroy()
 {
     if (this == s_current)
     {
         s_current = nullptr;
     }
+
     m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
 
     if (Threadpool::IsMainThread())
@@ -189,12 +200,14 @@ void Camera::setActive(bool value) {
         s_current = this;
         return;
     }
+
     if (s_current == this) {
         s_current = nullptr;
     }
 }
 
-Vector3 Camera::getPosition() const {
+Vector3 Camera::getPosition() const
+{
     return m_transform->getPosition();
 }
 

@@ -16,7 +16,8 @@ std::vector<Light *> Light::GetListLight() {
 
 Light::Light(std::uint8_t type, const Color& color, float aConstant, float aLinear, float aQuadract, float inneCone, float outerCone) : m_type(static_cast<int>(type)), m_color(color), m_attenuationConstant(aConstant), m_attenuationLinear(aLinear), m_attenuationQuadratic(aQuadract), m_transform(nullptr), m_angleInnerCone(inneCone), m_angleOuterCone(outerCone) {}
 
-void Light::Init() {
+void Light::Init()
+{
     m_transform = entity->getComponent<Transform>();
 
     addInGlobalLight();

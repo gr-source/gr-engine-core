@@ -8,6 +8,10 @@ class Transform : public Component {
 public:
     Transform();
 
+    void Start() override;
+
+    void Destroy() override;
+
     void setLocalScale(const Vector3 &value);
 
     Vector3 getLocalScale() const;
@@ -62,6 +66,12 @@ private:
     Quaternion m_rotation;
 
     Vector3 m_position;
+
+    Vector3 m_lastscale;
+
+    Quaternion m_lastrotation;
+
+    Vector3 m_lastposition;
 
     std::vector<Transform *> m_children;
 
