@@ -11,7 +11,7 @@ class Rigidbody : public Component {
 public:
     Rigidbody();
 
-    void Init() override;
+    void Start() override;
 
     void Destroy() override;
 

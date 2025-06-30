@@ -65,6 +65,8 @@ Component *Entity::addComponent(const std::string &name, const Component *compon
 
     m_components.push_back(instance);
 
+    pool->init(instance);
+
     return instance;
 }
 

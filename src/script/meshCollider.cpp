@@ -13,7 +13,8 @@
 
 MeshCollider::MeshCollider() : m_triangleMesh(nullptr), m_shape(nullptr) {}
 
-void MeshCollider::Init() {
+void MeshCollider::Start()
+{
     if (!HasComponent<MeshFilter>()) {
         return;
     }

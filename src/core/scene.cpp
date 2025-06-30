@@ -10,73 +10,7 @@
 
 #include "gr-base/ecs/gameObject.hpp"
 
-#include "gr-base/ecs/componentRegistry.hpp"
-
-#include "gr-base/core/task/runtime/scenesavetask.hpp"
-
 std::hash<std::string> Scene::hash;
-
-Scene *Scene::m_current = nullptr;
-
-void Scene::SetCurrent(Scene *scene)
-{
-    m_current = scene;
-}
-
-Scene *Scene::GetCurrentScene()
-{
-    return m_current;
-}
-
-bool Scene::HasScene()
-{
-    return m_current != nullptr;
-}
-
-void Scene::Use(Scene *scene)
-{
-    if (m_current && m_current != scene && m_current->m_enable)
-    {
-        m_current->setEnable(false);
-    }
-
-    if (scene && scene != m_current && !scene->m_enable)
-    {
-        scene->setEnable(true);
-    }
-    m_current = scene;
-}
-
-/*
-Scene *Scene::Create(const std::string &name)
-{
-    auto &&[it, added] = m_scenes.emplace(name, std::make_unique<Scene>(name));
-
-    Scene::Use(&(*it->second));
-
-    auto camera_engine = CreateEngineCamera();
-
-    it->second->m_goCamera = camera_engine;
-    it->second->m_camera = camera_engine->getComponent<Camera>();
-
-    // camera for game
-    {
-        auto camera = it->second->CreateGameObject("MainCamera");
-        if (!camera)
-        {
-            m_scenes.erase(it);
-
-            Scene::Use(nullptr);
-            Console::LogError("[ Scene ] Falied to create scene, Camera do not created.");
-            return nullptr;
-        }
-
-        camera->addComponent<Camera>();
-    }
-
-    return &(*it->second);
-}
-*/
 
 void DestroyComponnet(Transform *transform)
 {
@@ -90,6 +24,7 @@ void DestroyComponnet(Transform *transform)
 
 void Scene::DestroyScript()
 {
+    /*
     auto scene = GetCurrentScene();
     if (!scene)
     {
@@ -101,6 +36,7 @@ void Scene::DestroyScript()
         DestroyComponnet(go->getTransform());
     }
     scene->m_tempInitObjects.clear();
+    */
 }
 
 void Scene::CheckRequestReinstanceScript()
@@ -126,6 +62,7 @@ void Scene::CheckRequestReinstanceScript()
 
 void Scene::Remove(GameObject *gameObject)
 {
+    /*
     auto scene = GetCurrentScene();
     if (!scene)
     {
@@ -133,19 +70,9 @@ void Scene::Remove(GameObject *gameObject)
     }
 
     scene->remove(gameObject);
+    */
 }
-
-void Scene::Destoy(GameObject *gameObject)
-{
-    auto scene = GetCurrentScene();
-    if (!scene)
-    {
-        return;
-    }
-
-    scene->destroy(gameObject);
-}
-
+/*
 void Scene::Init(GameObject *gameObject)
 {
     auto entity = gameObject->getEntity();
@@ -174,7 +101,7 @@ void Scene::Init(GameObject *gameObject)
         Scene::Init(child->getGameObject());
     }
 }
-
+*/
 // public
 Scene::Scene() : m_enable(true), m_goCamera(nullptr), m_camera(nullptr) {}
 
@@ -194,8 +121,6 @@ void Scene::init()
     m_goCamera = CreateEngineCamera();
 
     m_camera = m_goCamera->getComponent<Camera>();
-
-    m_camera->setActive(true);
 }
 
 void Scene::create_main_camra()
@@ -299,8 +224,21 @@ std::vector<GameObject *> Scene::get_object_selected() const
     return v_object_selected_list;
 }
 
+bool Scene::destroy(GameObject *gameObject)
+{
+    if (!remove(gameObject))
+    {
+        Console::LogWarning("[ Scene ] GameObject don't has in scene.");
+        return false;
+    }
+
+    GameObject::Destroy(gameObject);
+    return true;
+}
+
 void Scene::InitializeEngineScript()
 {
+    /*
     auto scene = GetCurrentScene();
     if (!scene)
     {
@@ -311,10 +249,12 @@ void Scene::InitializeEngineScript()
     {
         Scene::InitializeInternalScript(go->getTransform());
     }
+    */
 }
 
 void Scene::InitializeAllScript()
 {
+    /*
     auto scene = Scene::GetCurrentScene();
     if (!scene)
     {
@@ -326,6 +266,7 @@ void Scene::InitializeAllScript()
         Scene::Init(go);
         scene->m_tempInitObjects.push_back(go);
     }
+    */
 }
 
 static std::array<std::string, 5> Scripts = {"MeshRender", "SkinnedMeshRender", "MeshFilter", "Light", "Camera"};
@@ -385,7 +326,6 @@ GameObject *Scene::CreateEngineCamera()
         return nullptr;
     }
 
-    Scene::Init(go);
     return go;
 }
 
@@ -427,17 +367,6 @@ bool Scene::remove(GameObject *gameObject)
     m_tempInitObjects.erase(std::remove(m_tempInitObjects.begin(), m_tempInitObjects.end(), gameObject), m_tempInitObjects.end());
 
     m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObject), m_objects.end());
-    return true;
-}
-
-bool Scene::destroy(GameObject *gameObject)
-{
-    if (!remove(gameObject))
-    {
-        Console::LogWarning("[ Scene ] GameObject don't has in scene.");
-    }
-
-    GameObject::Destroy(gameObject);
     return true;
 }
 

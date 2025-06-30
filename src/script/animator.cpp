@@ -18,6 +18,11 @@ Animator::Animator() : m_animation(nullptr), m_currentTime(0.0f), m_FinalBoneMat
 
 void Animator::Init()
 {
+    bCanUseUpdate = true;
+}
+
+void Animator::Start()
+{
     if (!HasComponent<SkinnedMeshRender>())
     {
         return;

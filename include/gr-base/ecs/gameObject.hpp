@@ -17,8 +17,6 @@ public:
 
     static void Destroy(GameObject *go);
 
-    static void Clear();
-
     static std::size_t GetGameObjectCount();
 
     GameObject() = delete;

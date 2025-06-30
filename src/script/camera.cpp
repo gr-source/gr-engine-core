@@ -1,6 +1,7 @@
 #include "gr-base/script/camera.hpp"
 
 #include "gr-base/core/rendertarget.hpp"
+#include "gr-base/core/thread/threadpool.hpp"
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/core/display.hpp"
@@ -36,12 +37,14 @@ Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlan
 {
 }
 
-void Camera::Init() {
+void Camera::Init()
+{
     m_transform = entity->getComponent<Transform>();
 
     addInGlobalCam();
-    
-    if (!s_current) {
+
+    if (!s_current)
+    {
         s_current = this;
     }
     
@@ -51,16 +54,20 @@ void Camera::Init() {
 
     updateProjection();
 
-    rendertarget.init();
+    if (Threadpool::IsMainThread())
+        rendertarget.init();
 }
 
-void Camera::Destroy() {
-    if (this == s_current) {
+void Camera::Destroy()
+{
+    if (this == s_current)
+    {
         s_current = nullptr;
     }
     m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
 
-    rendertarget.shutdown();
+    if (Threadpool::IsMainThread())
+        rendertarget.shutdown();
 }
 
 void Camera::Enable() {
@@ -216,3 +223,5 @@ void Camera::addInGlobalCam()
     }
     m_cameraList.push_back(this);
 }
+
+

@@ -31,8 +31,6 @@ GameObject *GameObject::Instantiate(const GameObject *go)
 
     gameObject->getEntity()->copy(go->getEntity());
 
-    scene->Init(gameObject);
-
     scene->insert(gameObject);
 
     return gameObject;
@@ -47,13 +45,6 @@ GameObject *GameObject::Find(const std::string &name)
 void GameObject::Destroy(GameObject *go)
 {
     return GameObjectManager::Destroy(go);
-}
-
-void GameObject::Clear() {
-    std::cout << "Cle" << std::endl;
-    // mGoCache.clear();
-
-    // GetNameManager().clear();
 }
 
 std::size_t GameObject::GetGameObjectCount() {

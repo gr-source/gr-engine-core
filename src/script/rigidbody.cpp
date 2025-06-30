@@ -22,7 +22,8 @@
 Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_lastTransform(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f)
 {}
 
-void Rigidbody::Init() {
+void Rigidbody::Start()
+{
     m_transform = GetComponent<Transform>();
 
     if (entity->hasComponent<MeshCollider>()) {

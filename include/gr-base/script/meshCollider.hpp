@@ -14,7 +14,7 @@ class MeshCollider : public Component {
 public:
     MeshCollider();
 
-    void Init() override;
+    void Start() override;
 
     void buildMesh(Mesh *meshList);
 

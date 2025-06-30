@@ -22,11 +22,13 @@ void Light::Init() {
     addInGlobalLight();
 }
 
-void Light::Destroy() {
+void Light::Destroy()
+{
     m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), this), m_lights.end());
 }
 
-void Light::Enable() {
+void Light::Enable()
+{
     addInGlobalLight();
 }
 

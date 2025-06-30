@@ -9,7 +9,7 @@
 BoxCollider::BoxCollider() : m_CollisionShape(nullptr), boxSize(Vector3::one)
 {}
 
-void BoxCollider::Init()
+void BoxCollider::Start()
 {
     auto transform = GetComponent<Transform>();
 

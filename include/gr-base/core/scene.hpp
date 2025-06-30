@@ -17,14 +17,6 @@ class Stream;
 // TODO: Causando crash quando d aplya na cena e para o jogo, motivo esta nos objetos que nao foram reacceragdos das cenas
 class Scene {
 public:
-    static void SetCurrent(Scene *scene);
-
-    static Scene *GetCurrentScene();
-
-    static bool HasScene();
-
-    static void Use(Scene *scene);
-
     static void DestroyScript();
 
     static void CheckRequestReinstanceScript();
@@ -34,10 +26,6 @@ public:
     static void InitializeAllScript();
 
     static void Remove(GameObject *gameObject);
-
-    static void Destoy(GameObject *gameObject);
-
-    static void Init(GameObject *gameObject);
 
     Scene();
     ~Scene();
@@ -72,10 +60,10 @@ public:
 
     std::vector<GameObject *> get_object_selected() const;
 
+    bool destroy(GameObject *gameObject);
+
 private:
     static std::hash<std::string> hash;
-
-    static Scene *m_current;
 
     std::vector<std::tuple<std::string, std::string, Component *>> m_componentCache; 
 
@@ -102,8 +90,6 @@ private:
     void setDisableEntity(Transform *transform, bool value);
 
     bool remove(GameObject *gameObject);
-
-    bool destroy(GameObject *gameObject);
 
     void for_each(std::function<void (GameObject *)> func);
 

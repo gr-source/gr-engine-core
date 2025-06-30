@@ -48,10 +48,12 @@ SceneManager &SceneManager::GetInstance()
 }
 
 SceneManager::SceneManager()
-{}
+{
+}
 
 SceneManager::~SceneManager()
-{}
+{
+}
 
 Scene *SceneManager::create(const std::string &name)
 {

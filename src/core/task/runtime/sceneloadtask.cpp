@@ -69,8 +69,6 @@ int SceneLoadTask::doInBackground()
         auto nextPosition = stream->tellg() + static_cast<std::streampos>(dataSegment.sizeData);
         auto headerName = HeaderName[dataSegment.type];
 
-        std::cout << "HeaderName: " << headerName << std::endl;
-
         if (dataSegment.sizeData <= 0)
         {
             continue;
@@ -216,8 +214,6 @@ int SceneLoadTask::read_material(Stream *stream)
         {
             return 3;
         }
-
-        std::cout << name << ": " << shadername << std::endl;
 
         // deserialize material
         std::size_t bufferSize = {};
