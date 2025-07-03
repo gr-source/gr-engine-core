@@ -3,6 +3,9 @@
 #include "gr-base/core/nameManager.hpp"
 #include "gr-base/ecs/gameObject.hpp"
 
+#include <unordered_set>
+#include <atomic>
+
 class GameObjectManager
 {
 public:
@@ -15,6 +18,8 @@ public:
     static std::string Rename(GameObject *, const std::string &name);
 
 private:
+    static GameObjectManager& GetInstance();
+
     std::unordered_map<std::string, std::unique_ptr<GameObject>> m_gameobjectmap;
 
     std::unordered_map<const GameObject *, const std::string> m_gameobjectnamemap;
@@ -22,8 +27,6 @@ private:
     NameManager m_namemanager;
 
     std::mutex m_mutex;
-
-    static GameObjectManager& GetInstance();
 
     GameObjectManager();
     ~GameObjectManager();
@@ -33,6 +36,8 @@ private:
     GameObject *find(const std::string &name);
 
     void destroy(GameObject *gameObject);
+
+    void mark(GameObject *gameObject);
 
     std::string rename(GameObject *gameObject, const std::string &name);
 };

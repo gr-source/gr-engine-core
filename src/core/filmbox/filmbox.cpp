@@ -1,19 +1,13 @@
 #include "gr-base/core/filmbox/filmbox.hpp"
 
-#include "gr-base/core/file/file.hpp"
-
-#include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/event.hpp"
 
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
+
 #include <gr-math/matrix4x4.hpp>
 #include <gr-math/quaternion.hpp>
 #include <gr-math/vector3.hpp>
-#include <stdexcept>
-#include <string>
-#include <unordered_map>
 
 #define NORMALIZE(v) if (std::abs(v.x) > 6.0f) v.x /= 1e2f; if (std::abs(v.y) > 6.0f) v.y /= 1e2f; if (std::abs(v.z) > 6.0f) v.z /= 1e2f;
 

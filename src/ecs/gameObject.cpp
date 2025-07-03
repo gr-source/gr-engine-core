@@ -28,10 +28,16 @@ GameObject *GameObject::Instantiate(const GameObject *go)
     
     gameObject->m_static = go->m_static;
     gameObject->m_active = go->m_active;
+    gameObject->m_scene = scene;
 
     gameObject->getEntity()->copy(go->getEntity());
 
     scene->insert(gameObject);
+
+    if (scene->is_running())
+    {
+        Scene::Start(gameObject);
+    }
 
     return gameObject;
 }
@@ -51,7 +57,7 @@ std::size_t GameObject::GetGameObjectCount() {
     return 0;
 }
 
-GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(nullptr), m_active(true), m_static(true), m_transform(nullptr)
+GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(nullptr), m_active(true), m_static(false), m_transform(nullptr), m_scene(nullptr)
 {
 }
 
@@ -94,6 +100,11 @@ Transform *GameObject::getTransform() const {
 
 Entity *GameObject::getEntity() const {
     return m_entity;
+}
+
+Scene *GameObject::get_scene() const
+{
+    return m_scene;
 }
 
 void GameObject::setActive(bool b) {

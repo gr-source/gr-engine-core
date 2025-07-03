@@ -71,7 +71,7 @@ void Scene::Stop(GameObject *gameObject)
 }
 
 // public
-Scene::Scene() : m_enable(true), m_goCamera(nullptr), m_camera(nullptr) {}
+Scene::Scene() : m_enable(true), m_goCamera(nullptr), m_camera(nullptr), m_isrunning(false) {}
 
 Scene::~Scene()
 {
@@ -97,6 +97,8 @@ void Scene::play()
     {
         Scene::Start(go);
     }
+
+    m_isrunning = true;
 }
 
 void Scene::stop()
@@ -105,6 +107,8 @@ void Scene::stop()
     {
         Scene::Stop(go);
     }
+
+    m_isrunning = false;
 }
 
 void Scene::create_main_camra()
@@ -119,6 +123,11 @@ void Scene::create_main_camra()
     }
 
     GameObject::Destroy(go);
+}
+
+bool Scene::is_running() const
+{
+    return m_isrunning;
 }
 
 GameObject *Scene::CreateGameObject(const std::string &name, const std::string &tag)

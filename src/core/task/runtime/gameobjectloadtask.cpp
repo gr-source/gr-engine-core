@@ -233,8 +233,6 @@ int GameObjectLoadTask::read_material(Stream *stream)
             return 3;
         }
 
-        std::cout << name << ": " << shadername << std::endl;
-
         // deserialize material
         std::size_t bufferSize = {};
         if (!stream->read(bufferSize))

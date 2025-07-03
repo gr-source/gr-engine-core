@@ -63,6 +63,8 @@ void Rigidbody::Start()
 	m_body->setAngularFactor(VEC3_TO_BTVEC3(m_lookRotation));
     m_body->setUserPointer(reinterpret_cast<void *>(entity->getGameObject()));
 
+    m_body->setSleepingThresholds(0.005f, 0.005f);
+
     if (fMotionThreshold >= 0.0f)
         m_body->setCcdMotionThreshold(fMotionThreshold);
 
@@ -83,7 +85,8 @@ void Rigidbody::Destroy() {
 }
 
 void Rigidbody::Update() {
-    if (!getGameObject()->getStatic()) {
+    if (!getGameObject()->getStatic())
+    {
         if (m_body->getLinearVelocity().length() < 0.01 && m_body->getAngularVelocity().length() < 0.01) {
             m_body->setActivationState(DISABLE_DEACTIVATION);
         } else {
@@ -91,7 +94,8 @@ void Rigidbody::Update() {
         }
 	}
 
-	if (m_body->isActive()) {
+	if (m_body->isActive())
+    {
 		btTransform trans;
 		m_body->getMotionState()->getWorldTransform(trans);
 

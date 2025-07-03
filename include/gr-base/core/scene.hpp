@@ -30,6 +30,8 @@ public:
 
     void create_main_camra();
 
+    bool is_running() const;
+
     GameObject *CreateGameObject(const std::string &name, const std::string &tag = "untagged");
 
     std::vector<GameObject *> getObjectList() const;
@@ -60,6 +62,9 @@ public:
 
     bool destroy(GameObject *gameObject);
 
+    static void Start(GameObject *go);
+
+    static void Stop(GameObject *go);
 private:
     static std::hash<std::string> hash;
 
@@ -79,11 +84,9 @@ private:
 
     bool m_enable;
 
+    bool m_isrunning;
+
     static GameObject *CreateEngineCamera();
-
-    static void Start(GameObject *go);
-
-    static void Stop(GameObject *go);
 
     void setEnable(bool value);
 

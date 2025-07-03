@@ -46,6 +46,7 @@ set(thread
 )
 
 set(core
+    src/core/mainthreaddispatcher.cpp
     src/core/assetsManager.cpp
     src/core/rendertarget.cpp
     src/core/scenemanager.cpp
@@ -57,7 +58,6 @@ set(core
     src/core/status.cpp
     src/core/skybox.cpp
     src/core/scene.cpp
-    src/core/event.cpp
     src/core/clock.cpp
     src/core/input.cpp
 )

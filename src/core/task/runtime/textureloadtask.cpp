@@ -1,8 +1,8 @@
 #include "gr-base/core/task/runtime/textureloadtask.hpp"
 
+#include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/event.hpp"
 #include <gr-render/gCommon.h>
 
 #include "gr-base/core/thread/threadpool.hpp"
@@ -89,7 +89,7 @@ void TextureLoadTask::doInBackground(std::string path)
         break;
     }
 
-    Event::Add(&TextureLoadTask::upload, this, path, width, height, format);
+    MainThreadDispatcher::Add(&TextureLoadTask::upload, this, path, width, height, format);
 }
 
 

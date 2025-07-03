@@ -1,5 +1,8 @@
 #include "gr-base/ecs/gameobjectmanager.hpp"
 
+#include "gr-base/core/mainthreaddispatcher.hpp"
+#include "gr-base/core/scene.hpp"
+
 #include "gr-base/script/transform.hpp"
 
 // public
@@ -15,7 +18,7 @@ GameObject *GameObjectManager::Find(const std::string &name)
 
 void GameObjectManager::Destroy(GameObject *gameObject)
 {
-    return GetInstance().destroy(gameObject);
+    return GetInstance().mark(gameObject);
 }
 
 std::string GameObjectManager::Rename(GameObject * gameObject, const std::string &name)
@@ -83,6 +86,10 @@ void GameObjectManager::destroy(GameObject *gameObject)
     }
     lock.unlock();
 
+    auto scene = gameObject->get_scene();
+    if (scene != nullptr)
+        scene->remove(gameObject);
+
     auto name = gameObject->getName();
 
     auto transform = gameObject->getTransform();
@@ -109,6 +116,14 @@ void GameObjectManager::destroy(GameObject *gameObject)
     lock.unlock();
 
     m_namemanager.RemoveNameID(name);
+}
+
+void GameObjectManager::mark(GameObject *gameObject)
+{
+    MainThreadDispatcher::Add([this, gameObject]()
+    {
+        destroy(gameObject);
+    });
 }
 
 std::string GameObjectManager::rename(GameObject *gameObject, const std::string &name)

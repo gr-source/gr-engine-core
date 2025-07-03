@@ -4,6 +4,8 @@
 
 #include "gr-base/script/default.hpp"
 
+#include "gr-base/core/default.hpp"
+
 #include "default.hpp"
 
 class GameObject
@@ -39,6 +41,8 @@ public:
 
     Entity *getEntity() const;
 
+    Scene *get_scene() const;
+
     void setActive(bool b);
 
     bool getActive() const;
@@ -71,6 +75,8 @@ private:
     std::string m_tag;
 
     Entity *m_entity;
+
+    Scene *m_scene;
 
     bool m_active;
 
