@@ -25,7 +25,7 @@ void DestroyComponnet(Transform *transform)
 
 void Scene::CheckRequestReinstanceScript()
 {
-    auto script = ComponentRegistry::getInstance().getScriptRequestReinstance();
+    auto script = ComponentRegistry::GetScriptsNeedingReinstance();
     if (script.empty())
     {
         return;
@@ -36,8 +36,6 @@ void Scene::CheckRequestReinstanceScript()
         for (auto scriptname : script)
         {
             scene->reinstanceScript(scriptname);
-
-            ComponentRegistry::getInstance().removeScriptNeedsUpdate(scriptname);
         }
     }
 }

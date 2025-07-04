@@ -2,14 +2,12 @@
 
 #include <gr-math/gmath.hpp>
 
-#include <ostream>
-#include <istream>
-
 class GameObject;
 class Entity;
 class Stream;
 
-class Component {
+class Component
+{
 public:
     Entity* entity;
 
@@ -73,7 +71,7 @@ static bool is_register_##klass##_##type##_##field = \
 
 #define REGISTER_COMPONENT(klass, enableUpdate) \
     static bool is_register_##klass = \
-        ComponentRegistry::getInstance().registry<klass>(true, enableUpdate); \
+        ComponentRegistry::Register<klass>(#klass, true, enableUpdate); \
 
 #endif
 

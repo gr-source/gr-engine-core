@@ -2,51 +2,74 @@
 
 #include <algorithm>
 
-ComponentRegistry &ComponentRegistry::getInstance()
+// public
+std::vector<std::string> ComponentRegistry::GetScriptsNeedingReinstance()
+{
+    return GetInstance().getScriptsNeedingReinstance();
+}
+
+void ComponentRegistry::Update()
+{
+    return GetInstance().update();
+}
+
+// private
+ComponentRegistry &ComponentRegistry::GetInstance()
 {
     static ComponentRegistry instance;
     return instance;
 }
 
-BaseChunk *ComponentRegistry::Find(const std::string &name)
+
+std::vector<std::string> ComponentRegistry::getScriptsNeedingReinstance()
 {
-    return getInstance().findScript(name.c_str());
+    return std::move(m_scriptToRestart);
 }
 
-void ComponentRegistry::Clear()
+IComponentStorage *ComponentRegistry::find(const std::string &name)
 {
-    getInstance().clear();
-}
-
-std::unordered_map<std::string, std::tuple<std::unique_ptr<BaseChunk>, bool>> &ComponentRegistry::GetAllChunkComponent()
-{
-    return getInstance().m_scriptChunk;
-}
-
-BaseChunk *ComponentRegistry::findScript(const std::string &name) const
-{
-    auto it = m_scriptChunk.find(name);
-    if (it != m_scriptChunk.end())
+    auto it = m_componentstorage.find(name);
+    if (it != m_componentstorage.end())
     {
-        return &(*std::get<0>(it->second));
+        return it->second.get();
     }
     return nullptr;
 }
 
+IComponentStorage *ComponentRegistry::Find(const std::string &name)
+{
+    return GetInstance().find(name);
+}
+
+void ComponentRegistry::Clear()
+{
+    return GetInstance().clear();
+}
+
+/*
+std::unordered_map<std::string, std::tuple<std::unique_ptr<BaseChunk>, bool>> &ComponentRegistry::GetAllChunkComponent()
+{
+    return GetInstance().m_scriptChunk;
+}
+*/
 void ComponentRegistry::init()
 {
-    for (auto chunk : chunkList)
+    /*
+    for (auto chunk : m_componentstorage)
     {
         chunk->initall(chunk);
     }
+    */
 }
 
 void ComponentRegistry::update()
 {
+    /*
     for (auto chunk : chunkList)
     {
         chunk->updateall(chunk);
     }
+    */
 }
 
 std::vector<std::string> ComponentRegistry::getScriptRequestReinstance() const
@@ -61,7 +84,7 @@ void ComponentRegistry::removeScriptNeedsUpdate(const std::string &name)
 
 void ComponentRegistry::CheckScriptRemoved()
 {// m_scriptRegister
-
+    /*
     for (auto it = m_scriptChunk.begin(); it != m_scriptChunk.end();)
     {
         if (!m_scriptRegister[it->first] && !std::get<1>(it->second))
@@ -80,10 +103,12 @@ void ComponentRegistry::CheckScriptRemoved()
     }
 
     m_scriptRegister.clear();
+    */
 }
 
 void ComponentRegistry::clear()
 {
+    /*
     for (auto it = m_scriptChunk.begin(); it != m_scriptChunk.end();)
     {
         auto &&[pointer, engine] = it->second;
@@ -97,8 +122,9 @@ void ComponentRegistry::clear()
             it++;
         }
     }
+    */
 }
-
+/*
 bool ComponentRegistry::isCanRegister(const std::string &name)
 {
     return m_scriptChunk.find(name) == m_scriptChunk.end();
@@ -108,9 +134,10 @@ void ComponentRegistry::removeChunkInvector(BaseChunk *baseChunk)
 {
     chunkList.erase(std::remove(chunkList.begin(), chunkList.end(), baseChunk), chunkList.end());
 }
-
+*/
 void ComponentRegistry::checkScriptStride(const std::string &name, std::size_t stride)
 {
+    /*
     // script to remove
     {
         if (m_scriptRegister.find(name) == m_scriptRegister.end())
@@ -136,19 +163,7 @@ void ComponentRegistry::checkScriptStride(const std::string &name, std::size_t s
             m_scriptStride[name] = stride;
         }
     }
-}
-
-BaseChunk * ComponentRegistry::registryScript(const std::string &name, std::unique_ptr<BaseChunk> ptr, std::size_t stride, bool isInternal)
-{
-    m_scriptChunk.emplace(name, std::make_tuple(std::move(ptr), isInternal));
-
-    auto baseChunk = &(*std::get<0>(m_scriptChunk[name]));
-
-    m_scriptStride.emplace(name, stride);
-
-    chunkList.push_back(baseChunk);
-
-    return baseChunk;
+    */
 }
 
 

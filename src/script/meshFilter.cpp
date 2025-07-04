@@ -72,7 +72,8 @@ bool MeshFilter::Serialize(Stream *stream) {
     return true;
 }
 
-bool MeshFilter::Deserialize(Stream *stream) {
+bool MeshFilter::Deserialize(Stream *stream)
+{
     bool hasMesh;
     if (!stream->read(reinterpret_cast<char *>(&hasMesh), sizeof(bool)))
     {
@@ -110,6 +111,7 @@ bool MeshFilter::Deserialize(Stream *stream) {
         {
             return false;
         }
+
         for (std::size_t i={};i<mcount;i++)
         {
             m_mesh->emplace_back().deserialize(stream);

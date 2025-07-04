@@ -57,8 +57,9 @@ std::size_t Manager::GetEntityCount() {
     return mEntities.size();
 }
 
-void Manager::Update() {
-    ComponentRegistry::getInstance().update();
+void Manager::Update()
+{
+    return ComponentRegistry::Update();
 }
 
 

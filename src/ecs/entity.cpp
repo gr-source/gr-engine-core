@@ -53,7 +53,7 @@ Component *Entity::addComponent(const std::string &name, const Component *compon
         throw std::runtime_error("Fail to add component, " + name + " do not registry.");
     }
 
-    auto instance = pool->allocatein(pool, this, component);
+    auto instance = pool->allocate(this, component);
     if (!instance)
     {
         throw std::runtime_error("Fail to add component, " + name + " invalid instance.");
@@ -70,7 +70,8 @@ Component *Entity::addComponent(const std::string &name, const Component *compon
     return instance;
 }
 
-Component *Entity::getComponent(const std::string &name) const {
+Component *Entity::getComponent(const std::string &name) const
+{
     auto it = m_componentPtr.find(name);
     if (it == m_componentPtr.end()) {
         return nullptr;
@@ -78,7 +79,8 @@ Component *Entity::getComponent(const std::string &name) const {
     return it->second;
 }
 
-bool Entity::hasComponent(const std::string &name) const {
+bool Entity::hasComponent(const std::string &name) const
+{
     return m_componentPtr.find(name) != m_componentPtr.end();
 }
 
@@ -95,7 +97,7 @@ void Entity::destroy(const std::string &name) {
         it->second->bCanUseUpdate = false;
         it->second->entity = nullptr;
 
-        pool->deallocatein(pool, it->second);
+        pool->deallocate(it->second);
     }
 
     m_components.erase(std::remove(m_components.begin(), m_components.end(), it->second), m_components.end());

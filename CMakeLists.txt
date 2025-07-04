@@ -5,16 +5,14 @@ project(gr-base VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 set(ecs
+    src/ecs/icomponentstorage.cpp
     src/ecs/gameobjectmanager.cpp
     src/ecs/componentRegistry.cpp
     src/ecs/scriptpriority.cpp
-    src/ecs/chunkManager.cpp
     src/ecs/gameObject.cpp
     src/ecs/component.cpp
     src/ecs/manager.cpp
     src/ecs/entity.cpp
-    src/ecs/field.cpp
-    src/ecs/pool.cpp
 )
 
 set(geometry
