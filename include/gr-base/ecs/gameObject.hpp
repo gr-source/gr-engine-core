@@ -19,13 +19,9 @@ public:
 
     static void Destroy(GameObject *go);
 
-    static std::size_t GetGameObjectCount();
-
     GameObject() = delete;
     GameObject(const std::string &name, const std::string &tag = "untagged");
     ~GameObject();
-
-    void init();
 
     void setName(const std::string &name);
 

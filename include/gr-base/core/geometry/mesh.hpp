@@ -16,7 +16,7 @@ public:
     std::string getName() const;
 
     template <typename ...Args>
-    Vertex3D& addVertex(Args &&...args);
+    std::size_t addVertex(Args &&...args);
 
     std::vector<Vertex3D> getVertices() const;
 
@@ -52,8 +52,11 @@ private:
 };
 
 template <typename ...Args>
-inline Vertex3D& Mesh::addVertex(Args&& ...args) {
-    return m_vertices.emplace_back(std::forward<Args>(args)...);
+inline std::size_t Mesh::addVertex(Args&& ...args)
+{
+    m_vertices.emplace_back(std::forward<Args>(args)...);
+
+    return m_vertices.size() - 1;
 }
 
 template <typename... Args>

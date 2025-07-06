@@ -1,5 +1,7 @@
 #include "gr-base/ecs/entity.hpp"
 
+#include "gr-base/core/mainthreaddispatcher.hpp"
+#include "gr-base/core/thread/threadpool.hpp"
 #include "gr-base/script/meshRender.hpp"
 
 #include "gr-base/core/console.hpp"

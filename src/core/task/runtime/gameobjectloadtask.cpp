@@ -58,6 +58,7 @@ void GameObjectLoadTask::onPostExecute(int result)
     {
         return;
     }
+
     Console::LogInfo("[ GameObjectLoadTask ] Loaded: %s", m_path.c_str());
 
     if (m_func)

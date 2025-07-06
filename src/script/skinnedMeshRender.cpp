@@ -186,28 +186,29 @@ void SkinnedMeshRender::build()
     {
         batching = Batching::Create(meshListName);
         batching->setMesh(meshList);
-    }
 
-    for (auto &material : m_material)
-    {
-        auto shader = material->getShader();
-        if (shader == nullptr)
+
+        for (auto &material : m_material)
         {
-            continue;
+            auto shader = material->getShader();
+            if (shader == nullptr)
+            {
+                continue;
+            }
+
+            auto path = AssetsManager::GetShaderName(shader);
+            if (!File::Exists(path))
+            {
+                continue;
+            }
+
+            ShaderParams shaderParams;
+            shaderParams.name = "simple_model";
+            shaderParams.base = path;
+            shaderParams.flags = ShaderOptimize_dynamic | ShaderOptimize_animated;
+
+            AssetsManager::LoadShader(shaderParams, &Material::setShader, material);
         }
-
-        auto path = AssetsManager::GetShaderName(shader);
-        if (!File::Exists(path))
-        {
-            continue;
-        }
-
-        ShaderParams shaderParams;
-        shaderParams.name = "simple_model";
-        shaderParams.base = path;
-        shaderParams.flags = ShaderOptimize_dynamic | ShaderOptimize_animated;
-
-        AssetsManager::LoadShader(shaderParams, &Material::setShader, material);
     }
 
     batching->insert(GetGameObject()->getTransform(), &m_material, 2);

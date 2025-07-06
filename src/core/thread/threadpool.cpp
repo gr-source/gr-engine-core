@@ -12,6 +12,16 @@ bool Threadpool::IsMainThread()
     return GetInstance().isMainThread();
 }
 
+std::size_t Threadpool::GetThreadCount()
+{
+    return GetInstance().get_thread_count();
+}
+
+std::size_t Threadpool::GetCount()
+{
+    return GetInstance().get_count();
+}
+
 // private
 Threadpool &Threadpool::GetInstance()
 {
@@ -125,4 +135,15 @@ bool Threadpool::wait_for()
     return m_bStop || !m_task.empty();
 }
 
+std::size_t Threadpool::get_thread_count()
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_threads.size();
+}
+
+std::size_t Threadpool::get_count()
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_available;
+}
 

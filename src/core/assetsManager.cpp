@@ -61,37 +61,6 @@ void AssetsManager::Shutdown()
 void AssetsManager::Render()
 {
     GetFilmboxManager().render();
-    /*
-    auto has_task_in_filmboxmanager = mFilmboxManager.has_task();
-    if (!has_task_in_filmboxmanager)
-    {
-        return;
-    }
-
-    auto mainWindowSize = Window::GetWindowSize() / 2;
-    auto beginSize = ImVec2{400, 300};
-
-    ImGui::SetNextWindowSize(beginSize);
-    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(mainWindowSize.x), static_cast<float>(mainWindowSize.y)} - (beginSize / 2.0f));
-
-    bool isOpen = true;
-
-    if (ImGui::Begin("Task", &isOpen, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings))
-    {
-        if (has_task_in_filmboxmanager)
-        {
-
-            mFilmboxManager.render();
-        }
-    }
-
-    if (!isOpen)
-    {
-        mFilmboxManager.clear();
-    }
-
-    ImGui::End();
-    */
 }
 
 std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {

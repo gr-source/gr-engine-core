@@ -17,6 +17,8 @@ public:
 
     static std::string Rename(GameObject *, const std::string &name);
 
+    static std::size_t GetCount();
+
 private:
     static GameObjectManager& GetInstance();
 
@@ -40,5 +42,7 @@ private:
     void mark(GameObject *gameObject);
 
     std::string rename(GameObject *gameObject, const std::string &name);
+
+    std::size_t get_count();
 };
 

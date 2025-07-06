@@ -16,10 +16,7 @@ public:
 private:
     std::unordered_map<std::string, int> m_nameID;
 
-    static std::size_t FindDelimiter(char delimiter, const std::string &name);
-
-protected:
-    std::mutex mutex;
+    std::mutex m_mutex;
 };
 
 

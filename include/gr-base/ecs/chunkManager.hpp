@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstring>
 #include <memory>
+#include <mutex>
 
 #define MAX_COMPONENT_CHUNK 64
 
@@ -63,6 +64,8 @@ public:
 
     Component *(*allocatein)(IComponentStorage *, Entity *, const Component *component);
 
+    std::mutex m_mutex;
+
 private:
     std::unordered_map<std::string, grm::size> m_fieldID;
 
@@ -110,6 +113,7 @@ private:
 template <typename T>
 Component* ComponentStorage<T>::allocateComponent(Entity *entity, const Component *other)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (!m_freeslot.empty())
     {
         auto [id, chunk] = m_freeslot.back();
@@ -159,6 +163,8 @@ Component* ComponentStorage<T>::allocateComponent(Entity *entity, const Componen
 template <typename T>
 void ComponentStorage<T>::deallocate(Component *component)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     for (auto &chunk : m_chunklist)
     {
         auto base = reinterpret_cast<std::uintptr_t>(chunk->data);
@@ -182,13 +188,18 @@ void ComponentStorage<T>::deallocate(Component *component)
 template <typename T>
 void ComponentStorage<T>::allinit()
 {
+    std::unique_lock<std::mutex> lock(m_mutex);
     for (auto &chunk : m_chunklist)
     {
         for (int i = 0; i < MAX_COMPONENT_CHUNK; ++i)
         {
             if (chunk->used[i])
             {
+                lock.unlock();
+
                 init(reinterpret_cast<Component *>(&chunk->data[i]));
+
+                lock.lock();
             }
         }
     }
@@ -197,6 +208,7 @@ void ComponentStorage<T>::allinit()
 template <typename T>
 void ComponentStorage<T>::allupdate()
 {
+    std::unique_lock<std::mutex> lock(m_mutex);
     if (!bCanEnableUpdate)
     {
         return;
@@ -208,7 +220,11 @@ void ComponentStorage<T>::allupdate()
         {
             if (chunk->used[i] && chunk->data[i].bCanUseUpdate)
             {
+                lock.unlock();
+
                 update(reinterpret_cast<Component *>(&chunk->data[i]));
+
+                lock.lock();
             }
         }
     }

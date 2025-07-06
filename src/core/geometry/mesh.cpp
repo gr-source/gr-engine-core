@@ -20,6 +20,7 @@ void Mesh::setVertices(const std::vector<Vertex3D> &vertices) {
     m_vertices = vertices;
 }
 
+// addTriangle
 void Mesh::addTriangles(int t0, int t1, int t2) {
     m_indices.push_back(t0);
     m_indices.push_back(t1);

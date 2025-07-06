@@ -21,6 +21,10 @@ public:
 
     static bool IsMainThread();
 
+    static std::size_t GetThreadCount();
+
+    static std::size_t GetCount();
+
 private:
     static Threadpool &GetInstance();
 
@@ -49,6 +53,10 @@ private:
     void update();
 
     bool wait_for();
+
+    std::size_t get_thread_count();
+
+    std::size_t get_count();
 };
 
 template <typename... Args>
@@ -71,7 +79,7 @@ inline void Threadpool::add(TaskPriority priority, Args &&...args)
         std::lock_guard<std::mutex> lock(m_mutex);
         m_task.emplace_back(priority, std::bind(std::forward<Args>(args)...));
     }
-    m_cv.notify_one();
+    m_cv.notify_all();
 }
 
 

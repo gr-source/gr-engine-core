@@ -62,7 +62,7 @@ public:
 
 #define REGISTER_FIELD(klass, type, field) \
 static bool is_register_##klass##_##type##_##field = \
-    ComponentRegistry::Find<klass>() != nullptr ? ComponentRegistry::Find<klass>()->registerField(#field, FieldType_ ##type, reinterpret_cast<std::size_t>(&reinterpret_cast<klass *>(0)->field)) : false;
+    ComponentRegistry::Find(#klass) != nullptr ? ComponentRegistry::Find(#klass)->registerField(#field, FieldType_ ##type, reinterpret_cast<std::size_t>(&reinterpret_cast<klass *>(0)->field)) : false;
 
 
         

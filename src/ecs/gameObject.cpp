@@ -53,24 +53,17 @@ void GameObject::Destroy(GameObject *go)
     return GameObjectManager::Destroy(go);
 }
 
-std::size_t GameObject::GetGameObjectCount() {
-    return 0;
-}
-
 GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(nullptr), m_active(true), m_static(false), m_transform(nullptr), m_scene(nullptr)
-{
-}
-
-GameObject::~GameObject()
-{
-    Manager::DestroyEntity(m_entity);
-}
-
-void GameObject::init()
 {
     m_entity = Manager::CreateEntity(this);
 
     m_transform = addComponent<Transform>();
+}
+
+GameObject::~GameObject()
+{
+    if (m_entity != nullptr)
+        Manager::DestroyEntity(m_entity);
 }
 
 void GameObject::setName(const std::string &name)

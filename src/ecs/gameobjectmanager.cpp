@@ -26,6 +26,11 @@ std::string GameObjectManager::Rename(GameObject * gameObject, const std::string
     return GetInstance().rename(gameObject, name);
 }
 
+std::size_t GameObjectManager::GetCount()
+{
+    return GetInstance().get_count();
+}
+
 // private
 GameObjectManager &GameObjectManager::GetInstance()
 {
@@ -50,16 +55,16 @@ GameObject *GameObjectManager::create(const std::string &name, const std::string
     GameObject *gameObject = nullptr;
 
     {
+        auto ptr = std::make_unique<GameObject>(newname, tag);
+
         std::lock_guard<std::mutex> lock(m_mutex);
-        auto &&[it, added] = m_gameobjectmap.emplace(newname, std::make_unique<GameObject>(newname, tag));
+        auto &&[it, added] = m_gameobjectmap.emplace(newname, std::move(ptr));
         if (added)
         {
             m_gameobjectnamemap.emplace(it->second.get(), newname);
         }
         gameObject = it->second.get();
     }
-
-    gameObject->init();
 
     return gameObject;
 }
@@ -78,6 +83,8 @@ GameObject *GameObjectManager::find(const std::string &name)
 
 void GameObjectManager::destroy(GameObject *gameObject)
 {
+    m_namemanager.RemoveNameID(gameObject->getName());
+
     std::unique_lock<std::mutex> lock(m_mutex);
     auto it = m_gameobjectnamemap.find(gameObject);
     if (it == m_gameobjectnamemap.end())
@@ -89,8 +96,6 @@ void GameObjectManager::destroy(GameObject *gameObject)
     auto scene = gameObject->get_scene();
     if (scene != nullptr)
         scene->remove(gameObject);
-
-    auto name = gameObject->getName();
 
     auto transform = gameObject->getTransform();
     // remove o objeto pai do objeto altual e se o pai me ter como filho me remove do objeto pai.
@@ -112,18 +117,11 @@ void GameObjectManager::destroy(GameObject *gameObject)
     m_gameobjectmap.erase(it->second);
 
     m_gameobjectnamemap.erase(it);
-
-    lock.unlock();
-
-    m_namemanager.RemoveNameID(name);
 }
 
 void GameObjectManager::mark(GameObject *gameObject)
 {
-    MainThreadDispatcher::Add([this, gameObject]()
-    {
-        destroy(gameObject);
-    });
+    MainThreadDispatcher::Add(&GameObjectManager::destroy, this, gameObject);
 }
 
 std::string GameObjectManager::rename(GameObject *gameObject, const std::string &name)
@@ -160,4 +158,11 @@ std::string GameObjectManager::rename(GameObject *gameObject, const std::string 
 
     return newname;
 }
+
+std::size_t GameObjectManager::get_count()
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_gameobjectnamemap.size();
+}
+
 
