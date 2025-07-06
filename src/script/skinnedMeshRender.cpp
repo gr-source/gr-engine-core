@@ -181,13 +181,12 @@ void SkinnedMeshRender::build()
 
     auto meshListName = AssetsManager::GetMeshListRefToName(meshList);
 
-    auto batching = Batching::Find(meshListName);
-    if (batching == nullptr)
+    m_batching = Batching::Find(meshListName);
+    if (m_batching == nullptr)
     {
-        batching = Batching::Create(meshListName);
-        batching->setMesh(meshList);
+        m_batching = Batching::Create(meshListName, meshList);
 
-
+        /*
         for (auto &material : m_material)
         {
             auto shader = material->getShader();
@@ -209,9 +208,10 @@ void SkinnedMeshRender::build()
 
             AssetsManager::LoadShader(shaderParams, &Material::setShader, material);
         }
+        */
     }
 
-    batching->insert(GetGameObject()->getTransform(), &m_material, 2);
+    m_batching->insert(GetGameObject()->getTransform(), &m_material);
 }
 
 void SkinnedMeshRender::setBones(const std::vector<Bone> &bones)

@@ -3,6 +3,7 @@
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/file/file.hpp"
+#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 
 #include <gr-render/gError.h>
@@ -522,6 +523,10 @@ void ShaderLoadTask::bind_shader(const std::string &path)
     if (m_shaderParams.flags & ShaderOptimize_animated)
     {
         macro_map.emplace("ENABLE_ANIMATION");
+    }
+    if (m_shaderParams.flags & ShaderOptimize_instanced)
+    {
+        macro_map.emplace("USE_INSTANCED");
     }
     /*
     switch (shaderoptimize)

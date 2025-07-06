@@ -66,10 +66,10 @@ void MeshRender::build()
     auto batching = Batching::Find(meshListName);
     if (batching == nullptr)
     {
-        batching = Batching::Create(meshListName);
-        batching->setMesh(meshList);
+        batching = Batching::Create(meshListName, meshList);
     }
 
+    /*
     for (auto &material : m_material)
     {
         auto shader = material->getShader();
@@ -85,8 +85,9 @@ void MeshRender::build()
 
         AssetsManager::LoadShader(shaderParams, &Material::setShader, material);
     }
+    */
 
-    batching->insert(GetGameObject()->getTransform(), &m_material, 1);
+    batching->insert(GetGameObject()->getTransform(), &m_material);
 }
 
 

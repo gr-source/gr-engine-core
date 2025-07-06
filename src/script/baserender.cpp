@@ -20,6 +20,7 @@ void BaseRender::Init()
 
 void BaseRender::Destroy()
 {
+
     if (m_batching == nullptr)
     {
         return;
