@@ -20,13 +20,7 @@ void BaseRender::Init()
 
 void BaseRender::Destroy()
 {
-
-    if (m_batching == nullptr)
-    {
-        return;
-    }
-
-    if (Threadpool::IsMainThread())
+    if (Threadpool::IsMainThread() && m_batching != nullptr)
         m_batching->erase(GetGameObject()->getTransform());
 
     m_batching = nullptr;

@@ -91,7 +91,8 @@ Vector3 Transform::getUp() const {
     return getRotation() * Vector3::up;
 }
 
-Matrix4x4 Transform::getGlobalMatrix() const {
+Matrix4x4 &Transform::getGlobalMatrix()
+{
     return m_globalMatrix;
 }
 

@@ -1,7 +1,113 @@
 #pragma once
 
+#include "gr-base/core/geometry/mesh.hpp"
+
+#include "gr-base/core/geometry/default.hpp"
+
+#include "gr-base/script/default.hpp"
+
+#include <gr-render/gCommon.h>
+
+struct MeshInfo
+{
+    grr::gVertexArray *vertexArray;
+
+    grm::u32 vbo, pbo;
+
+    grm::u32 abo;
+
+    grm::u32 count;
+
+    void push(const Matrix4x4 *data, const std::size_t &size);
+
+    void draw(const std::size_t &instances);
+};
+
+struct GpuMesh
+{
+    std::vector<MeshInfo> meshinfolist;
+
+    std::vector<grr::gShader *> shaderlist;
+
+    void resize(const std::size_t &size);
+
+    MeshInfo &get(const std::size_t &id);
+
+    grr::gShader *getshader(const std::size_t &id)
+    {
+        return shaderlist[id];
+    }
+
+    void set(int id, grr::gShader *shader)
+    {
+        shaderlist[id] = shader;
+    }
+
+    void push(const Matrix4x4 *data, const std::size_t &size);
+
+    void draw(int id, const std::size_t &instances = 0);
+};
+
+#define DYNAMIC_MESH 0
+#define DYNAMIC_INSTANCED_MESH 1
+
+class BatchingDynamic
+{
+public:
+    BatchingDynamic(const std::vector<Material *> &materiallist, std::vector<Mesh> *meshlist);
+
+    void insert(Transform *transform);
+
+    void erase(Transform *transform);
+
+    void render();
+
+private:
+    std::vector<Material *> m_materiallist;
+
+    std::vector<Mesh> *m_meshlist;
+
+    std::vector<Transform *> m_instances;
+
+    std::unique_ptr<GpuMesh> m_gpuMesh[2];
+
+    void build(GpuMesh *gpuMesh, std::vector<Mesh> *meshlist, int id);
+
+    void buildDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh);
+
+    void buildDynamicSkinnedMesh();
+
+    void buildInstancedDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh);
+
+    void buildInstancedDynamicSkinnedMesh();
+};
+
+class Batching
+{
+public:
+    Batching(std::vector<Mesh> *meshlist);
+    ~Batching();
+
+    void insert(Transform *transform, const std::vector<Material *> &material);
+
+    void erase(Transform *transform);
+
+    void render();
+
+private:
+    std::unordered_map<std::string, std::unique_ptr<BatchingDynamic>> m_batchingdynamicmap;
+
+    std::vector<BatchingDynamic *> m_batchingdynamiclist;
+
+    std::vector<Mesh> *m_meshlist;
+
+    std::size_t m_count;
+};
+
+/*
 #include <cstddef>
 #include <gr-math/matrix4x4.hpp>
+#include <gr-render/gShader.h>
 #include <unordered_map>
 #include <memory>
 #include <string>
@@ -16,7 +122,7 @@
 
 #include "gr-base/script/default.hpp"
 
-typedef struct MeshData
+struct MeshData
 {
     grr::gVertexArray *vertexArray;
 
@@ -26,12 +132,10 @@ typedef struct MeshData
 
     grm::u32 count;
 
-    int instanceCount;
+    void draw(int instanced);
 
-    void draw();
-
-    void update(Matrix4x4 *data, std::size_t size);
-} MeshData;
+    void update(Matrix4x4 *data, int size);
+};
 
 struct RenderEntity
 {
@@ -55,7 +159,7 @@ struct BatchingRenderer
 {
     Transform *transform;
 
-    const std::vector<Material *> *materialList;
+    std::vector<Material *> materialList;
 
     int meshID;
 };
@@ -64,7 +168,7 @@ struct BatchingRendererInstanced
 {
     std::vector<Transform *> transformlist;
 
-    const std::vector<Material *> *materialList;
+    std::vector<Material *> materialList;
 
     int meshID;
 };
@@ -74,10 +178,9 @@ struct GpuMesh
     std::vector<MeshData> m_meshdata;
     std::vector<grr::gShader *> m_shaderlist;
 
-    void draw_mesh(int id)
+    void draw_mesh(int id, int instanced)
     {
-        if (id <= m_meshdata.size())
-            m_meshdata[id].draw();
+        return m_meshdata[id < m_meshdata.size() ? id : 0].draw(instanced);
     }
 
     void resize(std::size_t size)
@@ -95,6 +198,11 @@ struct GpuMesh
         for (auto &mesh : m_meshdata)
             mesh.update(data, size);
     }
+
+    void set_shader(int id, grr::gShader *shader)
+    {
+        m_shaderlist[id] = shader;
+    }
 };
 
 class Batching
@@ -108,11 +216,9 @@ public:
 
     Batching(std::vector<Mesh> *meshList);
 
-    void insert(Transform *transform, const std::vector<Material *> *materialList);
+    void insert(Transform *transform, const std::vector<Material *> &materialList);
 
     void erase(Transform *transform);
-
-    void setMesh();
 
 private:
     std::vector<Mesh> *m_meshlist;
@@ -131,7 +237,7 @@ private:
 
     int create_gpu_mesh(int meshID);
 
-    void create_shader(int meshID, const std::vector<Material *> *materialList);
+    void create_shader(int meshID, const std::vector<Material *> &materialList);
 
     void build(GpuMesh *gpuMesh, int meshID);
 
@@ -140,7 +246,7 @@ protected:
 
     static std::vector<Batching *> mBatcheList;
 };
-
+*/
 
 
 

@@ -18,6 +18,7 @@ set(ecs
 )
 
 set(geometry
+    src/core/geometry/batchingmanager.cpp
     src/core/geometry/batchingRender.cpp
     src/core/geometry/boneWeight.cpp
     src/core/geometry/vertex2D.cpp

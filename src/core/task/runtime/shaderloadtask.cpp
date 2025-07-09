@@ -516,17 +516,21 @@ void ShaderLoadTask::bind_shader(const std::string &path)
     m_shaderSource[ShaderStage::VERTEX] = remove_comment(m_shaderSource[ShaderStage::VERTEX]);
 
     std::unordered_set<std::string> macro_map;
-    if (m_shaderParams.flags & ShaderOptimize_dynamic)
+    if (m_shaderParams.flags & ShaderOptimize_static)
+    {} else
     {
-        macro_map.emplace("USE_MODEL");
-    }
-    if (m_shaderParams.flags & ShaderOptimize_animated)
-    {
-        macro_map.emplace("ENABLE_ANIMATION");
-    }
-    if (m_shaderParams.flags & ShaderOptimize_instanced)
-    {
-        macro_map.emplace("USE_INSTANCED");
+        if (m_shaderParams.flags & ShaderOptimize_dynamic)
+        {
+            macro_map.emplace("USE_MODEL");
+        }
+        if (m_shaderParams.flags & ShaderOptimize_animated)
+        {
+            macro_map.emplace("ENABLE_ANIMATION");
+        }
+        if (m_shaderParams.flags & ShaderOptimize_instanced)
+        {
+            macro_map.emplace("USE_INSTANCED");
+        }
     }
     /*
     switch (shaderoptimize)

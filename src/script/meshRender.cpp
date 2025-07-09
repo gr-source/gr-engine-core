@@ -2,6 +2,7 @@
 
 #include "gr-base/core/assetsManager.hpp"
 
+#include "gr-base/core/geometry/batchingmanager.hpp"
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/batching.hpp"
 
@@ -63,11 +64,9 @@ void MeshRender::build()
 
     auto meshListName = AssetsManager::GetMeshListRefToName(meshList);
 
-    auto batching = Batching::Find(meshListName);
+    auto batching = BatchingManager::Find(meshListName);
     if (batching == nullptr)
-    {
-        batching = Batching::Create(meshListName, meshList);
-    }
+        batching = BatchingManager::Create(meshListName, meshList);
 
     /*
     for (auto &material : m_material)
@@ -87,7 +86,7 @@ void MeshRender::build()
     }
     */
 
-    batching->insert(GetGameObject()->getTransform(), &m_material);
+    batching->insert(GetGameObject()->getTransform(), m_material);
 }
 
 

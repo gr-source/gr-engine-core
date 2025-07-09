@@ -1,5 +1,6 @@
 #include "gr-base/script/skinnedMeshRender.hpp"
 
+#include "gr-base/core/geometry/batchingmanager.hpp"
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/batching.hpp"
 #include "gr-base/core/geometry/shader.hpp"
@@ -181,37 +182,11 @@ void SkinnedMeshRender::build()
 
     auto meshListName = AssetsManager::GetMeshListRefToName(meshList);
 
-    m_batching = Batching::Find(meshListName);
+    m_batching = BatchingManager::Find(meshListName);
     if (m_batching == nullptr)
-    {
-        m_batching = Batching::Create(meshListName, meshList);
+        m_batching = BatchingManager::Create(meshListName, meshList);
 
-        /*
-        for (auto &material : m_material)
-        {
-            auto shader = material->getShader();
-            if (shader == nullptr)
-            {
-                continue;
-            }
-
-            auto path = AssetsManager::GetShaderName(shader);
-            if (!File::Exists(path))
-            {
-                continue;
-            }
-
-            ShaderParams shaderParams;
-            shaderParams.name = "simple_model";
-            shaderParams.base = path;
-            shaderParams.flags = ShaderOptimize_dynamic | ShaderOptimize_animated;
-
-            AssetsManager::LoadShader(shaderParams, &Material::setShader, material);
-        }
-        */
-    }
-
-    m_batching->insert(GetGameObject()->getTransform(), &m_material);
+    m_batching->insert(GetGameObject()->getTransform(), m_material);
 }
 
 void SkinnedMeshRender::setBones(const std::vector<Bone> &bones)
