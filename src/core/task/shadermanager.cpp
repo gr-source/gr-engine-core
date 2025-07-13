@@ -2,9 +2,8 @@
 
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
-#include <mutex>
-#include <stdexcept>
-#include <string>
+
+#include <algorithm>
 
 ShaderManager::ShaderManager()
 {}
@@ -36,9 +35,21 @@ grr::gShader *ShaderManager::create(ShaderParams shaderParams)
     return shader;
 }
 
-void ShaderManager::destroy(const grr::gShader *shader)
+void ShaderManager::destroy(grr::gShader *shader)
 {
-    throw std::runtime_error("Falta corrigir aqui: 55 em ShaderManager.cpp");
+    std::lock_guard<std::mutex> lock(s_Mutex);
+    auto it = s_ShaderNameMap.find(shader);
+    if (it == s_ShaderNameMap.end())
+        return;
+
+    auto shaderParams = GetShaderParamsFromName(it->second);
+    {
+        auto &shaderlist = s_ShaderTypeList[static_cast<int>(shaderParams.type)];
+        shaderlist.erase(std::remove(shaderlist.begin(), shaderlist.end(), shader), shaderlist.end());
+    }
+
+    s_ShaderMap.erase(it->second);
+    s_ShaderNameMap.erase(it);
 }
 
 const char *ShaderManager::get_shader_name(const grr::gShader *shader)

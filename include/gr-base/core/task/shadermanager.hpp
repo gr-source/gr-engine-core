@@ -12,7 +12,7 @@ public:
 
     grr::gShader *create(ShaderParams shaderParams);
 
-    void destroy(const grr::gShader *shader);
+    void destroy(grr::gShader *shader);
 
     const char *get_shader_name(const grr::gShader *shader);
 

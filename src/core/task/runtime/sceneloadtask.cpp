@@ -183,8 +183,8 @@ int SceneLoadTask::read_shader(Stream *stream)
             auto info = AssetsManager::LoadShader(GetShaderParamsFromName(shadername), [&shader](auto current) { shader = current; });
             info->wait();
         }
-
-        m_shadermap.emplace(shadername, shader);
+        if (shader != nullptr)
+            m_shadermap.emplace(shadername, shader);
     }
     return 0;
 }
@@ -225,7 +225,7 @@ int SceneLoadTask::read_material(Stream *stream)
         auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
 
         auto it = m_materialmap.find(name);
-        if (it == m_materialmap.end())
+        if (it == m_materialmap.end() && m_shadermap.find(shadername) != m_shadermap.end())
         {
             auto material = AssetsManager::CreateMaterial(name, m_shadermap[shadername]);
             material->deserialize(stream);

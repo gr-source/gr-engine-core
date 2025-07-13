@@ -4,6 +4,7 @@
 #include "gr-base/core/assetsManager.hpp"
 
  // core, geometry
+#include "gr-base/core/geometry/batchingstatic.hpp"
 #include "gr-base/core/geometry/material.hpp"
 
 // ecs
@@ -16,263 +17,6 @@
 
 // gr-render
 #include <gr-render/gVertexArray.h>
-
-// MeshInfo
-void MeshInfo::push(const Matrix4x4 *data, const std::size_t &size)
-{
-    vertexArray->bind();
-    grr::gVertexArray::Bind(pbo);
-    grr::gVertexArray::UpdateResizeBuffer(size * sizeof(Matrix4x4), BufferUsage::DYNAMIC);
-    grr::gVertexArray::SetBufferUpdate(0, size * sizeof(Matrix4x4), data);
-}
-
-void MeshInfo::draw(const std::size_t &instances)
-{
-    vertexArray->bind();
-    if (instances > 0)
-        return grr::gVertexArray::DrawArraysInstanced(PrimitiveType::TRIANGLES, count, instances);
-    grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, count);
-}
-
-// gpuMesh
-void GpuMesh::resize(const std::size_t &size)
-{
-    meshinfolist.resize(size);
-    shaderlist.resize(size, nullptr);
-}
-
-MeshInfo &GpuMesh::get(const std::size_t &id)
-{
-    return meshinfolist[id];
-}
-
-void GpuMesh::push(const Matrix4x4 *data, const std::size_t &size)
-{
-    for (auto &meshinfo : meshinfolist)
-        meshinfo.push(data, size);
-}
-
-void GpuMesh::draw(int id, const std::size_t &instances)
-{
-    meshinfolist[id].draw(instances);
-}
-
-// BatchingDynamic
-BatchingDynamic::BatchingDynamic(const std::vector<Material *> &material, std::vector<Mesh> *meshlist) : m_materiallist(material), m_meshlist(meshlist)
-{
-    m_gpuMesh[0] = nullptr;
-    m_gpuMesh[1] = nullptr;
-    // build(meshlist);
-}
-
-void BatchingDynamic::insert(Transform *transform)
-{
-    if (m_instances.empty())
-    {
-        if (m_gpuMesh[DYNAMIC_MESH] == nullptr)
-        {
-            m_gpuMesh[DYNAMIC_MESH] = std::make_unique<GpuMesh>();
-
-            build(m_gpuMesh[DYNAMIC_MESH].get(), m_meshlist, DYNAMIC_MESH);
-        }
-    } else
-    {
-        if (m_gpuMesh[DYNAMIC_INSTANCED_MESH] == nullptr)
-        {
-            m_gpuMesh[DYNAMIC_INSTANCED_MESH] = std::make_unique<GpuMesh>();
-
-            build(m_gpuMesh[DYNAMIC_INSTANCED_MESH].get(), m_meshlist, DYNAMIC_INSTANCED_MESH);
-        }
-    }
-    m_instances.push_back(transform);
-}
-
-void BatchingDynamic::erase(Transform *transform)
-{
-    m_instances.erase(std::remove(m_instances.begin(), m_instances.end(), transform), m_instances.end());
-}
-
-void BatchingDynamic::render()
-{
-    if (m_instances.size() <= 1)
-    {
-        if (m_gpuMesh[DYNAMIC_MESH] == nullptr)
-            return;
-
-        auto gpuMesh = m_gpuMesh[DYNAMIC_MESH].get();
-
-        auto materialcount =  m_materiallist.size();
-
-        for (std::size_t i={};i<materialcount;i++)
-        {
-            auto material = m_materiallist[i];
-
-            auto current = material->getShader();
-            {
-                auto shader = gpuMesh->getshader(i);
-                material->setShader(shader);
-
-                material->flush();
-
-                shader->bind();
-        
-                for (auto &transform : m_instances)
-                {
-                    auto matrix = transform->getGlobalMatrix();
-
-                    shader->setUniform("u_model", &matrix);
-
-                    shader->flush();
-
-                    gpuMesh->draw(i);
-                }
-            }
-            material->setShader(current);
-        }
-    } else
-    {
-        if (m_gpuMesh[DYNAMIC_INSTANCED_MESH] == nullptr)
-            return;
-
-
-        std::vector<Matrix4x4> modellist;
-        for (auto &transform : m_instances)
-        {
-            modellist.push_back(transform->getGlobalMatrix());
-        }
-
-        auto gpuMesh = m_gpuMesh[DYNAMIC_INSTANCED_MESH].get();
-        gpuMesh->push(modellist.data(), modellist.size());
-
-        auto materialcount =  m_materiallist.size();
-
-        for (std::size_t i={};i<materialcount;i++)
-        {
-            auto material = m_materiallist[i];
-            
-            auto current = material->getShader();
-            {
-                auto shader = gpuMesh->getshader(i);
-                if (shader == nullptr)
-                    continue;
-
-                material->setShader(shader);
-                
-                material->flush();
-
-                shader->bind();                
-
-                shader->flush();
-
-                gpuMesh->draw(i, modellist.size());
-            }
-            material->setShader(current);
-        }
-    }
-}
-
-// private
-void BatchingDynamic::build(GpuMesh *gpuMesh, std::vector<Mesh> *meshlist, int id)
-{
-    auto meshCount = meshlist->size();
-    gpuMesh->resize(meshCount);
-
-    for (std::size_t i=0;i<meshCount;i++)
-    {
-        auto &mesh = (*meshlist)[i];
-
-        switch (id)
-        {
-            case DYNAMIC_MESH:
-                buildDynamicMesh(gpuMesh->get(i), mesh);
-                break;
-            case DYNAMIC_INSTANCED_MESH:
-                buildInstancedDynamicMesh(gpuMesh->get(i), mesh);
-                break;
-            default:
-                break;
-        }
-    }
-
-    auto count = m_materiallist.size();
-    for (std::size_t i={};i<count;i++)
-    {
-        auto material = m_materiallist[i];
-
-        auto shader = material->getShader();
-
-        auto shadername = AssetsManager::GetShaderName(shader);
-
-        auto shaderparams = GetShaderParamsFromName(shadername);
-        switch (id)
-        {       
-            case DYNAMIC_MESH:
-                shaderparams.flags = ShaderOptimize_dynamic;
-                break;
-            case DYNAMIC_INSTANCED_MESH:
-                shaderparams.flags = ShaderOptimize_dynamic | ShaderOptimize_instanced;
-                break;
-            default:
-                break;
-        }
-
-        shadername = GetShaderParamsName(shaderparams);
-
-        shader = AssetsManager::FindShader(shadername);
-        if (shader == nullptr)
-            AssetsManager::LoadShader(shaderparams, &GpuMesh::set, gpuMesh, i);
-        else
-            gpuMesh->set(i, shader);
-    }
-}
-
-void BatchingDynamic::buildDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh)
-{
-    auto vertices = mesh.getVertices();
-
-    meshInfo.vertexArray = new grr::gVertexArray();
-    meshInfo.vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
-
-    meshInfo.count = vertices.size();
-
-    meshInfo.vertexArray->bind();
-
-    grr::gVertexArray::Bind(meshInfo.vbo);
-    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex3D), BufferUsage::STATIC);
-    grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex3D), vertices.data());
-
-    grr::gVertexArray::SetAttrib(0, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
-    grr::gVertexArray::SetAttrib(1, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
-    grr::gVertexArray::SetAttrib(2, 2,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
-}
-
-void BatchingDynamic::buildInstancedDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh)
-{
-    auto vertices = mesh.getVertices();
-
-    meshInfo.vertexArray = new grr::gVertexArray();
-    meshInfo.vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
-    meshInfo.pbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
-
-    meshInfo.count = vertices.size();
-
-    meshInfo.vertexArray->bind();
-
-    grr::gVertexArray::Bind(meshInfo.vbo);
-    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex3D), BufferUsage::STATIC);
-    grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex3D), vertices.data());
-
-    grr::gVertexArray::SetAttrib(0, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
-    grr::gVertexArray::SetAttrib(1, 3,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
-    grr::gVertexArray::SetAttrib(2, 2,  sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
-
-    grr::gVertexArray::Bind(meshInfo.pbo);
-    for (int j=0;j<4;j++)
-    {
-        grr::gVertexArray::SetAttrib(6 + j, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(j * sizeof(Vector4)));
-        grr::gVertexArray::SetAttribDivisor(6 + j, 1);
-    }
-}
 
 // public
 Batching::Batching(std::vector<Mesh> *meshlist) : m_count(0), m_meshlist(meshlist)
@@ -297,45 +41,30 @@ void Batching::insert(Transform *transform, const std::vector<Material *> &mater
     for (auto &material : materiallist)
         key += AssetsManager::GetRefMaterialToName(material);
     /*
-    if (m_count > 0)
+    if (isstatic)
+    {
+        auto it = m_batchingstaticmap.find(key);
+        if (it == m_batchingstaticmap.end())
+        {
+            m_batchingstaticmap.emplace(key, std::make_unique<BatchingStatic>(materiallist, m_meshlist));
+
+            m_batchingstaticlist.push_back(m_batchingstaticmap[key].get());
+        }
+                
+        m_batchingstaticmap[key]->insert(transform);
+    } else
     {
         */
-        // instanced
-        // if (isstatic)
-        // {
-            // ignore
-        // } else
+        auto it = m_batchingdynamicmap.find(key);
+        if (it == m_batchingdynamicmap.end())
         {
-            // if (isanimated)
-                // std::cout << "Insert in (instanced, dynamic, animated)" << std::endl;
-            // else
-            {
-                auto it = m_batchingdynamicmap.find(key);
-                if (it == m_batchingdynamicmap.end())
-                {
-                    m_batchingdynamicmap.emplace(key, std::make_unique<BatchingDynamic>(materiallist, m_meshlist));
+            m_batchingdynamicmap.emplace(key, std::make_unique<BatchingDynamic>(materiallist, m_meshlist));
 
-                    m_batchingdynamiclist.push_back(m_batchingdynamicmap[key].get());
-                }
+            m_batchingdynamiclist.push_back(m_batchingdynamicmap[key].get());
+        }
                 
-                m_batchingdynamicmap[key]->insert(transform);
-            }
-        }
-    /*} else
-    {
-        // firts draw
-        if (isstatic)
-        {
-            // ignore
-        } else
-        {
-            if (isanimated)
-                std::cout << "Emplace fistr draw(dynamic, animated)" << std::endl;
-            else
-                batchdynamic.insert(transform, material);
-        }
-    }
-    */
+        m_batchingdynamicmap[key]->insert(transform);
+    // }
 
     m_count++;
 }
@@ -344,11 +73,17 @@ void Batching::erase(Transform *transform)
 {
     for (auto &batching : m_batchingdynamiclist)
         batching->erase(transform);
+
+    for (auto &batching : m_batchingstaticlist)
+        batching->erase(transform);
 }
 
 void Batching::render()
 {
     for (auto &batching : m_batchingdynamiclist)
+        batching->render();
+
+    for (auto &batching : m_batchingstaticlist)
         batching->render();
 }
 

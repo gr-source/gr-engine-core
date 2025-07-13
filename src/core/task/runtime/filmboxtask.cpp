@@ -1,5 +1,6 @@
 #include "gr-base/core/task/runtime/filmboxtask.hpp"
 
+#include "gr-base/core/filmbox/fbxMaterial.hpp"
 #include "gr-base/core/filmbox/filmbox.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
@@ -195,11 +196,6 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
     shaderParams.flags = ShaderOptimize_dynamic;
     shaderParams.type = ShaderType::SHADER3D;
 
-    if (!m_bones.empty())
-    {
-        shaderParams.flags |= ShaderOptimize_animated;
-    }
-
     auto name = GetShaderParamsName(shaderParams);
 
     auto shader = AssetsManager::FindShader(name);
@@ -215,24 +211,15 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
 
     for (auto &fbxMaterial : materialList)
     {
+        auto texturepath = fbxMaterial.getTextures();
+
         auto material = renderer->createMaterial(fbxMaterial.getName(), shader);
         material->setValue("albedo", fbxMaterial.getColor());
         material->setValue("metallic", fbxMaterial.metallic);
         material->setValue("roughness", fbxMaterial.roughness);
         material->setValue("ambientocclusion", fbxMaterial.ao);
 
-        // material->setValue("");
-        
-        for (auto &&[type, path] : fbxMaterial.getTextures())
-        {
-            switch (type) {
-            case TextureType_Albedo:
-                AssetsManager::LoadTexture(path, &Material::setTexture, material, 0);
-                break;
-            default:
-                break;
-            }
-        }
+        AssetsManager::LoadTexture(texturepath[TextureType_Albedo], &Material::setTexture, material, 0);
     }
 }
 

@@ -32,6 +32,14 @@ public:
 
     void setShader(grr::gShader *shader);
 
+    void set_scaling(const Vector2 &value);
+
+    Vector2 &get_scalling();
+
+    void set_offset(const Vector2 &value);
+
+    Vector2 &get_offset();
+
     void serialize(Stream *stream) const;
 
     void deserialize(Stream *stream);
@@ -50,16 +58,13 @@ public:
 private:
     std::unordered_map<std::string, std::tuple<void *, std::size_t>> m_field_data;
 
-
     std::vector<std::tuple<void *, int>> m_field_list;
 
-    /*
-    std::vector<std::tuple<int, const void *>> m_uniformList;
-    
-    std::unordered_map<std::string, void *> m_uniformMap;
-    */
-    
     std::array<grr::gTexture *, 10> m_textures;
+
+    Vector2 m_scalling;
+
+    Vector2 m_offset;
 
     grr::gShader *m_shader;
 

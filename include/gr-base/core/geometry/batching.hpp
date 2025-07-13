@@ -2,85 +2,8 @@
 
 #include "gr-base/core/geometry/mesh.hpp"
 
-#include "gr-base/core/geometry/default.hpp"
-
-#include "gr-base/script/default.hpp"
-
-#include <gr-render/gCommon.h>
-
-struct MeshInfo
-{
-    grr::gVertexArray *vertexArray;
-
-    grm::u32 vbo, pbo;
-
-    grm::u32 abo;
-
-    grm::u32 count;
-
-    void push(const Matrix4x4 *data, const std::size_t &size);
-
-    void draw(const std::size_t &instances);
-};
-
-struct GpuMesh
-{
-    std::vector<MeshInfo> meshinfolist;
-
-    std::vector<grr::gShader *> shaderlist;
-
-    void resize(const std::size_t &size);
-
-    MeshInfo &get(const std::size_t &id);
-
-    grr::gShader *getshader(const std::size_t &id)
-    {
-        return shaderlist[id];
-    }
-
-    void set(int id, grr::gShader *shader)
-    {
-        shaderlist[id] = shader;
-    }
-
-    void push(const Matrix4x4 *data, const std::size_t &size);
-
-    void draw(int id, const std::size_t &instances = 0);
-};
-
-#define DYNAMIC_MESH 0
-#define DYNAMIC_INSTANCED_MESH 1
-
-class BatchingDynamic
-{
-public:
-    BatchingDynamic(const std::vector<Material *> &materiallist, std::vector<Mesh> *meshlist);
-
-    void insert(Transform *transform);
-
-    void erase(Transform *transform);
-
-    void render();
-
-private:
-    std::vector<Material *> m_materiallist;
-
-    std::vector<Mesh> *m_meshlist;
-
-    std::vector<Transform *> m_instances;
-
-    std::unique_ptr<GpuMesh> m_gpuMesh[2];
-
-    void build(GpuMesh *gpuMesh, std::vector<Mesh> *meshlist, int id);
-
-    void buildDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh);
-
-    void buildDynamicSkinnedMesh();
-
-    void buildInstancedDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh);
-
-    void buildInstancedDynamicSkinnedMesh();
-};
+#include "gr-base/core/geometry/batchingdynamic.hpp"
+#include "gr-base/core/geometry/batchingstatic.hpp"
 
 class Batching
 {
@@ -97,7 +20,11 @@ public:
 private:
     std::unordered_map<std::string, std::unique_ptr<BatchingDynamic>> m_batchingdynamicmap;
 
+    std::unordered_map<std::string, std::unique_ptr<BatchingStatic>> m_batchingstaticmap;
+
     std::vector<BatchingDynamic *> m_batchingdynamiclist;
+
+    std::vector<BatchingStatic *> m_batchingstaticlist;
 
     std::vector<Mesh> *m_meshlist;
 

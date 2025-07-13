@@ -8,9 +8,9 @@
 
 #include <gr-render/gShader.h>
 
-Material::Material(grr::gShader *shader) : m_shader(shader)
+Material::Material(grr::gShader *shader) : m_shader(shader), m_scalling{1.0f, 1.0f}, m_offset{0.0f, 0.0f}
 {
-    m_textures.fill(nullptr);
+        m_textures.fill(nullptr);
 }
 
 Material::~Material()
@@ -49,28 +49,26 @@ grr::gShader *Material::getShader() const
 void Material::setShader(grr::gShader *shader)
 {
     m_shader = shader;
-    /*
+}
 
-    std::vector<std::tuple<std::string, std::unique_ptr<uint8_t>>> temp;
+void Material::set_scaling(const Vector2 &value)
+{
+    m_scalling = value;
+}
 
-    for (auto &&[name, ptr] : m_uniformMap)
-    {
-        temp.emplace_back(name, std::unique_ptr<uint8_t>((uint8_t *)ptr));
-    }
+Vector2 &Material::get_scalling()
+{
+    return m_scalling;
+}
 
-    m_uniformMap.clear();
-    m_uniformList.clear();
+void Material::set_offset(const Vector2 &value)
+{
+    m_offset = value;
+}
 
-    for (auto &&[name, data] : temp)
-    {
-        if (internal_set_value(name.c_str(), 0, data.get()) != nullptr)
-        {
-            continue;
-        }
-
-        Console::LogError("[ Material ] Fail to set value: %s", name.c_str());
-    }
-    */
+Vector2 &Material::get_offset()
+{
+    return m_offset;
 }
 
 void Material::serialize(Stream *stream) const
@@ -101,11 +99,8 @@ void Material::serialize(Stream *stream) const
     std::vector<std::tuple<grr::gTexture *, int>> textures;
     for (std::size_t i={};i<m_textures.size();i++)
     {
-        if (m_textures[i] == nullptr)
-        {
-            continue;
-        }
-        textures.emplace_back(m_textures[i], i);
+        if (m_textures[i] != nullptr)
+            textures.emplace_back(m_textures[i], i);
     }
 
     auto tCount = textures.size();
@@ -114,16 +109,19 @@ void Material::serialize(Stream *stream) const
         return;
     }
 
-    for (auto &&[texture, id] : textures) {
+    for (auto &&[texture, id] : textures)
+    {
         if (!stream->write(reinterpret_cast<const char *>(&id), sizeof(int)))
         {
             return;
         }
 
         std::string path;
-        try {
+        try
+        {
             path = AssetsManager::GetRefTextureName(texture);
-        } catch (const std::exception &e) {
+        } catch (const std::exception &e)
+        {
             Console::LogError("[ Material ] %s", e.what());
         }
         
@@ -174,6 +172,12 @@ void Material::serialize(Stream *stream) const
             return;
         }
     }
+
+    if (!stream->write(m_scalling))
+        return;
+
+    if (!stream->write(m_offset))
+        return;
 }
 
 void Material::deserialize(Stream *stream)
@@ -263,6 +267,12 @@ void Material::deserialize(Stream *stream)
 
         internal_set_value(name.c_str(), 1, data);
     }
+
+    if (!stream->read(m_scalling))
+        return;
+
+    if (!stream->read(m_offset))
+        return;
 }
 
 void Material::flush() const
@@ -271,6 +281,10 @@ void Material::flush() const
     {
         m_shader->setUniform(id, data);
     }
+
+    auto u_transform = m_scalling + m_offset;
+
+    m_shader->setUniform("u_transform", &u_transform);
 }
 
 bool Material::setupTexture(int id, grr::gTexture *texture)

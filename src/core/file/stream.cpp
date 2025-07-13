@@ -1,5 +1,8 @@
 #include "gr-base/core/file/stream.hpp"
+
 #include <fstream>
+
+#include <gr-math/gmath.hpp>
 
 Stream::Stream(const std::string &path, std::ios_base::openmode mode) : m_path(path), std::fstream(path, mode) {}
 
@@ -53,6 +56,30 @@ bool Stream::write(const std::size_t &value)
     return write(&value, sizeof(std::size_t));
 }
 
+template <>
+bool Stream::write(const Vector2 &value)
+{
+    return write(&value, sizeof(Vector2));
+}
+
+template <>
+bool Stream::write(const Vector3 &value)
+{
+    return write(&value, sizeof(Vector3));
+}
+
+template <>
+bool Stream::write(const Vector4 &value)
+{
+    return write(&value, sizeof(Vector4));
+}
+
+template <>
+bool Stream::write(const Quaternion &value)
+{
+    return write(&value, sizeof(Quaternion));
+}
+
 bool Stream::write(const void *data, std::size_t size)
 {
     if (!data || size <= 0) {
@@ -93,6 +120,30 @@ template <>
 bool Stream::read(std::size_t &value)
 {
     return read(reinterpret_cast<char *>(&value), sizeof(std::size_t));
+}
+
+template <>
+bool Stream::read(Vector2 &value)
+{
+    return read(reinterpret_cast<char *>(&value), sizeof(Vector2));
+}
+
+template <>
+bool Stream::read(Vector3 &value)
+{
+    return read(reinterpret_cast<char *>(&value), sizeof(Vector3));
+}
+
+template <>
+bool Stream::read(Vector4 &value)
+{
+    return read(reinterpret_cast<char *>(&value), sizeof(Vector4));
+}
+
+template <>
+bool Stream::read(Quaternion &value)
+{
+    return read(reinterpret_cast<char *>(&value), sizeof(Quaternion));
 }
 
 bool Stream::read(char *data, std::streamsize size)
