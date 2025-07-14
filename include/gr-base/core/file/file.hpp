@@ -73,9 +73,11 @@ public:
 
     static std::string get_config_directory(const std::string &path = "");
 
-    static std::string get_cache_directory(const std::string &path = "");
+    static std::string get_cache_directory();
 
     static bool exists(const std::string &path);
+
+    static bool is_directory(const std::string &path);
 
     static bool create_directories(const std::string &path);
 

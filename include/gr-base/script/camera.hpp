@@ -10,7 +10,7 @@
 
 class Camera : public Component {
 public:
-    static std::vector<Camera *> GetCameras();
+    static std::vector<Camera *> &GetCameras();
 
     static Camera *Main();
 

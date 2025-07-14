@@ -45,11 +45,9 @@ Quaternion Transform::getLocalRotation() const {
     return m_rotation;
 }
 
-Quaternion Transform::getRotation() const {
-    if (m_parent) {
-        return m_parent->m_rotation * m_rotation;
-    }
-    return m_rotation;
+Quaternion Transform::getRotation() const
+{
+    return m_parent != nullptr ? m_parent->getRotation() * m_rotation : m_rotation;
 }
 
 void Transform::setLocalPosition(const Vector3 &value) {

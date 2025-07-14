@@ -73,13 +73,15 @@ Scene::Scene() : m_enable(true), m_goCamera(nullptr), m_camera(nullptr), m_isrun
 
 Scene::~Scene()
 {
-    /*
-    auto temp = m_objects;
-    for (auto gameObject : temp)
+    for (auto gameObject : getObjectList())
     {
         GameObject::Destroy(gameObject);
     }
-    */
+
+    if (m_goCamera != nullptr)
+    {
+        GameObject::Destroy(m_goCamera);
+    }
 }
 
 void Scene::init()

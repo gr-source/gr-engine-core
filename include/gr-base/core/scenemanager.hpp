@@ -20,7 +20,7 @@ public:
 
     static void Remove(Scene *scene);
 
-    static void SetcActive(Scene *scene);
+    static void SetActive(Scene *scene);
 
     static Scene *GetCurrent();
 

@@ -1,6 +1,7 @@
 #include "gr-base/ecs/gameObject.hpp"
+
 #include "gr-base/ecs/gameobjectmanager.hpp"
-#include "gr-base/ecs/manager.hpp"
+#include "gr-base/ecs/entitymanager.hpp"
 
 #include "gr-base/core/scenemanager.hpp"
 #include "gr-base/core/scene.hpp"
@@ -47,7 +48,6 @@ GameObject *GameObject::Find(const std::string &name)
     return GameObjectManager::Find(name);
 }
 
-#include "gr-base/core/scene.hpp"
 void GameObject::Destroy(GameObject *go)
 {
     return GameObjectManager::Destroy(go);
@@ -55,7 +55,7 @@ void GameObject::Destroy(GameObject *go)
 
 GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(nullptr), m_active(true), m_static(false), m_transform(nullptr), m_scene(nullptr)
 {
-    m_entity = Manager::CreateEntity(this);
+    m_entity = EntityManager::Create(this);
 
     m_transform = addComponent<Transform>();
 }
@@ -63,7 +63,7 @@ GameObject::GameObject(const std::string &name, const std::string &tag) : m_name
 GameObject::~GameObject()
 {
     if (m_entity != nullptr)
-        Manager::DestroyEntity(m_entity);
+        EntityManager::Destroy(m_entity);
 }
 
 void GameObject::setName(const std::string &name)

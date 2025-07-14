@@ -11,6 +11,8 @@
 
 #include "gr-base/ecs/gameObject.hpp"
 
+#include "gr-base/core/file/file.hpp"
+
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
@@ -21,7 +23,7 @@ GameObjectSaveTask::GameObjectSaveTask(const std::string &path, GameObject *game
 // private
 int GameObjectSaveTask::doInBackground()
 {
-    auto stream = std::make_unique<Stream>(m_path + "/" + m_gameObject->getName() + ".gmdx", std::ios_base::out | std::ios_base::binary);
+    auto stream = std::make_unique<Stream>(gfile::get_cache_directory() + "/" + (m_gameObject->getName() + ".gmdx"), std::ios_base::out | std::ios_base::binary);
 
     // Header file
     {
@@ -53,8 +55,22 @@ void GameObjectSaveTask::onPostExecute(int result)
     {
         return Console::LogError("[ GameObjectSaveTask ] Fail to save gameObject");
     }
+    auto filename = m_gameObject->getName() + ".gmdx";
 
-    Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", m_path.c_str());
+    auto file = gfile::get_cache_directory() + "/" + filename;
+
+    if (!gfile::exists(file) || !gfile::exists(m_path))
+        return;
+
+    try
+    {
+        File::Move(file, m_path);
+    } catch (const std::exception &e)
+    {
+        return Console::LogError("[ GameObjectSaveTask ] %s", e.what());
+    }
+
+    Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", filename.c_str());
 
     if (m_func != nullptr)
     {

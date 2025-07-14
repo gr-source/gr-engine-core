@@ -30,7 +30,7 @@ void SceneManager::Remove(Scene *scene)
     return GetInstance().remove(scene);
 }
 
-void SceneManager::SetcActive(Scene *scene)
+void SceneManager::SetActive(Scene *scene)
 {
     return GetInstance().set_active(scene);
 }

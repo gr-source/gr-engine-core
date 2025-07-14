@@ -20,11 +20,7 @@ public:
 private:
     std::unordered_map<std::string, std::unique_ptr<BatchingDynamic>> m_batchingdynamicmap;
 
-    std::unordered_map<std::string, std::unique_ptr<BatchingStatic>> m_batchingstaticmap;
-
     std::vector<BatchingDynamic *> m_batchingdynamiclist;
-
-    std::vector<BatchingStatic *> m_batchingstaticlist;
 
     std::vector<Mesh> *m_meshlist;
 

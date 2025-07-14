@@ -5,38 +5,50 @@
 
 #include "gr-base/script/transform.hpp"
 
+GameObjectManager *GameObjectManager::m_instance = nullptr;
+
 // public
 GameObject *GameObjectManager::Create(const std::string &name, const std::string &tag)
 {
-    return GetInstance().create(name, tag);
+    return m_instance->create(name, tag);
 }
 
 GameObject *GameObjectManager::Find(const std::string &name)
 {
-    return GetInstance().find(name);
+    return m_instance->find(name);
 }
 
 void GameObjectManager::Destroy(GameObject *gameObject)
 {
-    return GetInstance().mark(gameObject);
+    return m_instance->mark(gameObject);
 }
 
 std::string GameObjectManager::Rename(GameObject * gameObject, const std::string &name)
 {
-    return GetInstance().rename(gameObject, name);
+    return m_instance->rename(gameObject, name);
 }
 
 std::size_t GameObjectManager::GetCount()
 {
-    return GetInstance().get_count();
+    return m_instance->get_count();
 }
 
-// private
-GameObjectManager &GameObjectManager::GetInstance()
+void GameObjectManager::Initialize()
 {
-    static GameObjectManager instance;
-    return instance;
+    if (m_instance == nullptr)
+        m_instance = new GameObjectManager();
 }
+
+void GameObjectManager::Shutdown()
+{
+    if (m_instance != nullptr)
+        delete m_instance;
+
+    m_instance = nullptr;
+}
+
+
+// private
 
 GameObjectManager::GameObjectManager()
 {}

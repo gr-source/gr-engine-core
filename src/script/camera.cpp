@@ -18,12 +18,15 @@ std::vector<Camera *> Camera::m_cameraList;
 
 Camera *Camera::s_current = nullptr;
 
-std::vector<Camera *> Camera::GetCameras() {
+std::vector<Camera *> &Camera::GetCameras()
+{
     return m_cameraList;
 }
 
-Camera *Camera::Main() {
-    if (m_cameraList.empty()) {
+Camera *Camera::Main()
+{
+    if (m_cameraList.empty())
+    {
         return s_current;
     }
     return m_cameraList[0];

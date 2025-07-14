@@ -219,7 +219,8 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
         material->setValue("roughness", fbxMaterial.roughness);
         material->setValue("ambientocclusion", fbxMaterial.ao);
 
-        AssetsManager::LoadTexture(texturepath[TextureType_Albedo], &Material::setTexture, material, 0);
+        if (!texturepath[TextureType_Albedo].empty())
+            AssetsManager::LoadTexture(texturepath[TextureType_Albedo], &Material::setTexture, material, 0);
     }
 }
 

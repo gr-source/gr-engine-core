@@ -64,29 +64,11 @@ void MeshRender::build()
 
     auto meshListName = AssetsManager::GetMeshListRefToName(meshList);
 
-    auto batching = BatchingManager::Find(meshListName);
-    if (batching == nullptr)
-        batching = BatchingManager::Create(meshListName, meshList);
+    m_batching = BatchingManager::Find(meshListName);
+    if (m_batching == nullptr)
+        m_batching = BatchingManager::Create(meshListName, meshList);
 
-    /*
-    for (auto &material : m_material)
-    {
-        auto shader = material->getShader();
-        if (shader == nullptr)
-        {
-            continue;
-        }
-
-        auto name = AssetsManager::GetShaderName(shader);
-
-        ShaderParams shaderParams = GetShaderParamsFromName(name);
-        shaderParams.flags = ShaderOptimize_dynamic;
-
-        AssetsManager::LoadShader(shaderParams, &Material::setShader, material);
-    }
-    */
-
-    batching->insert(GetGameObject()->getTransform(), m_material);
+    m_batching->insert(GetGameObject()->getTransform(), m_material);
 }
 
 

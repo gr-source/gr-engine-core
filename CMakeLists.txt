@@ -8,10 +8,10 @@ set(ecs
     src/ecs/gameobjectmanager.cpp
     src/ecs/componentRegistry.cpp
     src/ecs/scriptpriority.cpp
+    src/ecs/entitymanager.cpp
     src/ecs/chunkManager.cpp
     src/ecs/gameObject.cpp
     src/ecs/component.cpp
-    src/ecs/manager.cpp
     src/ecs/entity.cpp
     src/ecs/field.cpp
     src/ecs/pool.cpp

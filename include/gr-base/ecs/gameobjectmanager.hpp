@@ -19,8 +19,12 @@ public:
 
     static std::size_t GetCount();
 
+    static void Initialize();
+
+    static void Shutdown();
+
 private:
-    static GameObjectManager& GetInstance();
+    static GameObjectManager *m_instance;
 
     std::unordered_map<std::string, std::unique_ptr<GameObject>> m_gameobjectmap;
 

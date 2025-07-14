@@ -88,9 +88,11 @@ bool File::Delete(const std::string &path) {
 }
 
 bool File::Move(const std::string &from, const std::string &to) {
-    if (!std::filesystem::is_directory(to)) {
+    if (!std::filesystem::is_directory(to))
+    {
         return false;
     }
+
     if (!Copy(from, to)) {
         return false;
     }
@@ -184,14 +186,19 @@ std::string gfile::get_config_directory(const std::string &path)
     return get_home_directory() + "/.config/gr-engine" + path;
 }
 
-std::string gfile::get_cache_directory(const std::string &path)
+std::string gfile::get_cache_directory()
 {
-    return get_home_directory() + "/.cache/gr-engine" + path;
+    return get_home_directory() + "/.cache/gr-engine";
 }
 
 bool gfile::exists(const std::string &path)
 {
     return std::filesystem::exists(path);
+}
+
+bool gfile::is_directory(const std::string &path)
+{
+    return std::filesystem::is_directory(path);
 }
 
 bool gfile::create_directories(const std::string &path)

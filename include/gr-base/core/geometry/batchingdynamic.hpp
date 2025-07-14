@@ -15,6 +15,8 @@ public:
 
     void erase(Transform *transform);
 
+    bool is_empty() const;
+
     void render();
 
 private:
