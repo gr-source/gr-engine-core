@@ -54,7 +54,7 @@ void FilmboxManager::render()
             if (ImGui::CollapsingHeader(name.c_str()))
             {
                 for (auto &go : root)
-                render_tree_node(go);
+                    render_tree_node(go);
             }
         }
 
@@ -123,7 +123,6 @@ void FilmboxManager::GameObjectSave(GameObject *go)
 
                     return rootList.empty();
                 }), resultTask.end());
-
 
     GameObject::Destroy(go);
 }

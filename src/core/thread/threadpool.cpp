@@ -80,9 +80,7 @@ void Threadpool::update()
         m_cv.wait(lock, std::bind(&Threadpool::wait_for, this));
 
         if (m_bStop)
-        {
             break;
-        }
 
 
         if (m_available >= 3)

@@ -79,6 +79,7 @@ inline void Threadpool::add(TaskPriority priority, Args &&...args)
         std::lock_guard<std::mutex> lock(m_mutex);
         m_task.emplace_back(priority, std::bind(std::forward<Args>(args)...));
     }
+
     m_cv.notify_all();
 }
 
