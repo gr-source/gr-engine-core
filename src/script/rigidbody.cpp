@@ -22,12 +22,7 @@
 Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f)
 {}
 
-void Rigidbody::Init()
-{
-    bCanUseUpdate = true;
-}
-
-void Rigidbody::Start()
+void Rigidbody::onStart()
 {
     m_transform = GetComponent<Transform>();
 
@@ -72,9 +67,12 @@ void Rigidbody::Start()
         m_body->setCcdSweptSphereRadius(fSweptSphereRadius);
 
     PhysicsScene::AddRigidbody(&(*m_body));
+
+    bCanUseUpdate = true;
 }
 
-void Rigidbody::Destroy() {
+void Rigidbody::onDestroy()
+{
     if (!m_body) {
         return;
     }
@@ -84,7 +82,8 @@ void Rigidbody::Destroy() {
     m_body = nullptr;
 }
 
-void Rigidbody::Update() {
+void Rigidbody::onUpdate()
+{
     if (!getGameObject()->getStatic())
     {
         if (m_body->getLinearVelocity().length() < 0.01 && m_body->getAngularVelocity().length() < 0.01) {
@@ -105,7 +104,7 @@ void Rigidbody::Update() {
 	}
 }
 
-bool Rigidbody::Serialize(Stream *stream) {
+bool Rigidbody::onSerialize(Stream *stream) {
     stream->write(&m_mass, sizeof(float));
     stream->write(&m_lookRotation, sizeof(Vector3));
     stream->write(&fMotionThreshold, sizeof(float));
@@ -113,7 +112,7 @@ bool Rigidbody::Serialize(Stream *stream) {
     return true;
 }
 
-bool Rigidbody::Deserialize(Stream *stream) {
+bool Rigidbody::onDeserialize(Stream *stream) {
     stream->read(reinterpret_cast<char *>(&m_mass), sizeof(float));
     stream->read(reinterpret_cast<char *>(&m_lookRotation), sizeof(Vector3));
     stream->read(reinterpret_cast<char *>(&fMotionThreshold), sizeof(float));

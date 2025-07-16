@@ -33,9 +33,10 @@ public:
 
     bool hasComponent(const std::string &name) const;
 
-    void destroy(const std::string &name);
+    Component *getComponentInChildren(const std::string &name) const;
 
-    void free(const std::string &name);
+    template <typename T>
+    T *getComponentInChildren() const;
 
     std::unordered_map<std::string, Component *> getComponentMap() const;
 
@@ -45,15 +46,19 @@ public:
 
     void setEnable(bool value);
 
-    void start();
+    void play();
 
-    void destroy();
+    void stop();
 
     void copy(const Entity *entity);
 
     void serialize(Stream *stream) const;
 
     void deserialize(Stream *stream);
+
+    void destroy(const std::string &name);
+
+    void free(const std::string &name);
     
 private:
     std::unordered_map<std::string, Component *> m_componentPtr;
@@ -86,6 +91,14 @@ inline bool Entity::hasComponent() const {
     static_assert(sizeof(T) != 0, "Component don't defined.");
 
     return hasComponent(String::RemoveNumber(typeid(T).name()));
+}
+
+template <typename T>
+inline T *Entity::getComponentInChildren() const
+{
+    static_assert(sizeof(T) != 0, "Component don't defined.");
+
+    return static_cast<T *>(getComponentInChildren(String::RemoveNumber(typeid(T).name())));
 }
 
 template <typename T>

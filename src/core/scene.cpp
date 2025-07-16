@@ -1,27 +1,14 @@
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/core/console.hpp"
-
 #include "gr-base/core/scenemanager.hpp"
-#include "gr-base/script/baserender.hpp"
-#include "gr-base/script/meshRender.hpp"
-#include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
 #include "gr-base/ecs/gameObject.hpp"
 
+#include <algorithm>
+
 std::hash<std::string> Scene::hash;
-
-void DestroyComponnet(Transform *transform)
-{
-    transform->entity->destroy();
-
-    for (auto child : transform->getChildren())
-    {
-        DestroyComponnet(child);
-    }
-}
 
 void Scene::CheckRequestReinstanceScript()
 {
@@ -40,17 +27,17 @@ void Scene::CheckRequestReinstanceScript()
     }
 }
 
-void Scene::Start(GameObject *gameObject)
+void Scene::Play(GameObject *gameObject)
 {
     auto entity = gameObject->getEntity();
 
-    entity->start();
+    entity->play();
 
     auto transform = entity->getComponent<Transform>();
 
     for (auto child : transform->getChildren())
     {
-        Scene::Start(child->getGameObject());
+        Scene::Play(child->getGameObject());
     }
 }
 
@@ -58,7 +45,7 @@ void Scene::Stop(GameObject *gameObject)
 {
     auto entity = gameObject->getEntity();
 
-    entity->destroy();
+    entity->stop();
 
     auto transform = entity->getComponent<Transform>();
 
@@ -93,22 +80,22 @@ void Scene::init()
 
 void Scene::play()
 {
+    m_isrunning = true;
+
     for (auto &go : getObjectList())
     {
-        Scene::Start(go);
+        Scene::Play(go);
     }
-
-    m_isrunning = true;
 }
 
 void Scene::stop()
 {
+    m_isrunning = false;
+
     for (auto &go : getObjectList())
     {
         Scene::Stop(go);
     }
-
-    m_isrunning = false;
 }
 
 void Scene::create_main_camra()

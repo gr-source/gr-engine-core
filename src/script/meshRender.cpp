@@ -14,33 +14,34 @@
 #include "gr-base/script/meshFilter.hpp"
 
 MeshRender::MeshRender()
-{}
-
-void MeshRender::Init()
 {
-    BaseRender::Init();
+}
+
+void MeshRender::onInit()
+{
+    BaseRender::onInit();
 
     if (Threadpool::IsMainThread())
         build();
 }
 
-void MeshRender::Destroy()
+void MeshRender::onRelease()
 {
-    return BaseRender::Destroy();
+    return BaseRender::onRelease();
 }
 
-bool MeshRender::Serialize(Stream *stream)
+bool MeshRender::onSerialize(Stream *stream)
 {
-    if (!BaseRender::Serialize(stream))
+    if (!BaseRender::onSerialize(stream))
     {
         return false;
     }
     return true;
 }
 
-bool MeshRender::Deserialize(Stream *stream)
+bool MeshRender::onDeserialize(Stream *stream)
 {
-    if (!BaseRender::Deserialize(stream))
+    if (!BaseRender::onDeserialize(stream))
     {
         return false;
     }

@@ -1,9 +1,5 @@
 #include "gr-base/ecs/entity.hpp"
 
-#include "gr-base/core/mainthreaddispatcher.hpp"
-#include "gr-base/core/thread/threadpool.hpp"
-#include "gr-base/script/meshRender.hpp"
-
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/scene.hpp"
 
@@ -13,6 +9,7 @@
 #include "gr-base/script/transform.hpp"
 
 #include <algorithm>
+#include <functional>
 #include <string>
 #include <map>
 
@@ -84,37 +81,49 @@ bool Entity::hasComponent(const std::string &name) const {
     return m_componentPtr.find(name) != m_componentPtr.end();
 }
 
-void Entity::destroy(const std::string &name) {
-    auto it = m_componentPtr.find(name);
-    if (it == m_componentPtr.end()) {
-        return;
+template <typename T>
+static T _for_each(Transform *transform, std::function<T (Transform *)> func)
+{
+    for (auto &child : transform->getChildren())
+    {
+        auto ret = func(child);
+        if (ret != nullptr)
+        {
+            return ret;
+        }
+
+        ret = _for_each(child, func);
+        if (ret != nullptr)
+            return ret;
     }
 
-    auto pool = ComponentRegistry::Find(name);
-    if (pool != nullptr) {
-        pool->destroy(it->second);
-
-        it->second->bCanUseUpdate = false;
-        it->second->entity = nullptr;
-
-        pool->deallocatein(pool, it->second);
-    }
-
-    m_components.erase(std::remove(m_components.begin(), m_components.end(), it->second), m_components.end());
-
-    m_componentPtr.erase(it);
+    return nullptr;
 }
 
-void Entity::free(const std::string &name)
+template <typename T, typename ...Args>
+static T for_each(Transform *transform, Args &&...args)
 {
-    auto it = m_componentPtr.find(name);
-    if (it == m_componentPtr.end()) {
-        return;
+    std::function<T (Transform *)> func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+
+    return _for_each(transform, func);
+}
+
+Component *find(const std::string &name, Transform *transform)
+{
+    auto entity = transform->entity;
+    if (entity->hasComponent(name))
+    {
+        return entity->getComponent(name);
     }
+    return nullptr;
+}
 
-    m_components.erase(std::remove(m_components.begin(), m_components.end(), it->second), m_components.end());
+Component *Entity::getComponentInChildren(const std::string &name) const
+{
+    auto gameObject = getGameObject();
 
-    m_componentPtr.erase(it);
+    auto transform = gameObject->getTransform();
+    return for_each<Component *>(transform, &find, name);
 }
 
 std::unordered_map<std::string, Component *> Entity::getComponentMap() const {
@@ -145,7 +154,7 @@ void Entity::setEnable(bool value) {
 }
 
 
-void Entity::start()
+void Entity::play()
 {
     std::vector<std::tuple<std::string, Component *>> temp;
     for (auto &&[name, component] : m_componentPtr)
@@ -177,7 +186,7 @@ void Entity::start()
     }
 }
 
-void Entity::destroy()
+void Entity::stop()
 {
     std::vector<std::tuple<std::string, Component *>> temp;
     for (auto &&[name, component] : m_componentPtr) {
@@ -244,6 +253,46 @@ void Entity::copy(const Entity *entity)
     }
 }
 
+void Entity::destroy(const std::string &name)
+{
+    auto it = m_componentPtr.find(name);
+    if (it == m_componentPtr.end())
+    {
+        return;
+    }
 
+    auto storage = ComponentRegistry::Find(name);
+    if (storage != nullptr)
+    {
+        auto scene = getGameObject()->get_scene();
+        if (scene != nullptr && scene->is_running())
+        {
+            storage->destroy(it->second);
+        }
+
+        storage->release(it->second);
+
+        it->second->bCanUseUpdate = false;
+        it->second->entity = nullptr;
+
+        storage->deallocatein(storage, it->second);
+    }
+
+    m_components.erase(std::remove(m_components.begin(), m_components.end(), it->second), m_components.end());
+
+    m_componentPtr.erase(it);
+}
+
+void Entity::free(const std::string &name)
+{
+    auto it = m_componentPtr.find(name);
+    if (it == m_componentPtr.end()) {
+        return;
+    }
+
+    m_components.erase(std::remove(m_components.begin(), m_components.end(), it->second), m_components.end());
+
+    m_componentPtr.erase(it);
+}
 
 

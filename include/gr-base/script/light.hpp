@@ -17,17 +17,17 @@ public:
 
     Light(std::uint8_t type = eDirection, const Color& color = Color::white, float aConstant = 1.0f, float aLinear = 1.0f, float aQuadract = 1.0f, float inneCone = 1.0f, float outerCone = 1.0f);
     
-    void Init() override;
+    void onInit() override;
 
-    void Destroy() override;
+    void onRelease() override;
 
-    void Enable() override;
+    void onEnable() override;
 
-    void Disable() override;
+    void onDisable() override;
 
-    bool Serialize(Stream *stream) override;
+    bool onSerialize(Stream *stream) override;
 
-    bool Deserialize(Stream *stream) override;
+    bool onDeserialize(Stream *stream) override;
 
     Vector3 getPosition() const;
 

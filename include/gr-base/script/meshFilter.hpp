@@ -17,9 +17,9 @@ public:
 
     Boundbox &getBoundbox();
 
-    bool Serialize(Stream *stream) override;
+    bool onSerialize(Stream *stream) override;
 
-    bool Deserialize(Stream *stream) override;
+    bool onDeserialize(Stream *stream) override;
     
 private:
     std::vector<Mesh> *m_mesh;

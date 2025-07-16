@@ -15,10 +15,10 @@
 BaseRender::BaseRender() : m_batching(nullptr)
 {}
 
-void BaseRender::Init()
+void BaseRender::onInit()
 {}
 
-void BaseRender::Destroy()
+void BaseRender::onRelease()
 {
     if (Threadpool::IsMainThread() && m_batching != nullptr)
         m_batching->erase(GetGameObject()->getTransform());
@@ -26,7 +26,7 @@ void BaseRender::Destroy()
     m_batching = nullptr;
 }
 
-bool BaseRender::Serialize(Stream *stream)
+bool BaseRender::onSerialize(Stream *stream)
 {
     auto mcount = m_material.size();
     if (!stream->write(mcount))
@@ -45,7 +45,7 @@ bool BaseRender::Serialize(Stream *stream)
     return true;
 }
 
-bool BaseRender::Deserialize(Stream *stream)
+bool BaseRender::onDeserialize(Stream *stream)
 {
     std::size_t mcount = {};
     if (!stream->read(mcount))

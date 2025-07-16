@@ -11,17 +11,15 @@ class Rigidbody : public Component {
 public:
     Rigidbody();
 
-    void Init() override;
+    void onStart() override;
 
-    void Start() override;
+    void onDestroy() override;
 
-    void Destroy() override;
+    void onUpdate() override;
 
-    void Update() override;
+    bool onSerialize(Stream *stream) override;
 
-    bool Serialize(Stream *stream) override;
-
-    bool Deserialize(Stream *stream) override;
+    bool onDeserialize(Stream *stream) override;
 
     float getMass() const;
 

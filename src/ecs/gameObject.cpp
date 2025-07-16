@@ -17,8 +17,11 @@ GameObject *GameObject::Create(const std::string &name, const std::string &tag)
 
 GameObject *GameObject::Instantiate(const GameObject *go)
 {
-    auto scene = SceneManager::GetCurrent();
-    if (!scene)
+    auto scene = go->get_scene();
+    if (scene == nullptr)
+        scene = SceneManager::GetCurrent();
+    
+    if (scene == nullptr)
         return nullptr;
 
     auto gameObject = GameObject::Create(go->m_name, go->m_tag);
@@ -37,7 +40,7 @@ GameObject *GameObject::Instantiate(const GameObject *go)
 
     if (scene->is_running())
     {
-        Scene::Start(gameObject);
+        Scene::Play(gameObject);
     }
 
     return gameObject;

@@ -1,6 +1,6 @@
 #include "gr-base/ecs/chunkManager.hpp"
 
-IComponentStorage::IComponentStorage() : bCanEnableUpdate(false), init(nullptr), start(nullptr), update(nullptr), enable(nullptr), disable(nullptr), serialize(nullptr), deserialize(nullptr), destroy(nullptr), initall(nullptr), updateall(nullptr), allocatein(nullptr), deallocatein(nullptr)
+IComponentStorage::IComponentStorage() : bCanEnableUpdate(false), init(nullptr), start(nullptr), update(nullptr), enable(nullptr), disable(nullptr), serialize(nullptr), deserialize(nullptr), destroy(nullptr), initall(nullptr), updateall(nullptr), allocatein(nullptr), deallocatein(nullptr), release(nullptr)
 {
 }
 

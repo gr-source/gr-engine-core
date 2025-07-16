@@ -9,14 +9,14 @@
 Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix)
 {}
 
-void Transform::Start()
+void Transform::onStart()
 {
     m_lastposition = m_position;
     m_lastrotation = m_rotation;
     m_lastscale = m_scale;
 }
 
-void Transform::Destroy()
+void Transform::onDestroy()
 {
     m_position = m_lastposition;
     m_rotation = m_lastrotation;
@@ -35,7 +35,8 @@ Vector3 Transform::getLocalScale() const {
     return m_scale;
 }
 
-void Transform::setLocalRotation(const Quaternion &value) {
+void Transform::setLocalRotation(const Quaternion &value)
+{
     m_rotation = value;
 
     updateLocalMatrix();
@@ -66,18 +67,21 @@ void Transform::addLocalPosition(const Vector3 &value) {
     updateLocalMatrix();
 }
 
-Vector3 Transform::getPosition() const {
+Vector3 Transform::getPosition() const
+{
     if (m_parent) {
         return Vector3(m_parent->getGlobalMatrix() * Vector4({m_position.x, m_position.y, m_position.z, 1.0f}));
     }
     return m_position;
 }
 
-Vector3 Transform::getLocalForward() const {
+Vector3 Transform::getLocalForward() const
+{
     return m_rotation * Vector3::forward;
 }
 
-Vector3 Transform::getForward() const {
+Vector3 Transform::getForward() const
+{
     return getRotation() * Vector3::forward;
 }
 
@@ -150,7 +154,7 @@ void Transform::updateGlobalMatrix()
         m_globalMatrix = m_parent->getGlobalMatrix() * m_globalMatrix;
     }
 
-    for (auto & child : m_children)
+    for (auto &child : m_children)
     {
         child->updateLocalMatrix();
     }
@@ -188,7 +192,7 @@ Transform *Transform::findChildrenComponent(const std::string &name) const {
     return result;
 }
 
-bool Transform::Serialize(Stream *stream) {
+bool Transform::onSerialize(Stream *stream) {
     if (!stream->write(reinterpret_cast<const char *>(&m_scale), sizeof(Vector3)))
     {
         return false;
@@ -206,7 +210,7 @@ bool Transform::Serialize(Stream *stream) {
     return true;
 }
 
-bool Transform::Deserialize(Stream *stream)
+bool Transform::onDeserialize(Stream *stream)
 {
     if (!stream->read(reinterpret_cast<char *>(&m_scale), sizeof(Vector3)))
     {

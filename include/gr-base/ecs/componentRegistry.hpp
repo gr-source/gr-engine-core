@@ -85,8 +85,6 @@ bool ComponentRegistry::Register(const std::string &name, bool is_engine)
     return GetInstance().registry<T>(name, is_engine);
 }
 
-#include "gr-base/core/string.hpp"
-
 // private
 template <typename T>
 inline bool ComponentRegistry::registry(const std::string &name, bool is_engine)
@@ -121,16 +119,17 @@ inline bool ComponentRegistry::registry(const std::string &name, bool is_engine)
 template <typename T>
 inline void ComponentRegistry::SetupMethod(IComponentStorage *storage)
 {
-    storage->bCanEnableUpdate = has_Update_method<T>::value;
+    storage->bCanEnableUpdate = has_onUpdate_method<T>::value;
 
-    storage->init        = reinterpret_cast<void (*) (Component *)>((void *) &T::Init);
-    storage->start       = reinterpret_cast<void (*) (Component *)>((void *) &T::Start);
-    storage->update      = reinterpret_cast<void (*) (Component *)>((void *) &T::Update);
-    storage->enable      = reinterpret_cast<void (*) (Component *)>((void *) &T::Enable);
-    storage->disable     = reinterpret_cast<void (*) (Component *)>((void *) &T::Disable);
-    storage->serialize   = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::Serialize);
-    storage->deserialize = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::Deserialize);
-    storage->destroy     = reinterpret_cast<void (*) (Component *)>((void *) &T::Destroy);
+    storage->init           = reinterpret_cast<void (*) (Component *)>((void *) &T::onInit);
+    storage->start          = reinterpret_cast<void (*) (Component *)>((void *) &T::onStart);
+    storage->update         = reinterpret_cast<void (*) (Component *)>((void *) &T::onUpdate);
+    storage->enable         = reinterpret_cast<void (*) (Component *)>((void *) &T::onEnable);
+    storage->disable        = reinterpret_cast<void (*) (Component *)>((void *) &T::onDisable);
+    storage->serialize      = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::onSerialize);
+    storage->deserialize    = reinterpret_cast<bool (*) (Component *, Stream *)>((void *) &T::onDeserialize);
+    storage->destroy        = reinterpret_cast<void (*) (Component *)>((void *) &T::onDestroy);
+    storage->release        = reinterpret_cast<void (*) (Component *)>((void *) &T::onRelease);
 
     storage->initall = reinterpret_cast<void (*)(IComponentStorage *)>((void *) &ComponentStorage<T>::allinit);
     storage->updateall = reinterpret_cast<void (*)(IComponentStorage *)>((void *) &ComponentStorage<T>::allupdate);
@@ -138,10 +137,6 @@ inline void ComponentRegistry::SetupMethod(IComponentStorage *storage)
     storage->allocatein = reinterpret_cast<Component *(*)(IComponentStorage *, Entity *, const Component *)>((void *) &ComponentStorage<T>::allocateComponent);
     storage->deallocatein = reinterpret_cast<void (*)(IComponentStorage *, Component *)>((void *) &ComponentStorage<T>::deallocate);
 }
-
-
-
-
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

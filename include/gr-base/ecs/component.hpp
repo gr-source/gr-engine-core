@@ -16,22 +16,25 @@ public:
     bool bCanUseUpdate;
 
     Component();
+    virtual ~Component() {}
 
-    virtual void Init() {}
+    virtual void onInit() {}
 
-    virtual void Start() {}
+    virtual void onStart() {}
 
-    virtual void Update() {}
+    virtual void onUpdate() {}
 
-    virtual void Enable() {}
+    virtual void onEnable() {}
 
-    virtual void Disable() {}
+    virtual void onDisable() {}
 
-    virtual bool Serialize(Stream *stream) { return false; }
+    virtual bool onSerialize(Stream *stream) { return false; }
 
-    virtual bool Deserialize(Stream *stream) { return false; }
+    virtual bool onDeserialize(Stream *stream) { return false; }
 
-    virtual void Destroy() {}
+    virtual void onDestroy() {}
+
+    virtual void onRelease() {}
 
     GameObject *getGameObject() const;
 };
@@ -49,6 +52,8 @@ public:
     inline bool HasComponent() const { \
         return entity->hasComponent<T>(); \
     } \
+    template <typename T> \
+    inline T *GetComponentInChildren() { return entity->getComponentInChildren<T>(); } \
     inline GameObject *GetGameObject() { \
         return entity->getGameObject(); \
     } \

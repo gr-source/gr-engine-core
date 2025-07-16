@@ -40,7 +40,7 @@ Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlan
 {
 }
 
-void Camera::Init()
+void Camera::onInit()
 {
     m_transform = entity->getComponent<Transform>();
 
@@ -54,7 +54,7 @@ void Camera::Init()
         rendertarget.init();
 }
 
-void Camera::Start()
+void Camera::onStart()
 {
     if (s_current == nullptr)
         s_current = this;
@@ -71,7 +71,7 @@ void Camera::Start()
         rendertarget.init();
 }
 
-void Camera::Destroy()
+void Camera::onDestroy()
 {
     if (this == s_current)
     {
@@ -84,7 +84,7 @@ void Camera::Destroy()
         rendertarget.shutdown();
 }
 
-void Camera::Enable() {
+void Camera::onEnable() {
     addInGlobalCam();
 
     if (!s_current) {
@@ -98,14 +98,14 @@ void Camera::Enable() {
     updateProjection();
 }
 
-void Camera::Disable() {
+void Camera::onDisable() {
     if (this == s_current) {
         s_current = nullptr;
     }
     m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
 }
 
-bool Camera::Serialize(Stream *stream)
+bool Camera::onSerialize(Stream *stream)
 {
     if (!stream->write(&m_projection, sizeof(Matrix4x4)))
     {
@@ -139,7 +139,7 @@ bool Camera::Serialize(Stream *stream)
     return false;
 }
 
-bool Camera::Deserialize(Stream *stream)
+bool Camera::onDeserialize(Stream *stream)
 {
     if (!stream->read(reinterpret_cast<char *>(&m_projection), sizeof(Matrix4x4)))
     {

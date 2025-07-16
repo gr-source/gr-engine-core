@@ -16,12 +16,7 @@ Animator::Animator() : m_animation(nullptr), m_currentTime(0.0f), m_FinalBoneMat
 {
 }
 
-void Animator::Init()
-{
-    bCanUseUpdate = true;
-}
-
-void Animator::Start()
+void Animator::onStart()
 {
     if (!HasComponent<SkinnedMeshRender>())
     {
@@ -33,7 +28,7 @@ void Animator::Start()
     bCanUseUpdate = true;
 }
 
-void Animator::Update()
+void Animator::onUpdate()
 {
     if (m_animation == nullptr)
     {
@@ -43,7 +38,7 @@ void Animator::Update()
     updateFrame();
 }
 
-bool Animator::Serialize(Stream *stream)
+bool Animator::onSerialize(Stream *stream)
 {
     if (m_animation == nullptr)
     {
@@ -66,7 +61,7 @@ bool Animator::Serialize(Stream *stream)
     return true;
 }
 
-bool Animator::Deserialize(Stream *stream)
+bool Animator::onDeserialize(Stream *stream)
 {
     std::size_t nlen = {};
     if (!stream->read(reinterpret_cast<char *>(&nlen), sizeof(std::size_t)))

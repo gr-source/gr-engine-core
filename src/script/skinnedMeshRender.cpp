@@ -20,32 +20,32 @@
 SkinnedMeshRender::SkinnedMeshRender()
 {}
 
-void SkinnedMeshRender::Init()
+void SkinnedMeshRender::onInit()
 {
-    BaseRender::Init();
+    BaseRender::onInit();
 
     if (Threadpool::IsMainThread())
         build();
 }
 
-void SkinnedMeshRender::Destroy()
+void SkinnedMeshRender::onRelease()
 {
-    return BaseRender::Destroy();
+    return BaseRender::onRelease();
 }
 
-void SkinnedMeshRender::Enable()
+void SkinnedMeshRender::onEnable()
 {
-    return BaseRender::Enable();
+    return BaseRender::onEnable();
 }
 
-void SkinnedMeshRender::Disable()
+void SkinnedMeshRender::onDisable()
 {
-    return BaseRender::Disable();
+    return BaseRender::onDisable();
 }
 
-bool SkinnedMeshRender::Serialize(Stream *stream)
+bool SkinnedMeshRender::onSerialize(Stream *stream)
 {
-    if (!BaseRender::Serialize(stream))
+    if (!BaseRender::onSerialize(stream))
     {
         return false;
     }
@@ -107,9 +107,9 @@ bool SkinnedMeshRender::Serialize(Stream *stream)
     return true;
 }
 
-bool SkinnedMeshRender::Deserialize(Stream *stream)
+bool SkinnedMeshRender::onDeserialize(Stream *stream)
 {
-    if (!BaseRender::Deserialize(stream))
+    if (!BaseRender::onDeserialize(stream))
     {
         return false;
     }

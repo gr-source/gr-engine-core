@@ -8,9 +8,9 @@ class Transform : public Component {
 public:
     Transform();
 
-    void Start() override;
+    void onStart() override;
 
-    void Destroy() override;
+    void onDestroy() override;
 
     void setLocalScale(const Vector3 &value);
 
@@ -56,9 +56,9 @@ public:
 
     bool hasChildren() const;
 
-    bool Serialize(Stream *stream) override;
+    bool onSerialize(Stream *stream) override;
     
-    bool Deserialize(Stream *stream) override;
+    bool onDeserialize(Stream *stream) override;
 
 private:
     Vector3 m_scale;

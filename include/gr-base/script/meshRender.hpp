@@ -8,13 +8,13 @@ class MeshRender : public BaseRender
 public:
     MeshRender();
 
-    void Init() override;
+    void onInit() override;
 
-    void Destroy() override;
+    void onRelease() override;
 
-    bool Serialize(Stream *stream) override;
+    bool onSerialize(Stream *stream) override;
 
-    bool Deserialize(Stream *stream) override;
+    bool onDeserialize(Stream *stream) override;
 
     void build() override;
 

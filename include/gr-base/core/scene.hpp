@@ -62,7 +62,7 @@ public:
 
     bool destroy(GameObject *gameObject);
 
-    static void Start(GameObject *go);
+    static void Play(GameObject *go);
 
     static void Stop(GameObject *go);
 private:

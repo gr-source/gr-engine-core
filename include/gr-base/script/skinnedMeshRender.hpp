@@ -12,17 +12,17 @@ class SkinnedMeshRender : public BaseRender
 public:
     SkinnedMeshRender();
 
-    void Init() override;
+    void onInit() override;
 
-    void Destroy() override;
+    void onRelease() override;
 
-    void Enable() override;
+    void onEnable() override;
 
-    void Disable() override;
+    void onDisable() override;
 
-    bool Serialize(Stream *stream) override;
+    bool onSerialize(Stream *stream) override;
 
-    bool Deserialize(Stream *stream) override;
+    bool onDeserialize(Stream *stream) override;
 
     void build() override;
 

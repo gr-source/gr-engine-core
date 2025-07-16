@@ -17,15 +17,13 @@ class Animator : public Component
 public:
     Animator();
 
-    void Init() override;
+    void onStart() override;
 
-    void Start() override;
+    void onUpdate() override;
 
-    void Update() override;
+    bool onSerialize(Stream *stream) override;
 
-    bool Serialize(Stream *stream) override;
-
-    bool Deserialize(Stream *stream) override;
+    bool onDeserialize(Stream *stream) override;
 
     void play(bool repeate, Animation *animation);
 

@@ -18,19 +18,19 @@ public:
 
     Camera();
 
-    void Init() override;
+    void onInit() override;
 
-    void Start() override;
+    void onStart() override;
 
-    void Destroy() override;
+    void onDestroy() override;
 
-    void Enable() override;
+    void onEnable() override;
 
-    void Disable() override;
+    void onDisable() override;
 
-    bool Serialize(Stream *stream) override;
+    bool onSerialize(Stream *stream) override;
 
-    bool Deserialize(Stream *stream) override;
+    bool onDeserialize(Stream *stream) override;
 
     Matrix4x4 getPerspesctive() const;
 

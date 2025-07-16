@@ -4,6 +4,7 @@
 
 #include "field.hpp"
 
+#include <functional>
 #include <cstddef>
 #include <cstring>
 #include <memory>
@@ -55,6 +56,8 @@ public:
     bool (*deserialize)(Component *component, Stream *stream);
 
     void (*destroy)(Component *component);
+
+    void (*release)(Component *component);
 
     void (*updateall)(IComponentStorage *);
 
@@ -269,15 +272,16 @@ public:                                                                         
 
 class Stream;
 
-DEFINE_HAS_OWN_METHOD(Init)
-DEFINE_HAS_OWN_METHOD(Start)
-DEFINE_HAS_OWN_METHOD(Update)
-DEFINE_HAS_OWN_METHOD(Enable)
-DEFINE_HAS_OWN_METHOD(Disable)
-DEFINE_HAS_OWN_METHOD(Destroy)
+DEFINE_HAS_OWN_METHOD(onInit)
+DEFINE_HAS_OWN_METHOD(onStart)
+DEFINE_HAS_OWN_METHOD(onUpdate)
+DEFINE_HAS_OWN_METHOD(onEnable)
+DEFINE_HAS_OWN_METHOD(onDisable)
+DEFINE_HAS_OWN_METHOD(onDestroy)
+DEFINE_HAS_OWN_METHOD(onRelease)
 
-DEFINE_HAS_OWN_METHOD_WITH_SIG(Serialize, bool, Stream *)
-DEFINE_HAS_OWN_METHOD_WITH_SIG(Deserialize, bool, Stream *)
+DEFINE_HAS_OWN_METHOD_WITH_SIG(onSerialize, bool, Stream *)
+DEFINE_HAS_OWN_METHOD_WITH_SIG(onDeserialize, bool, Stream *)
 
 
 

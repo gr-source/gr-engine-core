@@ -32,7 +32,7 @@ Boundbox &MeshFilter::getBoundbox() {
     return m_boundbox;
 }
 
-bool MeshFilter::Serialize(Stream *stream) {
+bool MeshFilter::onSerialize(Stream *stream) {
     bool hasMesh = m_mesh != nullptr;
     if (!stream->write(&hasMesh, sizeof(bool)))
     {
@@ -72,7 +72,7 @@ bool MeshFilter::Serialize(Stream *stream) {
     return true;
 }
 
-bool MeshFilter::Deserialize(Stream *stream) {
+bool MeshFilter::onDeserialize(Stream *stream) {
     bool hasMesh;
     if (!stream->read(reinterpret_cast<char *>(&hasMesh), sizeof(bool)))
     {

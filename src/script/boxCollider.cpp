@@ -9,20 +9,20 @@
 BoxCollider::BoxCollider() : m_CollisionShape(nullptr), boxSize(Vector3::one)
 {}
 
-void BoxCollider::Start()
+void BoxCollider::onStart()
 {
     auto transform = GetComponent<Transform>();
 
     build(transform->getLocalScale());
 }
 
-bool BoxCollider::Serialize(Stream *stream)
+bool BoxCollider::onSerialize(Stream *stream)
 {
     stream->write(&boxSize, sizeof(Vector3));
     return true;
 }
 
-bool BoxCollider::Deserialize(Stream *stream) {
+bool BoxCollider::onDeserialize(Stream *stream) {
     stream->read(reinterpret_cast<char *>(&boxSize), sizeof(Vector3));
     return true;
 }

@@ -11,11 +11,11 @@ class BoxCollider : public Component {
 public:
     BoxCollider();
 
-    void Start() override;
+    void onStart() override;
 
-    bool Serialize(Stream *stream) override;
+    bool onSerialize(Stream *stream) override;
 
-    bool Deserialize(Stream *stream) override;
+    bool onDeserialize(Stream *stream) override;
 
     void build(const Vector3 &size);
 

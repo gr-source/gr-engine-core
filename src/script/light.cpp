@@ -16,28 +16,28 @@ std::vector<Light *> Light::GetListLight() {
 
 Light::Light(std::uint8_t type, const Color& color, float aConstant, float aLinear, float aQuadract, float inneCone, float outerCone) : m_type(static_cast<int>(type)), m_color(color), m_attenuationConstant(aConstant), m_attenuationLinear(aLinear), m_attenuationQuadratic(aQuadract), m_transform(nullptr), m_angleInnerCone(inneCone), m_angleOuterCone(outerCone) {}
 
-void Light::Init()
+void Light::onInit()
 {
     m_transform = entity->getComponent<Transform>();
 
     addInGlobalLight();
 }
 
-void Light::Destroy()
+void Light::onRelease()
 {
     m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), this), m_lights.end());
 }
 
-void Light::Enable()
+void Light::onEnable()
 {
     addInGlobalLight();
 }
 
-void Light::Disable() {
+void Light::onDisable() {
     m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), this), m_lights.end());
 }
 
-bool Light::Serialize(Stream *stream) {
+bool Light::onSerialize(Stream *stream) {
     stream->write(reinterpret_cast<const char *>(&m_type), sizeof(int));
     stream->write(reinterpret_cast<const char *>(&m_color), sizeof(Color));
     stream->write(reinterpret_cast<const char *>(&m_attenuationConstant), sizeof(float));
@@ -48,7 +48,7 @@ bool Light::Serialize(Stream *stream) {
     return true;
 }
 
-bool Light::Deserialize(Stream *stream) {
+bool Light::onDeserialize(Stream *stream) {
     stream->read(reinterpret_cast<char *>(&m_type), sizeof(int));
     stream->read(reinterpret_cast<char *>(&m_color), sizeof(Color));
     stream->read(reinterpret_cast<char *>(&m_attenuationConstant), sizeof(float));
