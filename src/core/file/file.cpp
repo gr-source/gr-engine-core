@@ -242,6 +242,13 @@ bool gfile::remove(const std::string &path)
     return std::filesystem::remove(path);
 }
 
+std::string gfile::get_parent(const std::string &path)
+{
+    auto start = path.rfind('/');
+    if (start == std::string::npos)
+        return path;
+    return path.substr(0, start);
+}
 
 
 

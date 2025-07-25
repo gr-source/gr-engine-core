@@ -21,8 +21,6 @@
 #include "gr-base/core/task/runtime/textureloadtask.hpp"
 #include "gr-base/core/task/runtime/sceneloadtask.hpp"
 
-#include "gr-base/core/task/filmboxmanager.hpp"
-
 class AssetsManager
 {
 public:
@@ -59,9 +57,6 @@ public:
 
     template <typename ...Args>
     static void LoadAnimation(const std::string &path, Args &&...args);
-
-    template <typename ...Args>
-    static std::shared_ptr<TaskInfo> LoadFilmbox(const std::string &path, Args &&...args);
 
     static Animation *CreateAnimation(const std::string &name);
 
@@ -139,8 +134,6 @@ private:
 
     static ShaderManager &GetShaderManager();
 
-    static FilmboxManager &GetFilmboxManager();
-
     static SceneTaskManager &GetSceneTaskManager();
 };
 
@@ -217,18 +210,6 @@ template <typename ...Args>
 void AssetsManager::LoadAnimation(const std::string &path, Args &&...args)
 {
     return mAnimationManager.load(path, std::forward<Args>(args)...);
-}
-
-template <typename ...Args>
-std::shared_ptr<TaskInfo> AssetsManager::LoadFilmbox(const std::string &path, Args &&...args)
-{
-    std::function<void ()> func = nullptr;
-    if constexpr (sizeof...(Args) > 0)
-    {
-        func = std::bind(std::forward<Args>(args)...);
-    }
-
-    return GetFilmboxManager().create_task_load(path, func);
 }
 
 

@@ -84,6 +84,8 @@ public:
     static bool create_directory(const std::string &path);
 
     static bool remove(const std::string &path);
+
+    static std::string get_parent(const std::string &path);
 };
 
 

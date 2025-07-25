@@ -60,7 +60,6 @@ void AssetsManager::Shutdown()
 
 void AssetsManager::Render()
 {
-    GetFilmboxManager().render();
 }
 
 std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
@@ -350,11 +349,12 @@ void AssetsManager::RemoveTask(const std::string &name)
     {
         return;
     }
-
+    /*
     if (GetFilmboxManager().remove_task(name))
     {
         return;
     }
+    */
 }
 
 // private
@@ -363,13 +363,13 @@ ShaderManager &AssetsManager::GetShaderManager()
     static ShaderManager instance;
     return instance;
 }
-
+/*
 FilmboxManager &AssetsManager::GetFilmboxManager()
 {
     static FilmboxManager instance;
     return instance;
 }
-
+*/
 SceneTaskManager &AssetsManager::GetSceneTaskManager()
 {
     static SceneTaskManager instance;

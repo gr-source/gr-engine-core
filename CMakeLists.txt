@@ -66,20 +66,7 @@ set(core
     src/core/input.cpp
 )
 
-set(filmbox
-    src/core/filmbox/fbxAnimation.cpp
-    src/core/filmbox/fbxMaterial.cpp
-    src/core/filmbox/fbxChannel.cpp
-    src/core/filmbox/fbxVertex.cpp
-    src/core/filmbox/fbxScene.cpp
-    src/core/filmbox/fbxBone.cpp
-    src/core/filmbox/fbxMesh.cpp
-    src/core/filmbox/fbxNode.cpp
-    src/core/filmbox/filmbox.cpp
-)
-
 set(binary
-    src/core/binary/modelhandle.cpp
     src/core/binary/gHeader.cpp
 )
 
@@ -121,9 +108,6 @@ set(task
     src/core/task/runtime/shaderloadtask.cpp
     src/core/task/scenetaskmanager.cpp
     src/core/task/shadermanager.cpp
-
-    src/core/task/filmboxmanager.cpp
-    src/core/task/runtime/filmboxtask.cpp
 )
 
 find_package(assimp QUIET)
@@ -138,7 +122,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${culling} ${filmbox} ${task} ${binary} ${animation} ${physics} ${thread})
+add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
