@@ -64,6 +64,7 @@ void GameObjectSaveTask::onPostExecute(int result)
 
     try
     {
+        std::cout << "move(" << file << ", " << m_path << std::endl;
         File::Move(file, m_path);
     } catch (const std::exception &e)
     {
