@@ -55,6 +55,7 @@ set(core
     src/core/rendertarget.cpp
     src/core/scenemanager.cpp
     src/core/nameManager.cpp
+    src/core/debugdraw.cpp
     src/core/display.cpp
     src/core/console.cpp
     src/core/window.cpp
@@ -89,7 +90,10 @@ set(physics
 )
 
 set(culling
+    src/core/culling/octreemanager.cpp
+    src/core/culling/quadtree.cpp
     src/core/culling/frustum.cpp
+    src/core/culling/octree.cpp
 )
 
 set(task

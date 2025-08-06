@@ -36,7 +36,7 @@ private:
     void onPostExecute(int result) override;
 
 protected:
-    std::array<std::vector<ShaderUniform>, IShaderStage> mShaderUniformMapToList;
+    std::vector<ShaderUniform> s_shader_uniform_list;
 
     grr::gShader *m_shader;
 

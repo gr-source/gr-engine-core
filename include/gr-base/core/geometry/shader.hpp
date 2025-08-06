@@ -6,9 +6,14 @@ using ShaderOptimize_ = std::uint8_t;
 
 enum class ShaderType
 {
+    UNKNOWN,
     SHADER2D,
     SHADER3D,
+    SKY,
+    COUNT
 };
+
+constexpr std::size_t ShaderTypeCount = static_cast<std::size_t>(ShaderType::COUNT);
 
 enum ShaderOptimize : ShaderOptimize_
 {

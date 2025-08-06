@@ -82,13 +82,13 @@ std::vector<grr::gShader *> ShaderManager::get_shader(ShaderType type)
 
 std::shared_ptr<TaskInfo> ShaderManager::create_shader_task_load(ShaderParams shaderParams, grr::gShader *shader, std::function<void(grr::gShader *)> func)
 {
-    auto name = GetShaderParamsName(shaderParams);
+    auto taskname = GetShaderParamsName(shaderParams);
 
     std::unique_lock<std::mutex> lock(s_Mutex);
 
     // Verifica se já existe uma task de caregamento, se ouver adiciona a func em func list
     {
-        auto it = s_ShaderTaskMap.find(name);
+        auto it = s_ShaderTaskMap.find(taskname);
         if (it != s_ShaderTaskMap.end())
         {
             if (func == nullptr)
@@ -106,7 +106,7 @@ std::shared_ptr<TaskInfo> ShaderManager::create_shader_task_load(ShaderParams sh
     }
 
     { // Verifica se já foi carregado e está na lista principal
-        auto it = s_ShaderMap.find(name);
+        auto it = s_ShaderMap.find(taskname);
         if (it != s_ShaderMap.end())
         {
             if (func == nullptr)
@@ -126,7 +126,7 @@ std::shared_ptr<TaskInfo> ShaderManager::create_shader_task_load(ShaderParams sh
 
     // cria uma nova task
     auto taskInfo = TaskManager::Add<ShaderLoadTask>(shaderParams, shader);
-    s_ShaderTaskMap.emplace(name, taskInfo);
+    s_ShaderTaskMap.emplace(taskname, taskInfo);
 
     auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(taskInfo->task.get());
     if (func != nullptr)

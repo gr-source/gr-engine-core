@@ -40,31 +40,16 @@ void Batching::insert(Transform *transform, const std::vector<Material *> &mater
     std::string key;
     for (auto &material : materiallist)
         key += AssetsManager::GetRefMaterialToName(material);
-    /*
-    if (isstatic)
-    {
-        auto it = m_batchingstaticmap.find(key);
-        if (it == m_batchingstaticmap.end())
-        {
-            m_batchingstaticmap.emplace(key, std::make_unique<BatchingStatic>(materiallist, m_meshlist));
 
-            m_batchingstaticlist.push_back(m_batchingstaticmap[key].get());
-        }
-                
-        m_batchingstaticmap[key]->insert(transform);
-    } else
+    auto it = m_batchingdynamicmap.find(key);
+    if (it == m_batchingdynamicmap.end())
     {
-        */
-        auto it = m_batchingdynamicmap.find(key);
-        if (it == m_batchingdynamicmap.end())
-        {
-            m_batchingdynamicmap.emplace(key, std::make_unique<BatchingDynamic>(materiallist, m_meshlist));
+        m_batchingdynamicmap.emplace(key, std::make_unique<BatchingDynamic>(materiallist, m_meshlist));
 
-            m_batchingdynamiclist.push_back(m_batchingdynamicmap[key].get());
-        }
+        m_batchingdynamiclist.push_back(m_batchingdynamicmap[key].get());
+    }
                 
-        m_batchingdynamicmap[key]->insert(transform);
-    // }
+    m_batchingdynamicmap[key]->insert(transform);
 
     m_count++;
 }

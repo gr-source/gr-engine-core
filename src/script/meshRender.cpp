@@ -1,14 +1,15 @@
 #include "gr-base/script/meshRender.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/console.hpp"
 
 #include "gr-base/core/geometry/batchingmanager.hpp"
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/batching.hpp"
 
-#include "gr-base/core/geometry/shader.hpp"
-
+#include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/thread/threadpool.hpp"
+
 #include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
@@ -21,8 +22,7 @@ void MeshRender::onInit()
 {
     BaseRender::onInit();
 
-    if (Threadpool::IsMainThread())
-        build();
+    return MainThreadDispatcher::Add(&MeshRender::build, this);
 }
 
 void MeshRender::onRelease()
@@ -52,7 +52,7 @@ void MeshRender::build()
 {
     if (!HasComponent<MeshFilter>())
     {
-        return;
+        return Console::LogError("[ MeshRender ] fail to build mesh, %s don't have MeshFilter!", GetGameObject()->getName().c_str());
     }
 
     auto meshFilter = GetComponent<MeshFilter>();
@@ -60,7 +60,7 @@ void MeshRender::build()
     auto meshList = meshFilter->getMesh();
     if (meshList == nullptr)
     {
-        return;
+        return Console::LogError("[ MeshRender ] fail to build mesh, %s don't have mesh!", GetGameObject()->getName().c_str());
     }
 
     auto meshListName = AssetsManager::GetMeshListRefToName(meshList);

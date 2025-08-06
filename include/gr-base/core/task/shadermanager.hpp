@@ -33,7 +33,7 @@ private:
 
     std::unordered_map<std::string, std::shared_ptr<TaskInfo>> s_ShaderTaskMap;
 
-    std::array<std::vector<grr::gShader *>, 2> s_ShaderTypeList;
+    std::array<std::vector<grr::gShader *>, ShaderTypeCount> s_ShaderTypeList;
 };
 
 
