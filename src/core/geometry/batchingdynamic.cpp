@@ -184,13 +184,24 @@ void BatchingDynamic::build(GpuMesh *gpuMesh, std::vector<Mesh> *meshlist, int i
 void BatchingDynamic::buildDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh)
 {
     auto vertices = mesh.getVertices();
+    auto indices = mesh.getIndices();
 
     meshInfo.vertexArray = new grr::gVertexArray();
     meshInfo.vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
+    meshInfo.ebo = indices.empty() ? -1 : grr::gVertexArray::CreateBuffer(BufferType::EBO);
 
     meshInfo.count = vertices.size();
 
     meshInfo.vertexArray->bind();
+
+    if (meshInfo.ebo != -1)
+    {
+        meshInfo.count = indices.size();
+
+        grr::gVertexArray::Bind(meshInfo.ebo);
+        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::uint32), BufferUsage::STATIC);
+        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::uint32), indices.data());
+    }
 
     grr::gVertexArray::Bind(meshInfo.vbo);
     grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex3D), BufferUsage::STATIC);
@@ -204,14 +215,24 @@ void BatchingDynamic::buildDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh)
 void BatchingDynamic::buildInstancedDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh)
 {
     auto vertices = mesh.getVertices();
+    auto indices = mesh.getIndices();
 
     meshInfo.vertexArray = new grr::gVertexArray();
     meshInfo.vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
     meshInfo.pbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
+    meshInfo.ebo = indices.empty() ? -1 : grr::gVertexArray::CreateBuffer(BufferType::EBO);
 
     meshInfo.count = vertices.size();
 
     meshInfo.vertexArray->bind();
+    if (meshInfo.ebo != -1)
+    {
+        meshInfo.count = indices.size();
+
+        grr::gVertexArray::Bind(meshInfo.ebo);
+        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::uint32), BufferUsage::STATIC);
+        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::uint32), indices.data());
+    }
 
     grr::gVertexArray::Bind(meshInfo.vbo);
     grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex3D), BufferUsage::STATIC);

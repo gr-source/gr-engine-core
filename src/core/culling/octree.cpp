@@ -110,8 +110,6 @@ void Octree::subdivide()
     Vector3 bfl{center.x - w, center.y - h, center.z - d}; // Bottom Front Left
     Vector3 bbr{center.x + w, center.y - h, center.z + d}; // Bottom Back Right
     Vector3 bbl{center.x - w, center.y - h, center.z + d}; // Bottom Back Left
-                                                           //
-    std::cout << center << ": " << tfr << std::endl;
 
     m_children[0] = std::make_unique<Octree>(tfr, m_radius / 2, m_capacity);
     m_children[1] = std::make_unique<Octree>(tfl, m_radius / 2, m_capacity);

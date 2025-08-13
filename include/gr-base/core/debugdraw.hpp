@@ -30,7 +30,7 @@ private:
     public:
         std::shared_ptr<grr::gVertexArray> m_vertexarray;
 
-        grm::u32 m_vbo;
+        grm::uint32 m_vbo;
 
         grr::gShader *m_shader;
 

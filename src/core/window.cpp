@@ -1,8 +1,8 @@
 #include "gr-base/core/window.hpp"
 
-void (*Window::SetWindowSize)(const gVector2<int> &size);
+void (*Window::SetWindowSize)(const Vector2 &size);
 
-gVector2<int> (*Window::GetWindowSize)();
+Vector2 (*Window::GetWindowSize)();
 
 void (*Window::SetWindowTitle)(const char *title);
 

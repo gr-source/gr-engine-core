@@ -194,7 +194,7 @@ void Skybox::create_cube_mesh()
         {-1.0f, -1.0f,  1.0f}
     };
 
-    std::vector<grm::u32> indices = {
+    std::vector<grm::uint32> indices = {
         1, 0, 4,
         5, 1, 4,
         1, 3, 0,

@@ -40,5 +40,5 @@ private:
 
 template <typename T>
 inline T *Field::GetFieldData(void *ptr, const Field &field) {
-    return reinterpret_cast<T *>(reinterpret_cast<grm::u8 *>(ptr) + field.getOffset());
+    return reinterpret_cast<T *>(reinterpret_cast<grm::uint8 *>(ptr) + field.getOffset());
 }

@@ -134,9 +134,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${BULLET_INCLUDE_DIRS}
     imgui/src/backends
     imgui/src
+    /home/felipy/Downloads/meshoptimizer/extern
+    /home/felipy/Downloads/meshoptimizer/src
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE assimp ${BULLET_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE assimp ${BULLET_LIBRARIES} /home/felipy/Downloads/meshoptimizer/build/libmeshoptimizer.so)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC INTERNAL_REGISTER_SCRIPT)
 

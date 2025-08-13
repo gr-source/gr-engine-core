@@ -8,7 +8,13 @@ class MeshLOD : public Component
 public:
     MeshLOD();
 
-    void onStart();
+    void onStart() override;
+
+    void onUpdate() override;
+
+    void Calculate();
+
+private:
 };
 
 REGISTER_COMPONENT(MeshLOD)

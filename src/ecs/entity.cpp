@@ -23,7 +23,8 @@ static std::map<std::string, int> MapScriptPriority
     {"SkinnedMeshRender",   98},
     {"MeshCollider",        97},
     {"BoxCollider",         97},
-    {"Rigidbody",           96}
+    {"Rigidbody",           96},
+    {"MeshLOD",           97}
 };
 
 Entity::Entity(GameObject *go, EntityID id) : m_gameObject(go), m_entityID(id)

@@ -4,9 +4,9 @@
 
 class Window {
 public:
-    static void (*SetWindowSize)(const gVector2<int> &size);
+    static void (*SetWindowSize)(const Vector2 &size);
 
-    static gVector2<int> (*GetWindowSize)();
+    static Vector2 (*GetWindowSize)();
 
     static void (*SetWindowTitle)(const char *title);
 };

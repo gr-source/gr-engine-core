@@ -13,6 +13,7 @@ class MeshRender;
 class Rigidbody;
 class Transform;
 class Animator;
+class MeshLOD;
 class Camera;
 class Light;
 

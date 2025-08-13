@@ -22,7 +22,19 @@ void MeshRender::onInit()
 {
     BaseRender::onInit();
 
-    return MainThreadDispatcher::Add(&MeshRender::build, this);
+    if (Threadpool::IsMainThread())
+    {
+        if (!HasComponent<MeshFilter>())
+            return Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
+
+        MeshFilter *meshFilter = GetComponent<MeshFilter>();
+        
+        auto meshlist = meshFilter->getMesh();
+        if (meshlist == nullptr)
+            return Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
+
+        build(meshlist);
+    }
 }
 
 void MeshRender::onRelease()
@@ -48,26 +60,13 @@ bool MeshRender::onDeserialize(Stream *stream)
     return true;
 }
 
-void MeshRender::build()
+void MeshRender::build(std::vector<Mesh> *meshlist)
 {
-    if (!HasComponent<MeshFilter>())
-    {
-        return Console::LogError("[ MeshRender ] fail to build mesh, %s don't have MeshFilter!", GetGameObject()->getName().c_str());
-    }
-
-    auto meshFilter = GetComponent<MeshFilter>();
-
-    auto meshList = meshFilter->getMesh();
-    if (meshList == nullptr)
-    {
-        return Console::LogError("[ MeshRender ] fail to build mesh, %s don't have mesh!", GetGameObject()->getName().c_str());
-    }
-
-    auto meshListName = AssetsManager::GetMeshListRefToName(meshList);
+    auto meshListName = AssetsManager::GetMeshListRefToName(meshlist);
 
     m_batching = BatchingManager::Find(meshListName);
     if (m_batching == nullptr)
-        m_batching = BatchingManager::Create(meshListName, meshList);
+        m_batching = BatchingManager::Create(meshListName, meshlist);
 
     m_batching->insert(GetGameObject()->getTransform(), m_material);
 }

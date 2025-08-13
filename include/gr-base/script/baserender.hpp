@@ -20,7 +20,7 @@ public:
 
     bool onDeserialize(Stream *stream) override;
 
-    virtual void build() {}
+    virtual void build(std::vector<Mesh> *meshlist) {}
 
     template <typename ...Args>
     Material *createMaterial(Args &&...args);

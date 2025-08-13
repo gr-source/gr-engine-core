@@ -335,7 +335,7 @@ void ShaderLoadTask::SetUniformList(std::unordered_map<std::string, std::vector<
         }
 
 
-        vector.emplace_back(ShaderUniform{field_name, type, static_cast<grm::u32>(count)});
+        vector.emplace_back(ShaderUniform{field_name, type, static_cast<grm::uint32>(count)});
         
         return;
     }

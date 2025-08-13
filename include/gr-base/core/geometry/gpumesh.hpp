@@ -8,11 +8,11 @@ struct MeshInfo
 {
     grr::gVertexArray *vertexArray;
 
-    grm::u32 vbo, pbo;
+    int vbo, pbo, ebo;
 
-    grm::u32 abo;
+    int abo;
 
-    grm::u32 count;
+    grm::uint32 count;
 
     void push(const Matrix4x4 *data, const std::size_t &size);
 

@@ -13,7 +13,7 @@ typedef struct
 
     std::string variable;
 
-    grm::u32 count;
+    grm::uint32 count;
 } ShaderUniform;
 
 class ShaderLoadTask : public IAsyncTask<int>

@@ -35,15 +35,15 @@ public:
 private:
     grr::gVertexArray *m_vertexBuffer;
 
-    grm::u32 m_indexCount;
+    grm::uint32 m_indexCount;
 
-    grm::u32 m_pboCount;
+    grm::uint32 m_pboCount;
 
-    grm::u32 m_vbo;
+    grm::uint32 m_vbo;
 
-    grm::u32 m_ebo;
+    grm::uint32 m_ebo;
 
-    grm::u32 m_pbo;
+    grm::uint32 m_pbo;
 
     BatchingRenderFlags m_flags;
 };

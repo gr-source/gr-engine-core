@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gr-base/script/baserender.hpp"
+#include <vector>
 
 class MeshRender : public BaseRender
 {
@@ -16,7 +17,7 @@ public:
 
     bool onDeserialize(Stream *stream) override;
 
-    void build() override;
+    void build(std::vector<Mesh> *meshlist) override;
 
 private:
 };

@@ -5,7 +5,7 @@
 
 #include <gr-render/gVertexArray.h>
 
-BatchingRender::BatchingRender(BatchingRenderFlags flags) : m_vertexBuffer(new grr::gVertexArray()), m_vbo(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_ebo(grr::gVertexArray::CreateBuffer(BufferType::EBO)), m_pbo(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_indexCount(0), m_flags(flags)
+BatchingRender::BatchingRender(BatchingRenderFlags flags) : m_vertexBuffer(new grr::gVertexArray()), m_vbo(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_ebo(-1), m_pbo(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_indexCount(0), m_flags(flags)
 {
 }
 
@@ -21,7 +21,7 @@ BatchingRender::~BatchingRender()
         grr::gVertexArray::DeleteBuffer(m_vbo);
     }
 
-    if (m_ebo)
+    if (m_ebo != -1)
     {
         grr::gVertexArray::DeleteBuffer(m_ebo);
     }
@@ -35,28 +35,27 @@ BatchingRender::~BatchingRender()
 void BatchingRender::build(Mesh *mesh)
 {
     auto vertices = mesh->getVertices();
-    // for (auto vertice : mesh->getVertices()) {
-    //     vertices.push_back(VertexData{vertice.position, vertice.normal, vertice.texCoord, vertice.mIdx, entityID});
-    // }
+    auto indices = mesh->getIndices();
 
     m_indexCount = vertices.size();
     
     m_vertexBuffer->bind();
 
-    /*
-    if (m_flags & BatchingFlags_HasIndices) {
-        m_EBO = m_EBO != 0 ? m_EBO : grr::gVertexArray::CreateBuffer(BufferType::EBO);
+    if (!indices.empty())
+    {
+        if (m_ebo == -1)
+            m_ebo = grr::gVertexArray::CreateBuffer(BufferType::EBO);
+
+        std::cout << "Draw elements" << std::endl;
 
         auto indices = mesh->getIndices();
 
         m_indexCount = indices.size();
 
-        grr::gVertexArray::Bind(m_EBO);
-        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::u32), BufferUsage::STATIC);
-        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::u32), indices.data());
+        grr::gVertexArray::Bind(m_ebo);
+        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::uint32), BufferUsage::STATIC);
+        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::uint32), indices.data());
     }
-    */
-    
     
     grr::gVertexArray::Bind(m_vbo);
     grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex3D), BufferUsage::STATIC);
@@ -121,8 +120,12 @@ void BatchingRender::render()
     switch (m_flags)
     {
     case BatchingRenderFlags_Default:
+        if (m_ebo != -1)
+            return grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
         return grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
     case BatchingRenderFlags_Instanced:
+        if (m_ebo != -1)
+            return grr::gVertexArray::DrawElementsInstanced(PrimitiveType::TRIANGLES, m_indexCount, nullptr, m_pboCount);
         return grr::gVertexArray::DrawArraysInstanced(PrimitiveType::TRIANGLES, m_indexCount, m_pboCount);
     default:
         break;

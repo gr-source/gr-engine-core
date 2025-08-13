@@ -15,7 +15,14 @@ void MeshInfo::draw(const std::size_t &instances)
 {
     vertexArray->bind();
     if (instances > 0)
+    {
+        if (ebo != -1)
+            return grr::gVertexArray::DrawElementsInstanced(PrimitiveType::TRIANGLES, count, nullptr, instances);
         return grr::gVertexArray::DrawArraysInstanced(PrimitiveType::TRIANGLES, count, instances);
+    }
+
+    if (ebo != -1)
+        return grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, count, nullptr);
     grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, count);
 }
 

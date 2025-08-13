@@ -101,7 +101,9 @@ bool Frustum::IsPointInFrustum(const Vector3 &point, int planeIndex) {
            m_Frustum[planeIndex][D] > 0.0f;
 }
 
-bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model) {
+bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model)
+{
+    /*
     Vector3 points[8] {
         Vector3(model * Vector4{min.x, min.y, min.z, 1.0f}),
         Vector3(model * Vector4{max.x, min.y, min.z, 1.0f}),
@@ -113,6 +115,7 @@ bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const 
         Vector3(model * Vector4{max.x, max.y, max.z, 1.0f}),
         Vector3(model * Vector4{min.x, max.y, max.z, 1.0f})
     };
+    */
 
     /*
 	if (DebugDraw::bDebugMode) {
@@ -120,6 +123,7 @@ bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const 
     }
 	*/
 
+    /*
     for (int i = 0; i < 6; i++) {
         bool allPointsOutside = true;
         for (int j = 0; j < 8; j++) {
@@ -130,6 +134,7 @@ bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const 
         }
         if (allPointsOutside) return false;
     }
+    */
     return true;
 }
 

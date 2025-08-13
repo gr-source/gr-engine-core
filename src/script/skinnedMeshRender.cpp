@@ -1,5 +1,6 @@
 #include "gr-base/script/skinnedMeshRender.hpp"
 
+#include "gr-base/core/console.hpp"
 #include "gr-base/core/geometry/batchingmanager.hpp"
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/batching.hpp"
@@ -25,7 +26,18 @@ void SkinnedMeshRender::onInit()
     BaseRender::onInit();
 
     if (Threadpool::IsMainThread())
-        build();
+    {
+        if (!HasComponent<MeshFilter>())
+            return Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
+
+        MeshFilter *meshFilter = GetComponent<MeshFilter>();
+        
+        auto meshlist = meshFilter->getMesh();
+        if (meshlist == nullptr)
+            return Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
+
+        build(meshlist);
+    }
 }
 
 void SkinnedMeshRender::onRelease()
@@ -174,17 +186,18 @@ bool SkinnedMeshRender::onDeserialize(Stream *stream)
     return true;
 }
 
-void SkinnedMeshRender::build()
+void SkinnedMeshRender::build(std::vector<Mesh> *meshlist)
 {
-    auto meshFilter = GetComponent<MeshFilter>();
+    if (m_batching != nullptr)
+    {
+        m_batching->erase(GetGameObject()->getTransform());
+    }
 
-    auto meshList = meshFilter->getMesh();
-
-    auto meshListName = AssetsManager::GetMeshListRefToName(meshList);
+    auto meshListName = AssetsManager::GetMeshListRefToName(meshlist);
 
     m_batching = BatchingManager::Find(meshListName);
     if (m_batching == nullptr)
-        m_batching = BatchingManager::Create(meshListName, meshList);
+        m_batching = BatchingManager::Create(meshListName, meshlist);
 
     m_batching->insert(GetGameObject()->getTransform(), m_material);
 }

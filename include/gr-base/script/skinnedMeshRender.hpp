@@ -24,7 +24,7 @@ public:
 
     bool onDeserialize(Stream *stream) override;
 
-    void build() override;
+    void build(std::vector<Mesh> *meshlist) override;
 
     void setBones(const std::vector<Bone> &bones);
 
