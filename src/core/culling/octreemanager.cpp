@@ -1,8 +1,10 @@
 #include "gr-base/core/culling/octreemanager.hpp"
 
+#include "gr-base/core/culling/frustum.hpp"
+
 #include "gr-base/core/debugdraw.hpp"
+
 #include "gr-base/script/transform.hpp"
-#include <gr-math/vector3.hpp>
 
 // public
 bool OctreeManager::Insert(NodeID id, Transform *transform)
@@ -82,7 +84,7 @@ bool OctreeManager::remove(NodeID id, Transform *transform)
         nquery &query = node->data[i];
         if (query.transform == transform)
         {
-            node->data[i] = node->data[MAX_OBJECT_IN_NODE - 1];
+            node->data[i] = node->data[node->count - 1];
             node->count--;
 
             NodeID parent = node->parent;
@@ -191,11 +193,26 @@ void OctreeManager::render_node(NodeID id)
 {
     OctreeNode &node = m_nodes[id];
 
+    Vector3 position = node.position;
+    float radius = node.radius;
+
+    Vector3 min = position - Vector3{radius, radius, radius};
+    Vector3 max = position + Vector3{radius, radius, radius};
+
+    if (!Frustum::IsCubeInFrustumAABB(min, max))
+        return;
+
+    for (int i=0;i<node.count;i++)
+    {
+        nquery &query = node.data[i];
+
+        GameObject *gameObject = query.transform->getGameObject();
+    }
+
     drawWireCube(node.position, node.radius);
 
     if (node.divided)
     {
-        int x = 0;
         for (NodeID i=node.first;i!=InvalidNode;i=m_nodes[i].next)
         {
             render_node(i);

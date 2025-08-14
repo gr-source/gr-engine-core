@@ -24,6 +24,8 @@ void MeshRender::onInit()
 
     if (Threadpool::IsMainThread())
     {
+        MainThreadDispatcher::Add([this]()
+                {
         if (!HasComponent<MeshFilter>())
             return Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
 
@@ -34,6 +36,7 @@ void MeshRender::onInit()
             return Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
 
         build(meshlist);
+        });
     }
 }
 
