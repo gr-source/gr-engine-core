@@ -40,9 +40,9 @@ public:
 
     void setGlobalMatrix(const Matrix4x4 &matrix);
 
-    Matrix4x4 &getGlobalMatrix();
+    const Matrix4x4 &getGlobalMatrix() const;
 
-    Matrix4x4 getLocalMatrix() const;
+    const Matrix4x4 &getLocalMatrix() const;
 
     bool hasParent() const;
 

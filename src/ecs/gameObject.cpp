@@ -104,7 +104,18 @@ Scene *GameObject::get_scene() const
 }
 
 void GameObject::setActive(bool b) {
+    if (m_active == b)
+        return;
+
     m_active = b;
+
+    m_entity->setEnable(b);
+
+    for (auto &child : m_transform->getChildren())
+    {
+        GameObject *go = child->getGameObject();
+        go->setActive(b);
+    }
 }
 
 bool GameObject::getActive() const {

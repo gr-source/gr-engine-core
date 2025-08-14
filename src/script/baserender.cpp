@@ -8,6 +8,7 @@
 #include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/core/geometry/batching.hpp"
+#include "gr-base/script/transform.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -24,6 +25,22 @@ void BaseRender::onRelease()
         m_batching->erase(GetGameObject()->getTransform());
 
     m_batching = nullptr;
+}
+
+void BaseRender::onEnable()
+{
+    if (m_batching == nullptr)
+        return;
+
+    m_batching->insert(GetComponent<Transform>(), m_material);
+}
+
+void BaseRender::onDisable()
+{
+    if (m_batching == nullptr)
+        return;
+
+    m_batching->erase(GetComponent<Transform>());
 }
 
 bool BaseRender::onSerialize(Stream *stream)

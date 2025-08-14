@@ -96,12 +96,12 @@ Vector3 Transform::getUp() const {
     return getRotation() * Vector3::up;
 }
 
-Matrix4x4 &Transform::getGlobalMatrix()
+const Matrix4x4 &Transform::getGlobalMatrix() const
 {
     return m_globalMatrix;
 }
 
-Matrix4x4 Transform::getLocalMatrix() const {
+const Matrix4x4 &Transform::getLocalMatrix() const {
     return m_localMatrix;
 }
 

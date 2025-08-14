@@ -81,7 +81,7 @@ set(script
     src/script/rigidbody.cpp
     src/script/transform.cpp
     src/script/animator.cpp
-    src/script/meshLOD.cpp
+    src/script/LODGroup.cpp
     src/script/camera.cpp
     src/script/light.cpp
 )

@@ -16,6 +16,10 @@ public:
 
     void onRelease() override;
 
+    void onEnable() override;
+
+    void onDisable() override;
+
     bool onSerialize(Stream *stream) override;
 
     bool onDeserialize(Stream *stream) override;

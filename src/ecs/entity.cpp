@@ -141,8 +141,9 @@ EntityID Entity::getEntityID() const
     return m_entityID;
 }
 
-void Entity::setEnable(bool value) {
-    for (auto [name, component] : m_componentPtr)
+void Entity::setEnable(bool value)
+{
+    for (auto &&[name, component] : m_componentPtr)
     {
         auto pool = ComponentRegistry::Find(name);
         if (pool == nullptr)
