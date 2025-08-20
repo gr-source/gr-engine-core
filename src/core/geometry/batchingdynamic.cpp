@@ -51,11 +51,6 @@ void BatchingDynamic::erase(Transform *transform)
     m_instances.erase(std::remove(m_instances.begin(), m_instances.end(), transform), m_instances.end());
 }
 
-bool BatchingDynamic::is_empty() const
-{
-    return m_instances.empty();
-}
-
 void BatchingDynamic::render()
 {
     const bool useInstancing = m_instances.size() > 1;

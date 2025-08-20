@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/core/geometry/batchingdynamic.hpp"
 #include "gr-base/script/baserender.hpp"
 #include <vector>
 
@@ -13,11 +14,15 @@ public:
 
     void onRelease() override;
 
+    void build();
+
     bool onSerialize(Stream *stream) override;
 
     bool onDeserialize(Stream *stream) override;
 
     void build(std::vector<Mesh> *meshlist) override;
+
+    BatchingDynamic *batchingdynamic;
 
 private:
 };

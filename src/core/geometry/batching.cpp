@@ -4,7 +4,6 @@
 #include "gr-base/core/assetsManager.hpp"
 
  // core, geometry
-#include "gr-base/core/geometry/batchingstatic.hpp"
 #include "gr-base/core/geometry/material.hpp"
 
 // ecs
@@ -19,17 +18,18 @@
 #include <gr-render/gVertexArray.h>
 
 // public
-Batching::Batching(std::vector<Mesh> *meshlist) : m_count(0), m_meshlist(meshlist)
+Batching::Batching(std::vector<Mesh> *meshlist) : m_meshlist(meshlist)
 {}
 
 Batching::~Batching()
 {}
 
-void Batching::insert(Transform *transform, const std::vector<Material *> &materiallist)
+BatchingDynamic *Batching::insert(Transform *transform, const std::vector<Material *> &materiallist)
 {
     if (materiallist.empty())
     {
-        return Console::LogError("[ Batching ] this model don't have material");
+        Console::LogError("[ Batching ] this model don't have material");
+        return nullptr;
     }
 
     auto gameObject = transform->getGameObject();
@@ -44,14 +44,14 @@ void Batching::insert(Transform *transform, const std::vector<Material *> &mater
     auto it = m_batchingdynamicmap.find(key);
     if (it == m_batchingdynamicmap.end())
     {
-        m_batchingdynamicmap.emplace(key, std::make_unique<BatchingDynamic>(materiallist, m_meshlist));
+        m_batchingdynamicmap.emplace(key, std::make_shared<BatchingDynamic>(materiallist, m_meshlist));
 
         m_batchingdynamiclist.push_back(m_batchingdynamicmap[key].get());
     }
                 
     m_batchingdynamicmap[key]->insert(transform);
 
-    m_count++;
+    return m_batchingdynamicmap[key].get();
 }
 
 void Batching::erase(Transform *transform)
@@ -67,6 +67,7 @@ void Batching::render()
     for (auto &batching : m_batchingdynamiclist)
         batching->render();
 }
+
 
 
 

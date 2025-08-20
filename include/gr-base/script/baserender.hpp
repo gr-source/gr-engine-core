@@ -2,6 +2,7 @@
 
 #include "gr-base/core/assetsManager.hpp"
 
+#include "gr-base/core/geometry/batchingmanager.hpp"
 #include "gr-base/core/geometry/default.hpp"
 
 #include "gr-base/ecs/entity.hpp"
@@ -42,7 +43,7 @@ public:
 private:
     std::vector<Material *> m_material;
 
-    Batching *m_batching;
+    // BatchID m_batchID;
 
     friend class SkinnedMeshRender;
     friend class MeshRender;

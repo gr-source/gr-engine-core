@@ -4,7 +4,12 @@
 
 #include "gr-base/core/debugdraw.hpp"
 
+#include "gr-base/script/camera.hpp"
+#include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/transform.hpp"
+
+#include "gr-base/ecs/gameObject.hpp"
+#include <gr-math/gmath.hpp>
 
 // public
 bool OctreeManager::Insert(NodeID id, Transform *transform)
@@ -15,6 +20,11 @@ bool OctreeManager::Insert(NodeID id, Transform *transform)
 bool OctreeManager::Remove(NodeID id, Transform *transform)
 {
     return GetInstance().remove(id, transform);
+}
+
+void OctreeManager::Foreach(std::function<bool (OctreeNode *)> func)
+{
+    return GetInstance().for_each(GetInstance().m_root, func);
 }
 
 NodeID OctreeManager::GetRoot()
@@ -103,6 +113,18 @@ bool OctreeManager::remove(NodeID id, Transform *transform)
     return false;
 }
 
+void OctreeManager::for_each(NodeID id, std::function<bool (OctreeNode *)> &func)
+{
+    OctreeNode *node = m_nodes + id;
+    if (func(node))
+        return;
+
+    for (NodeID i=node->first;i!=InvalidNode;i=m_nodes[i].next)
+    {
+        for_each(i, func);
+    }
+}
+
 bool OctreeManager::check(NodeID id)
 {
     if (tryCollapse(id))
@@ -141,14 +163,13 @@ bool OctreeManager::tryCollapse(NodeID id)
     return true;
 }
 
-
 void OctreeManager::deallocate(NodeID id)
 {
-    OctreeNode &node = m_nodes[id];
+    OctreeNode *node = m_nodes + id;
 
-    if (node.divided)
+    if (node->divided)
     {
-        for (NodeID i=node.first;i!=InvalidNode;)
+        for (NodeID i=node->first;i!=InvalidNode;)
         {
             NodeID next = m_nodes[i].next;
             deallocate(i);
@@ -156,17 +177,8 @@ void OctreeManager::deallocate(NodeID id)
         }
     }
 
-    if (node.parent != InvalidNode)
-    {
-        OctreeNode &parent = m_nodes[node.parent];
-        if (parent.first == id)
-            parent.first = node.next;
-        else
-            parent.next = node.next;
-    }
-        
-    node.first = InvalidNode;
-    node.next = m_freeID;
+    node->first = InvalidNode;
+    node->next = m_freeID;
     m_freeID = id;
 
     m_count--;
@@ -181,6 +193,12 @@ bool OctreeManager::empty(NodeID id)
     if (!node.divided)
         return true;
 
+    for (NodeID i = node.first; i != InvalidNode; i = m_nodes[i].next)
+    {
+        if (!empty(i))
+            return false;
+    }
+
     return true;
 }
 
@@ -193,6 +211,11 @@ void OctreeManager::render_node(NodeID id)
 {
     OctreeNode &node = m_nodes[id];
 
+    /*
+    Camera *camera = Camera::Current();
+    if (camera == nullptr)
+        return;
+
     Vector3 position = node.position;
     float radius = node.radius;
 
@@ -201,13 +224,7 @@ void OctreeManager::render_node(NodeID id)
 
     if (!Frustum::IsCubeInFrustumAABB(min, max))
         return;
-
-    for (int i=0;i<node.count;i++)
-    {
-        nquery &query = node.data[i];
-
-        GameObject *gameObject = query.transform->getGameObject();
-    }
+    */
 
     drawWireCube(node.position, node.radius);
 

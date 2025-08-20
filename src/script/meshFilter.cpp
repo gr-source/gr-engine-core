@@ -8,31 +8,38 @@
 
 MeshFilter::MeshFilter() : m_mesh(nullptr) {}
 
-void MeshFilter::setMesh(std::vector<Mesh> *mesh) {
+void MeshFilter::setMesh(std::vector<Mesh> *mesh)
+{
     m_mesh = mesh;
+
+    processBoundbox();
 }
 
 std::vector<Mesh> *MeshFilter::getMesh() {
     return m_mesh;
 }
 
-void MeshFilter::processBoundbox() {
-    /*
+void MeshFilter::processBoundbox()
+{
     m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
     m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
     
-    for (const auto& vertex : m_sharedMesh->getVertices()) {
-        m_boundbox.min = Math::min(m_boundbox.min, vertex.position);
-        m_boundbox.max = Math::max(m_boundbox.max, vertex.position);
+    for (const auto& mesh : *m_mesh)
+    {
+        for (auto &vertice : mesh.getVertices())
+        {
+            m_boundbox.min = Math::min(m_boundbox.min, vertice.position);
+            m_boundbox.max = Math::max(m_boundbox.max, vertice.position);
+        }
     }
-    */
 }
 
 Boundbox &MeshFilter::getBoundbox() {
     return m_boundbox;
 }
 
-bool MeshFilter::onSerialize(Stream *stream) {
+bool MeshFilter::onSerialize(Stream *stream)
+{
     bool hasMesh = m_mesh != nullptr;
     if (!stream->write(&hasMesh, sizeof(bool)))
     {
@@ -44,22 +51,17 @@ bool MeshFilter::onSerialize(Stream *stream) {
         return true;
     }
 
-    auto name = AssetsManager::GetMeshListRefToName(m_mesh);
-
-    auto nsize = name.size();
-    if (!stream->write(&nsize, sizeof(std::size_t)))
-    {
+    if (!stream->write(&m_boundbox, sizeof(Boundbox)))
         return false;
-    }
 
-    if (!stream->write(name.c_str(), nsize * sizeof(char)))
+    auto name = AssetsManager::GetMeshListRefToName(m_mesh);
+    if (!stream->write(name))
     {
         return false;
     }
 
     auto mcount = m_mesh->size();
-
-    if (!stream->write(&mcount, sizeof(std::size_t)))
+    if (!stream->write(mcount))
     {
         return false;
     }
@@ -84,20 +86,18 @@ bool MeshFilter::onDeserialize(Stream *stream) {
         return true;
     }
 
-    std::size_t nsize = 0;
-    if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t)))
-    {
+    if (!stream->read(reinterpret_cast<char *>(&m_boundbox), sizeof(Boundbox)))
         return false;
-    }
 
-    std::string name(nsize, '\0');
-    if (!stream->read(name.data(), nsize * sizeof(char)))
+
+    std::string name;
+    if (!stream->read(name))
     {
         return false;
     }
 
     std::size_t mcount = 0;
-    if (!stream->read(reinterpret_cast<char *>(&mcount), sizeof(std::size_t)))
+    if (!stream->read(mcount))
     {
         return false;
     }

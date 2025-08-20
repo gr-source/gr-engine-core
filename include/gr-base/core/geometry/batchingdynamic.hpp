@@ -15,8 +15,6 @@ public:
 
     void erase(Transform *transform);
 
-    bool is_empty() const;
-
     void render();
 
 private:
@@ -32,11 +30,11 @@ private:
 
     void buildDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh);
 
-    void buildDynamicSkinnedMesh();
+    // void buildDynamicSkinnedMesh();
 
     void buildInstancedDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh);
 
-    void buildInstancedDynamicSkinnedMesh();
+    // void buildInstancedDynamicSkinnedMesh();
 };
 
 

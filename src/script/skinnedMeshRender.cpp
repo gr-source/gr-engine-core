@@ -24,7 +24,7 @@ SkinnedMeshRender::SkinnedMeshRender()
 void SkinnedMeshRender::onInit()
 {
     BaseRender::onInit();
-
+/*
     if (Threadpool::IsMainThread())
     {
         if (!HasComponent<MeshFilter>())
@@ -38,6 +38,7 @@ void SkinnedMeshRender::onInit()
 
         build(meshlist);
     }
+*/
 }
 
 void SkinnedMeshRender::onRelease()
@@ -188,18 +189,25 @@ bool SkinnedMeshRender::onDeserialize(Stream *stream)
 
 void SkinnedMeshRender::build(std::vector<Mesh> *meshlist)
 {
-    if (m_batching != nullptr)
+    /*
+    if (m_batchID != InvalidBatch)
     {
-        m_batching->erase(GetGameObject()->getTransform());
+        Batching *batching = BatchingManager::Get(m_batchID);
+        batching->erase(GetGameObject()->getTransform());
     }
 
     auto meshListName = AssetsManager::GetMeshListRefToName(meshlist);
 
-    m_batching = BatchingManager::Find(meshListName);
-    if (m_batching == nullptr)
-        m_batching = BatchingManager::Create(meshListName, meshlist);
+    m_batchID = BatchingManager::Find(meshListName);
+    if (m_batchID == InvalidBatch)
+        m_batchID = BatchingManager::Create(meshListName, meshlist);
 
-    m_batching->insert(GetGameObject()->getTransform(), m_material);
+    if (m_batchID == InvalidBatch)
+        return;
+
+    Batching *batching = BatchingManager::Get(m_batchID);
+    batching->insert(GetGameObject()->getTransform(), m_material);
+    */
 }
 
 void SkinnedMeshRender::setBones(const std::vector<Bone> &bones)

@@ -4,6 +4,7 @@
 #include "gr-base/core/culling/octree.hpp"
 
 #include "gr-base/script/default.hpp"
+#include <functional>
 
 using NodeID = std::size_t;
 
@@ -44,6 +45,8 @@ public:
 
     static bool Remove(NodeID id, Transform *transform);
 
+    static void Foreach(std::function<bool (OctreeNode *)> func);
+
     static NodeID GetRoot();
 
     static void Render();
@@ -67,6 +70,8 @@ private:
     bool insert(NodeID id, Transform *transform);
 
     bool remove(NodeID id, Transform *transform);
+
+    void for_each(NodeID id, std::function<bool (OctreeNode *)> &func);
 
     bool check(NodeID id);
 

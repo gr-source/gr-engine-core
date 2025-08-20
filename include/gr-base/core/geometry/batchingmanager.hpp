@@ -4,36 +4,104 @@
 
 #include "default.hpp"
 
+using BatchID = std::size_t;
+
+constexpr BatchID InvalidBatch = std::numeric_limits<BatchID>::max();
+
 class BatchingManager
 {
 public:
-    static Batching *Create(const std::string &name, std::vector<Mesh> *meshlist);
+    static BatchID Create(const std::string &name, std::vector<Mesh> *meshlist);
 
-    static Batching *Find(const std::string &name);
+    static BatchID Find(const std::string &name);
 
-    static void Destroy(Batching *batching);
+    static Batching *Get(BatchID id);
+
+    static void Destroy(BatchID id);
 
     static void Render();
 
 private:
     static BatchingManager &GetInstance();
 
-    std::unordered_map<std::string, std::unique_ptr<Batching>> m_batchingmap;
+    std::unordered_map<std::string, BatchID> m_namemaptobatchid;
 
-    std::unordered_map<Batching *, const std::string &> m_batchingnamemap;
+    std::vector<Batching> m_entry;
 
-    std::vector<Batching *> m_batchinglist;
+    std::vector<BatchID> m_freeID;
+
+    std::size_t m_count;
 
     BatchingManager();
     ~BatchingManager();
 
-    Batching *create(const std::string &name, std::vector<Mesh> *meshlist);
+    BatchID create(const std::string &name, std::vector<Mesh> *meshlist);
 
-    Batching *find(const std::string &name);
+    BatchID find(const std::string &name);
 
-    void destroy(Batching *batching);
+    Batching *get(BatchID id);
+
+    void destroy(BatchID id);
 
     void render();
-};
 
+    void resize(const std::size_t &size);
+};
+/*
+#pragma once
+
+#include "gr-base/core/geometry/batching.hpp"
+
+#include "default.hpp"
+
+using BatchID = std::size_t;
+
+constexpr BatchID InvalidBatch = std::numeric_limits<BatchID>::max();
+
+class BatchingManager
+{
+public:
+    static BatchID Create(const std::string &name, std::vector<Mesh> *meshlist);
+
+    static BatchID Find(const std::string &name);
+
+    static void Destroy(BatchID id);
+
+    static Batching *Get(BatchID id);
+
+    static void Render();
+
+private:
+    static BatchingManager &GetInstance();
+
+    // std::unordered_map<std::string, std::unique_ptr<Batching>> m_batchingmap;
+    //
+    // std::unordered_map<Batching *, const std::string &> m_batchingnamemap;
+    //
+    // std::vector<Batching *> m_batchinglist;
+
+    Batching *m_entry;
+
+    std::size_t m_count;
+
+    std::size_t m_size;
+
+    std::vector<BatchID> m_freeID;
+
+    BatchingManager();
+    ~BatchingManager();
+
+    BatchID create(const std::string &name, std::vector<Mesh> *meshlist);
+
+    BatchID find(const std::string &name);
+
+    void destroy(BatchID id);
+
+    Batching *get(BatchID id);
+
+    void render();
+
+    void resize(std::size_t size);
+};
+*/
 

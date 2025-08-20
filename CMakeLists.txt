@@ -20,8 +20,6 @@ set(ecs
 set(geometry
     src/core/geometry/batchingmanager.cpp
     src/core/geometry/batchingdynamic.cpp
-    src/core/geometry/batchingRender.cpp
-    src/core/geometry/batchingstatic.cpp
     src/core/geometry/boneWeight.cpp
     src/core/geometry/vertex2D.cpp
     src/core/geometry/vertex3D.cpp
@@ -115,6 +113,10 @@ set(task
     src/core/task/shadermanager.cpp
 )
 
+set(broadphase_src
+    src/broadphase/bvhtree.cpp
+)
+
 find_package(assimp QUIET)
 if(NOT assimp_FOUND)
     message(FATAL_ERROR "Please install libassimp-dev")
@@ -127,18 +129,16 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread})
+add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${broadphase_src})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     ${BULLET_INCLUDE_DIRS}
     imgui/src/backends
     imgui/src
-    /home/felipy/Downloads/meshoptimizer/extern
-    /home/felipy/Downloads/meshoptimizer/src
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE assimp ${BULLET_LIBRARIES} /home/felipy/Downloads/meshoptimizer/build/libmeshoptimizer.so)
+target_link_libraries(${PROJECT_NAME} PRIVATE assimp ${BULLET_LIBRARIES})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC INTERNAL_REGISTER_SCRIPT)
 

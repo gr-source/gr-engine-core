@@ -1,21 +1,24 @@
 #include "gr-base/core/geometry/batchingmanager.hpp"
 
-#include <algorithm>
-
 // public
-Batching *BatchingManager::Create(const std::string &name, std::vector<Mesh> *meshlist)
+BatchID BatchingManager::Create(const std::string &name, std::vector<Mesh> *meshlist)
 {
     return GetInstance().create(name, meshlist);
 }
 
-Batching *BatchingManager::Find(const std::string &name)
+BatchID BatchingManager::Find(const std::string &name)
 {
     return GetInstance().find(name);
 }
 
-void BatchingManager::Destroy(Batching *batching)
+Batching *BatchingManager::Get(BatchID id)
 {
-    return GetInstance().destroy(batching);
+    return GetInstance().get(id);
+}
+
+void BatchingManager::Destroy(BatchID id)
+{
+    return GetInstance().destroy(id);
 }
 
 void BatchingManager::Render()
@@ -30,49 +33,82 @@ BatchingManager &BatchingManager::GetInstance()
     return instance;
 }
 
-BatchingManager::BatchingManager()
+BatchingManager::BatchingManager() : m_count(0)
 {}
 
 BatchingManager::~BatchingManager()
 {}
 
-Batching *BatchingManager::create(const std::string &name, std::vector<Mesh> *meshlist)
+BatchID BatchingManager::create(const std::string &name, std::vector<Mesh> *meshlist)
 {
-    auto &&[it, added] = m_batchingmap.emplace(name, std::make_unique<Batching>(meshlist));
-    if (added)
-    {
-        m_batchinglist.push_back(it->second.get());
+    if (m_freeID.empty())
+        resize(1024);
 
-        m_batchingnamemap.emplace(it->second.get(), name);
-    }
-    return it->second.get();
+    BatchID id = m_freeID.back();
+    m_freeID.pop_back();
+
+    Batching *batching = &m_entry[id];
+    new (batching) Batching(meshlist);
+
+    batching->name = name;
+
+    m_namemaptobatchid[name] = id;
+
+    m_count++;
+    return id;
 }
 
-Batching *BatchingManager::find(const std::string &name)
+BatchID BatchingManager::find(const std::string &name)
 {
-    auto it = m_batchingmap.find(name);
-    if (it == m_batchingmap.end())
-        return nullptr;
-    return it->second.get();
+    auto it = m_namemaptobatchid.find(name);
+    if (it == m_namemaptobatchid.end())
+        return InvalidBatch;
+
+    return it->second;
 }
 
-void BatchingManager::destroy(Batching *batching)
+Batching *BatchingManager::get(BatchID id)
 {
-    auto it = m_batchingnamemap.find(batching);
-    if (it == m_batchingnamemap.end())
-        return;
+    return &m_entry[id];
+}
 
-    m_batchinglist.erase(std::remove(m_batchinglist.begin(), m_batchinglist.end(), batching), m_batchinglist.end());
+void BatchingManager::destroy(BatchID id)
+{
+    BatchID lastID = m_count - 1;
 
-    m_batchingmap.erase(it->second);
-    m_batchingnamemap.erase(it);
+    Batching *current = m_entry.data() + id;
+    m_namemaptobatchid.erase(current->name);
+
+    current->~Batching();
+
+    Batching *last = m_entry.data() + lastID;
+
+    new (current) Batching(*last);
+
+    m_count--;
 }
 
 void BatchingManager::render()
 {
-    for (auto &batching : m_batchinglist)
-        batching->render();
+    for (BatchID id=0;id<m_count;id++)
+        m_entry[id].render();
 }
 
+void BatchingManager::resize(const std::size_t &size)
+{
+    auto oldsize = m_entry.size();
+    auto newsize = oldsize + size;
+
+    m_entry.resize(newsize, Batching(nullptr));
+
+    auto temp = newsize;
+    while ((temp--) > oldsize)
+    {
+        Batching &batching = m_entry[temp];
+        // batching.name = nullptr;
+
+        m_freeID.push_back(temp);
+    }
+}
 
 

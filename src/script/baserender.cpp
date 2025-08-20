@@ -2,6 +2,7 @@
 
 #include "gr-base/core/assetsManager.hpp"
 
+#include "gr-base/core/geometry/batchingmanager.hpp"
 #include "gr-base/core/geometry/material.hpp"
 
 #include "gr-base/core/thread/threadpool.hpp"
@@ -13,7 +14,7 @@
 #include <algorithm>
 #include <cstddef>
 
-BaseRender::BaseRender() : m_batching(nullptr)
+BaseRender::BaseRender() /* : m_batchID(InvalidBatch) */
 {}
 
 void BaseRender::onInit()
@@ -21,26 +22,37 @@ void BaseRender::onInit()
 
 void BaseRender::onRelease()
 {
-    if (Threadpool::IsMainThread() && m_batching != nullptr)
-        m_batching->erase(GetGameObject()->getTransform());
+    /*
+    if (Threadpool::IsMainThread() && m_batchID != InvalidBatch)
+    {
+        Batching *batching = BatchingManager::Get(m_batchID);
+        batching->erase(GetGameObject()->getTransform());
+    }
 
-    m_batching = nullptr;
+    m_batchID = InvalidBatch;
+    */
 }
 
 void BaseRender::onEnable()
 {
-    if (m_batching == nullptr)
+    /*
+    if (m_batchID == InvalidBatch)
         return;
-
-    m_batching->insert(GetComponent<Transform>(), m_material);
+    
+    Batching *batching = BatchingManager::Get(m_batchID);
+    batching->insert(GetComponent<Transform>(), m_material);
+    */
 }
 
 void BaseRender::onDisable()
 {
-    if (m_batching == nullptr)
+    /*
+    if (m_batchID == InvalidBatch)
         return;
 
-    m_batching->erase(GetComponent<Transform>());
+    Batching *batching = BatchingManager::Get(m_batchID);
+    batching->erase(GetComponent<Transform>());
+    */
 }
 
 bool BaseRender::onSerialize(Stream *stream)
