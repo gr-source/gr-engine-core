@@ -26,6 +26,13 @@ void Tree::Remove(NodeID id)
     return GetInstance().remove(id);
 }
 
+void Tree::For_each(std::function<bool (struct Node<void *> *)> func)
+{
+    auto &instance = GetInstance();
+
+    return instance.for_each(instance.m_root, func);
+}
+
 void Tree::Render()
 {
     return GetInstance().render();
@@ -53,7 +60,7 @@ NodeID Tree::insert(const Bounds &bounds, void *data)
 {
     NodeID id = allocate();
 
-    Node &node = m_nodes[id];
+    struct Node<void *> &node = m_nodes[id];
     node.boundary = bounds;
     node.data = data;
 
@@ -66,16 +73,28 @@ NodeID Tree::insert(const Bounds &bounds, void *data)
 
 void Tree::remove(NodeID id)
 {
-    struct Node &node = m_nodes[id];
+    struct Node<void *> &node = m_nodes[id];
     if (!node.isLeaf())
     {
-        std::cout << "fail: " << id << std::endl;
         return;
     }
 
     removeLeaf(id);
 
     deallocate(id);
+}
+
+void Tree::for_each(NodeID id, std::function<bool (struct Node<void *> *)> func)
+{
+    if (id == Null)
+        return;
+
+    struct Node<void *> *node = m_nodes + id;
+    if (func(node))
+        return;
+
+    for_each(node->right, func);
+    for_each(node->left, func);
 }
 
 void Tree::render()
@@ -86,7 +105,7 @@ void Tree::render()
 
 void Tree::render_node(NodeID id)
 {
-    struct Node &node = m_nodes[id];
+    struct Node<void *> &node = m_nodes[id];
 
 	const Bounds& b = node.boundary;
     auto min = b.min;
@@ -134,7 +153,7 @@ NodeID Tree::allocate()
     NodeID id = m_freeID;
     m_freeID = m_nodes[id].next;
 
-    Node &node = m_nodes[id];
+    struct Node<void *> &node = m_nodes[id];
     node.parent = Null;
     node.right = Null;
     node.left = Null;
@@ -147,7 +166,7 @@ NodeID Tree::allocate()
 
 void Tree::deallocate(NodeID id)
 {
-    Node &node = m_nodes[id];
+    struct Node<void *> &node = m_nodes[id];
 
     node.next = m_freeID;
     m_freeID = id;
@@ -160,10 +179,10 @@ void Tree::resize(const std::size_t &size)
     auto oldsize = m_size;
     auto newsize = oldsize + size;
 
-    Node *temp = (Node *)malloc(sizeof(Node) * newsize);
+    struct Node<void *> *temp = (struct Node<void *> *)malloc(sizeof(struct Node<void *>) * newsize);
     if (m_nodes != nullptr)
     {
-        memcpy(temp, m_nodes, sizeof(Node) * oldsize);
+        memcpy(temp, m_nodes, sizeof(struct Node<void *>) * oldsize);
         free(m_nodes);
     }
 
@@ -256,14 +275,14 @@ void Tree::insertLeaf(NodeID id)
 	{
         // pai antigo
         {
-            struct Node &parent = m_nodes[oldParent];
+            struct Node<void *> &parent = m_nodes[oldParent];
 		    if (parent.left == sibling)
 			    parent.left = newParent;
 		    else
 			    parent.right = newParent;
         }
 
-        struct Node &parent = m_nodes[newParent];
+        struct Node<void *> &parent = m_nodes[newParent];
 		parent.left = sibling;
 		parent.right = id;
 
@@ -271,7 +290,7 @@ void Tree::insertLeaf(NodeID id)
 		m_nodes[id].parent = newParent;
 	} else
 	{
-        struct Node &parent = m_nodes[newParent];
+        struct Node<void *> &parent = m_nodes[newParent];
 		parent.left = sibling;
 		parent.right = id;
 
@@ -343,15 +362,15 @@ void Tree::syncHeirarchy(NodeID id)
 
     NodeID Tree::balance(NodeID iA)
     {
-	    Node &A = m_nodes[iA];
+	    struct Node<void *> &A = m_nodes[iA];
 
 	    if (A.isLeaf() || A.height == 1)
 		    return iA;
         
 	    NodeID iB = A.left;
 	    NodeID iC = A.right;
-	    Node &B = m_nodes[iB]; // left
-	    Node &C = m_nodes[iC]; // right
+	    struct Node<void *> &B = m_nodes[iB]; // left
+	    struct Node<void *> &C = m_nodes[iC]; // right
         
 
         int balance = getBalance(iA);
@@ -361,8 +380,8 @@ void Tree::syncHeirarchy(NodeID id)
 	    {
 		    NodeID iF = C.left;
 		    NodeID iG = C.right;
-		    Node &F = m_nodes[iF];
-		    Node &G = m_nodes[iG];
+		    struct Node<void *> &F = m_nodes[iF];
+		    struct Node<void *> &G = m_nodes[iG];
 
 		    // grandParent point to C
 		    if (A.parent != Null)
@@ -408,8 +427,8 @@ void Tree::syncHeirarchy(NodeID id)
 	    {
 		    NodeID iD = B.left;
 		    NodeID iE = B.right;
-		    Node &D = m_nodes[iD];
-		    Node &E = m_nodes[iE];
+		    struct Node<void *> &D = m_nodes[iD];
+		    struct Node<void *> &E = m_nodes[iE];
 
 		    // grandParent point to B
 		    if (A.parent != Null)

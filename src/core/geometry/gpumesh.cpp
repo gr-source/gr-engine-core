@@ -3,12 +3,29 @@
 #include <gr-render/gVertexArray.h>
 
 // MeshInfo
+MeshInfo::MeshInfo() : vertexArray(nullptr), vbo(-1), ebo(-1), pbo(-1), count(0) {}
+
 void MeshInfo::push(const Matrix4x4 *data, const std::size_t &size)
 {
     vertexArray->bind();
     grr::gVertexArray::Bind(pbo);
     grr::gVertexArray::UpdateResizeBuffer(size * sizeof(Matrix4x4), BufferUsage::DYNAMIC);
     grr::gVertexArray::SetBufferUpdate(0, size * sizeof(Matrix4x4), data);
+}
+
+MeshInfo::~MeshInfo()
+{
+    if (vertexArray != nullptr)
+        delete vertexArray;
+
+    if (vbo != -1)
+        grr::gVertexArray::DeleteBuffer(vbo);
+
+    if (ebo != -1)
+        grr::gVertexArray::DeleteBuffer(ebo);
+
+    if (pbo != -1)
+        grr::gVertexArray::DeleteBuffer(pbo);
 }
 
 void MeshInfo::draw(const std::size_t &instances)

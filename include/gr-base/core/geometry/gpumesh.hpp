@@ -4,15 +4,17 @@
 
 #include <gr-render/gCommon.h>
 
-struct MeshInfo
+class MeshInfo
 {
+public:
     grr::gVertexArray *vertexArray;
 
     int vbo, pbo, ebo;
 
-    int abo;
-
     grm::uint32 count;
+
+    MeshInfo();
+    ~MeshInfo();
 
     void push(const Matrix4x4 *data, const std::size_t &size);
 

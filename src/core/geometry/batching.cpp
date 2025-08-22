@@ -54,14 +54,6 @@ BatchingDynamic *Batching::insert(Transform *transform, const std::vector<Materi
     return m_batchingdynamicmap[key].get();
 }
 
-void Batching::erase(Transform *transform)
-{
-    for (auto &batching : m_batchingdynamiclist)
-    {
-        batching->erase(transform);
-    }
-}
-
 void Batching::render()
 {
     for (auto &batching : m_batchingdynamiclist)

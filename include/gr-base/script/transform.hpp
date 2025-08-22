@@ -14,11 +14,11 @@ public:
 
     void setLocalScale(const Vector3 &value);
 
-    Vector3 getLocalScale() const;
+    const Vector3 &getLocalScale() const;
 
     void setLocalRotation(const Quaternion &value);
 
-    Quaternion getLocalRotation() const;
+    const Quaternion &getLocalRotation() const;
 
     Quaternion getRotation() const;
 
@@ -28,7 +28,7 @@ public:
 
     Vector3 getPosition() const;
 
-    Vector3 getLocalPosition() const;
+    const Vector3 &getLocalPosition() const;
 
     Vector3 getRight() const;
 

@@ -2,6 +2,8 @@
 
 #include "default.hpp"
 
+#include <functional>
+
 namespace bvh
 {
     struct Bounds
@@ -15,7 +17,8 @@ namespace bvh
             return 2.0f * (size.x * size.y + size.y * size.z + size.z * size.x);
         }
     };
-
+    
+    template <typename T>
     struct Node
     {
         NodeID parent;
@@ -24,7 +27,7 @@ namespace bvh
         NodeID right;
         NodeID left;
 
-        void *data;
+        T data;
 
         Bounds boundary;
 
@@ -43,6 +46,8 @@ namespace bvh
 
         static void Remove(NodeID id);
 
+        static void For_each(std::function<bool (struct Node<void *> *)> func);
+
         static void Render();
 
     private:
@@ -52,7 +57,7 @@ namespace bvh
 
         NodeID m_root;
 
-        Node *m_nodes;
+        struct Node<void *> *m_nodes;
 
         std::size_t m_size;
 
@@ -64,6 +69,8 @@ namespace bvh
         NodeID insert(const Bounds &bounds, void *data);
 
         void remove(NodeID id);
+
+        void for_each(NodeID node, std::function<bool (struct Node<void *> *)> func);
 
         void render();
 

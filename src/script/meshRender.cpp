@@ -14,7 +14,7 @@
 
 #include "gr-base/script/meshFilter.hpp"
 
-MeshRender::MeshRender() : batchingdynamic(nullptr)
+MeshRender::MeshRender() : batchingdynamic(nullptr), m_batchID(InvalidBatch)
 {}
 
 void MeshRender::onInit()
@@ -25,41 +25,18 @@ void MeshRender::onInit()
 
     if (Threadpool::IsMainThread())
     {
+        /*
         MainThreadDispatcher::Add([this]()
                 {
-        if (!HasComponent<MeshFilter>())
-            return Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
-
-        MeshFilter *meshFilter = GetComponent<MeshFilter>();
         
-        auto meshlist = meshFilter->getMesh();
-        if (meshlist == nullptr)
-            return Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
-
-        build(meshlist);
         });
+        */
     }
 }
 
 void MeshRender::onRelease()
 {
     return BaseRender::onRelease();
-}
-
-void MeshRender::build()
-{
-    /*
-    if (!HasComponent<MeshFilter>())
-        return Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
-
-    MeshFilter *meshFilter = GetComponent<MeshFilter>();
-        
-    auto meshlist = meshFilter->getMesh();
-    if (meshlist == nullptr)
-        return Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
-
-    build(meshlist);
-    */
 }
 
 bool MeshRender::onSerialize(Stream *stream)
@@ -80,16 +57,42 @@ bool MeshRender::onDeserialize(Stream *stream)
     return true;
 }
 
+void MeshRender::build()
+{
+    if (m_batchID == InvalidBatch)
+    {
+        if (!HasComponent<MeshFilter>())
+            return Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
+
+        MeshFilter *meshFilter = GetComponent<MeshFilter>();
+        
+        auto meshlist = meshFilter->getMesh();
+        if (meshlist == nullptr)
+            return Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
+
+        build(meshlist);
+    }
+
+    if (m_batchID == InvalidBatch)
+        return;
+
+    if (batchingdynamic == nullptr)
+    {
+        Batching *batching = BatchingManager::Get(m_batchID);
+        batchingdynamic = batching->insert(GetGameObject()->getTransform(), m_material);
+    }
+
+    if (batchingdynamic)
+        batchingdynamic->insert(getGameObject()->getTransform());
+}
+
 void MeshRender::build(std::vector<Mesh> *meshlist)
 {
     auto meshListName = AssetsManager::GetMeshListRefToName(meshlist);
 
-    auto m_batchID = BatchingManager::Find(meshListName);
+    m_batchID = BatchingManager::Find(meshListName);
     if (m_batchID == InvalidBatch)
         m_batchID = BatchingManager::Create(meshListName, meshlist);
-
-    Batching *batching = BatchingManager::Get(m_batchID);
-    batchingdynamic = batching->insert(GetGameObject()->getTransform(), m_material);
 }
 
 

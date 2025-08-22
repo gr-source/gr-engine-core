@@ -14,17 +14,19 @@ public:
 
     void onRelease() override;
 
-    void build();
-
     bool onSerialize(Stream *stream) override;
 
     bool onDeserialize(Stream *stream) override;
+
+    void build();
 
     void build(std::vector<Mesh> *meshlist) override;
 
     BatchingDynamic *batchingdynamic;
 
 private:
+
+    BatchID m_batchID;
 };
 
 REGISTER_COMPONENT(MeshRender)

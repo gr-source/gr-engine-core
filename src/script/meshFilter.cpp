@@ -6,7 +6,8 @@
 
 #include "gr-base/core/assetsManager.hpp"
 
-MeshFilter::MeshFilter() : m_mesh(nullptr) {}
+MeshFilter::MeshFilter() : m_mesh(nullptr)
+{}
 
 void MeshFilter::setMesh(std::vector<Mesh> *mesh)
 {
@@ -15,7 +16,8 @@ void MeshFilter::setMesh(std::vector<Mesh> *mesh)
     processBoundbox();
 }
 
-std::vector<Mesh> *MeshFilter::getMesh() {
+std::vector<Mesh> *MeshFilter::getMesh()
+{
     return m_mesh;
 }
 
@@ -34,7 +36,8 @@ void MeshFilter::processBoundbox()
     }
 }
 
-Boundbox &MeshFilter::getBoundbox() {
+Boundbox &MeshFilter::getBoundbox()
+{
     return m_boundbox;
 }
 
@@ -42,74 +45,55 @@ bool MeshFilter::onSerialize(Stream *stream)
 {
     bool hasMesh = m_mesh != nullptr;
     if (!stream->write(&hasMesh, sizeof(bool)))
-    {
         return false;
-    }
 
     if (!hasMesh)
-    {
         return true;
-    }
 
     if (!stream->write(&m_boundbox, sizeof(Boundbox)))
         return false;
 
     auto name = AssetsManager::GetMeshListRefToName(m_mesh);
     if (!stream->write(name))
-    {
         return false;
-    }
 
     auto mcount = m_mesh->size();
     if (!stream->write(mcount))
-    {
         return false;
-    }
 
     for (auto &mesh : *m_mesh)
-    {
         mesh.serialize(stream);
-    }
 
     return true;
 }
 
-bool MeshFilter::onDeserialize(Stream *stream) {
+bool MeshFilter::onDeserialize(Stream *stream)
+{
     bool hasMesh;
     if (!stream->read(reinterpret_cast<char *>(&hasMesh), sizeof(bool)))
-    {
         return false;
-    }
 
     if (!hasMesh)
-    {
         return true;
-    }
 
     if (!stream->read(reinterpret_cast<char *>(&m_boundbox), sizeof(Boundbox)))
         return false;
 
-
     std::string name;
     if (!stream->read(name))
-    {
         return false;
-    }
 
     std::size_t mcount = 0;
     if (!stream->read(mcount))
-    {
         return false;
-    }
 
     m_mesh = AssetsManager::FindMesh(name);
     if (!m_mesh)
     {
         m_mesh = AssetsManager::CreateMesh(name);
         if (!m_mesh)
-        {
-            return false;
-        }
+                return false;
+
         for (std::size_t i={};i<mcount;i++)
         {
             m_mesh->emplace_back().deserialize(stream);

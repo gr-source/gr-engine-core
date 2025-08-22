@@ -13,8 +13,6 @@ public:
 
     void insert(Transform *transform);
 
-    void erase(Transform *transform);
-
     void render();
 
 private:
@@ -24,9 +22,11 @@ private:
 
     std::vector<Transform *> m_instances;
 
-    std::unique_ptr<GpuMesh> m_gpuMesh[2];
+    GpuMesh m_gpuMesh;
 
-    void build(GpuMesh *gpuMesh, std::vector<Mesh> *meshlist, int id);
+    bool instanced;
+
+    void build(std::vector<Mesh> *meshlist, int id);
 
     void buildDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh);
 

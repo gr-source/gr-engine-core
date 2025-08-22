@@ -1,6 +1,6 @@
 #include "gr-base/script/transform.hpp"
 
-#include "gr-base/ecs/gameObject.hpp"
+#include "gr-base/ecs/entity.hpp"
 
 #include "gr-base/core/file/stream.hpp"
 
@@ -25,13 +25,15 @@ void Transform::onDestroy()
     updateLocalMatrix();
 }
 
-void Transform::setLocalScale(const Vector3 &value) {
+void Transform::setLocalScale(const Vector3 &value)
+{
     m_scale = value;
 
     updateLocalMatrix();
 }
 
-Vector3 Transform::getLocalScale() const {
+const Vector3 &Transform::getLocalScale() const
+{
     return m_scale;
 }
 
@@ -42,7 +44,8 @@ void Transform::setLocalRotation(const Quaternion &value)
     updateLocalMatrix();
 }
 
-Quaternion Transform::getLocalRotation() const {
+const Quaternion &Transform::getLocalRotation() const
+{
     return m_rotation;
 }
 
@@ -51,17 +54,20 @@ Quaternion Transform::getRotation() const
     return m_parent != nullptr ? m_parent->getRotation() * m_rotation : m_rotation;
 }
 
-void Transform::setLocalPosition(const Vector3 &value) {
+void Transform::setLocalPosition(const Vector3 &value)
+{
     m_position = value;
 
     updateLocalMatrix();
 }
 
-Vector3 Transform::getLocalPosition() const {
+const Vector3 &Transform::getLocalPosition() const
+{
     return m_position;
 }
 
-void Transform::addLocalPosition(const Vector3 &value) {
+void Transform::addLocalPosition(const Vector3 &value)
+{
     m_position += value;
 
     updateLocalMatrix();
@@ -158,21 +164,23 @@ void Transform::updateGlobalMatrix()
     }
 
     for (auto &child : m_children)
-    {
         child->updateLocalMatrix();
-    }
 }
 
-Transform *Transform::findChild(Transform *transform) const {
+Transform *Transform::findChild(Transform *transform) const
+{
     Transform *result = nullptr;
-    for (auto &child : m_children) {
-        if (child == transform) {
+    for (auto &child : m_children)
+    {
+        if (child == transform)
+        {
             result = child;
             break;
         }
         
         result = child->findChild(transform);
-        if (result) {
+        if (result)
+        {
             break;
         }
     }

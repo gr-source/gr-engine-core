@@ -14,8 +14,6 @@ public:
 
     BatchingDynamic *insert(Transform *transform, const std::vector<Material *> &material);
 
-    void erase(Transform *transform);
-
     void render();
 
 private:
