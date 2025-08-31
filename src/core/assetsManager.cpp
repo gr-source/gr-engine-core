@@ -6,7 +6,6 @@
 
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/geometry/shader.hpp"
-#include "gr-base/core/scene.hpp"
 
 #include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
@@ -26,13 +25,6 @@ AnimationManager AssetsManager::mAnimationManager;
 
 // sshader property
 std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> AssetsManager::mShaderPropertyMap;
-
-/***************** Texture *****************/
-std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::mTextureMap;
-std::unordered_map<grr::gTexture *, std::string> AssetsManager::mTextureRefToName;
-
-std::unordered_map<std::string, std::unique_ptr<TextureLoadTask>> AssetsManager::mTextureLoadTaskMap;
-std::mutex AssetsManager::mTextureMutex;
 
 /***************** Mesh *****************/
 std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> AssetsManager::mMeshMapList;
@@ -55,20 +47,18 @@ void AssetsManager::Shutdown()
 {
 }
 
-#include "gr-base/core/window.hpp"
 #include <imgui.h>
 
 void AssetsManager::Render()
 {
 }
 
-std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
-    std::lock_guard<std::mutex> lock(mTextureMutex);
-    auto it = mTextureRefToName.find(texture);
-    if (it == mTextureRefToName.end()) {
+std::string AssetsManager::GetRefTextureName(grr::gTexture *texture)
+{
+    auto name = GetTextureManager().getname(texture);
+    if (name == nullptr)
         throw std::runtime_error("texture has not reference.");
-    }
-    return it->second;
+    return name;
 }
 
 grr::gShader *AssetsManager::CreateShader(ShaderParams shaderParams)
@@ -96,13 +86,9 @@ void AssetsManager::RemoveShader(grr::gShader *shader)
     return GetShaderManager().destroy(shader);
 }
 
-grr::gTexture *AssetsManager::CreateTexture(const std::string &name) {
-    std::lock_guard<std::mutex> lock(mTextureMutex);
-    auto &&[it, badded] = mTextureMap.emplace(name, std::make_unique<grr::gTexture>());
-
-    mTextureRefToName.emplace(&(*it->second), name);
-
-    return &(*it->second);
+grr::gTexture *AssetsManager::CreateTexture(const std::string &name)
+{
+    return GetTextureManager().create(name);
 }
 
 // ********** Mesh ********** //
@@ -180,41 +166,6 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
     TaskManager::Add<GameObjectLoadTask>(path, func);
 }
 
-void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func)
-{
-    std::lock_guard<std::mutex> lock(mTextureMutex);
-
-    // Check texture has in main list
-    {
-        auto it = mTextureMap.find(path);
-        if (it != mTextureMap.end())
-        {
-            if (func == nullptr)
-                return;
-            return func(&(*it->second));
-        }
-    }
-
-    // Check texture is loading
-    {
-        auto it = mTextureLoadTaskMap.find(path);
-        if (it != mTextureLoadTaskMap.end())
-        {
-            if (func == nullptr)
-                return;
-            return it->second->addFunction(func);
-        }
-    }
-
-    if (!File::Exists(path))
-    {
-        return Console::LogError("[ AssetsManager::Texture ] File not found: %s", path.c_str());
-    }
-    
-    // Create task to load texture
-    mTextureLoadTaskMap.emplace(path, std::make_unique<TextureLoadTask>(path, func));
-}
-
 /*
 void AssetsManager::SetAnimationList(const std::string &path, const std::function<void (Animation *)> func)
 {
@@ -281,21 +232,15 @@ std::vector<grr::gShader *> AssetsManager::GetShaderList(ShaderType type)
     return GetShaderManager().get_shader(type);
 }
 
-grm::size AssetsManager::GetTextureCount() {
-    std::lock_guard<std::mutex> lock(mTextureMutex);
-    return mTextureMap.size();
+grm::size AssetsManager::GetTextureCount()
+{
+    return GetTextureManager().getcount();
 }
 
 grm::size AssetsManager::GetMeshCount()
 {
     std::lock_guard<std::mutex> lock(m_meshMutex);
     return mMeshMapList.size();
-}
-
-std::unordered_map<grr::gTexture *, std::string> AssetsManager::GetTextureRefMap()
-{
-    std::lock_guard<std::mutex> lock(mTextureMutex);
-    return mTextureRefToName;
 }
 
 Material *AssetsManager::FindMaterial(const std::string &key) {
@@ -324,31 +269,18 @@ void AssetsManager::RemoveTask(const std::string &name)
 {
     // Check if task on the scene
     if (GetSceneTaskManager().remove_task(name))
-    {
         return;
-    }
 
     // Check if task on the texture
-    {
-        std::lock_guard<std::mutex> lock(mTextureMutex);
-        auto it = mTextureLoadTaskMap.find(name);
-        if (it != mTextureLoadTaskMap.end())
-        {
-            mTextureLoadTaskMap.erase(it);
-            return;
-        }
-    }
+    if (GetTextureManager().remove_task(name))
+        return;
 
     if (GetShaderManager().remove_task(name))
-    {
         return;
-    }
 
     // Chck task is on AnimationLoadTask
     if (mAnimationManager.remove_task(name))
-    {
         return;
-    }
     /*
     if (GetFilmboxManager().remove_task(name))
     {
@@ -358,11 +290,6 @@ void AssetsManager::RemoveTask(const std::string &name)
 }
 
 // private
-ShaderManager &AssetsManager::GetShaderManager()
-{
-    static ShaderManager instance;
-    return instance;
-}
 /*
 FilmboxManager &AssetsManager::GetFilmboxManager()
 {
@@ -376,6 +303,17 @@ SceneTaskManager &AssetsManager::GetSceneTaskManager()
     return instance;
 }
 
+TextureManager &AssetsManager::GetTextureManager()
+{
+    static TextureManager instance;
+    return instance;
+}
+
+ShaderManager &AssetsManager::GetShaderManager()
+{
+    static ShaderManager instance;
+    return instance;
+}
 
 
 

@@ -5,7 +5,8 @@
 
 #include "gr-base/ecs/component.hpp"
 
-class MeshFilter : public Component {
+class MeshFilter : public Component
+{
 public:
     MeshFilter();
 

@@ -1,15 +1,17 @@
 #pragma once
 
 #include <gr-render/gRender.h>
-#include <utility>
+#include <memory>
 
 #include "gr-base/core/animation/animation.hpp"
 
-#include "gr-base/core/geometry/default.hpp"
+#include "gr-base/core/geometry/material.hpp"
+#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
-#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
+#include "gr-base/core/task/texturemanager.hpp"
+
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/core/default.hpp"
@@ -87,13 +89,7 @@ public:
 
     static grm::size GetMeshCount();
 
-    static std::unordered_map<grr::gTexture *, std::string> GetTextureRefMap();
-
     static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
-
-    static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
-
-    // static std::vector<grr::gShader *> GetShaderList(AssetShader_ type, ShaderOptimize_ optimize);
 
     static std::vector<grr::gShader *> GetShaderList(ShaderType type);
 
@@ -114,14 +110,6 @@ private:
     // sshader property
     static std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> mShaderPropertyMap;
 
-    /***************** Texture *****************/
-    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> mTextureMap;
-    static std::unordered_map<grr::gTexture *, std::string> mTextureRefToName;
-
-    // multithread
-    static std::unordered_map<std::string, std::unique_ptr<TextureLoadTask>> mTextureLoadTaskMap;
-    static std::mutex mTextureMutex;
-
     /***************** Mesh *****************/
     static std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> mMeshMapList;
     static std::unordered_map<std::vector<Mesh> *, std::string> mMeshListRefToName;
@@ -132,9 +120,11 @@ private:
     static std::unordered_map<Material *, std::string> mMaterialRefToName;
     static std::mutex mMaterialMutex;
 
-    static ShaderManager &GetShaderManager();
-
     static SceneTaskManager &GetSceneTaskManager();
+
+    static TextureManager &GetTextureManager();
+
+    static ShaderManager &GetShaderManager();
 };
 
 template <typename... Args>
@@ -167,7 +157,7 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
 
-    SetTextureList(path, func);
+    return GetTextureManager().load(path, func);
 }
 
 // ***** Shader ***** //

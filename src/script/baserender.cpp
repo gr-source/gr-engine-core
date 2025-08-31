@@ -14,35 +14,17 @@
 #include <algorithm>
 #include <cstddef>
 
-BaseRender::BaseRender() /* : m_batchID(InvalidBatch) */
+BaseRender::BaseRender()
 {}
 
 void BaseRender::onInit()
 {}
 
 void BaseRender::onRelease()
-{
-    /*
-    if (Threadpool::IsMainThread() && m_batchID != InvalidBatch)
-    {
-        Batching *batching = BatchingManager::Get(m_batchID);
-        batching->erase(GetGameObject()->getTransform());
-    }
-
-    m_batchID = InvalidBatch;
-    */
-}
+{}
 
 void BaseRender::onEnable()
-{
-    /*
-    if (m_batchID == InvalidBatch)
-        return;
-    
-    Batching *batching = BatchingManager::Get(m_batchID);
-    batching->insert(GetComponent<Transform>(), m_material);
-    */
-}
+{}
 
 void BaseRender::onDisable()
 {

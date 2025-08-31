@@ -59,6 +59,8 @@ bool MeshRender::onDeserialize(Stream *stream)
 
 void MeshRender::build()
 {
+    std::cout << "Build" << std::endl;
+    /*
     if (m_batchID == InvalidBatch)
     {
         if (!HasComponent<MeshFilter>())
@@ -83,6 +85,7 @@ void MeshRender::build()
 
     if (batchingdynamic)
         batchingdynamic->insert(getGameObject()->getTransform());
+    */
 }
 
 void MeshRender::build(std::vector<Mesh> *meshlist)
