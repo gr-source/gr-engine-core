@@ -1,20 +1,21 @@
 #include "gr-base/core/debugdraw.hpp"
 #include "gr-base/core/assetsManager.hpp"
+
 #include "gr-base/core/file/file.hpp"
+
 #include "gr-base/core/geometry/shader.hpp"
+
 #include "gr-base/script/camera.hpp"
-#include <gr-math/color.hpp>
-#include <gr-math/vector3.hpp>
-#include <gr-render/gShader.h>
-#include <gr-render/gVertexArray.h>
-#include <iterator>
-#include <memory>
-#include <ostream>
 
 // public
+void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor)
+{
+    return GetInstance().drawLine(start, end, startColor, endColor);
+}
+
 void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end)
 {
-    return GetInstance().drawLine(start, end);
+    return GetInstance().drawLine(start, end, Color::white, Color::white);
 }
 
 void DebugDraw::Render(const Camera *camera)
@@ -35,17 +36,17 @@ DebugDraw::DebugDraw()
 DebugDraw::~DebugDraw()
 {}
 
-void DebugDraw::drawLine(const Vector3 &start, const Vector3 &end)
+void DebugDraw::drawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor)
 {
-    m_lines.push_back(start);
-    m_lines.push_back(end);
+    m_lines.push_back(Line3D{start, startColor});
+    m_lines.push_back(Line3D{end, endColor});
 }
 
 void DebugDraw::render(const Camera *camera)
 {
-    m_linerender.render(camera, m_lines.data(), m_lines.size());
+    auto lines = std::move(m_lines);
 
-    m_lines.clear();
+    m_linerender.render(camera, lines.data(), lines.size());
 }
 
 // LineRender
@@ -64,11 +65,11 @@ DebugDraw::LineRender::LineRender() : m_vbo(grr::gVertexArray::CreateBuffer(Buff
     m_vertexarray->bind();
 
     grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::SetAttrib(0, 3, sizeof(Vector3), nullptr);
-    // grr::gVertexArray::SetAttrib(1, 4, sizeof(Line3D), reinterpret_cast<void*>(offsetof(Line3D, color)));
+    grr::gVertexArray::SetAttrib(0, 3, sizeof(Line3D), reinterpret_cast<const void *>(offsetof(Line3D, position)));
+    grr::gVertexArray::SetAttrib(1, 4, sizeof(Line3D), reinterpret_cast<const void *>(offsetof(Line3D, color)));
 }
 
-void DebugDraw::LineRender::render(const Camera *camera, const Vector3 *data, std::size_t size)
+void DebugDraw::LineRender::render(const Camera *camera, const Line3D *data, std::size_t size)
 {
     if (m_shader == nullptr || !m_shader->isValid())
         return;
@@ -76,13 +77,13 @@ void DebugDraw::LineRender::render(const Camera *camera, const Vector3 *data, st
     m_shader->bind();
     m_shader->set_uniform("u_projection", camera->getPerspesctive());
     m_shader->set_uniform("u_view", camera->getViewmatrix());
-    m_shader->set_uniform("u_model", Matrix4x4::identityMatrix);
+    // m_shader->set_uniform("u_model", Matrix4x4::identityMatrix);
 
     m_vertexarray->bind();
 
     grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::UpdateResizeBuffer(size * sizeof(Vector3), BufferUsage::DYNAMIC);
-    grr::gVertexArray::SetBufferUpdate(0, size * sizeof(Vector3), (const void *)data);
+    grr::gVertexArray::UpdateResizeBuffer(size * sizeof(Line3D), BufferUsage::DYNAMIC);
+    grr::gVertexArray::SetBufferUpdate(0, size * sizeof(Line3D), (const void *)data);
 
     m_shader->flush();
 

@@ -139,6 +139,8 @@ ShaderType ShaderLoadTask::get_shader_asset_type(const std::string &path)
             type = ShaderType::SHADER3D;
         else if (line.find("sky") != std::string::npos)
             type = ShaderType::SKY;
+        else if (line.find("line") != std::string::npos)
+            type = ShaderType::LINE;
 
         break;
     }
@@ -159,6 +161,7 @@ std::array<std::string, IShaderStage> ShaderLoadTask::LoadShaderBase(ShaderType 
             path_to_base = "/assets/shader/model/shader2D.glsl";
             break;
         case ShaderType::SHADER3D:
+        case ShaderType::LINE:
         case ShaderType::SKY:
             path_to_base = "/assets/shader/model/shader3D.glsl";
             break;
@@ -509,7 +512,10 @@ void ShaderLoadTask::bind_shader(const std::string &path)
     m_shaderSource[ShaderStage::VERTEX] = remove_comment(m_shaderSource[ShaderStage::VERTEX]);
 
     std::unordered_set<std::string> macro_map;
-    if (m_shaderParams.type == ShaderType::SKY)
+    if (m_shaderParams.type == ShaderType::LINE)
+    {
+        macro_map.emplace("ENABLE_LINE");
+    } else if (m_shaderParams.type == ShaderType::SKY)
     {
         macro_map.emplace("ENABLE_SKYBOX");
     }

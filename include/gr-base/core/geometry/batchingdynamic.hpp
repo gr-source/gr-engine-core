@@ -10,6 +10,7 @@ class BatchingDynamic
 {
 public:
     BatchingDynamic(const std::vector<Material *> &materiallist, std::vector<Mesh> *meshlist);
+    BatchingDynamic() = default;
 
     void insert(Transform *transform);
 

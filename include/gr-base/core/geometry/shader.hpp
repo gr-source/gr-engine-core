@@ -10,6 +10,7 @@ enum class ShaderType
     SHADER2D,
     SHADER3D,
     SKY,
+    LINE,
     COUNT
 };
 

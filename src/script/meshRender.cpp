@@ -71,13 +71,12 @@ void MeshRender::build()
             return Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
 
         build(meshlist);
-    }
 
-    if (m_batchID == InvalidBatch)
-        return;
 
-    if (batchingdynamic == nullptr)
-    {
+        if (m_batchID == InvalidBatch)
+            return;
+
+
         Batching *batching = BatchingManager::Get(m_batchID);
         batchingdynamic = batching->insert(GetGameObject()->getTransform(), m_material);
     }

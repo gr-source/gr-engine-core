@@ -11,6 +11,8 @@
 class DebugDraw
 {
 public:
+    static void DrawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor);
+
     static void DrawLine(const Vector3 &start, const Vector3 &end);
 
     static void Render(const Camera *camera);
@@ -18,12 +20,12 @@ public:
 private:
     static DebugDraw &GetInstance();
 
-    struct Line3D
+    typedef struct Line3D
     {
         Vector3 position;
 
         Color color;
-    };
+    } Line3D;
 
     class LineRender
     {
@@ -36,17 +38,17 @@ private:
 
         LineRender();
 
-        void render(const Camera *camera, const Vector3 *data, std::size_t size);
+        void render(const Camera *camera, const Line3D *data, std::size_t size);
     };
     
-    std::vector<Vector3> m_lines;
+    std::vector<Line3D> m_lines;
 
     LineRender m_linerender;
 
     DebugDraw();
     ~DebugDraw();
 
-    void drawLine(const Vector3 &start, const Vector3 &end);
+    void drawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor);
 
     void render(const Camera *camera);
 };
