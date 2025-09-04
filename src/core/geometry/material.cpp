@@ -83,17 +83,8 @@ void Material::serialize(Stream *stream) const
     if (hasShader)
     {
         auto name = AssetsManager::GetShaderName(m_shader);
-
-        auto nsize = name.size();
-        if (!stream->write(&nsize, sizeof(std::size_t)))
-        {
+        if (!stream->write(name))
             return;
-        }
-
-        if (!stream->write(name.c_str(), nsize * sizeof(char)))
-        {
-            return;
-        }
     }
 
     std::vector<std::tuple<grr::gTexture *, int>> textures;
@@ -299,7 +290,7 @@ void *Material::internal_set_value(const char *name, grm::uint8 count, const voi
     if (it == m_field_data.end())
     {
         auto id = m_shader->findUniform(name);
-        if (id == InvalidUniformID)
+        if (id == InvalidID)
         {
             return nullptr;
         }

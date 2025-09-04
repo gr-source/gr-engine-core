@@ -1,6 +1,7 @@
 #pragma once
 
 // core/geomery
+#include "gr-base/core/geometry/boundbox.hpp"
 #include "gr-base/core/geometry/gpumesh.hpp"
 
 // script
@@ -22,6 +23,8 @@ private:
     std::vector<MeshID> m_meshes;
 
     std::vector<Transform *> m_instances;
+
+    Boundbox m_boundbox;
 
     GpuMesh m_gpuMesh;
 

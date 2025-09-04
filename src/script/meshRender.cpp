@@ -56,37 +56,6 @@ bool MeshRender::onDeserialize(Stream *stream)
     return BaseRender::onDeserialize(stream);
 }
 
-/*
-void MeshRender::build()
-{
-    std::cout << "Build" << std::endl;
-    if (m_batchID == InvalidBatch)
-    {
-        if (!HasComponent<MeshFilter>())
-            return Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
-
-        MeshFilter *meshFilter = GetComponent<MeshFilter>();
-        
-        auto meshlist = meshFilter->getMesh();
-        if (meshlist == nullptr)
-            return Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
-
-        build(meshlist);
-
-
-        if (m_batchID == InvalidBatch)
-            return;
-
-
-        Batching *batching = BatchingManager::Get(m_batchID);
-        batchingdynamic = batching->insert(GetGameObject()->getTransform(), m_material);
-    }
-
-    if (batchingdynamic)
-        batchingdynamic->insert(getGameObject()->getTransform());
-}
-*/
-
 void MeshRender::build(const std::vector<MeshID> &meshes)
 {
     std::string batchname;

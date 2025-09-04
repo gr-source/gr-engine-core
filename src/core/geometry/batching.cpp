@@ -24,12 +24,12 @@ Batching::Batching(const std::vector<MeshID> &meshes) : m_meshes(meshes)
 Batching::~Batching()
 {}
 
-BatchingDynamic *Batching::insert(Transform *transform, const std::vector<MaterialID> &materials)
+void Batching::insert(Transform *transform, const std::vector<MaterialID> &materials)
 {
     if (materials.empty())
     {
         Console::LogError("[ Batching ] this model don't have material");
-        return nullptr;
+        return;
     }
 
     auto gameObject = transform->getGameObject();
@@ -50,8 +50,6 @@ BatchingDynamic *Batching::insert(Transform *transform, const std::vector<Materi
     }
                 
     m_batchingdynamicmap[key]->insert(transform);
-
-    return m_batchingdynamicmap[key].get();
 }
 
 void Batching::render()

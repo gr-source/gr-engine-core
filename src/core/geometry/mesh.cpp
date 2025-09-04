@@ -43,34 +43,28 @@ std::vector<BoneWeight> Mesh::getBoneWeight() const {
 int Mesh::serialize(Stream *stream) const
 {
     // Serialize vertices
-    auto vSize = m_vertices.size();
-    if (!stream->writeS(&vSize, 1)) {
-        return 3;
-    }
+    std::size_t vericecount = m_vertices.size();
+    if (!stream->write(vericecount))
+        return 1;
 
-    if (!stream->writeS(m_vertices.data(), vSize)) {
-        return 4;
-    }
+    if (!stream->write(m_vertices.data(), vericecount * sizeof(Vertex3D)))
+        return 2;
 
     // Serialize indices
-    auto iSize = m_indices.size();
-    if (!stream->writeS(&iSize, 1)) {
-        return 5;
-    }
+    std::size_t indicecount = m_indices.size();
+    if (!stream->write(indicecount))
+        return 3;
 
-    if (!stream->writeS(m_indices.data(), iSize)) {
-        return 6;
-    }
+    if (!stream->write(m_indices.data(), indicecount * sizeof(int)))
+        return 4;
 
     // Serialize bone
-    auto bsize = m_boneWeight.size();
-    if (!stream->writeS(&bsize, 1)) {
-        return 7;
-    }
+    std::size_t bonewightcount = m_boneWeight.size();
+    if (!stream->write(bonewightcount))
+        return 5;
 
-    if (!stream->writeS(m_boneWeight.data(), m_boneWeight.size())) {
-        return 8;
-    }
+    if (!stream->write(m_boneWeight.data(), bonewightcount * sizeof(BoneWeight)))
+        return 6;
     
     return 0;
 }
@@ -78,38 +72,30 @@ int Mesh::serialize(Stream *stream) const
 int Mesh::deserialize(Stream *stream)
 {
     // Deserialize vertices
-    std::size_t vSize;
-    if (!stream->readS(&vSize, 1)) {
-        return 3;
-    }
+    std::size_t vericecount = {};
+    if (!stream->read(vericecount))
+        return 1;
 
-    m_vertices.resize(vSize);
-    if (!stream->readS(m_vertices.data(), vSize)) {
-        return 4;
-    }
+    m_vertices.resize(vericecount);
+    if (!stream->read(reinterpret_cast<char *>(m_vertices.data()), vericecount * sizeof(Vertex3D)))
+        return 2;
 
     // Deserialize indices
-    std::size_t iSize;
-    if (!stream->readS(&iSize, 1)) {
+    std::size_t indicecount = {};
+    if (!stream->read(indicecount))
+        return 3;
+
+    m_indices.resize(indicecount, 0);
+    if (!stream->read(reinterpret_cast<char *>(m_indices.data()), indicecount * sizeof(int)))
+        return 4;
+
+    std::size_t bonewightcount = {};
+    if (!stream->read(bonewightcount))
         return 5;
-    }
 
-    m_indices.resize(iSize, 0);
-    if (!stream->readS(m_indices.data(), iSize)) {
+    m_boneWeight.resize(bonewightcount);
+    if (!stream->read(reinterpret_cast<char *>(m_boneWeight.data()), bonewightcount * sizeof(BoneWeight)))
         return 6;
-    }
-
-    std::size_t bsize = 0;
-    if (!stream->readS(&bsize, 1)) {
-        return 7;
-    }
-
-    if (bsize <= 0) { return 0; }
-
-    m_boneWeight.resize(bsize);
-    if (!stream->readS(m_boneWeight.data(), m_boneWeight.size())) {
-        return 8;
-    }
     return 0;
 }
 

@@ -4,6 +4,7 @@
 #include "gr-base/core/assetsManager.hpp"
 
 // core/geometry
+#include "gr-base/core/culling/frustum.hpp"
 #include "gr-base/core/geometry/material.hpp"
 
 // script
@@ -73,6 +74,23 @@ void BatchingDynamic::render()
         material.setShader(shader);
         material.flush();
 
+        bool enable[10] = {false};
+        int textureID[10] = {0};
+
+        for (std::size_t j={};j<10;j++)
+        {
+            auto texture = material.getTexture(j);
+            if (texture == nullptr)
+                continue;
+            
+            texture->bind(i);
+            enable[j] = true;
+            textureID[j] = j;
+        }
+
+        shader->setUniform("u_texture", textureID);
+        shader->setUniform("u_enable", enable);
+
         if (useInstancing)
         {
             shader->flush();
@@ -80,25 +98,9 @@ void BatchingDynamic::render()
         }
         else
         {
-            bool enable[10] = {false};
-            int textureID[10] = {0};
-
-            for (std::size_t j={};j<10;j++)
-            {
-                auto texture = material.getTexture(j);
-                if (texture == nullptr)
-                    continue;
-                
-                texture->bind(i);
-                enable[j] = true;
-                textureID[j] = j;
-            }
-
-            shader->setUniform("u_texture", textureID);
-            shader->setUniform("u_enable", enable);
-
             shader->setUniform("u_model", &modellist[0]);
             shader->flush();
+            
             m_gpuMesh.draw(i);
         }
 
@@ -112,11 +114,20 @@ void BatchingDynamic::build(int id)
     auto meshCount = m_meshes.size();
     m_gpuMesh.resize(meshCount);
 
+    m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
+
     for (std::size_t i=0;i<meshCount;i++)
     {
         auto &meshID = m_meshes[i];
 
         auto &mesh = AssetsManager::GetMesh(meshID);
+
+        for (auto &vertice : mesh.getVertices())
+        {
+            m_boundbox.min = Math::min(m_boundbox.min, vertice.position);
+            m_boundbox.max = Math::max(m_boundbox.max, vertice.position);
+        }
 
         switch (id)
         {

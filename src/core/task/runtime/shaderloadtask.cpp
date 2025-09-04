@@ -12,7 +12,7 @@
 #include <stdexcept>
 
 #define PRINT_ERROR(func, property, type) \
-    if (func == InvalidUniformID) { \
+    if (func == InvalidID) { \
         Console::LogError("[ ShaderLoadTask ] Shader.Regiter uniform: %s", grr::error()); \
     } else if (userfield.find(name) != userfield.end()) { \
         property->addProperty(variablename, name, type); \

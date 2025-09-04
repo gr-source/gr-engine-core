@@ -65,9 +65,7 @@ std::string AssetsManager::GetShaderName(grr::gShader *shader)
 {
     auto name = GetShaderManager().get_shader_name(shader);
     if (name == nullptr)
-    {
         throw std::runtime_error("[ AssetsManager.Shader ] Fail to get shader name, pointer is not valid.");
-    }
     return name;
 }
 

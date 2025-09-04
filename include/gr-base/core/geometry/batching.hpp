@@ -12,7 +12,7 @@ public:
 
     std::string name;
 
-    BatchingDynamic *insert(Transform *transform, const std::vector<MaterialID> &materials);
+    void insert(Transform *transform, const std::vector<MaterialID> &materials);
 
     void render();
 
