@@ -9,11 +9,7 @@
 
 class Mesh {
 public:
-    Mesh(const std::string &name = "default");
-
-    void setName(const std::string &name);
-
-    std::string getName() const;
+    Mesh();
 
     template <typename ...Args>
     std::size_t addVertex(Args &&...args);
@@ -37,9 +33,9 @@ public:
 
     std::vector<BoneWeight> getBoneWeight() const;
 
-    int serialize(Stream *streaming) const;
+    int serialize(Stream *stream) const;
 
-    int deserialize(Stream *streaming);
+    int deserialize(Stream *stream);
 
 private:
     std::vector<BoneWeight> m_boneWeight;
@@ -47,8 +43,6 @@ private:
     std::vector<Vertex3D> m_vertices;
 
     std::vector<int> m_indices;
-
-    std::string m_name;
 };
 
 template <typename ...Args>

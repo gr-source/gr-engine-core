@@ -10,9 +10,9 @@ class MeshFilter : public Component
 public:
     MeshFilter();
 
-    void setMesh(std::vector<Mesh> *mesh);
+    void addMesh(MeshID id);
 
-    std::vector<Mesh> *getMesh();
+    const std::vector<MeshID> &getMesh() const;
 
     void processBoundbox();
 
@@ -23,7 +23,7 @@ public:
     bool onDeserialize(Stream *stream) override;
     
 private:
-    std::vector<Mesh> *m_mesh;
+    std::vector<MeshID> m_meshes;
 
     Boundbox m_boundbox;
 };

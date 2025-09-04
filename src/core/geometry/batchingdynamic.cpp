@@ -17,19 +17,19 @@
 #include <algorithm>
 
 // BatchingDynamic
-BatchingDynamic::BatchingDynamic(const std::vector<Material *> &material, std::vector<Mesh> *meshlist) : m_materiallist(material), m_meshlist(meshlist), instanced(false)
+BatchingDynamic::BatchingDynamic(const std::vector<MaterialID> &materials, const std::vector<MeshID> &meshes) : m_materials(materials), m_meshes(meshes), instanced(false)
 {
 }
 
 void BatchingDynamic::insert(Transform *transform)
 {
     if (m_instances.empty())
-        build(m_meshlist, DYNAMIC_MESH);
+        build(DYNAMIC_MESH);
     else
     {
         if (!instanced)
         {
-            build(m_meshlist, DYNAMIC_INSTANCED_MESH);
+            build(DYNAMIC_INSTANCED_MESH);
 
             instanced = true;
         }
@@ -40,10 +40,8 @@ void BatchingDynamic::insert(Transform *transform)
 
 void BatchingDynamic::render()
 {
-    auto instances = std::move(m_instances);
-
-    const bool useInstancing = instances.size() > 1;
-    const std::size_t instanceCount = instances.size();
+    const bool useInstancing = m_instances.size() > 1;
+    const std::size_t instanceCount = m_instances.size();
 
     if (instanceCount == 0)
         return;
@@ -51,26 +49,29 @@ void BatchingDynamic::render()
     std::vector<Matrix4x4> modellist(instanceCount, Matrix4x4::identityMatrix);
     {
         for (std::size_t i={};i<instanceCount;i++)
-            modellist[i] = instances[i]->getGlobalMatrix();
+            modellist[i] = m_instances[i]->getGlobalMatrix();
 
         if (useInstancing)
             m_gpuMesh.push(modellist.data(), modellist.size());
     }
 
-    auto materialCount = m_materiallist.size();
+    auto materialCount = m_materials.size();
 
     for (std::size_t i = 0; i < materialCount; ++i)
     {
-        auto material = m_materiallist[i];
+        auto &materialID = m_materials[i];
+        
+        auto &material = AssetsManager::GetMaterial(materialID);
+
         auto shader = m_gpuMesh.getshader(i);
         if (!shader)
             continue;
     
         shader->bind();
 
-        auto originalShader = material->getShader();
-        material->setShader(shader);
-        material->flush();
+        auto originalShader = material.getShader();
+        material.setShader(shader);
+        material.flush();
 
         if (useInstancing)
         {
@@ -84,7 +85,7 @@ void BatchingDynamic::render()
 
             for (std::size_t j={};j<10;j++)
             {
-                auto texture = material->getTexture(j);
+                auto texture = material.getTexture(j);
                 if (texture == nullptr)
                     continue;
                 
@@ -101,19 +102,21 @@ void BatchingDynamic::render()
             m_gpuMesh.draw(i);
         }
 
-        material->setShader(originalShader);
+        material.setShader(originalShader);
     }
 }
 
 // private
-void BatchingDynamic::build(std::vector<Mesh> *meshlist, int id)
+void BatchingDynamic::build(int id)
 {
-    auto meshCount = meshlist->size();
+    auto meshCount = m_meshes.size();
     m_gpuMesh.resize(meshCount);
 
     for (std::size_t i=0;i<meshCount;i++)
     {
-        auto &mesh = (*meshlist)[i];
+        auto &meshID = m_meshes[i];
+
+        auto &mesh = AssetsManager::GetMesh(meshID);
 
         switch (id)
         {
@@ -128,12 +131,14 @@ void BatchingDynamic::build(std::vector<Mesh> *meshlist, int id)
         }
     }
 
-    auto count = m_materiallist.size();
+    auto count = m_materials.size();
     for (std::size_t i={};i<count;i++)
     {
-        auto material = m_materiallist[i];
+        auto &materialID = m_materials[i];
 
-        auto shader = material->getShader();
+        auto &material = AssetsManager::GetMaterial(materialID);
+
+        auto shader = material.getShader();
 
         auto shadername = AssetsManager::GetShaderName(shader);
 

@@ -7,12 +7,12 @@
 class Batching
 {
 public:
-    Batching(std::vector<Mesh> *meshlist);
+    Batching(const std::vector<MeshID> &meshes);
     ~Batching();
 
     std::string name;
 
-    BatchingDynamic *insert(Transform *transform, const std::vector<Material *> &material);
+    BatchingDynamic *insert(Transform *transform, const std::vector<MaterialID> &materials);
 
     void render();
 
@@ -21,7 +21,7 @@ private:
 
     std::vector<BatchingDynamic *> m_batchingdynamiclist;
 
-    std::vector<Mesh> *m_meshlist;
+    std::vector<MeshID> m_meshes;
 };
 
 /*

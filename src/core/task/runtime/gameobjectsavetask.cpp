@@ -15,6 +15,7 @@
 
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/transform.hpp"
 
 GameObjectSaveTask::GameObjectSaveTask(const std::string &path, GameObject *gameObject, std::function<void (GameObject *)> func) : m_path(path), m_gameObject(gameObject), m_func(func)
@@ -64,7 +65,6 @@ void GameObjectSaveTask::onPostExecute(int result)
 
     try
     {
-        std::cout << "move(" << file << ", " << m_path << std::endl;
         File::Move(file, m_path);
     } catch (const std::exception &e)
     {
@@ -129,6 +129,18 @@ int GameObjectSaveTask::write_data(Stream *stream)
         {
             return 6;
         }
+        stream->flush();
+    }
+    
+    // write mesh
+    {
+        if (write_mesh(stream) != 0)
+            return 7;
+
+        DataSegment dataSegment = {HeaderType::MESH, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&dataSegment, 1, false))
+            return 8;
+
         stream->flush();
     }
 
@@ -258,14 +270,16 @@ int GameObjectSaveTask::write_material(Stream *stream)
         return 1;
     }
 
-    for (auto &&[name, material] : m_materialmap)
+    for (auto &&[name, materialID] : m_materialmap)
     {
+        auto &material = AssetsManager::GetMaterial(materialID);
+
         if (!stream->write(name))
         {
             return 2;
         }
 
-        auto shadername = AssetsManager::GetShaderName(material->getShader());
+        auto shadername = AssetsManager::GetShaderName(material.getShader());
         if (!stream->write(shadername))
         {
             return 3;
@@ -275,7 +289,7 @@ int GameObjectSaveTask::write_material(Stream *stream)
         std::size_t bufferSize = 0;
         {
             Stream temp;
-            material->serialize(&temp);
+            material.serialize(&temp);
             bufferSize = temp.getDataSize();
 
             temp.close();
@@ -286,7 +300,33 @@ int GameObjectSaveTask::write_material(Stream *stream)
             return 4;
         }
 
-        material->serialize(stream);
+        material.serialize(stream);
+    }
+    return 0;
+}
+
+int GameObjectSaveTask::write_mesh(Stream *stream)
+{
+    auto size = m_meshmap.size();
+    if (!stream->write(size))
+        return 1;
+
+    for (auto &meshID : m_meshmap)
+    {
+        auto name = AssetsManager::GetMeshName(meshID);
+        if (!stream->write(name))
+            return 2;
+
+        auto &mesh = AssetsManager::GetMesh(meshID);
+
+        Stream temp;
+        mesh.serialize(&temp);
+
+        std::size_t length = temp.getDataSize();
+        if (!stream->write(length))
+            return 3;
+
+        mesh.serialize(stream);
     }
     return 0;
 }
@@ -386,15 +426,25 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
     for (auto &&[name, component] : entity->getComponentMap())
         m_componentdata.emplace_back(gameObject->getName(), name, component);
 
+    if (gameObject->hasComponent<MeshFilter>())
+    {
+        auto meshFilter = gameObject->getComponent<MeshFilter>();
+        for (auto &meshID : meshFilter->getMesh())
+        {
+            m_meshmap.emplace(meshID);
+        }
+    }
+
     if (gameObject->hasComponent<MeshRender>() || gameObject->hasComponent<SkinnedMeshRender>())
     {
         auto baseRender = gameObject->hasComponent<MeshRender>() ? static_cast<BaseRender *>(gameObject->getComponent<MeshRender>()) : static_cast<BaseRender *>(gameObject->getComponent<SkinnedMeshRender>());
         
-        for (auto material : baseRender->getMaterial())
+        for (auto &materialID : baseRender->getMaterial())
         {
-            auto material_name = AssetsManager::GetRefMaterialToName(material);
+            auto material_name = AssetsManager::GetMaterialName(materialID);
+            auto &material = AssetsManager::GetMaterial(materialID);
 
-            auto shader_name = AssetsManager::GetShaderName(material->getShader());
+            auto shader_name = AssetsManager::GetShaderName(material.getShader());
 
             {
                 auto it = m_shadermap.find(shader_name);
@@ -405,7 +455,7 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
             {
                 auto it = m_materialmap.find(material_name);
                 if (it == m_materialmap.end())
-                    m_materialmap.emplace(material_name, material);
+                    m_materialmap.emplace(material_name, materialID);
             }
         }
     }

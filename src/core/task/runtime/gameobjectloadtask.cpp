@@ -6,6 +6,7 @@
 
 #include "gr-base/core/assetsManager.hpp"
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/core/geometry/shader.hpp"
@@ -110,6 +111,9 @@ int GameObjectLoadTask::read_data(Stream *stream)
                 break;
             case HeaderType::MATERIAL:
                 result = read_material(stream);
+                break;
+            case HeaderType::MESH:
+                result = read_mesh(stream);
                 break;
             case HeaderType::OBJECT:
                 result = read_gameobject(stream);
@@ -243,17 +247,58 @@ int GameObjectLoadTask::read_material(Stream *stream)
 
         auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
 
-        auto it = m_materialmap.find(name);
-        if (it == m_materialmap.end() && m_shadermap.find(shadername) != m_shadermap.end())
+        auto materialID = AssetsManager::FindMaterial(name);
+        if (materialID == nill)
         {
-            auto material = AssetsManager::CreateMaterial(name, m_shadermap[shadername]);
-            material->deserialize(stream);
-
-            m_materialmap.emplace(name, material);
+            auto it = m_materialmap.find(name);
+            if (it == m_materialmap.end() && m_shadermap.find(shadername) != m_shadermap.end())
+            {
+                materialID = AssetsManager::CreateMaterial(name, m_shadermap[shadername]);
+                {
+                    auto &material = AssetsManager::GetMaterial(materialID);
+                    material.deserialize(stream);
+                }
+            }
         }
+
+        if (materialID != nill)
+            m_materialmap.emplace(name, materialID);
 
         if (stream->tellg() != next)
             stream->seekg(next, std::ios_base::beg);
+    }
+    return 0;
+}
+
+int GameObjectLoadTask::read_mesh(Stream *stream)
+{
+    std::size_t size = {};
+    if (!stream->read(size))
+        return 1;
+
+    for (std::size_t i=0;i<size;i++)
+    {
+        std::string name;
+        if (!stream->read(name))
+            return 2;
+
+        std::size_t buffsize = 0;
+        if (!stream->read(buffsize))
+            return 3;
+
+        auto next = stream->tellg() + static_cast<std::streampos>(buffsize);
+
+        auto meshID = AssetsManager::FindMesh(name);
+        if (meshID == nill)
+        {
+            meshID = AssetsManager::CreateMesh(name);
+
+            auto &mesh = AssetsManager::GetMesh(meshID);
+            mesh.deserialize(stream);
+        } else
+        {
+            stream->seekg(next, std::ios_base::beg);
+        }
     }
     return 0;
 }

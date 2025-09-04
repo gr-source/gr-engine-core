@@ -111,8 +111,10 @@ set(task
     src/core/task/runtime/shaderloadtask.cpp
 
     src/core/task/scenetaskmanager.cpp
+    src/core/task/materialmanager.cpp
     src/core/task/texturemanager.cpp
     src/core/task/shadermanager.cpp
+    src/core/task/meshmanager.cpp
 )
 
 set(broadphase_src

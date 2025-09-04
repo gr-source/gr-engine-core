@@ -39,32 +39,27 @@ void BaseRender::onDisable()
 
 bool BaseRender::onSerialize(Stream *stream)
 {
-    auto mcount = m_material.size();
-    if (!stream->write(mcount))
-    {
+    auto count = m_materials.size();
+    if (!stream->write(count))
         return false;
-    }
 
-    for (auto material : m_material)
+    for (auto &materialID : m_materials)
     {
-        auto name = AssetsManager::GetRefMaterialToName(material);
+        auto name = AssetsManager::GetMaterialName(materialID);
+
         if (!stream->write(name))
-        {
             return false;
-        }
     }
     return true;
 }
 
 bool BaseRender::onDeserialize(Stream *stream)
 {
-    std::size_t mcount = {};
-    if (!stream->read(mcount))
-    {
+    std::size_t count = {};
+    if (!stream->read(count))
         return false;
-    }
 
-    for (std::size_t i=0;i<mcount;i++)
+    for (std::size_t i=0;i<count;i++)
     {
         std::string name;
         if (!stream->read(name))
@@ -72,40 +67,28 @@ bool BaseRender::onDeserialize(Stream *stream)
             return false;
         }
 
-        auto material = AssetsManager::FindMaterial(name);
-        if (material == nullptr || hasMaterial(material))
-        {
+        auto materialID = AssetsManager::FindMaterial(name);
+        if (materialID == nill)
             continue;
-        }
 
-        m_material.push_back(material);
+        addMaterial(materialID);
     }
     return true;
 }
 
-Material *BaseRender::addMaterial(Material *material)
+void BaseRender::addMaterial(MaterialID id)
 {
-    return m_material.emplace_back(material);
+    m_materials.push_back(id);
 }
 
-void BaseRender::delMaterial(Material *material)
+bool BaseRender::hasMaterial(MaterialID id) const
 {
-    m_material.erase(std::remove(m_material.begin(), m_material.end(), material), m_material.end());
+    return std::find(m_materials.begin(), m_materials.end(), id) != m_materials.end();
 }
 
-bool BaseRender::hasMaterial(const Material *material) const
+const std::vector<MaterialID> &BaseRender::getMaterial() const
 {
-    return std::find(m_material.begin(), m_material.end(), material) != m_material.end();
-}
-
-std::vector<Material *> BaseRender::getMaterial() const
-{
-    return m_material;
-}
-
-const std::vector<Material *> &BaseRender::getMaterialRef() const
-{
-    return m_material;
+    return m_materials;
 }
 
 

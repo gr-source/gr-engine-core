@@ -28,7 +28,9 @@ private:
 
     std::vector<std::tuple<std::string, std::string, const Component *>> m_componentdata;
 
-    std::unordered_map<std::string, const Material *> m_materialmap;
+    std::unordered_map<std::string, MaterialID> m_materialmap;
+
+    std::unordered_set<MeshID> m_meshmap;
 
     std::unordered_set<std::string> m_shadermap;
 
@@ -45,6 +47,8 @@ private:
     int write_texture(Stream *stream);
 
     int write_material(Stream *stream);
+
+    int write_mesh(Stream *stream);
 
     int write_gameobject(Stream *stream, const GameObject *go);
 

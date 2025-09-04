@@ -28,7 +28,7 @@ private:
 
     std::unordered_map<std::string, grr::gShader *> m_shadermap;
 
-    std::unordered_map<std::string, Material *> m_materialmap;
+    std::unordered_map<std::string, MaterialID> m_materialmap;
 
     int doInBackground();
 
@@ -43,6 +43,8 @@ private:
     int read_texture(Stream *stream);
 
     int read_material(Stream *stream);
+
+    int read_mesh(Stream *stream);
 
     int read_gameobject(Stream *stream, Transform *parent = nullptr);
 

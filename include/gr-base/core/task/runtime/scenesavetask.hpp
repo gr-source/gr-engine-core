@@ -26,9 +26,11 @@ private:
 
     std::vector<std::tuple<std::string, std::string, const Component *>> m_componentdata;
 
-    std::unordered_map<std::string, const Material *> m_materialmap;
+    std::unordered_map<std::string, MaterialID> m_materialmap;
 
     std::unordered_set<std::string> m_shadermap;
+
+    std::unordered_set<MeshID> m_meshmap;
 
     int doInBackground() override;
 

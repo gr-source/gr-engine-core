@@ -19,7 +19,7 @@ void MeshCollider::onStart()
         return;
     }
     auto meshFilter = GetComponent<MeshFilter>();
-    
+    /*
     try {
         Mesh mesh_out;
 
@@ -42,6 +42,7 @@ void MeshCollider::onStart()
     } catch (const std::exception &e) {
         Console::LogError("[ MeshCollider ] %s",e.what());
     }
+    */
 }
 
 

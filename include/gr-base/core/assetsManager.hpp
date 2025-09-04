@@ -9,6 +9,8 @@
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
+#include "gr-base/core/task/materialmanager.hpp"
+#include "gr-base/core/task/meshmanager.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/task/texturemanager.hpp"
 
@@ -70,37 +72,36 @@ public:
     static grr::gTexture *CreateTexture(const std::string &name);
 
     // ********** Mesh ********** //
-    static std::vector<Mesh> *CreateMesh(const std::string &name);
+    static MeshID CreateMesh(const std::string &name);
 
-    static std::vector<Mesh> *FindMesh(const std::string &name);
+    static Mesh &GetMesh(MeshID id);
 
-    static std::string GetMeshListRefToName(std::vector<Mesh> *meshList);
+    static MeshID FindMesh(const std::string &name);
 
-    static void RemoveMesh(const std::string &name);
+    static std::string GetMeshName(MeshID id);
+
+    static void RemoveMesh(MeshID id);
     
     // shader property
     static ShaderProperty *CreateShaderProperty(grr::gShader *shader);
 
     static ShaderProperty *GetShaderProperty(grr::gShader *shader);
 
-    static std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> &GetMeshListMap();
-
     static grm::size GetTextureCount();
 
-    static grm::size GetMeshCount();
+    static std::size_t GetMeshCount();
 
     static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
 
     static std::vector<grr::gShader *> GetShaderList(ShaderType type);
 
-    template <typename ...Args>
-    static Material *CreateMaterial(const std::string &key, Args &&...args);
+    static MaterialID CreateMaterial(const std::string &name, grr::gShader *shader);
 
-    static Material *FindMaterial(const std::string &key);
+    static Material &GetMaterial(MaterialID id);
 
-    static std::string GetRefMaterialToName(Material *material);
+    static MaterialID FindMaterial(const std::string &name);
 
-    static std::unordered_map<Material *, std::string> GetMaterialRefMap();
+    static std::string GetMaterialName(MaterialID id);
 
     static void RemoveTask(const std::string &name);
 
@@ -110,21 +111,15 @@ private:
     // sshader property
     static std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> mShaderPropertyMap;
 
-    /***************** Mesh *****************/
-    static std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> mMeshMapList;
-    static std::unordered_map<std::vector<Mesh> *, std::string> mMeshListRefToName;
-    static std::mutex m_meshMutex;
-    
-    /***************** Material *****************/
-    static std::unordered_map<std::string, std::unique_ptr<Material>> mMaterialMap;
-    static std::unordered_map<Material *, std::string> mMaterialRefToName;
-    static std::mutex mMaterialMutex;
-
     static SceneTaskManager &GetSceneTaskManager();
+
+    static MaterialManager &GetMaterialManager();
 
     static TextureManager &GetTextureManager();
 
     static ShaderManager &GetShaderManager();
+
+    static MeshManager &GetMeshManager();
 };
 
 template <typename... Args>
@@ -183,17 +178,6 @@ inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderPa
     }
     
     return GetShaderManager().create_shader_task_load(shaderParams, shader, func);
-}
-
-// ***** Material ***** //
-template <typename... Args>
-inline Material *AssetsManager::CreateMaterial(const std::string &key, Args && ...args) {
-    std::lock_guard<std::mutex> lock(mMaterialMutex);
-    mMaterialMap.emplace(key, std::make_unique<Material>(std::forward<Args>(args)...));
-
-    mMaterialRefToName.emplace(&(*mMaterialMap[key]), key);
-
-    return &(*mMaterialMap[key]);
 }
 
 template <typename ...Args>

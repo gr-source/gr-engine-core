@@ -27,35 +27,20 @@ public:
 
     virtual void build(std::vector<Mesh> *meshlist) {}
 
-    template <typename ...Args>
-    Material *createMaterial(Args &&...args);
+    void addMaterial(MaterialID id);
 
-    Material *addMaterial(Material *material);
+    bool hasMaterial(MaterialID id) const;
 
-    void delMaterial(Material *material);
-
-    bool hasMaterial(const Material *material) const;
-
-    std::vector<Material *> getMaterial() const;
-
-    const std::vector<Material *> &getMaterialRef() const;
+    const std::vector<MaterialID> &getMaterial() const;
 
 private:
-    std::vector<Material *> m_material;
+    std::vector<MaterialID> m_materials;
 
     // BatchID m_batchID;
 
     friend class SkinnedMeshRender;
     friend class MeshRender;
 };
-
-#include "gr-base/core/assetsManager.hpp"
-
-template <typename ...Args>
-inline Material *BaseRender::createMaterial(Args &&...args)
-{
-    return addMaterial(static_cast<Material *>(AssetsManager::CreateMaterial(std::forward<Args>(args)...)));
-}
 
 REGISTER_COMPONENT(BaseRender)
 

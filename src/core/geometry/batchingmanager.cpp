@@ -1,9 +1,9 @@
 #include "gr-base/core/geometry/batchingmanager.hpp"
 
 // public
-BatchID BatchingManager::Create(const std::string &name, std::vector<Mesh> *meshlist)
+BatchID BatchingManager::Create(const std::string &name, const std::vector<MeshID> &meshes)
 {
-    return GetInstance().create(name, meshlist);
+    return GetInstance().create(name, meshes);
 }
 
 BatchID BatchingManager::Find(const std::string &name)
@@ -11,7 +11,7 @@ BatchID BatchingManager::Find(const std::string &name)
     return GetInstance().find(name);
 }
 
-Batching *BatchingManager::Get(BatchID id)
+Batching &BatchingManager::Get(BatchID id)
 {
     return GetInstance().get(id);
 }
@@ -39,7 +39,7 @@ BatchingManager::BatchingManager() : m_count(0)
 BatchingManager::~BatchingManager()
 {}
 
-BatchID BatchingManager::create(const std::string &name, std::vector<Mesh> *meshlist)
+BatchID BatchingManager::create(const std::string &name, const std::vector<MeshID> &meshes)
 {
     if (m_freeID.empty())
         resize(1024);
@@ -48,7 +48,7 @@ BatchID BatchingManager::create(const std::string &name, std::vector<Mesh> *mesh
     m_freeID.pop_back();
 
     Batching *batching = &m_entry[id];
-    new (batching) Batching(meshlist);
+    new (batching) Batching(meshes);
 
     batching->name = name;
 
@@ -67,9 +67,9 @@ BatchID BatchingManager::find(const std::string &name)
     return it->second;
 }
 
-Batching *BatchingManager::get(BatchID id)
+Batching &BatchingManager::get(BatchID id)
 {
-    return &m_entry[id];
+    return m_entry[id];
 }
 
 void BatchingManager::destroy(BatchID id)
@@ -99,7 +99,7 @@ void BatchingManager::resize(const std::size_t &size)
     auto oldsize = m_entry.size();
     auto newsize = oldsize + size;
 
-    m_entry.resize(newsize, Batching(nullptr));
+    m_entry.resize(newsize, Batching({}));
 
     auto temp = newsize;
     while ((temp--) > oldsize)

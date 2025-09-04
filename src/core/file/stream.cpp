@@ -1,4 +1,5 @@
 #include "gr-base/core/file/stream.hpp"
+#include "gr-base/core/geometry/boundbox.hpp"
 
 #include <fstream>
 
@@ -80,6 +81,12 @@ bool Stream::write(const Quaternion &value)
     return write(&value, sizeof(Quaternion));
 }
 
+template <>
+bool Stream::write(const Boundbox &value)
+{
+    return write(&value, sizeof(Boundbox));
+}
+
 bool Stream::write(const void *data, std::size_t size)
 {
     if (!data || size <= 0) {
@@ -144,6 +151,12 @@ template <>
 bool Stream::read(Quaternion &value)
 {
     return read(reinterpret_cast<char *>(&value), sizeof(Quaternion));
+}
+
+template <>
+bool Stream::read(Boundbox &value)
+{
+    return read(reinterpret_cast<char *>(&value), sizeof(Boundbox));
 }
 
 bool Stream::read(char *data, std::streamsize size)

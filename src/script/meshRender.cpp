@@ -25,12 +25,19 @@ void MeshRender::onInit()
 
     if (Threadpool::IsMainThread())
     {
-        /*
         MainThreadDispatcher::Add([this]()
-                {
+        {
+            if (!HasComponent<MeshFilter>())
+                return Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
+
+            MeshFilter *meshFilter = GetComponent<MeshFilter>();
         
+            auto meshes = meshFilter->getMesh();
+            if (meshes.empty())
+                return Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
+
+            build(meshes);
         });
-        */
     }
 }
 
@@ -41,26 +48,18 @@ void MeshRender::onRelease()
 
 bool MeshRender::onSerialize(Stream *stream)
 {
-    if (!BaseRender::onSerialize(stream))
-    {
-        return false;
-    }
-    return true;
+    return BaseRender::onSerialize(stream);
 }
 
 bool MeshRender::onDeserialize(Stream *stream)
 {
-    if (!BaseRender::onDeserialize(stream))
-    {
-        return false;
-    }
-    return true;
+    return BaseRender::onDeserialize(stream);
 }
 
+/*
 void MeshRender::build()
 {
     std::cout << "Build" << std::endl;
-    /*
     if (m_batchID == InvalidBatch)
     {
         if (!HasComponent<MeshFilter>())
@@ -85,16 +84,22 @@ void MeshRender::build()
 
     if (batchingdynamic)
         batchingdynamic->insert(getGameObject()->getTransform());
-    */
 }
+*/
 
-void MeshRender::build(std::vector<Mesh> *meshlist)
+void MeshRender::build(const std::vector<MeshID> &meshes)
 {
-    auto meshListName = AssetsManager::GetMeshListRefToName(meshlist);
+    std::string batchname;
+    for (auto &meshID : meshes)
+        batchname += AssetsManager::GetMeshName(meshID);
 
-    m_batchID = BatchingManager::Find(meshListName);
-    if (m_batchID == InvalidBatch)
-        m_batchID = BatchingManager::Create(meshListName, meshlist);
+    BatchID batchID = BatchingManager::Find(batchname);
+    if (batchID == InvalidBatch)
+        batchID = BatchingManager::Create(batchname, meshes);
+
+    auto &batch = BatchingManager::Get(batchID);
+
+    batch.insert(GetGameObject()->getTransform(), m_materials);
 }
 
 

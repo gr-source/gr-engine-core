@@ -9,7 +9,7 @@
 class BatchingDynamic
 {
 public:
-    BatchingDynamic(const std::vector<Material *> &materiallist, std::vector<Mesh> *meshlist);
+    BatchingDynamic(const std::vector<MaterialID> &materials, const std::vector<MeshID> &meshes);
     BatchingDynamic() = default;
 
     void insert(Transform *transform);
@@ -17,9 +17,9 @@ public:
     void render();
 
 private:
-    std::vector<Material *> m_materiallist;
+    std::vector<MaterialID> m_materials;
 
-    std::vector<Mesh> *m_meshlist;
+    std::vector<MeshID> m_meshes;
 
     std::vector<Transform *> m_instances;
 
@@ -27,7 +27,7 @@ private:
 
     bool instanced;
 
-    void build(std::vector<Mesh> *meshlist, int id);
+    void build(int id);
 
     void buildDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh);
 

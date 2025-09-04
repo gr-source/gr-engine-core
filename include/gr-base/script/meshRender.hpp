@@ -18,9 +18,7 @@ public:
 
     bool onDeserialize(Stream *stream) override;
 
-    void build();
-
-    void build(std::vector<Mesh> *meshlist) override;
+    void build(const std::vector<MeshID> &meshes);
 
     BatchingDynamic *batchingdynamic;
 

@@ -26,16 +26,6 @@ AnimationManager AssetsManager::mAnimationManager;
 // sshader property
 std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> AssetsManager::mShaderPropertyMap;
 
-/***************** Mesh *****************/
-std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> AssetsManager::mMeshMapList;
-std::unordered_map<std::vector<Mesh> *, std::string> AssetsManager::mMeshListRefToName;
-std::mutex AssetsManager::m_meshMutex;
-
-/***************** Material *****************/
-std::unordered_map<std::string, std::unique_ptr<Material>> AssetsManager::mMaterialMap;
-std::unordered_map<Material *, std::string> AssetsManager::mMaterialRefToName;
-std::mutex AssetsManager::mMaterialMutex;
-
 #include "gr-base/core/stb/stb_image.h"
 
 void AssetsManager::Initialize() {
@@ -92,44 +82,32 @@ grr::gTexture *AssetsManager::CreateTexture(const std::string &name)
 }
 
 // ********** Mesh ********** //
-std::vector<Mesh> *AssetsManager::CreateMesh(const std::string &name) {
-    std::lock_guard<std::mutex> lock(m_meshMutex);
-    auto &&[it, badded] = mMeshMapList.emplace(name, std::make_unique<std::vector<Mesh>>());
-    
-    mMeshListRefToName.emplace(&(*it->second), name);
-
-    return &(*it->second);
-}
-
-std::vector<Mesh> *AssetsManager::FindMesh(const std::string &name) {
-    std::lock_guard<std::mutex> lock(m_meshMutex);
-    auto it = mMeshMapList.find(name);
-    if (it == mMeshMapList.end()) {
-        return nullptr;
-    }
-    return &(*it->second);
-}
-
-std::string AssetsManager::GetMeshListRefToName(std::vector<Mesh> *meshList)
+MeshID AssetsManager::CreateMesh(const std::string &name)
 {
-    auto it = mMeshListRefToName.find(meshList);
-    if (it == mMeshListRefToName.end())
-    {
+    return GetMeshManager().create(name);
+}
+
+Mesh &AssetsManager::GetMesh(MeshID id)
+{
+    return GetMeshManager().get(id);
+}
+
+MeshID AssetsManager::FindMesh(const std::string &name)
+{
+    return GetMeshManager().find(name);
+}
+
+std::string AssetsManager::GetMeshName(MeshID id)
+{
+    auto name = GetMeshManager().getname(id);
+    if (name == nullptr)
         throw std::runtime_error("MeshList do not register.");
-    }
-    return it->second;
+    return name;
 }
 
-void AssetsManager::RemoveMesh(const std::string &name)
+void AssetsManager::RemoveMesh(MeshID id)
 {
-    std::lock_guard<std::mutex> lock(m_meshMutex);
-    auto it = mMeshMapList.find(name);
-    if (it == mMeshMapList.end()) {
-        return;
-    }
-    mMeshListRefToName.erase(&(*it->second));
-
-    mMeshMapList.erase(it);
+    return GetMeshManager().remove(id);
 }
 
 ShaderProperty *AssetsManager::CreateShaderProperty(grr::gShader *shader)
@@ -149,11 +127,6 @@ ShaderProperty *AssetsManager::GetShaderProperty(grr::gShader *shader)
         return nullptr;
     }
     return &(*it->second);
-}
-
-std::unordered_map<std::string, std::unique_ptr<std::vector<Mesh>>> &AssetsManager::GetMeshListMap()
-{
-    return mMeshMapList;
 }
 
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func)
@@ -232,37 +205,34 @@ std::vector<grr::gShader *> AssetsManager::GetShaderList(ShaderType type)
     return GetShaderManager().get_shader(type);
 }
 
+MaterialID AssetsManager::CreateMaterial(const std::string &name, grr::gShader *shader)
+{
+    return GetMaterialManager().create(shader, name);
+}
+
+Material &AssetsManager::GetMaterial(MaterialID id)
+{
+    return GetMaterialManager().get(id);
+}
+
 grm::size AssetsManager::GetTextureCount()
 {
     return GetTextureManager().getcount();
 }
 
-grm::size AssetsManager::GetMeshCount()
+std::size_t AssetsManager::GetMeshCount()
 {
-    std::lock_guard<std::mutex> lock(m_meshMutex);
-    return mMeshMapList.size();
+    return GetMeshManager().getcount();
 }
 
-Material *AssetsManager::FindMaterial(const std::string &key) {
-    std::lock_guard<std::mutex> lock(mMaterialMutex);
-    auto it = mMaterialMap.find(key);
-    if (it == mMaterialMap.end()) {
-        return nullptr;
-    }
-    return &(*it->second);
+MaterialID AssetsManager::FindMaterial(const std::string &name)
+{
+    return GetMaterialManager().find(name);
 }
 
-std::string AssetsManager::GetRefMaterialToName(Material *material) {
-    std::lock_guard<std::mutex> lock(mMaterialMutex);
-    auto it = mMaterialRefToName.find(material);
-    if (it == mMaterialRefToName.end()) {
-        return "";
-    }
-    return it->second;
-}
-
-std::unordered_map<Material *, std::string> AssetsManager::GetMaterialRefMap() {
-    return mMaterialRefToName;
+std::string AssetsManager::GetMaterialName(MaterialID id)
+{
+    return GetMaterialManager().getname(id);
 }
 
 void AssetsManager::RemoveTask(const std::string &name)
@@ -303,6 +273,12 @@ SceneTaskManager &AssetsManager::GetSceneTaskManager()
     return instance;
 }
 
+MaterialManager &AssetsManager::GetMaterialManager()
+{
+    static MaterialManager instance;
+    return instance;
+}
+
 TextureManager &AssetsManager::GetTextureManager()
 {
     static TextureManager instance;
@@ -315,6 +291,11 @@ ShaderManager &AssetsManager::GetShaderManager()
     return instance;
 }
 
+MeshManager &AssetsManager::GetMeshManager()
+{
+    static MeshManager instance;
+    return instance;
+}
 
 
 

@@ -17,6 +17,8 @@ public:
 
     static void Render(const Camera *camera);
 
+    static void PosRender();
+
 private:
     static DebugDraw &GetInstance();
 
@@ -51,6 +53,8 @@ private:
     void drawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor);
 
     void render(const Camera *camera);
+
+    void posRender();
 };
 
 

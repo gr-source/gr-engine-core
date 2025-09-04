@@ -23,6 +23,11 @@ void DebugDraw::Render(const Camera *camera)
     return GetInstance().render(camera);
 }
 
+void DebugDraw::PosRender()
+{
+    return GetInstance().posRender();
+}
+
 // private
 DebugDraw &DebugDraw::GetInstance()
 {
@@ -44,9 +49,12 @@ void DebugDraw::drawLine(const Vector3 &start, const Vector3 &end, const Color &
 
 void DebugDraw::render(const Camera *camera)
 {
-    auto lines = std::move(m_lines);
+    m_linerender.render(camera, m_lines.data(), m_lines.size());
+}
 
-    m_linerender.render(camera, lines.data(), lines.size());
+void DebugDraw::posRender()
+{
+    m_lines.clear();
 }
 
 // LineRender

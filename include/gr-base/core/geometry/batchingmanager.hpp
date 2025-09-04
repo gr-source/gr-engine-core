@@ -11,11 +11,11 @@ constexpr BatchID InvalidBatch = std::numeric_limits<BatchID>::max();
 class BatchingManager
 {
 public:
-    static BatchID Create(const std::string &name, std::vector<Mesh> *meshlist);
+    static BatchID Create(const std::string &name, const std::vector<MeshID> &meshes);
 
     static BatchID Find(const std::string &name);
 
-    static Batching *Get(BatchID id);
+    static Batching &Get(BatchID id);
 
     static void Destroy(BatchID id);
 
@@ -35,11 +35,11 @@ private:
     BatchingManager();
     ~BatchingManager();
 
-    BatchID create(const std::string &name, std::vector<Mesh> *meshlist);
+    BatchID create(const std::string &name, const std::vector<MeshID> &meshes);
 
     BatchID find(const std::string &name);
 
-    Batching *get(BatchID id);
+    Batching &get(BatchID id);
 
     void destroy(BatchID id);
 

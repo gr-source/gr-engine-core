@@ -1,28 +1,28 @@
 #include "gr-base/script/meshFilter.hpp"
 
+#include "gr-base/core/console.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include "gr-base/core/file/stream.hpp"
 
 #include "gr-base/core/assetsManager.hpp"
 
-MeshFilter::MeshFilter() : m_mesh(nullptr)
+MeshFilter::MeshFilter()
 {}
 
-void MeshFilter::setMesh(std::vector<Mesh> *mesh)
+void MeshFilter::addMesh(MeshID id)
 {
-    m_mesh = mesh;
-
-    processBoundbox();
+    m_meshes.push_back(id);
 }
 
-std::vector<Mesh> *MeshFilter::getMesh()
+const std::vector<MeshID> &MeshFilter::getMesh() const
 {
-    return m_mesh;
+    return m_meshes;
 }
 
 void MeshFilter::processBoundbox()
 {
+    /*
     m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
     m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
     
@@ -34,6 +34,7 @@ void MeshFilter::processBoundbox()
             m_boundbox.max = Math::max(m_boundbox.max, vertice.position);
         }
     }
+    */
 }
 
 Boundbox &MeshFilter::getBoundbox()
@@ -43,60 +44,45 @@ Boundbox &MeshFilter::getBoundbox()
 
 bool MeshFilter::onSerialize(Stream *stream)
 {
-    bool hasMesh = m_mesh != nullptr;
-    if (!stream->write(&hasMesh, sizeof(bool)))
+    if (!stream->write(m_boundbox))
         return false;
 
-    if (!hasMesh)
-        return true;
-
-    if (!stream->write(&m_boundbox, sizeof(Boundbox)))
+    auto count = m_meshes.size();
+    if (!stream->write(count))
         return false;
 
-    auto name = AssetsManager::GetMeshListRefToName(m_mesh);
-    if (!stream->write(name))
-        return false;
+    for (auto &meshID : m_meshes)
+    {
+        auto name = AssetsManager::GetMeshName(meshID);
 
-    auto mcount = m_mesh->size();
-    if (!stream->write(mcount))
-        return false;
-
-    for (auto &mesh : *m_mesh)
-        mesh.serialize(stream);
-
+        if (!stream->write(name))
+            return false;
+    }
     return true;
 }
 
 bool MeshFilter::onDeserialize(Stream *stream)
 {
-    bool hasMesh;
-    if (!stream->read(reinterpret_cast<char *>(&hasMesh), sizeof(bool)))
+    if (!stream->read(m_boundbox))
         return false;
 
-    if (!hasMesh)
-        return true;
-
-    if (!stream->read(reinterpret_cast<char *>(&m_boundbox), sizeof(Boundbox)))
+    std::size_t count = {};
+    if (!stream->read(count))
         return false;
 
-    std::string name;
-    if (!stream->read(name))
-        return false;
-
-    std::size_t mcount = 0;
-    if (!stream->read(mcount))
-        return false;
-
-    m_mesh = AssetsManager::FindMesh(name);
-    if (!m_mesh)
+    for (std::size_t i=0;i<count;i++)
     {
-        m_mesh = AssetsManager::CreateMesh(name);
-        if (!m_mesh)
-                return false;
+        std::string name;
+        if (!stream->read(name))
+            return false;
 
-        for (std::size_t i={};i<mcount;i++)
+        auto meshID = AssetsManager::FindMesh(name);
+        if (meshID != nill)
         {
-            m_mesh->emplace_back().deserialize(stream);
+            addMesh(meshID);
+        } else
+        {
+            Console::LogError("[ MeshFilter ] mesh %s do not found!", name.c_str());
         }
     }
     return true;
