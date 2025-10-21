@@ -25,7 +25,6 @@ set(geometry
     src/core/geometry/vertex3D.cpp
     src/core/geometry/batching.cpp
     src/core/geometry/material.cpp
-    src/core/geometry/boundbox.cpp
     src/core/geometry/gpumesh.cpp
     src/core/geometry/shader.cpp
     src/core/geometry/mesh.cpp
@@ -50,6 +49,7 @@ set(thread
 set(core
     src/core/mainthreaddispatcher.cpp
     src/core/assetsManager.cpp
+    src/core/rendermanager.cpp
     src/core/rendertarget.cpp
     src/core/scenemanager.cpp
     src/core/nameManager.cpp

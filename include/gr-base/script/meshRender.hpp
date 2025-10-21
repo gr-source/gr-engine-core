@@ -20,8 +20,6 @@ public:
 
     void build(const std::vector<MeshID> &meshes);
 
-    BatchingDynamic *batchingdynamic;
-
 private:
 
     BatchID m_batchID;

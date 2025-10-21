@@ -15,7 +15,7 @@ public:
 private:
     static MainThreadDispatcher &GetInstance();
 
-    std::list<std::function<void()>> m_events;
+    std::vector<std::function<void()>> m_events;
     
     std::mutex m_mutex;
 

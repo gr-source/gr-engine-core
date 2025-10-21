@@ -1,6 +1,7 @@
 #include "gr-base/core/mainthreaddispatcher.hpp"
 
 #include "gr-base/core/console.hpp"
+#include <vector>
 
 // public
 void MainThreadDispatcher::Update()
@@ -17,13 +18,13 @@ MainThreadDispatcher &MainThreadDispatcher::GetInstance()
 
 void MainThreadDispatcher::update()
 {
-    std::list<std::function<void()>> events;
+    std::vector<std::function<void()>> events;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         events = std::move(m_events);
     }
 
-    for (auto& event : events)
+    for (auto &event : events)
     {
         try {
             event();

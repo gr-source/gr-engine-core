@@ -17,7 +17,7 @@
 
 #define BTVEC3_TO_VEC3(v) Vector3{v.getX(), v.getY(), v.getZ()}
 
-#define BTQUAT_TO_QUAT(q) Quaternion(q.w(), q.x(), q.y(), q.z())
+#define BTQUAT_TO_QUAT(q) Quaternion{q.w(), q.x(), q.y(), q.z()}
 
 Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f)
 {}

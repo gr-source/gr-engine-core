@@ -14,18 +14,12 @@ public:
 
     const std::vector<MeshID> &getMesh() const;
 
-    void processBoundbox();
-
-    Boundbox &getBoundbox();
-
     bool onSerialize(Stream *stream) override;
 
     bool onDeserialize(Stream *stream) override;
     
 private:
     std::vector<MeshID> m_meshes;
-
-    Boundbox m_boundbox;
 };
 
 REGISTER_COMPONENT(MeshFilter)

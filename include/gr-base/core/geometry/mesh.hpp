@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "boneWeight.hpp"
+#include "gr-base/core/geometry/boundbox.hpp"
 #include "vertex3D.hpp"
 
 #include "gr-base/core/file/default.hpp"
@@ -33,6 +34,10 @@ public:
 
     std::vector<BoneWeight> getBoneWeight() const;
 
+    void CalculateLocalBounds();
+
+    const Boundbox &getBoundbox() const;
+
     int serialize(Stream *stream) const;
 
     int deserialize(Stream *stream);
@@ -43,6 +48,8 @@ private:
     std::vector<Vertex3D> m_vertices;
 
     std::vector<int> m_indices;
+
+    Boundbox m_boundbox;
 };
 
 template <typename ...Args>

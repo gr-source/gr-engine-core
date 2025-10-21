@@ -239,7 +239,7 @@ void OctreeManager::render_node(NodeID id)
 
 void OctreeManager::drawWireCube(const Vector3 &center, float size)
 {
-    DebugDraw::DrawLine(center, center + (Vector3::up * 2));
+    DebugDraw::DrawLine(center, center + (Vector3::up * 2.0f));
 
     float half = size;
 
