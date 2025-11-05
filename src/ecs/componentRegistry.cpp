@@ -44,9 +44,8 @@ IComponentStorage *ComponentRegistry::find(const std::string &name) const
 {
     auto it = m_componentstoragemap.find(name);
     if (it == m_componentstoragemap.end())
-    {
         return nullptr;
-    }
+
     return it->second.get();
 }
 

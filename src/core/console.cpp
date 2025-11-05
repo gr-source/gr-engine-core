@@ -1,12 +1,30 @@
 #include "gr-base/core/console.hpp"
 
-std::list<Log> Console::m_logs;
+// public
+std::list<Log> Console::GetLogs()
+{
+    return GetInstance().getLogs();
+}
 
-bool Console::bChanged = false;
+bool Console::IsChanged()
+{
+    return GetInstance().isChanged();
+}
 
-int Console::m_maxLog = 500;
+void Console::StopChange()
+{
+    return GetInstance().stopChange();
+}
 
-std::mutex Console::m_mutex;
+// private
+Console &Console::GetInstance()
+{
+    static Console instance;
+    return instance;
+}
+
+Console::Console() : m_maxLog(500), m_changed(false)
+{}
 
 void Console::log(Log::LogType type, const std::string &msg)
 {
@@ -17,23 +35,25 @@ void Console::log(Log::LogType type, const std::string &msg)
     {
         m_logs.pop_front();
     }
-    Console::bChanged = true;
+    m_changed = true;
 }
 
-std::list<Log> Console::GetListLogs()
+const std::list<Log> &Console::getLogs()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_logs;
 }
 
-void Console::Shutdown()
+bool Console::isChanged()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
-    bChanged = false;
-
-    m_logs.clear();
+    return m_changed;
 }
 
-
+void Console::stopChange()
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_changed = false;
+}
 
 

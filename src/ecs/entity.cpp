@@ -48,16 +48,12 @@ Entity::~Entity()
 Component *Entity::addComponent(const std::string &name, const Component *component)
 {
     auto pool = ComponentRegistry::Find(name);
-    if (!pool)
-    {
+    if (pool == nullptr)
         throw std::runtime_error("Fail to add component, " + name + " do not registry.");
-    }
 
     auto instance = pool->allocatein(pool, this, component);
-    if (!instance)
-    {
+    if (instance == nullptr)
         throw std::runtime_error("Fail to add component, " + name + " invalid instance.");
-    }
     
     instance->entity = this;
 
