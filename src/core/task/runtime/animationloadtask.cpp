@@ -3,7 +3,8 @@
 #include "gr-base/core/task/runtime/animationsavetask.hpp"
 
 #include "gr-base/core/animation/animation.hpp"
-#include "gr-base/core/assetsManager.hpp"
+
+#include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/core/mainthreaddispatcher.hpp"
 
@@ -70,6 +71,7 @@ void AnimationLoadTask::doInBackground(std::string path)
         }
     }
 
+    /*
     m_animation = AssetsManager::CreateAnimation(path);
 
     if (!m_animation->deserialize(&stream))
@@ -78,6 +80,7 @@ void AnimationLoadTask::doInBackground(std::string path)
         Console::LogError("[ AnimationTask ] Fail to load animation 2-%s.", path.c_str());
         return AssetsManager::RemoveTask(path);
     }
+    */
 
     stream.close();
 

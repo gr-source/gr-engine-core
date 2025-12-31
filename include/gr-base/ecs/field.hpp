@@ -19,13 +19,13 @@ enum FieldType {
 
 class Field {
 public:
-    Field(const std::string &name, FieldType type, grm::size offset);
+    Field(const std::string &name, FieldType type, usize offset);
 
     std::string getName() const;
 
     FieldType getType() const;
 
-    grm::size getOffset() const;
+    usize getOffset() const;
 
     template <typename T>
     static T *GetFieldData(void *ptr, const Field &field);
@@ -35,10 +35,10 @@ private:
 
     FieldType m_type;
 
-    grm::size m_offset;
+    usize m_offset;
 };
 
 template <typename T>
 inline T *Field::GetFieldData(void *ptr, const Field &field) {
-    return reinterpret_cast<T *>(reinterpret_cast<grm::uint8 *>(ptr) + field.getOffset());
+    return reinterpret_cast<T *>(reinterpret_cast<u8 *>(ptr) + field.getOffset());
 }

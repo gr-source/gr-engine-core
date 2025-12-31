@@ -70,7 +70,6 @@ struct TaskInfo
         cv.wait(lock, [this] { return bFinish; });
     }
 
-
     void wait_for(std::chrono::duration<int64_t> second)
     {
         std::unique_lock<std::mutex> lock(task->mutex);

@@ -1,6 +1,7 @@
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 
-#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/managers/assetsManager.hpp"
+
 #include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/core/file/stream.hpp"

@@ -16,6 +16,9 @@ class Mesh;
 
 using MaterialID = std::size_t;
 using MeshID = std::size_t;
+using BatchID = std::size_t;
+
+constexpr BatchID InvalidBatch = std::numeric_limits<BatchID>::max();
 
 constexpr std::size_t nill = std::numeric_limits<std::size_t>::max();
 

@@ -3,6 +3,7 @@
 #include <gr-render/gRender.h>
 
 #include "default.hpp"
+#include "gr-base/core/thread/asynctask.hpp"
 
 enum class TextureLoadFlags {};
 
@@ -10,7 +11,8 @@ using TextureLoadFlags_ = uint8_t;
 
 using TextureFunc = std::function<void (grr::gTexture *)>;
 
-class TextureLoadTask {
+class TextureLoadTask : public IAsyncTask<int>
+{
 public:
     TextureLoadTask(const std::string &path, TextureFunc func);
 
@@ -23,10 +25,18 @@ private:
 
     std::unique_ptr<char> m_pixels;
 
-    void upload(std::string path, int width, int height, TextureFormat format);
+    std::string m_path;
 
 protected:
-    void doInBackground(std::string path);
+    TextureFormat format;
+
+    int width;
+
+    int height;
+
+    int doInBackground() override;
+
+    void onPostExecute(int result) override;
 };
 
 

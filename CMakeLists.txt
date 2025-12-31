@@ -18,7 +18,6 @@ set(ecs
 )
 
 set(geometry
-    src/core/geometry/batchingmanager.cpp
     src/core/geometry/batchingdynamic.cpp
     src/core/geometry/boneWeight.cpp
     src/core/geometry/vertex2D.cpp
@@ -48,10 +47,7 @@ set(thread
 
 set(core
     src/core/mainthreaddispatcher.cpp
-    src/core/assetsManager.cpp
-    src/core/rendermanager.cpp
     src/core/rendertarget.cpp
-    src/core/scenemanager.cpp
     src/core/nameManager.cpp
     src/core/debugdraw.cpp
     src/core/display.cpp
@@ -121,6 +117,13 @@ set(broadphase_src
     src/broadphase/bvhtree.cpp
 )
 
+set(managers_src
+    src/managers/batchingmanager.cpp
+    src/managers/rendermanager.cpp
+    src/managers/assetsManager.cpp
+    src/managers/sceneManager.cpp
+)
+
 find_package(assimp QUIET)
 if(NOT assimp_FOUND)
     message(FATAL_ERROR "Please install libassimp-dev")
@@ -133,7 +136,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${broadphase_src})
+add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${broadphase_src} ${managers_src})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

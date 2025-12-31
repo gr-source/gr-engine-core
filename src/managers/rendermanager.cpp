@@ -1,35 +1,49 @@
-#include "gr-base/core/rendermanager.hpp"
+#include "gr-base/managers/rendermanager.hpp"
 
 #include "gr-base/core/culling/frustum.hpp"
 
-#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/managers/batchingmanager.hpp"
+#include "gr-base/managers/assetsManager.hpp"
 
-#include "gr-base/core/geometry/batchingmanager.hpp"
 #include "gr-base/script/camera.hpp"
 #include "gr-base/script/light.hpp"
+
+RenderManager* RenderManager::s_RenderManager = nullptr;
+
+void RenderManager::Initialize()
+{
+    if (s_RenderManager == nullptr)
+        s_RenderManager = new RenderManager();
+
+    BatchingManager::Initialize();
+}
+
+void RenderManager::Shutdown()
+{
+    if (s_RenderManager != nullptr)
+        delete s_RenderManager;
+    s_RenderManager = nullptr;
+
+    BatchingManager::Shutdown();
+}
 
 // public
 void RenderManager::PreRender(const Camera *camera)
 {
-    GetInstance().preRender(camera);
+    s_RenderManager->preRender(camera);
 }
 
 void RenderManager::Render()
 {
-    GetInstance().render();
+    s_RenderManager->render();
 }
 
 void RenderManager::PosRender()
 {
-    GetInstance().posRender();
+    s_RenderManager->posRender();
 }
 
 // private
-RenderManager &RenderManager::GetInstance()
-{
-    static RenderManager instance;
-    return instance;
-}
 
 void RenderManager::preRender(const Camera *camera)
 {

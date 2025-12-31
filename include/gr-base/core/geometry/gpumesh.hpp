@@ -11,7 +11,7 @@ public:
 
     int vbo, pbo, ebo;
 
-    grm::uint32 count;
+    u32 count;
 
     MeshInfo();
     ~MeshInfo();

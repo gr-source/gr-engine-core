@@ -1,6 +1,6 @@
 #include "gr-base/core/skybox.hpp"
 
-#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/core/file/file.hpp"
 
@@ -154,7 +154,7 @@ void Skybox::upload_cubemap_texture(grr::gTexture *texture, grr::gShader *shader
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, m_cubemapTexture->getTextureID(), 0);
 
-        grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void *)&Color::blue);
+        grr::gRender::SetBackgroundColor(Color::blue);
         grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER | grr::GR_DEPTH_BUFFER);
         
         shader->flush();
@@ -194,7 +194,7 @@ void Skybox::create_cube_mesh()
         {-1.0f, -1.0f,  1.0f}
     };
 
-    std::vector<grm::uint32> indices = {
+    std::vector<u32> indices = {
         1, 0, 4,
         5, 1, 4,
         1, 3, 0,

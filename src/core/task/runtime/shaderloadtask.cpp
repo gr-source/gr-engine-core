@@ -1,6 +1,7 @@
 #include "gr-base/core/task/runtime/shaderloadtask.hpp"
 
-#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/managers/assetsManager.hpp"
+
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/file/file.hpp"
 #include "gr-base/core/geometry/shader.hpp"
@@ -338,7 +339,7 @@ void ShaderLoadTask::SetUniformList(std::unordered_map<std::string, std::vector<
         }
 
 
-        vector.emplace_back(ShaderUniform{field_name, type, static_cast<grm::uint32>(count)});
+        vector.emplace_back(ShaderUniform{field_name, type, static_cast<u32>(count)});
         
         return;
     }

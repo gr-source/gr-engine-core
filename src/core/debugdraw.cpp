@@ -1,5 +1,6 @@
 #include "gr-base/core/debugdraw.hpp"
-#include "gr-base/core/assetsManager.hpp"
+
+#include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/core/file/file.hpp"
 
@@ -69,6 +70,7 @@ DebugDraw::LineRender::LineRender() : m_vbo(grr::gVertexArray::CreateBuffer(Buff
     AssetsManager::LoadShader(params, [&](grr::gShader *shader){
                 m_shader = shader;
             });
+
 
     m_vertexarray->bind();
 

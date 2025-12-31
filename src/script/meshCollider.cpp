@@ -71,7 +71,7 @@ btCollisionShape *MeshCollider::getShape() {
 }
 
 void MeshCollider::buildWithIndice(const std::vector<int> &indices, const std::vector<Vertex3D> &vertices) {
-    for (grm::uint32 i = 0; i < indices.size(); i += 3) {
+    for (usize i = 0; i < indices.size(); i += 3) {
         if (i + 2 >= indices.size()) {
             return Console::LogError("[ MeshCollider ] Index access out of bounds.");
         }

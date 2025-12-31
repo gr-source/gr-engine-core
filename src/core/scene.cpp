@@ -1,6 +1,6 @@
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/core/scenemanager.hpp"
+// #include "gr-base/core/scenemanager.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
@@ -10,6 +10,7 @@
 
 std::hash<std::string> Scene::hash;
 
+/*
 void Scene::CheckRequestReinstanceScript()
 {
     auto script = ComponentRegistry::GetScriptRequestReinstance();
@@ -26,7 +27,7 @@ void Scene::CheckRequestReinstanceScript()
         }
     }
 }
-
+*/
 void Scene::Play(GameObject *gameObject)
 {
     auto entity = gameObject->getEntity();
@@ -167,7 +168,8 @@ void Scene::setCamera(GameObject *go)
 {
     m_goCamera = go;
 
-    m_camera = go->getComponent<Camera>();
+    if (go != nullptr)
+        m_camera = go->getComponent<Camera>();
 }
 
 Camera *Scene::getCamera() const

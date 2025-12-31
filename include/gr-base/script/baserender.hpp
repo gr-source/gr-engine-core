@@ -1,8 +1,5 @@
 #pragma once
 
-#include "gr-base/core/assetsManager.hpp"
-
-#include "gr-base/core/geometry/batchingmanager.hpp"
 #include "gr-base/core/geometry/default.hpp"
 
 #include "gr-base/ecs/entity.hpp"

@@ -1,7 +1,7 @@
 #include "gr-base/script/animator.hpp"
 
 #include "gr-base/core/animation/keyframe.hpp"
-#include "gr-base/core/assetsManager.hpp"
+
 #include "gr-base/core/clock.hpp"
 
 #include "gr-base/core/animation/animation.hpp"
@@ -45,6 +45,7 @@ bool Animator::onSerialize(Stream *stream)
         return false;
     }
     
+    /*
     auto name = AssetsManager::GetAnimationName(m_animation);
 
     auto nlen = name.size();
@@ -57,6 +58,7 @@ bool Animator::onSerialize(Stream *stream)
     {
         return false;
     }
+    */
 
     return true;
 }
@@ -75,6 +77,7 @@ bool Animator::onDeserialize(Stream *stream)
         return false;
     }
 
+    /*
     auto animation = AssetsManager::FindAnimation(name);
     if (animation != nullptr)
     {
@@ -83,6 +86,7 @@ bool Animator::onDeserialize(Stream *stream)
     }
     
     AssetsManager::LoadAnimation(name, &Animator::play, this, false);
+    */
     return true;
 }
 

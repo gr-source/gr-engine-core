@@ -1,7 +1,7 @@
 #include "gr-base/core/geometry/batchingdynamic.hpp"
 
 // core
-#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/managers/assetsManager.hpp"
 
 // core/geometry
 #include "gr-base/core/culling/frustum.hpp"
@@ -205,8 +205,8 @@ void BatchingDynamic::buildDynamicMesh(MeshInfo &meshInfo, const Mesh &mesh)
         meshInfo.count = indices.size();
 
         grr::gVertexArray::Bind(meshInfo.ebo);
-        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::uint32), BufferUsage::STATIC);
-        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::uint32), indices.data());
+        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(u32), BufferUsage::STATIC);
+        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(u32), indices.data());
     }
 
     grr::gVertexArray::Bind(meshInfo.vbo);
@@ -244,8 +244,8 @@ void BatchingDynamic::buildInstancedDynamicMesh(MeshInfo &meshInfo, const Mesh &
         meshInfo.count = indices.size();
 
         grr::gVertexArray::Bind(meshInfo.ebo);
-        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::uint32), BufferUsage::STATIC);
-        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::uint32), indices.data());
+        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(u32), BufferUsage::STATIC);
+        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(u32), indices.data());
     }
 
     grr::gVertexArray::Bind(meshInfo.vbo);

@@ -32,8 +32,6 @@ public:
 
     static void Shutdown();
 
-    static void Render();
-
     template <typename ...Args>
     static void LoadTexture(const std::string &path, Args &&...args);
 
@@ -59,6 +57,7 @@ public:
     template <typename ...Args>
     static std::shared_ptr<TaskInfo> LoadScene(const std::string &path, Args &&...args);
 
+    /*
     template <typename ...Args>
     static void LoadAnimation(const std::string &path, Args &&...args);
 
@@ -67,6 +66,7 @@ public:
     static Animation *FindAnimation(const std::string &name);
 
     static std::string GetAnimationName(const Animation *animation);
+    */
 
     // ********** Texture ********** //
     static grr::gTexture *CreateTexture(const std::string &name);
@@ -87,7 +87,7 @@ public:
 
     static ShaderProperty *GetShaderProperty(grr::gShader *shader);
 
-    static grm::size GetTextureCount();
+    static usize GetTextureCount();
 
     static std::size_t GetMeshCount();
 
@@ -106,20 +106,26 @@ public:
     static void RemoveTask(const std::string &name);
 
 private:
-    static AnimationManager mAnimationManager;
+    static AssetsManager* s_AssetsManager;
+
+    // static AnimationManager mAnimationManager;
 
     // sshader property
     static std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> mShaderPropertyMap;
 
-    static SceneTaskManager &GetSceneTaskManager();
+    // fields
+    SceneTaskManager mSceneTaskManager;
 
-    static MaterialManager &GetMaterialManager();
+    MaterialManager mMaterialManager;
 
-    static TextureManager &GetTextureManager();
+    TextureManager mTextureManager;
 
-    static ShaderManager &GetShaderManager();
+    ShaderManager mShaderManager;
 
-    static MeshManager &GetMeshManager();
+    MeshManager mMeshManager;
+
+    AssetsManager() = default;
+    ~AssetsManager() = default;
 };
 
 template <typename... Args>
@@ -142,7 +148,7 @@ inline std::shared_ptr<TaskInfo> AssetsManager::LoadScene(const std::string &pat
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
 
-    return GetSceneTaskManager().create_task(path, func);
+    return s_AssetsManager->mSceneTaskManager.create_task(path, func);
 }
 
 template <typename ...Args>
@@ -152,7 +158,7 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
 
-    return GetTextureManager().load(path, func);
+    return s_AssetsManager->mTextureManager.load(path, func);
 }
 
 // ***** Shader ***** //
@@ -165,7 +171,7 @@ inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderPa
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
     
-    return GetShaderManager().create_shader_task_load(shaderParams, nullptr, func);
+    return s_AssetsManager->mShaderManager.create_shader_task_load(shaderParams, nullptr, func);
 }
 
 template <typename... Args>
@@ -177,14 +183,16 @@ inline std::shared_ptr<TaskInfo> AssetsManager::LoadShader(ShaderParams shaderPa
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
     
-    return GetShaderManager().create_shader_task_load(shaderParams, shader, func);
+    return s_AssetsManager->mShaderManager.create_shader_task_load(shaderParams, shader, func);
 }
 
+/*
 template <typename ...Args>
 void AssetsManager::LoadAnimation(const std::string &path, Args &&...args)
 {
     return mAnimationManager.load(path, std::forward<Args>(args)...);
 }
+*/
 
 
 

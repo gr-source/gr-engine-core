@@ -1,9 +1,12 @@
 #include "gr-base/core/task/texturemanager.hpp"
+
 #include "gr-base/core/console.hpp"
+
 #include "gr-base/core/file/file.hpp"
 
-TextureManager::TextureManager()
-{}
+#include "gr-base/core/thread/taskmanager.hpp"
+
+#include "gr-base/core/task/runtime/textureloadtask.hpp"
 
 grr::gTexture *TextureManager::create(const std::string &name)
 {
@@ -40,7 +43,9 @@ void TextureManager::load(const std::string &path, std::function<void (grr::gTex
         {
             if (func == nullptr)
                 return;
-            return it->second->addFunction(func);
+
+            TextureLoadTask* textureloadtask = static_cast<TextureLoadTask*>(it->second->task.get());
+            return textureloadtask->addFunction(func);
         }
     }
 
@@ -48,9 +53,9 @@ void TextureManager::load(const std::string &path, std::function<void (grr::gTex
     {
         return Console::LogError("[ AssetsManager::Texture ] File not found: %s", path.c_str());
     }
-    
-    // Create task to load texture
-    m_texturetaskmap.emplace(path, std::make_unique<TextureLoadTask>(path, func));
+
+    auto taskInfo = TaskManager::Add<TextureLoadTask>(path, func);
+    m_texturetaskmap.emplace(path, taskInfo);
 }
 
 bool TextureManager::remove_task(const std::string &name)

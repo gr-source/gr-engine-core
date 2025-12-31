@@ -5,7 +5,7 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/managers/assetsManager.hpp"
 
 MeshFilter::MeshFilter()
 {}

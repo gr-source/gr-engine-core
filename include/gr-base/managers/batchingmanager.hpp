@@ -2,15 +2,13 @@
 
 #include "gr-base/core/geometry/batching.hpp"
 
-#include "default.hpp"
-
-using BatchID = std::size_t;
-
-constexpr BatchID InvalidBatch = std::numeric_limits<BatchID>::max();
-
 class BatchingManager
 {
 public:
+    static void Initialize();
+
+    static void Shutdown();
+
     static BatchID Create(const std::string &name, const std::vector<MeshID> &meshes);
 
     static BatchID Find(const std::string &name);
@@ -22,7 +20,7 @@ public:
     static void Render();
 
 private:
-    static BatchingManager &GetInstance();
+    static BatchingManager* s_BatchingManager;
 
     std::unordered_map<std::string, BatchID> m_namemaptobatchid;
 

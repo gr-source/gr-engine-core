@@ -6,29 +6,39 @@
 #include <mutex>
 #include <thread>
 
+Threadpool* Threadpool::s_Threadpool = nullptr;
+
 // static
+void Threadpool::Initialize()
+{
+    if (s_Threadpool == nullptr)
+        s_Threadpool = new Threadpool(std::thread::hardware_concurrency());
+}
+
+void Threadpool::Shutdown()
+{
+    if (s_Threadpool != nullptr)
+        delete s_Threadpool;
+
+    s_Threadpool = nullptr;
+}
+
 bool Threadpool::IsMainThread()
 {
-    return GetInstance().isMainThread();
+    return s_Threadpool->isMainThread();
 }
 
 std::size_t Threadpool::GetThreadCount()
 {
-    return GetInstance().get_thread_count();
+    return s_Threadpool->get_thread_count();
 }
 
 std::size_t Threadpool::GetCount()
 {
-    return GetInstance().get_count();
+    return s_Threadpool->get_count();
 }
 
 // private
-Threadpool &Threadpool::GetInstance()
-{
-    static Threadpool instance(std::thread::hardware_concurrency());
-    return instance;
-}
-
 Threadpool::Threadpool(std::uint32_t maxThread) : m_bStop(false), m_available(0), m_mainThreadID(std::this_thread::get_id())
 {
     Console::LogInfo("[ Threadpool ] Initialize");

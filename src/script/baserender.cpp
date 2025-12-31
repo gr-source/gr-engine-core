@@ -1,18 +1,10 @@
 #include "gr-base/script/baserender.hpp"
 
-#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/managers/assetsManager.hpp"
 
-#include "gr-base/core/geometry/batchingmanager.hpp"
 #include "gr-base/core/geometry/material.hpp"
 
-#include "gr-base/core/thread/threadpool.hpp"
-#include "gr-base/ecs/gameObject.hpp"
-
-#include "gr-base/core/geometry/batching.hpp"
-#include "gr-base/script/transform.hpp"
-
 #include <algorithm>
-#include <cstddef>
 
 BaseRender::BaseRender()
 {}

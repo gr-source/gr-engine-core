@@ -1,38 +1,47 @@
-#include "gr-base/core/geometry/batchingmanager.hpp"
+#include "gr-base/managers/batchingmanager.hpp"
+
+BatchingManager* BatchingManager::s_BatchingManager = nullptr;
 
 // public
+void BatchingManager::Initialize()
+{
+    if (s_BatchingManager == nullptr)
+        s_BatchingManager = new BatchingManager();
+}
+
+void BatchingManager::Shutdown()
+{
+    if (s_BatchingManager != nullptr)
+        delete s_BatchingManager;
+    s_BatchingManager = nullptr;
+}
+
 BatchID BatchingManager::Create(const std::string &name, const std::vector<MeshID> &meshes)
 {
-    return GetInstance().create(name, meshes);
+    return s_BatchingManager->create(name, meshes);
 }
 
 BatchID BatchingManager::Find(const std::string &name)
 {
-    return GetInstance().find(name);
+    return s_BatchingManager->find(name);
 }
 
 Batching &BatchingManager::Get(BatchID id)
 {
-    return GetInstance().get(id);
+    return s_BatchingManager->get(id);
 }
 
 void BatchingManager::Destroy(BatchID id)
 {
-    return GetInstance().destroy(id);
+    return s_BatchingManager->destroy(id);
 }
 
 void BatchingManager::Render()
 {
-    return GetInstance().render();
+    return s_BatchingManager->render();
 }
 
 // private
-BatchingManager &BatchingManager::GetInstance()
-{
-    static BatchingManager instance;
-    return instance;
-}
-
 BatchingManager::BatchingManager() : m_count(0)
 {}
 

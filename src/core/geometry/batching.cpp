@@ -1,7 +1,7 @@
 #include "gr-base/core/geometry/batching.hpp"
 
 // core
-#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/managers/assetsManager.hpp"
 
  // core, geometry
 #include "gr-base/core/geometry/material.hpp"

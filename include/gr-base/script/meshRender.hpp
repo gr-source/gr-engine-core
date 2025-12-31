@@ -1,6 +1,7 @@
 #pragma once
 
-#include "gr-base/core/geometry/batchingdynamic.hpp"
+#include "gr-base/core/geometry/default.hpp"
+
 #include "gr-base/script/baserender.hpp"
 #include <vector>
 

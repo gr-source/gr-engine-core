@@ -12,7 +12,7 @@ class Stream;
 typedef struct
 {
     void *data;
-    grm::uint32 id;
+    u32 id;
 } Params;
 
 class Material
@@ -51,7 +51,7 @@ public:
     T *setValue(const std::string &name, const T &value);
 
     template <typename T>
-    T *setValue(const std::string &name, grm::uint8 count, const T &value);
+    T *setValue(const std::string &name, u8 count, const T &value);
 
     void flush() const;
 
@@ -70,7 +70,7 @@ private:
 
     bool setupTexture(int id, grr::gTexture *texture);
 
-    void *internal_set_value(const char *name, grm::uint8 count, const void *data);
+    void *internal_set_value(const char *name, u8 count, const void *data);
 };
 
 template <typename T>
@@ -91,7 +91,7 @@ inline T *Material::setValue(const std::string &name, const T &value)
 }
 
 template <typename T>
-inline T *Material::setValue(const std::string &name, grm::uint8 count, const T &value)
+inline T *Material::setValue(const std::string &name, u8 count, const T &value)
 {
     return reinterpret_cast<T *>(internal_set_value(name.c_str(), count, &value));
 }

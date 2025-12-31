@@ -1,6 +1,6 @@
 #pragma once
 
-#include "default.hpp"
+#include "gr-base/core/default.hpp"
 
 #include <unordered_map>
 #include <vector>
@@ -10,6 +10,10 @@
 class SceneManager
 {
 public:
+    static void Initialize();
+
+    static void Shutdown();
+
     static Scene *Create(const std::string &name);
 
     static Scene *Find(const std::string &name);
@@ -35,7 +39,7 @@ private:
 
     Scene *m_current;
 
-    static SceneManager &GetInstance();
+    static SceneManager* s_SceneManager;
 
     SceneManager();
     ~SceneManager();

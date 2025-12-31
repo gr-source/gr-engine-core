@@ -36,7 +36,7 @@ Camera *Camera::Current() {
     return s_current;
 }
 
-Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(1024, 1024)
+Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(1024, 1024), background(Color::black)
 {
 }
 

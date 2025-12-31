@@ -1,6 +1,7 @@
 #pragma once
 
-#include "gr-base/core/task/runtime/textureloadtask.hpp"
+#include "gr-base/core/thread/asynctask.hpp"
+
 #include "runtime/default.hpp"
 
 #include <gr-render/gTexture.h>
@@ -8,7 +9,8 @@
 class TextureManager
 {
 public:
-    TextureManager();
+    TextureManager() = default;
+    ~TextureManager() = default;
 
     grr::gTexture *create(const std::string &name);
 
@@ -21,7 +23,7 @@ public:
     std::size_t getcount();
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<TextureLoadTask>> m_texturetaskmap;
+    std::unordered_map<std::string, std::shared_ptr<TaskInfo>> m_texturetaskmap;
 
     std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> m_texturemap;
 

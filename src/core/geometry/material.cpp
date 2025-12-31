@@ -2,7 +2,8 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/managers/assetsManager.hpp"
+
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/geometry/shader.hpp"
 
@@ -284,7 +285,7 @@ bool Material::setupTexture(int id, grr::gTexture *texture)
     return true;
 }
 
-void *Material::internal_set_value(const char *name, grm::uint8 count, const void *data)
+void *Material::internal_set_value(const char *name, u8 count, const void *data)
 {
     auto it = m_field_data.find(name);
     if (it == m_field_data.end())

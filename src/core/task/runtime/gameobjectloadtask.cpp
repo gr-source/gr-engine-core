@@ -4,7 +4,8 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/managers/assetsManager.hpp"
+
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/scene.hpp"

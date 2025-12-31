@@ -13,6 +13,10 @@
 class Threadpool
 {
 public:
+    static void Initialize();
+
+    static void Shutdown();
+
     template <typename ...Args>
     static void AddTask(Args &&...args);
 
@@ -26,7 +30,7 @@ public:
     static std::size_t GetCount();
 
 private:
-    static Threadpool &GetInstance();
+    static Threadpool* s_Threadpool;
 
     std::list<std::tuple<TaskPriority, std::function<void()>>> m_task;
 
@@ -62,13 +66,13 @@ private:
 template <typename... Args>
 inline void Threadpool::AddTask(Args &&...args)
 {
-    return GetInstance().add(TaskPriority::LOW, std::forward<Args>(args)...);
+    return s_Threadpool->add(TaskPriority::LOW, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
 inline void Threadpool::AddTask(TaskPriority priority, Args &&...args)
 {
-    return GetInstance().add(priority, std::forward<Args>(args)...);
+    return s_Threadpool->add(priority, std::forward<Args>(args)...);
 }
 
 // private

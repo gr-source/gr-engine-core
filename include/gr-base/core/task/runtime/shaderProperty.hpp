@@ -24,7 +24,7 @@ struct Uniform {
     std::string name;
     std::string variablename;
     UniformVariable variable;
-    grm::uint8 count;
+    u8 count;
 };
 
 struct ShaderData {

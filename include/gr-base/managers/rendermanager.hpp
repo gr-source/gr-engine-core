@@ -7,6 +7,10 @@
 class RenderManager
 {
 public:
+    static void Initialize();
+
+    static void Shutdown();
+
     static void PreRender(const Camera *camera);
 
     static void Render();
@@ -14,7 +18,7 @@ public:
     static void PosRender();
 
 private:
-    static RenderManager &GetInstance();
+    static RenderManager* s_RenderManager;
 
     void preRender(const Camera *camera);
 

@@ -1,59 +1,68 @@
-#include "gr-base/core/scenemanager.hpp"
+#include "gr-base/managers/sceneManager.hpp"
 
 #include "gr-base/core/scene.hpp"
 
 #include <algorithm>
 
+
+SceneManager* SceneManager::s_SceneManager = nullptr;
+
 // ***** public ***** //
+void SceneManager::Initialize()
+{
+    if (s_SceneManager == nullptr)
+        s_SceneManager = new SceneManager();
+}
+
+void SceneManager::Shutdown()
+{
+    if (s_SceneManager != nullptr)
+        delete s_SceneManager;
+
+    s_SceneManager = nullptr;
+}
+
 Scene *SceneManager::Create(const std::string &name)
 {
-    return GetInstance().create(name);
+    return s_SceneManager->create(name);
 }
 
 Scene *SceneManager::Find(const std::string &name)
 {
-    return GetInstance().find(name);
+    return s_SceneManager->find(name);
 }
 
 const char *SceneManager::GetSceneName(const Scene *scene)
 {
-    return GetInstance().get_scene_name(scene);
+    return s_SceneManager->get_scene_name(scene);
 }
 
 std::vector<Scene *> SceneManager::GetScenes()
 {
-    return GetInstance().get_scenes();
+    return s_SceneManager->get_scenes();
 }
 
 void SceneManager::Remove(Scene *scene)
 {
-    return GetInstance().remove(scene);
+    return s_SceneManager->remove(scene);
 }
 
 void SceneManager::SetActive(Scene *scene)
 {
-    return GetInstance().set_active(scene);
+    return s_SceneManager->set_active(scene);
 }
 
 Scene *SceneManager::GetCurrent()
 {
-    return GetInstance().get_current();
+    return s_SceneManager != nullptr ? s_SceneManager->get_current() : nullptr;
 }
 
 // ***** private ***** //
-SceneManager &SceneManager::GetInstance()
-{
-    static SceneManager instance;
-    return instance;
-}
-
-SceneManager::SceneManager()
-{
-}
+SceneManager::SceneManager() : m_current(nullptr)
+{}
 
 SceneManager::~SceneManager()
-{
-}
+{}
 
 Scene *SceneManager::create(const std::string &name)
 {
@@ -120,13 +129,11 @@ void SceneManager::remove(Scene *scene)
 
 void SceneManager::set_active(Scene *scene)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
     m_current = scene;
 }
 
 Scene *SceneManager::get_current()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
     return m_current;
 }
 

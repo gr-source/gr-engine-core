@@ -8,7 +8,8 @@
 
 #include <gr-render/gRender.h>
 
-class Camera : public Component {
+class Camera : public Component
+{
 public:
     static std::vector<Camera *> &GetCameras();
 
@@ -51,6 +52,8 @@ public:
     Rect getRect() const;
 
     RenderTarget rendertarget;
+
+    Color background;
 
 private:
     static std::vector<Camera *> m_cameraList;

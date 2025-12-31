@@ -3,7 +3,8 @@
 #include "gr-base/ecs/gameobjectmanager.hpp"
 #include "gr-base/ecs/entitymanager.hpp"
 
-#include "gr-base/core/scenemanager.hpp"
+#include "gr-base/managers/sceneManager.hpp"
+
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/script/transform.hpp"

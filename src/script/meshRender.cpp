@@ -1,10 +1,11 @@
 #include "gr-base/script/meshRender.hpp"
 
 #include "gr-base/broadphase/bvhtree.hpp"
-#include "gr-base/core/assetsManager.hpp"
+
+#include "gr-base/managers/assetsManager.hpp"
+
 #include "gr-base/core/console.hpp"
 
-#include "gr-base/core/geometry/batchingmanager.hpp"
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/batching.hpp"
 
@@ -15,6 +16,8 @@
 
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/transform.hpp"
+
+#include "gr-base/managers/batchingmanager.hpp"
 
 MeshRender::MeshRender() : m_batchID(InvalidBatch)
 {}

@@ -50,7 +50,7 @@ public:
     std::string getName() const;
 
 private:
-    std::unordered_map<std::string, grm::size> m_fieldID;
+    std::unordered_map<std::string, usize> m_fieldID;
 
     std::vector<Field> m_fieldMap;
 

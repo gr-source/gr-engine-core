@@ -14,10 +14,9 @@
 
 class Stream;
 
-// TODO: Causando crash quando d aplya na cena e para o jogo, motivo esta nos objetos que nao foram reacceragdos das cenas
 class Scene {
 public:
-    static void CheckRequestReinstanceScript();
+    // static void CheckRequestReinstanceScript();
 
     Scene();
     ~Scene();
