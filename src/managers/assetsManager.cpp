@@ -127,7 +127,7 @@ ShaderProperty *AssetsManager::GetShaderProperty(grr::gShader *shader)
 
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func)
 {
-    if (!File::Exists(path))
+    if (!gfile::exists(path))
     {
         return Console::LogError("[ AssetsManager::GameObject ] File not found: %s", path.c_str());
     }

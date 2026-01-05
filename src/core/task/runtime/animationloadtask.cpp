@@ -63,7 +63,7 @@ void AnimationLoadTask::doInBackground(std::string path)
             return AssetsManager::RemoveTask(path);
         }
 
-        if (std::strcmp(fileHeader.signature, "gran") != 0)
+        if (strncmp(fileHeader.sign, "gran", 4) != 0)
         {
             stream.close();
             Console::LogError("[ AnimationTask ] Failt to load animation, binary is not valid %s.", path.c_str());

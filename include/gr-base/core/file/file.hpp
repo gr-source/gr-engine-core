@@ -6,10 +6,6 @@
 
 class File {
 public:
-    static void SetCurrentProject(const std::string &path);
-
-    static const std::string &GetCurrentProject();
-
     static void SetConfigPath(const std::string &path);
 
     static void SetCachePath(const std::string &path);
@@ -21,30 +17,6 @@ public:
     static std::string GetCacheFile(const std::string &path);
 
     static std::string GetFileContent(const std::string &path);
-
-    static bool Exists(const std::string& path);
-
-    static std::string GetFileName(const std::string &path);
-
-    static std::string GetFile(const std::string &path, bool internal = false);
-
-    static std::string GetAsset(const std::string &path, bool internal = false);
-
-    static bool CreateDirectories(const std::string &path);
-
-    static bool CreateDirectory(const std::string &path);
-
-    static bool Delete(const std::string &path);
-
-    static bool Move(const std::string &from, const std::string &to);
-
-    static bool Copy(const std::string &from, const std::string &to);
-
-    static std::string getHomeDirectory();
-
-    static std::string GetError();
-
-    static std::string GetTempFile(const std::string &path);
 
     static void rename(const std::string &path, const std::string &name);
     
@@ -63,8 +35,6 @@ private:
 
 class gfile {
 public:
-    static std::string AssetStreamPath;
-
     static std::string create_temp_file(const std::string& name);
 
     static std::string get_home_directory();
@@ -86,6 +56,12 @@ public:
     static bool remove(const std::string &path);
 
     static std::string get_parent(const std::string &path);
+
+    static const char* getname(const char* path);
+
+    static bool move(const char* src_path, const char* dest_path);
+
+    static bool copy(const char* src_path, const char* dest_path);
 };
 
 

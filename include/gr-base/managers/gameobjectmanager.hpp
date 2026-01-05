@@ -3,9 +3,6 @@
 #include "gr-base/core/nameManager.hpp"
 #include "gr-base/ecs/gameObject.hpp"
 
-#include <unordered_set>
-#include <atomic>
-
 class GameObjectManager
 {
 public:

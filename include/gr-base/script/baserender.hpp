@@ -28,12 +28,12 @@ public:
 
     bool hasMaterial(MaterialID id) const;
 
-    const std::vector<MaterialID> &getMaterial() const;
+    std::vector<MaterialID> getMaterialIDs() const;
+
+    void removeMaterial(MaterialID id);
 
 private:
     std::vector<MaterialID> m_materials;
-
-    // BatchID m_batchID;
 
     friend class SkinnedMeshRender;
     friend class MeshRender;

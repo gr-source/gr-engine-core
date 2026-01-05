@@ -5,7 +5,7 @@
 #include <memory>
 #include <mutex>
 
-#include "entity.hpp"
+#include "gr-base/ecs/entity.hpp"
 
 class EntityManager
 {

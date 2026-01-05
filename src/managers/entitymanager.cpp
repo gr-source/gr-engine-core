@@ -1,5 +1,4 @@
-#include "gr-base/ecs/entitymanager.hpp"
-#include "gr-base/ecs/entity.hpp"
+#include "gr-base/managers/entitymanager.hpp"
 
 #include <algorithm>
 

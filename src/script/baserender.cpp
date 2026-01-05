@@ -1,8 +1,7 @@
 #include "gr-base/script/baserender.hpp"
 
+#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/managers/assetsManager.hpp"
-
-#include "gr-base/core/geometry/material.hpp"
 
 #include <algorithm>
 
@@ -78,9 +77,14 @@ bool BaseRender::hasMaterial(MaterialID id) const
     return std::find(m_materials.begin(), m_materials.end(), id) != m_materials.end();
 }
 
-const std::vector<MaterialID> &BaseRender::getMaterial() const
+std::vector<MaterialID> BaseRender::getMaterialIDs() const
 {
     return m_materials;
+}
+
+void BaseRender::removeMaterial(MaterialID id)
+{
+    m_materials.erase(std::remove(m_materials.begin(), m_materials.end(), id), m_materials.end());
 }
 
 

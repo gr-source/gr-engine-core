@@ -39,11 +39,12 @@ static const std::array<std::string, IHeaderType> HeaderName = {
     "SCRIPT"
 };
 
-struct FileHeader {
-    char signature[4];
+typedef struct FileHeader
+{
+    char sign[4];
     float version;
-    size_t sizeData;
-};
+    uint64_t lenght;
+} FileHeader;
 
 typedef struct DataSegment
 {

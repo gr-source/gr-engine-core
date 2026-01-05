@@ -1,4 +1,4 @@
-#include "gr-base/ecs/gameobjectmanager.hpp"
+#include "gr-base/managers/gameobjectmanager.hpp"
 
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/scene.hpp"

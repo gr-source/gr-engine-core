@@ -11,7 +11,7 @@
 
 Material::Material(grr::gShader *shader) : m_shader(shader), m_scalling{1.0f, 1.0f}, m_offset{0.0f, 0.0f}
 {
-        m_textures.fill(nullptr);
+    m_textures.fill(nullptr);
 }
 
 Material::~Material()

@@ -1,8 +1,7 @@
 #include "gr-base/ecs/gameObject.hpp"
 
-#include "gr-base/ecs/gameobjectmanager.hpp"
-#include "gr-base/ecs/entitymanager.hpp"
-
+#include "gr-base/managers/gameobjectmanager.hpp"
+#include "gr-base/managers/entitymanager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 
 #include "gr-base/core/scene.hpp"

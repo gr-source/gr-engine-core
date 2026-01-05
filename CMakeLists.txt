@@ -5,10 +5,8 @@ project(gr-base VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 set(ecs
-    src/ecs/gameobjectmanager.cpp
     src/ecs/componentRegistry.cpp
     src/ecs/scriptpriority.cpp
-    src/ecs/entitymanager.cpp
     src/ecs/chunkManager.cpp
     src/ecs/gameObject.cpp
     src/ecs/component.cpp
@@ -92,6 +90,8 @@ set(culling
 )
 
 set(task
+    src/core/task/runtime/materialSaveTask.cpp
+
     src/core/task/runtime/gameobjectsavetask.cpp
     src/core/task/runtime/gameobjectloadtask.cpp
 
@@ -118,9 +118,11 @@ set(broadphase_src
 )
 
 set(managers_src
+    src/managers/gameobjectmanager.cpp
     src/managers/batchingmanager.cpp
     src/managers/rendermanager.cpp
     src/managers/assetsManager.cpp
+    src/managers/entitymanager.cpp
     src/managers/sceneManager.cpp
 )
 

@@ -66,7 +66,7 @@ void GameObjectSaveTask::onPostExecute(int result)
 
     try
     {
-        File::Move(file, m_path);
+        gfile::move(file.c_str(), m_path.c_str());
     } catch (const std::exception &e)
     {
         return Console::LogError("[ GameObjectSaveTask ] %s", e.what());
@@ -440,7 +440,7 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
     {
         auto baseRender = gameObject->hasComponent<MeshRender>() ? static_cast<BaseRender *>(gameObject->getComponent<MeshRender>()) : static_cast<BaseRender *>(gameObject->getComponent<SkinnedMeshRender>());
         
-        for (auto &materialID : baseRender->getMaterial())
+        for (auto materialID : baseRender->getMaterialIDs())
         {
             auto material_name = AssetsManager::GetMaterialName(materialID);
             auto &material = AssetsManager::GetMaterial(materialID);

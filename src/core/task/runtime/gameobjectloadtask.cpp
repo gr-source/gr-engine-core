@@ -36,7 +36,7 @@ int GameObjectLoadTask::doInBackground()
         return 1;
     }
 
-    if (std::strcmp(fileHeader.signature, "gmdx") != 0)
+    if (strncmp(fileHeader.sign, "gmdx", 4) != 0)
     {
         Console::LogError("[ GameObjectLoadTask ] file is not gmdx: %s", m_path.c_str());
         return 2;

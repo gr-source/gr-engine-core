@@ -418,7 +418,7 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
     {
         auto baseRender = gameObject->hasComponent<MeshRender>() ? static_cast<BaseRender *>(gameObject->getComponent<MeshRender>()) : static_cast<BaseRender *>(gameObject->getComponent<SkinnedMeshRender>());
         
-        for (auto &materialID : baseRender->getMaterial())
+        for (auto materialID : baseRender->getMaterialIDs())
         {
             auto material_name = AssetsManager::GetMaterialName(materialID);
             auto &material = AssetsManager::GetMaterial(materialID);
