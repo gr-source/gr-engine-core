@@ -1,6 +1,8 @@
 #include "gr-base/core/geometry/batching.hpp"
 
 // core
+#include "gr-base/core/gameObject.hpp"
+
 #include "gr-base/managers/assetsManager.hpp"
 
  // core, geometry
@@ -8,11 +10,10 @@
 
 // ecs
 #include "gr-base/core/console.hpp"
-#include "gr-base/ecs/gameObject.hpp"
 
 // component
 #include "gr-base/script/transform.hpp"
-#include "gr-base/script/animator.hpp"
+// #include "gr-base/script/animator.hpp"
 
 // gr-render
 #include <gr-render/gVertexArray.h>
@@ -32,10 +33,10 @@ void Batching::insert(Transform *transform, const std::vector<MaterialID> &mater
         return;
     }
 
-    auto gameObject = transform->getGameObject();
+    auto gameObject = transform->GetGameObject();
 
-    bool isanimated = gameObject->hasComponent<Animator>();
-    bool isstatic = gameObject->getStatic();
+    bool isanimated = false; //gameObject->getComponent<Animator>();
+    // bool isstatic = gameObject->getStatic();
 
     std::string key;
     for (auto &materialID : materials)

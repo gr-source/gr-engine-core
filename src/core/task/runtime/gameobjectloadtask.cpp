@@ -6,13 +6,12 @@
 
 #include "gr-base/managers/assetsManager.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/scene.hpp"
 
+#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/shader.hpp"
-
-#include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshRender.hpp"
@@ -28,13 +27,11 @@ int GameObjectLoadTask::doInBackground()
 {
     Console::LogInfo("[ GameObjectLoadTask ] Loading file: %s...", m_path.c_str());
 
-    auto stream = std::make_shared<Stream>(m_path, std::ios_base::in | std::ios_base::binary);
+    Stream stream(m_path, std::ios_base::in | std::ios_base::binary);
 
     FileHeader fileHeader;
-    if (!stream->read(reinterpret_cast<char *>(&fileHeader), sizeof(FileHeader)))
-    {
+    if (!stream.read(reinterpret_cast<char *>(&fileHeader), sizeof(FileHeader)))
         return 1;
-    }
 
     if (strncmp(fileHeader.sign, "gmdx", 4) != 0)
     {
@@ -42,15 +39,11 @@ int GameObjectLoadTask::doInBackground()
         return 2;
     }
 
-    if (read_metadata(stream.get()) != 0)
-    {
+    if (read_metadata(&stream) != 0)
         return 3;
-    }
 
-    if (read_data(stream.get()) != 0)
-    {
+    if (read_data(&stream) != 0)
         return 4;
-    }
     return 0;
 }
 
@@ -306,14 +299,15 @@ int GameObjectLoadTask::read_mesh(Stream *stream)
 
 int GameObjectLoadTask::read_gameobject(Stream *stream, Transform *parent)
 {
-    std::string name, tag;
-    bool bactive, bstatic;
+    std::string name/*, tag*/;
+    // bool bactive, bstatic;
 
     if (!stream->read(name))
     {
         return 1;
     }
 
+    /*
     if (!stream->read(tag))
     {
         return 2;
@@ -328,10 +322,11 @@ int GameObjectLoadTask::read_gameobject(Stream *stream, Transform *parent)
     {
         return 4;
     }
+    */
 
-    auto gameObject = GameObject::Create(name, tag);
-    gameObject->setActive(bactive);
-    gameObject->setStatic(bstatic);
+    auto gameObject = GameObject::Create(name/*, tag */);
+    // gameObject->setActive(bactive);
+    // gameObject->setStatic(bstatic);
 
     m_gameobjectmap.emplace(name, gameObject);
 
@@ -364,43 +359,35 @@ int GameObjectLoadTask::read_script(Stream *stream)
 {
     std::size_t count = {};
     if (!stream->read(count))
-    {
         return 1;
-    }
 
     for (std::size_t i=0;i<count;i++)
     {
-        std::string go_name, component_name;
+        std::string go_name;
         if (!stream->read(go_name))
-        {
             return 2;
-        }
 
-        if (!stream->read(component_name))
-        {
-            return 2;
-        }
+        uint64_t componentHash;
+        if (!stream->read(componentHash))
+            return 3;
 
-        std::size_t bufferlength = {};
+        size_t bufferlength = {};
         if (!stream->read(bufferlength))
-        {
             return 4;
-        }
 
         auto next = stream->tellg() + static_cast<std::streampos>(bufferlength);
 
         auto it = m_gameobjectmap.find(go_name);
         if (it != m_gameobjectmap.end())
         {
-            auto pool = ComponentRegistry::Find(component_name);
-            if (pool != nullptr)
-            {
-                auto entity = it->second->getEntity();
+            auto gameObject = it->second;
+            
+            auto component = gameObject->getComponent(componentHash);
+            if (component == nullptr)
+                component = gameObject->addComponent(componentHash);
 
-                auto component = entity->hasComponent(component_name) ? entity->getComponent(component_name) : entity->addComponent(component_name);
-
-                pool->deserialize(component, stream);
-            }
+            if (bufferlength > 0)
+                component->Deserialize(stream);
         }
 
         if (stream->tellg() != next)

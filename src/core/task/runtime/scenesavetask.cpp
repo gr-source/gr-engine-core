@@ -3,14 +3,13 @@
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/core/file/stream.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
-
-#include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshRender.hpp"
@@ -311,38 +310,36 @@ int SceneSaveTask::write_script(Stream *stream)
         return 1;
     }
 
-    for (auto &&[go_name, component_name, component] : m_componentdata)
+    for (auto &&[go_name, componentHash, component] : m_componentdata)
     {
         if (!stream->write(go_name))
-        {
             return 2;
-        }
 
-        if (!stream->write(component_name))
-        {
+        if (!stream->write(componentHash))
             return 2;
-        }
 
-        auto pool = ComponentRegistry::Find(component_name);
+        /*
+        auto pool = ComponentManager::Find(component_name);
         if (pool == nullptr)
         {
             return 3;
         }
+        */
 
         std::size_t bufferlength = {};
         {
             Stream temp;
-            pool->serialize((Component *)component, &temp);
+            component->Serialize(&temp);
+            // pool->serialize((Component *)component, &temp);
             bufferlength = temp.getDataSize();
             temp.close();
         }
 
         if (!stream->write(bufferlength))
-        {
             return 4;
-        }
 
-        pool->serialize((Component *)component, stream);
+        // pool->serialize((Component *)component, stream);
+        component->Serialize(stream);
     }
     return 0;
 }
@@ -354,6 +351,7 @@ bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
         return false;
     }
 
+    /*
     if (!stream->write(go->getTag()))
     {
         return false;
@@ -368,6 +366,7 @@ bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
     {
         return false;
     }
+    */
 
     auto transform = go->getTransform();
 
@@ -381,7 +380,7 @@ bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
 
     for (auto &child : children)
     {
-        if (!serialize(stream, child->getGameObject()))
+        if (!serialize(stream, child->GetGameObject()))
         {
             return false;
         }
@@ -400,23 +399,19 @@ void SceneSaveTask::read_gameobject()
 
 void SceneSaveTask::read_data(const GameObject *gameObject)
 {
-    auto entity = gameObject->getEntity();
+    for (auto &hash : gameObject->GetHashes())
+        m_componentdata.emplace_back(gameObject->getName(), hash, gameObject->getComponent(hash));
 
-    for (auto &&[name, component] : entity->getComponentMap())
-        m_componentdata.emplace_back(gameObject->getName(), name, component);
-
-    if (gameObject->hasComponent<MeshFilter>())
+    auto meshFilter = gameObject->getComponent<MeshFilter>();
+    if (meshFilter != nullptr)
     {
-        auto meshFilter = gameObject->getComponent<MeshFilter>();
         for (auto &meshID : meshFilter->getMesh())
-        {
             m_meshmap.emplace(meshID);
-        }
     }
 
-    if (gameObject->hasComponent<MeshRender>() || gameObject->hasComponent<SkinnedMeshRender>())
+    if (gameObject->getComponent<MeshRender>() || gameObject->getComponent<SkinnedMeshRender>())
     {
-        auto baseRender = gameObject->hasComponent<MeshRender>() ? static_cast<BaseRender *>(gameObject->getComponent<MeshRender>()) : static_cast<BaseRender *>(gameObject->getComponent<SkinnedMeshRender>());
+        auto baseRender = gameObject->getComponent<MeshRender>() ? static_cast<BaseRender *>(gameObject->getComponent<MeshRender>()) : static_cast<BaseRender *>(gameObject->getComponent<SkinnedMeshRender>());
         
         for (auto materialID : baseRender->getMaterialIDs())
         {
@@ -441,9 +436,7 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
 
     auto transform = gameObject->getTransform();
     for (auto &child : transform->getChildren())
-    {
-        read_data(child->getGameObject());
-    }
+        read_data(child->GetGameObject());
 }
 
 

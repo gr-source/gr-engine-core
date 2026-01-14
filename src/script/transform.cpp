@@ -1,7 +1,5 @@
 #include "gr-base/script/transform.hpp"
 
-#include "gr-base/ecs/entity.hpp"
-
 #include "gr-base/core/file/stream.hpp"
 
 #include <algorithm>
@@ -9,6 +7,7 @@
 Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix)
 {}
 
+/*
 void Transform::onStart()
 {
     m_lastposition = m_position;
@@ -24,7 +23,7 @@ void Transform::onDestroy()
 
     updateLocalMatrix();
 }
-
+*/
 void Transform::setLocalScale(const Vector3 &value)
 {
     m_scale = value;
@@ -164,46 +163,11 @@ void Transform::updateGlobalMatrix()
     }
 
     for (auto &child : m_children)
-        child->updateLocalMatrix();
+            child->updateLocalMatrix();
 }
 
-Transform *Transform::findChild(Transform *transform) const
+bool Transform::Serialize(Stream *stream) const
 {
-    Transform *result = nullptr;
-    for (auto &child : m_children)
-    {
-        if (child == transform)
-        {
-            result = child;
-            break;
-        }
-        
-        result = child->findChild(transform);
-        if (result)
-        {
-            break;
-        }
-    }
-    return result;
-}
-
-Transform *Transform::findChildrenComponent(const std::string &name) const {
-    Transform *result = nullptr;
-    for (auto &child : m_children) {
-        if (child->entity->hasComponent(name)) {
-            result = child;
-            break;
-        }
-        
-        result = child->findChildrenComponent(name);
-        if (result) {
-            break;
-        }
-    }
-    return result;
-}
-
-bool Transform::onSerialize(Stream *stream) {
     if (!stream->write(reinterpret_cast<const char *>(&m_scale), sizeof(Vector3)))
     {
         return false;
@@ -221,7 +185,7 @@ bool Transform::onSerialize(Stream *stream) {
     return true;
 }
 
-bool Transform::onDeserialize(Stream *stream)
+bool Transform::Deserialize(Stream *stream)
 {
     if (!stream->read(reinterpret_cast<char *>(&m_scale), sizeof(Vector3)))
     {

@@ -1,16 +1,19 @@
 #pragma once
 
-#include <vector>
+#include <gr-ecs/behavior.hpp>
 
-#include "gr-base/ecs/component.hpp"
+#include <gr-math/gmath.hpp>
 
-class Transform : public Component {
+#include "gr-base/core/file/default.hpp"
+
+class Transform : public BehaviorImpl<Transform>
+{
 public:
     Transform();
 
-    void onStart() override;
+    // void onStart() override;
 
-    void onDestroy() override;
+    // void onDestroy() override;
 
     void setLocalScale(const Vector3 &value);
 
@@ -56,9 +59,9 @@ public:
 
     bool hasChildren() const;
 
-    bool onSerialize(Stream *stream) override;
+    bool Serialize(Stream *stream) const override;
     
-    bool onDeserialize(Stream *stream) override;
+    bool Deserialize(Stream *stream) override;
 
 private:
     Vector3 m_scale;
@@ -84,10 +87,6 @@ private:
     void updateLocalMatrix();
 
     void updateGlobalMatrix();
-
-    Transform *findChild(Transform *transform) const;
-    
-    Transform *findChildrenComponent(const std::string &name) const;
 };
 
 REGISTER_COMPONENT(Transform)

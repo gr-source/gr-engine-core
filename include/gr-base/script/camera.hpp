@@ -2,36 +2,33 @@
 
 #include "default.hpp"
 
-#include "gr-base/ecs/entity.hpp"
-
 #include "gr-base/core/rendertarget.hpp"
 
 #include <gr-render/gRender.h>
 
-class Camera : public Component
+#include <gr-ecs/behavior.hpp>
+
+class Camera : public BehaviorImpl<Camera>
 {
 public:
-    static std::vector<Camera *> &GetCameras();
+    static std::vector<Camera*> GetCameras();
 
     static Camera *Main();
 
     static Camera *Current();
 
     Camera();
+    ~Camera() override;
 
-    void onInit() override;
+    void Start() override;
 
-    void onStart() override;
+    void Enable() override;
 
-    void onDestroy() override;
+    void Disable() override;
 
-    void onEnable() override;
+    bool Serialize(Stream *stream) const override;
 
-    void onDisable() override;
-
-    bool onSerialize(Stream *stream) override;
-
-    bool onDeserialize(Stream *stream) override;
+    bool Deserialize(Stream *stream) override;
 
     Matrix4x4 getPerspesctive() const;
 
@@ -56,7 +53,7 @@ public:
     Color background;
 
 private:
-    static std::vector<Camera *> m_cameraList;
+    static std::vector<Camera*> m_cameraList;
 
     Transform *m_transform;
 

@@ -14,16 +14,11 @@
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/task/texturemanager.hpp"
 
-#include "gr-base/ecs/default.hpp"
-
 #include "gr-base/core/default.hpp"
 
 #include "gr-base/core/task/animationmanager.hpp"
 #include "gr-base/core/task/shadermanager.hpp"
 
-#include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
-#include "gr-base/core/task/runtime/textureloadtask.hpp"
-#include "gr-base/core/task/runtime/sceneloadtask.hpp"
 
 class AssetsManager
 {

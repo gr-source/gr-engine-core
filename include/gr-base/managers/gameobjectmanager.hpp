@@ -1,49 +1,63 @@
 #pragma once
 
-#include "gr-base/core/nameManager.hpp"
-#include "gr-base/ecs/gameObject.hpp"
+#include "gr-base/core/default.hpp"
+
+extern "C"
+{
+#include <gr-ecs/array.h>
+}
+
+#include <string>
+#include <atomic>
+
+#define n32nill (uint32_t)-1
 
 class GameObjectManager
 {
 public:
-    static GameObject *Create(const std::string &name, const std::string &tag);
-
-    static GameObject *Find(const std::string &name);
-
-    static void Destroy(GameObject *gameObject);
-
-    static std::string Rename(GameObject *, const std::string &name);
-
-    static std::size_t GetCount();
-
     static void Initialize();
 
     static void Shutdown();
 
-private:
-    static GameObjectManager *m_instance;
+    static GameObject* Instantiate(const GameObject* other);
 
-    std::unordered_map<std::string, std::unique_ptr<GameObject>> m_gameobjectmap;
+    static GameObjectID Create(const std::string& name);
 
-    std::unordered_map<const GameObject *, const std::string> m_gameobjectnamemap;
+    static GameObject* Get(GameObjectID id);
 
-    NameManager m_namemanager;
+    static void DestroyImediate(GameObjectID id);
 
-    std::mutex m_mutex;
+    static void Destroy(GameObjectID id);
+
+    static size_t GetCount();
+
+protected:
+    static GameObjectManager* s_GameObjectManager;
 
     GameObjectManager();
     ~GameObjectManager();
 
-    GameObject *create(const std::string &name, const std::string &tag);
+    array* m_gameObjectPool;
 
-    GameObject *find(const std::string &name);
+    uint32_t m_freeIDs;
 
-    void destroy(GameObject *gameObject);
+    std::atomic<size_t> m_count;
 
-    void mark(GameObject *gameObject);
+    GameObject* instantiate(const GameObject* other);
 
-    std::string rename(GameObject *gameObject, const std::string &name);
+    GameObjectID create(const std::string& name);
 
-    std::size_t get_count();
+    GameObject* get(GameObjectID id);
+
+    void destroyImediate(GameObjectID id);
+
+    void destroy(GameObjectID id);
+
+    void requestResize();
+
+    void addFreeID(uint32_t start);
 };
+
+
+
 

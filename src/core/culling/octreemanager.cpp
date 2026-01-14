@@ -1,15 +1,12 @@
 #include "gr-base/core/culling/octreemanager.hpp"
 
-#include "gr-base/core/culling/frustum.hpp"
-
 #include "gr-base/core/debugdraw.hpp"
 
-#include "gr-base/script/camera.hpp"
-#include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/transform.hpp"
 
-#include "gr-base/ecs/gameObject.hpp"
 #include <gr-math/gmath.hpp>
+
+#include <string.h>
 
 // public
 bool OctreeManager::Insert(NodeID id, Transform *transform)
@@ -361,7 +358,7 @@ void OctreeManager::resize(std::size_t size)
         return;
 
     if (m_nodes != nullptr)
-        std::memcpy(nodes, m_nodes, sizeof(OctreeNode) * oldsize);
+        memcpy(nodes, m_nodes, sizeof(OctreeNode) * oldsize);
 
     m_nodes = nodes;
     m_size = newsize;

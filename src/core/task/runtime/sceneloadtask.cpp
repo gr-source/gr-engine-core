@@ -3,12 +3,11 @@
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
-
-#include "gr-base/ecs/gameObject.hpp"
 
 #include "gr-base/script/transform.hpp"
 
@@ -308,13 +307,14 @@ int SceneLoadTask::read_script(Stream *stream)
 
     for (std::size_t i=0;i<count;i++)
     {
-        std::string go_name, component_name;
+        std::string go_name;
         if (!stream->read(go_name))
         {
             return 2;
         }
 
-        if (!stream->read(component_name))
+        uint64_t componentHash;
+        if (!stream->read(componentHash))
         {
             return 2;
         }
@@ -330,15 +330,24 @@ int SceneLoadTask::read_script(Stream *stream)
         auto it = m_gameobjectmap.find(go_name);
         if (it != m_gameobjectmap.end())
         {
-            auto pool = ComponentRegistry::Find(component_name);
+            auto gameObject = it->second;
+            auto component = gameObject->getComponent(componentHash);
+            if (component == nullptr)
+                component = gameObject->addComponent(componentHash);
+
+            component->Deserialize(stream);
+
+            /*
+            auto pool = ComponentManager::Find(component_name);
             if (pool != nullptr)
             {
-                auto entity = it->second->getEntity();
+                auto entity = it->second;
 
                 auto component = entity->hasComponent(component_name) ? entity->getComponent(component_name) : entity->addComponent(component_name);
 
                 pool->deserialize(component, stream);
             }
+            */
         }
 
         if (stream->tellg() != next)
@@ -351,14 +360,15 @@ int SceneLoadTask::read_script(Stream *stream)
 
 GameObject *SceneLoadTask::deserialize(Stream *stream, Transform *parent)
 {
-    std::string name, tag;
-    bool bactive, bstatic;
+    std::string name /*, tag;
+    bool bactive, bstatic */;
 
     if (!stream->read(name))
     {
         return nullptr;
     }
 
+    /*
     if (!stream->read(tag))
     {
         return nullptr;
@@ -373,10 +383,11 @@ GameObject *SceneLoadTask::deserialize(Stream *stream, Transform *parent)
     {
         return nullptr;
     }
+    */
 
-    auto gameObject = GameObject::Create(name, tag);
-    gameObject->setActive(bactive);
-    gameObject->setStatic(bstatic);
+    auto gameObject = GameObject::Create(name/*, tag*/);
+    // gameObject->setActive(bactive);
+    // gameObject->setStatic(bstatic);
 
     m_gameobjectmap.emplace(name, gameObject);
 

@@ -3,6 +3,7 @@
 #include "gr-base/core/default.hpp"
 
 #include <unordered_map>
+#include <string>
 #include <vector>
 #include <memory>
 #include <mutex>

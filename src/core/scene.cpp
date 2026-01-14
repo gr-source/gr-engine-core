@@ -1,14 +1,12 @@
 #include "gr-base/core/scene.hpp"
 
+#include "gr-base/core/gameObject.hpp"
+
 // #include "gr-base/core/scenemanager.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
-#include "gr-base/ecs/gameObject.hpp"
-
 #include <algorithm>
-
-std::hash<std::string> Scene::hash;
 
 /*
 void Scene::CheckRequestReinstanceScript()
@@ -30,30 +28,30 @@ void Scene::CheckRequestReinstanceScript()
 */
 void Scene::Play(GameObject *gameObject)
 {
-    auto entity = gameObject->getEntity();
+    /*
+    gameObject->play();
 
-    entity->play();
-
-    auto transform = entity->getComponent<Transform>();
+    auto transform = gameObject->getComponent<Transform>();
 
     for (auto child : transform->getChildren())
     {
         Scene::Play(child->getGameObject());
     }
+    */
 }
 
 void Scene::Stop(GameObject *gameObject)
 {
-    auto entity = gameObject->getEntity();
+    /*
+    gameObject->stop();
 
-    entity->stop();
-
-    auto transform = entity->getComponent<Transform>();
+    auto transform = gameObject->getComponent<Transform>();
 
     for (auto child : transform->getChildren())
     {
         Scene::Stop(child->getGameObject());
     }
+    */
 }
 
 // public
@@ -110,25 +108,12 @@ void Scene::create_main_camra()
         MainCamera->setName("MainCamera");
     }
 
-    GameObject::Destroy(go);
+    GameObject::DestroyImediate(go);
 }
 
 bool Scene::is_running() const
 {
     return m_isrunning;
-}
-
-GameObject *Scene::CreateGameObject(const std::string &name, const std::string &tag)
-{
-    auto gameObject = GameObject::Create(name, tag);
-    if (!gameObject)
-    {
-        return nullptr;
-    }
-
-    m_objects.push_back(gameObject);
-
-    return gameObject;
 }
 
 std::vector<GameObject *> Scene::getObjectList() const
@@ -217,23 +202,19 @@ bool Scene::destroy(GameObject *gameObject)
 {
     remove(gameObject);
 
-    GameObject::Destroy(gameObject);
+    GameObject::DestroyImediate(gameObject);
     return true;
 }
 
 GameObject *Scene::CreateEngineCamera()
 {
-    auto go = GameObject::Create("MainEngineCamera", "Engine");
+    auto go = GameObject::Create("MainEngineCamera");
     if (!go)
-    {
         return nullptr;
-    }
 
     auto camera = go->addComponent<Camera>();
     if (!camera)
-    {
         return nullptr;
-    }
 
     return go;
 }
@@ -249,7 +230,7 @@ void Scene::setEnable(bool value)
 
 void Scene::setDisableEntity(Transform *transform, bool value)
 {
-    transform->entity->setEnable(value);
+    transform->GetGameObject()->SetState(value);
 
     for (auto &child : transform->getChildren())
     {
@@ -282,7 +263,7 @@ void Scene::for_each(std::function<void(GameObject *)> func)
 
 void Scene::for_each(Transform *transform, std::function<void(GameObject *)> func)
 {
-    func(transform->getGameObject());
+    func(transform->GetGameObject());
 
     for (auto child : transform->getChildren())
     {
@@ -293,12 +274,12 @@ void Scene::for_each(Transform *transform, std::function<void(GameObject *)> fun
 void Scene::reinstanceScript(const std::string &name)
 {
     Scene::for_each([name](GameObject *go)
-                    {
-        auto entt = go->getEntity();
+    {
+        // if (!go->hasComponent(name))
+            // return;
 
-        if (!entt->hasComponent(name)) { return; }
+        // go->free(name);
 
-        entt->free(name);
-
-        entt->addComponent(name); });
+        // go->addComponent(name.c_str());
+    });
 }

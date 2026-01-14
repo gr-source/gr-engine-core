@@ -10,13 +10,10 @@
 #include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
-#include "gr-base/ecs/gameObject.hpp"
 
 #include <gr-render/gTexture.h>
 #include <gr-render/gShader.h>
 #include <gr-render/gError.h>
-#include <memory>
-#include <mutex>
 
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
 

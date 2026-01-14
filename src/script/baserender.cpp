@@ -8,27 +8,7 @@
 BaseRender::BaseRender()
 {}
 
-void BaseRender::onInit()
-{}
-
-void BaseRender::onRelease()
-{}
-
-void BaseRender::onEnable()
-{}
-
-void BaseRender::onDisable()
-{
-    /*
-    if (m_batchID == InvalidBatch)
-        return;
-
-    Batching *batching = BatchingManager::Get(m_batchID);
-    batching->erase(GetComponent<Transform>());
-    */
-}
-
-bool BaseRender::onSerialize(Stream *stream)
+bool BaseRender::Serialize(Stream *stream) const
 {
     auto count = m_materials.size();
     if (!stream->write(count))
@@ -44,7 +24,7 @@ bool BaseRender::onSerialize(Stream *stream)
     return true;
 }
 
-bool BaseRender::onDeserialize(Stream *stream)
+bool BaseRender::Deserialize(Stream *stream)
 {
     std::size_t count = {};
     if (!stream->read(count))

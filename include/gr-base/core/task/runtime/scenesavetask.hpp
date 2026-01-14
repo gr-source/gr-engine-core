@@ -6,9 +6,9 @@
 
 #include "gr-base/core/file/default.hpp"
 
-#include "gr-base/ecs/default.hpp"
-
 #include "gr-base/core/geometry/default.hpp"
+
+#include <gr-ecs/behavior.hpp>
 
 #include <unordered_set>
 
@@ -24,7 +24,7 @@ private:
 
     std::function<void (const Scene *)> m_func;
 
-    std::vector<std::tuple<std::string, std::string, const Component *>> m_componentdata;
+    std::vector<std::tuple<std::string, uint64_t, const Behavior *>> m_componentdata;
 
     std::unordered_map<std::string, MaterialID> m_materialmap;
 

@@ -2,15 +2,11 @@
 
 #include "gr-base/script/default.hpp"
 
-#include "gr-base/ecs/default.hpp"
+#include "default.hpp"
 
-#include "geometry/material.hpp"
-
-#include <condition_variable>
-#include <functional>
-#include <list>
-#include <map>
 #include <unordered_set>
+#include <functional>
+#include <string>
 
 class Stream;
 
@@ -30,8 +26,6 @@ public:
     void create_main_camra();
 
     bool is_running() const;
-
-    GameObject *CreateGameObject(const std::string &name, const std::string &tag = "untagged");
 
     std::vector<GameObject *> getObjectList() const;
 
@@ -65,8 +59,6 @@ public:
 
     static void Stop(GameObject *go);
 private:
-    static std::hash<std::string> hash;
-
     std::vector<std::tuple<std::string, std::string, Component *>> m_componentCache; 
 
     std::vector<GameObject *> m_tempInitObjects;

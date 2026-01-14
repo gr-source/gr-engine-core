@@ -1,24 +1,26 @@
 #include "gr-base/script/camera.hpp"
 
 #include "gr-base/core/rendertarget.hpp"
+
 #include "gr-base/core/thread/threadpool.hpp"
+
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/core/display.hpp"
 
-#include "gr-base/ecs/gameObject.hpp"
-
 #include "gr-base/core/file/stream.hpp"
+
+#include <gr-ecs/entity.hpp>
 
 #include <algorithm>
 
 #include <gr-render/gTexture.h>
 
-std::vector<Camera *> Camera::m_cameraList;
+std::vector<Camera*> Camera::m_cameraList;
 
 Camera *Camera::s_current = nullptr;
 
-std::vector<Camera *> &Camera::GetCameras()
+std::vector<Camera*> Camera::GetCameras()
 {
     return m_cameraList;
 }
@@ -38,10 +40,6 @@ Camera *Camera::Current() {
 
 Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(1024, 1024), background(Color::black)
 {
-}
-
-void Camera::onInit()
-{
     m_transform = entity->getComponent<Transform>();
 
     auto rect = Display::GetDisplayRect();
@@ -54,7 +52,20 @@ void Camera::onInit()
         rendertarget.init();
 }
 
-void Camera::onStart()
+Camera::~Camera()
+{
+    if (this == s_current)
+    {
+        s_current = nullptr;
+    }
+
+    m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
+
+    if (Threadpool::IsMainThread())
+        rendertarget.shutdown();
+}
+
+void Camera::Start()
 {
     if (s_current == nullptr)
         s_current = this;
@@ -71,20 +82,8 @@ void Camera::onStart()
         rendertarget.init();
 }
 
-void Camera::onDestroy()
+void Camera::Enable()
 {
-    if (this == s_current)
-    {
-        s_current = nullptr;
-    }
-
-    m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
-
-    if (Threadpool::IsMainThread())
-        rendertarget.shutdown();
-}
-
-void Camera::onEnable() {
     addInGlobalCam();
 
     if (!s_current) {
@@ -98,14 +97,15 @@ void Camera::onEnable() {
     updateProjection();
 }
 
-void Camera::onDisable() {
+void Camera::Disable()
+{
     if (this == s_current) {
         s_current = nullptr;
     }
     m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
 }
 
-bool Camera::onSerialize(Stream *stream)
+bool Camera::Serialize(Stream *stream) const
 {
     if (!stream->write(&m_projection, sizeof(Matrix4x4)))
     {
@@ -139,7 +139,7 @@ bool Camera::onSerialize(Stream *stream)
     return false;
 }
 
-bool Camera::onDeserialize(Stream *stream)
+bool Camera::Deserialize(Stream *stream)
 {
     if (!stream->read(reinterpret_cast<char *>(&m_projection), sizeof(Matrix4x4)))
     {

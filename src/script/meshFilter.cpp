@@ -20,7 +20,7 @@ const std::vector<MeshID> &MeshFilter::getMesh() const
     return m_meshes;
 }
 
-bool MeshFilter::onSerialize(Stream *stream)
+bool MeshFilter::Serialize(Stream *stream) const
 {
     auto count = m_meshes.size();
     if (!stream->write(count))
@@ -36,7 +36,7 @@ bool MeshFilter::onSerialize(Stream *stream)
     return true;
 }
 
-bool MeshFilter::onDeserialize(Stream *stream)
+bool MeshFilter::Deserialize(Stream *stream)
 {
     std::size_t count = {};
     if (!stream->read(count))

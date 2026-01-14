@@ -4,16 +4,15 @@ project(gr-base VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
-set(ecs
-    src/ecs/componentRegistry.cpp
-    src/ecs/scriptpriority.cpp
-    src/ecs/chunkManager.cpp
-    src/ecs/gameObject.cpp
-    src/ecs/component.cpp
-    src/ecs/entity.cpp
-    src/ecs/field.cpp
-    src/ecs/pool.cpp
+## biblioteca do sistema ecs
+include(FetchContent)
+
+FetchContent_Declare(
+    gr-ecs
+    GIT_REPOSITORY git@github.com:gr-source/gr-ecs.git
+    GIT_TAG main
 )
+FetchContent_MakeAvailable(gr-ecs)
 
 set(geometry
     src/core/geometry/batchingdynamic.cpp
@@ -47,6 +46,7 @@ set(core
     src/core/mainthreaddispatcher.cpp
     src/core/rendertarget.cpp
     src/core/nameManager.cpp
+    src/core/gameObject.cpp
     src/core/debugdraw.cpp
     src/core/display.cpp
     src/core/console.cpp
@@ -65,15 +65,10 @@ set(binary
 
 set(script
     src/script/skinnedMeshRender.cpp
-    src/script/meshCollider.cpp
-    src/script/boxCollider.cpp
     src/script/meshFilter.cpp
     src/script/baserender.cpp
     src/script/meshRender.cpp
-    src/script/rigidbody.cpp
     src/script/transform.cpp
-    src/script/animator.cpp
-    src/script/LODGroup.cpp
     src/script/camera.cpp
     src/script/light.cpp
 )
@@ -122,15 +117,11 @@ set(managers_src
     src/managers/batchingmanager.cpp
     src/managers/rendermanager.cpp
     src/managers/assetsManager.cpp
-    src/managers/entitymanager.cpp
     src/managers/sceneManager.cpp
 )
-
-find_package(assimp QUIET)
-if(NOT assimp_FOUND)
-    message(FATAL_ERROR "Please install libassimp-dev")
-    return()
-endif()
+set(EXTERNALS
+    src/externals/array.c
+)
 
 find_package(Bullet QUIET)
 if(NOT Bullet_FOUND)
@@ -138,7 +129,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${ecs} ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${broadphase_src} ${managers_src})
+add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${broadphase_src} ${managers_src} ${EXTERNALS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -147,7 +138,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     imgui/src
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE assimp ${BULLET_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${BULLET_LIBRARIES} gr-ecs)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC INTERNAL_REGISTER_SCRIPT)
 

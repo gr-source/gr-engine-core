@@ -4,6 +4,8 @@
 
 #include "gr-base/core/file/stream.hpp"
 
+#include <gr-ecs/entity.hpp>
+
 #include <algorithm>
 
 std::vector<Light *> Light::m_lights;
@@ -14,30 +16,30 @@ std::vector<Light *> Light::GetListLight() {
     return m_lights;
 }
 
-Light::Light(std::uint8_t type, const Color& color, float aConstant, float aLinear, float aQuadract, float inneCone, float outerCone) : m_type(static_cast<int>(type)), m_color(color), m_attenuationConstant(aConstant), m_attenuationLinear(aLinear), m_attenuationQuadratic(aQuadract), m_transform(nullptr), m_angleInnerCone(inneCone), m_angleOuterCone(outerCone) {}
-
-void Light::onInit()
+Light::Light(std::uint8_t type, const Color& color, float aConstant, float aLinear, float aQuadract, float inneCone, float outerCone) : m_type(static_cast<int>(type)), m_color(color), m_attenuationConstant(aConstant), m_attenuationLinear(aLinear), m_attenuationQuadratic(aQuadract), m_transform(nullptr), m_angleInnerCone(inneCone), m_angleOuterCone(outerCone)
 {
     m_transform = entity->getComponent<Transform>();
 
     addInGlobalLight();
 }
 
-void Light::onRelease()
+Light::~Light()
 {
     m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), this), m_lights.end());
 }
 
-void Light::onEnable()
+void Light::Enable()
 {
     addInGlobalLight();
 }
 
-void Light::onDisable() {
+void Light::Disable()
+{
     m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), this), m_lights.end());
 }
 
-bool Light::onSerialize(Stream *stream) {
+bool Light::Serialize(Stream *stream) const
+{
     stream->write(reinterpret_cast<const char *>(&m_type), sizeof(int));
     stream->write(reinterpret_cast<const char *>(&m_color), sizeof(Color));
     stream->write(reinterpret_cast<const char *>(&m_attenuationConstant), sizeof(float));
@@ -48,7 +50,8 @@ bool Light::onSerialize(Stream *stream) {
     return true;
 }
 
-bool Light::onDeserialize(Stream *stream) {
+bool Light::Deserialize(Stream *stream)
+{
     stream->read(reinterpret_cast<char *>(&m_type), sizeof(int));
     stream->read(reinterpret_cast<char *>(&m_color), sizeof(Color));
     stream->read(reinterpret_cast<char *>(&m_attenuationConstant), sizeof(float));

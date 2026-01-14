@@ -2,25 +2,18 @@
 
 #include "gr-base/core/geometry/default.hpp"
 
-#include "gr-base/ecs/entity.hpp"
+#include <gr-ecs/behavior.hpp>
 
-class BaseRender : public Component
+#include <gr-ecs/entity.hpp>
+
+class BaseRender : public BehaviorImpl<BaseRender>
 {
-    CLASS_FUNCTIONS
 public:
     BaseRender();
 
-    void onInit() override;
+    virtual bool Serialize(Stream *stream) const override;
 
-    void onRelease() override;
-
-    void onEnable() override;
-
-    void onDisable() override;
-
-    bool onSerialize(Stream *stream) override;
-
-    bool onDeserialize(Stream *stream) override;
+    virtual bool Deserialize(Stream *stream) override;
 
     virtual void build(std::vector<Mesh> *meshlist) {}
 

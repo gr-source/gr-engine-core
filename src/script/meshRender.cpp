@@ -1,85 +1,60 @@
 #include "gr-base/script/meshRender.hpp"
 
-#include "gr-base/broadphase/bvhtree.hpp"
-
-#include "gr-base/managers/assetsManager.hpp"
-
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/console.hpp"
 
-#include "gr-base/core/geometry/material.hpp"
-#include "gr-base/core/geometry/batching.hpp"
+#include "gr-base/core/file/stream.hpp"
 
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/thread/threadpool.hpp"
-
-#include "gr-base/ecs/gameObject.hpp"
-
-#include "gr-base/script/meshFilter.hpp"
-#include "gr-base/script/transform.hpp"
-
+#include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/batchingmanager.hpp"
 
-MeshRender::MeshRender() : m_batchID(InvalidBatch)
-{}
+#include "gr-base/script/meshFilter.hpp"
 
-void MeshRender::onInit()
+
+MeshRender::MeshRender() : m_batchID(InvalidBatch)
 {
-    BaseRender::onInit();
+    // MainThreadDispatcher::Add([this]()
 
     if (Threadpool::IsMainThread())
     {
-        MainThreadDispatcher::Add([this]()
+        MeshFilter *meshFilter = entity->getComponent<MeshFilter>();
+        if (meshFilter != nullptr)
         {
-            if (!HasComponent<MeshFilter>())
-                return Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
-
-            MeshFilter *meshFilter = GetComponent<MeshFilter>();
-        
             auto meshes = meshFilter->getMesh();
             if (meshes.empty())
-                return Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
-
-            Boundbox boundbox;
-            for (auto &meshID : meshes)
             {
-                auto &mesh = AssetsManager::GetMesh(meshID);
-
-                boundbox = boundbox.Encapsulate(mesh.getBoundbox());
+                Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
+            } else
+            {
+                MainThreadDispatcher::Add(&MeshRender::build, this, meshes);
             }
-
-            auto transform = getGameObject()->getTransform();
-
-            auto &model = transform->getGlobalMatrix();
-            auto min = model * Vector4{boundbox.min.x, boundbox.min.y, boundbox.min.z, 1.0f};
-            auto max = model * Vector4{boundbox.max.x, boundbox.max.y, boundbox.max.z, 1.0f};
-
-            bvh::Tree::Insert(bvh::Bounds{{min.x, min.y, min.z}, {max.x, max.y, max.z}}, this);
-
-            build(meshes);
-        });
+        } else
+        {
+            Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
+        }
     }
 }
 
-void MeshRender::onRelease()
+bool MeshRender::Serialize(Stream* stream) const
 {
-    return BaseRender::onRelease();
+    return BaseRender::Serialize(stream);
 }
 
-bool MeshRender::onSerialize(Stream *stream)
+bool MeshRender::Deserialize(Stream* stream)
 {
-    return BaseRender::onSerialize(stream);
+    return BaseRender::Deserialize(stream);
 }
 
-bool MeshRender::onDeserialize(Stream *stream)
-{
-    return BaseRender::onDeserialize(stream);
-}
-
-void MeshRender::build(const std::vector<MeshID> &meshes)
+void MeshRender::build(const std::vector<MeshID>& meshes)
 {
     std::string batchname;
     for (auto &meshID : meshes)
         batchname += AssetsManager::GetMeshName(meshID);
+
+    if (m_batchID != InvalidBatch)
+        BatchingManager::Destroy(m_batchID);
 
     m_batchID = BatchingManager::Find(batchname);
     if (m_batchID == InvalidBatch)
@@ -89,7 +64,5 @@ void MeshRender::build(const std::vector<MeshID> &meshes)
 
     batch.insert(GetGameObject()->getTransform(), m_materials);
 }
-
-
 
 

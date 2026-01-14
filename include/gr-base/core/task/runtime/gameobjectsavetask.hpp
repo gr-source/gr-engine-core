@@ -6,9 +6,12 @@
 
 #include "gr-base/core/thread/asynctask.hpp"
 
-#include "gr-base/ecs/default.hpp"
+#include "gr-base/core/default.hpp"
+
+#include <gr-ecs/default.hpp>
 
 #include <gr-render/gCommon.h>
+
 #include <unordered_set>
 
 class GameObjectSaveTask : public IAsyncTask<int>
@@ -26,7 +29,7 @@ private:
 
     std::vector<std::tuple<std::string, std::string, std::string>> m_textureMap;
 
-    std::vector<std::tuple<std::string, std::string, const Component *>> m_componentdata;
+    std::vector<std::tuple<std::string, uint64_t, const Behavior *>> m_componentdata;
 
     std::unordered_map<std::string, MaterialID> m_materialmap;
 

@@ -2,10 +2,12 @@
 
 #include "default.hpp"
 
-#include "gr-base/ecs/entity.hpp"
+#include <gr-ecs/behavior.hpp>
 
-class Light : public Component {
-    CLASS_FUNCTIONS
+#include <gr-math/gmath.hpp>
+
+class Light : public BehaviorImpl<Light>
+{
 public:
     enum LightType : int {
         eDirection = 0,
@@ -15,19 +17,16 @@ public:
 
     static std::vector<Light *> GetListLight();
 
-    Light(std::uint8_t type = eDirection, const Color& color = Color::white, float aConstant = 1.0f, float aLinear = 1.0f, float aQuadract = 1.0f, float inneCone = 1.0f, float outerCone = 1.0f);
+    Light(uint8_t type = eDirection, const Color& color = Color::white, float aConstant = 1.0f, float aLinear = 1.0f, float aQuadract = 1.0f, float inneCone = 1.0f, float outerCone = 1.0f);
+    ~Light();
     
-    void onInit() override;
+    void Enable() override;
 
-    void onRelease() override;
+    void Disable() override;
 
-    void onEnable() override;
+    bool Serialize(Stream *stream) const override;
 
-    void onDisable() override;
-
-    bool onSerialize(Stream *stream) override;
-
-    bool onDeserialize(Stream *stream) override;
+    bool Deserialize(Stream *stream) override;
 
     Vector3 getPosition() const;
 

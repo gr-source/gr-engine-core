@@ -1,180 +1,173 @@
 #include "gr-base/managers/gameobjectmanager.hpp"
 
-#include "gr-base/core/mainthreaddispatcher.hpp"
+#include "gr-base/core/gameObject.hpp"
+#include "gr-base/core/default.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/script/transform.hpp"
 
-GameObjectManager *GameObjectManager::m_instance = nullptr;
+#include "gr-base/managers/sceneManager.hpp"
 
-// public
-GameObject *GameObjectManager::Create(const std::string &name, const std::string &tag)
-{
-    return m_instance->create(name, tag);
-}
+#include <cstddef>
 
-GameObject *GameObjectManager::Find(const std::string &name)
+typedef struct GameObjectWrapper
 {
-    return m_instance->find(name);
-}
+    uint32_t next;
 
-void GameObjectManager::Destroy(GameObject *gameObject)
-{
-    return m_instance->mark(gameObject);
-}
+    GameObject gameObject;
+} GameObjectWrapper;
 
-std::string GameObjectManager::Rename(GameObject * gameObject, const std::string &name)
-{
-    return m_instance->rename(gameObject, name);
-}
-
-std::size_t GameObjectManager::GetCount()
-{
-    return m_instance->get_count();
-}
+GameObjectManager* GameObjectManager::s_GameObjectManager = nullptr;
 
 void GameObjectManager::Initialize()
 {
-    if (m_instance == nullptr)
-        m_instance = new GameObjectManager();
+    if (s_GameObjectManager == nullptr)
+        s_GameObjectManager = new GameObjectManager();
 }
 
 void GameObjectManager::Shutdown()
 {
-    if (m_instance != nullptr)
-        delete m_instance;
-
-    m_instance = nullptr;
+    if (s_GameObjectManager != nullptr)
+        delete s_GameObjectManager;
+    s_GameObjectManager = nullptr;
 }
 
+GameObject* GameObjectManager::Instantiate(const GameObject *other)
+{
+    return s_GameObjectManager->instantiate(other);
+}
 
-// private
+GameObjectID GameObjectManager::Create(const std::string &name)
+{
+    return s_GameObjectManager->create(name);
+}
 
-GameObjectManager::GameObjectManager()
-{}
+GameObject* GameObjectManager::Get(GameObjectID id)
+{
+    return s_GameObjectManager->get(id);
+}
+
+void GameObjectManager::DestroyImediate(GameObjectID id)
+{
+    s_GameObjectManager->destroyImediate(id);
+}
+
+void GameObjectManager::Destroy(GameObjectID id)
+{
+    s_GameObjectManager->destroy(id);
+}
+
+size_t GameObjectManager::GetCount()
+{
+    return s_GameObjectManager->m_count;
+}
+
+// public
+GameObjectManager::GameObjectManager() : m_gameObjectPool(nullptr), m_freeIDs(n32nill), m_count(0)
+{
+    m_gameObjectPool = array_create(1024, sizeof(GameObjectWrapper));
+
+    addFreeID(0);
+}
 
 GameObjectManager::~GameObjectManager()
-{}
-
-GameObject *GameObjectManager::create(const std::string &name, const std::string &tag)
 {
-    auto newname = m_namemanager.GenerateNameID(name);
-    while (find(newname) != nullptr)
-    {
-        newname = m_namemanager.GenerateNameID(newname);
-    }
+    array_free(m_gameObjectPool);
+}
 
-    GameObject *gameObject = nullptr;
+// private
+GameObject* GameObjectManager::instantiate(const GameObject *other)
+{
+    auto handle = create(other->getName());
+    if (handle == GID_INVALID)
+        return nullptr;
 
-    {
-        auto ptr = std::make_unique<GameObject>(newname, tag);
+    auto gameObject = get(handle);
+    gameObject->Copy(other);
 
-        std::lock_guard<std::mutex> lock(m_mutex);
-        auto &&[it, added] = m_gameobjectmap.emplace(newname, std::move(ptr));
-        if (added)
-        {
-            m_gameobjectnamemap.emplace(it->second.get(), newname);
-        }
-        gameObject = it->second.get();
-    }
+    auto scene = SceneManager::GetCurrent();
+    if (scene != nullptr)
+        scene->insert(gameObject);
 
     return gameObject;
 }
 
-GameObject *GameObjectManager::find(const std::string &name)
+GameObjectID GameObjectManager::create(const std::string &name)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    auto it = m_gameobjectmap.find(name);
-    if (it == m_gameobjectmap.end())
+    if (m_freeIDs == n32nill)
     {
-        return nullptr;
+        requestResize();
     }
 
-    return it->second.get();
+    GameObjectWrapper* wrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
+
+    uint32_t id = m_freeIDs;
+    m_freeIDs = wrapper[id].next;
+
+    GameObjectID cacheID = CreateGameObjectID(id, 0);
+
+    GameObject* gameObject = &wrapper[id].gameObject;
+
+    new (gameObject) GameObject(cacheID);
+    gameObject->setName(name);
+
+    m_count++;
+
+    return cacheID;
 }
 
-void GameObjectManager::destroy(GameObject *gameObject)
+GameObject* GameObjectManager::get(GameObjectID id)
 {
-    m_namemanager.RemoveNameID(gameObject->getName());
+    GameObjectWrapper* wrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
 
-    std::unique_lock<std::mutex> lock(m_mutex);
-    auto it = m_gameobjectnamemap.find(gameObject);
-    if (it == m_gameobjectnamemap.end())
-    {
-        return;
-    }
-    lock.unlock();
-
-    auto scene = gameObject->get_scene();
-    if (scene != nullptr)
-        scene->remove(gameObject);
-
-    auto transform = gameObject->getTransform();
-    // remove o objeto pai do objeto altual e se o pai me ter como filho me remove do objeto pai.
-    transform->setParent(nullptr);
-
-    auto children = transform->getChildren();
-
-    for (auto child : children) {
-        // como o objeto pai ja foi removido diz, aos filhos que não tem mais parent.
-        child->setParent(nullptr, false);
-
-        auto gameObject = child->getGameObject();
-
-        GameObject::Destroy(gameObject);
-    }
-
-    lock.lock();
-
-    m_gameobjectmap.erase(it->second);
-
-    m_gameobjectnamemap.erase(it);
+    return &wrapper[GetIDIndex(id)].gameObject;
 }
 
-void GameObjectManager::mark(GameObject *gameObject)
+void GameObjectManager::destroyImediate(GameObjectID id)
 {
-    MainThreadDispatcher::Add(&GameObjectManager::destroy, this, gameObject);
+    GameObjectWrapper* wrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
+
+    uint32_t index = GetIDIndex(id);
+
+    auto& gameObject = wrapper[index].gameObject;
+
+    {
+        auto transform = gameObject.getTransform();
+        for (auto child : transform->getChildren())
+            destroyImediate(child->GetGameObject()->getCacheID());
+    }
+
+    wrapper[index].next = m_freeIDs;
+    m_freeIDs = index;
+
+    gameObject.~GameObject();
+
+    m_count--;
 }
 
-std::string GameObjectManager::rename(GameObject *gameObject, const std::string &name)
+void GameObjectManager::destroy(GameObjectID id)
+{}
+
+void GameObjectManager::requestResize()
 {
-    auto lastname = gameObject->getName();
+    size_t lastsize = m_gameObjectPool->length;
+    size_t newsize = lastsize + 1024;
 
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        auto it = m_gameobjectmap.find(lastname);
-        if (it == m_gameobjectmap.end())
-        {
-            return lastname;
-        }
-    }
+    m_gameObjectPool = array_resize(m_gameObjectPool, newsize, sizeof(GameObjectWrapper));
 
-    m_namemanager.RemoveNameID(lastname);
-
-    auto newname = name;
-    while (find(newname) != nullptr)
-    {
-        newname = m_namemanager.GenerateNameID(newname);
-    }
-
-    std::lock_guard<std::mutex> lock(m_mutex);
-    auto pointer = std::move(m_gameobjectmap[lastname]);
-    m_gameobjectmap.erase(lastname);
-    m_gameobjectnamemap.erase(gameObject);
-
-    auto &&[iterator, added] = m_gameobjectmap.emplace(newname, std::move(pointer));
-    if (added)
-    {
-        m_gameobjectnamemap.emplace(iterator->second.get(), newname);
-    }
-
-    return newname;
+    addFreeID(lastsize);
 }
 
-std::size_t GameObjectManager::get_count()
+void GameObjectManager::addFreeID(uint32_t start)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return m_gameobjectnamemap.size();
+    GameObjectWrapper* wrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
+
+    size_t lastID = m_gameObjectPool->length - 1;
+    for (size_t i=start;i<lastID;i++)
+        wrapper[i].next = i + 1;
+
+    wrapper[lastID].next = m_freeIDs;
+    m_freeIDs = start;
 }
 
 

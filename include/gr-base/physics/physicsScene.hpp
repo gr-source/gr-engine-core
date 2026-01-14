@@ -7,7 +7,7 @@
 
 #include <gr-math/gmath.hpp>
 
-#include "gr-base/ecs/default.hpp"
+#include "gr-base/core/default.hpp"
 
 #include "default.hpp"
 

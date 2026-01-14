@@ -3,9 +3,9 @@
 #include "gr-base/core/geometry/boundbox.hpp"
 #include "gr-base/core/geometry/default.hpp"
 
-#include "gr-base/ecs/component.hpp"
+#include <gr-ecs/behavior.hpp>
 
-class MeshFilter : public Component
+class MeshFilter : public BehaviorImpl<MeshFilter>
 {
 public:
     MeshFilter();
@@ -14,9 +14,9 @@ public:
 
     const std::vector<MeshID> &getMesh() const;
 
-    bool onSerialize(Stream *stream) override;
+    bool Serialize(Stream *stream) const override;
 
-    bool onDeserialize(Stream *stream) override;
+    bool Deserialize(Stream *stream) override;
     
 private:
     std::vector<MeshID> m_meshes;

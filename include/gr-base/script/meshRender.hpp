@@ -7,17 +7,12 @@
 
 class MeshRender : public BaseRender
 {
-    CLASS_FUNCTIONS
 public:
     MeshRender();
 
-    void onInit() override;
+    bool Serialize(Stream *stream) const override;
 
-    void onRelease() override;
-
-    bool onSerialize(Stream *stream) override;
-
-    bool onDeserialize(Stream *stream) override;
+    bool Deserialize(Stream *stream) override;
 
     void build(const std::vector<MeshID> &meshes);
 

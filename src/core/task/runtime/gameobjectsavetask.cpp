@@ -4,20 +4,19 @@
 
 #include "gr-base/core/binary/gHeader.hpp"
 
-#include "gr-base/core/file/stream.hpp"
-
 #include "gr-base/core/geometry/material.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/console.hpp"
 
-#include "gr-base/ecs/gameObject.hpp"
-
+#include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/file/file.hpp"
 
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/transform.hpp"
+#include "gr-ecs/componentmanager.hpp"
 
 GameObjectSaveTask::GameObjectSaveTask(const std::string &path, GameObject *gameObject, std::function<void (GameObject *)> func) : m_path(path), m_gameObject(gameObject), m_func(func)
 {}
@@ -25,28 +24,24 @@ GameObjectSaveTask::GameObjectSaveTask(const std::string &path, GameObject *game
 // private
 int GameObjectSaveTask::doInBackground()
 {
-    auto stream = std::make_unique<Stream>(gfile::get_cache_directory() + "/" + (m_gameObject->getName() + ".gmdx"), std::ios_base::out | std::ios_base::binary);
+    Stream stream(gfile::get_cache_directory() + "/" + (m_gameObject->getName() + ".gmdx"), std::ios_base::out | std::ios_base::binary);
 
     // Header file
     {
-        FileHeader header{{'g', 'm', 'd', 'x'}, 1.0f, 0};
-        if (!stream->writeS(&header, 1, false))
+        FileHeader header{{'g', 'm', 'd', 'x'}, 1.1f, 0};
+        if (!stream.writeS(&header, 1, false))
         {
             Console::LogError("[ GameObjectSaveTask ] Fail to write header.");
             return 1;
         }
     }
 
-    if (write_metadata(stream.get()) != 0)
-    {
+    if (write_metadata(&stream) != 0)
         return 2;
-    }
 
-    int result = write_data(stream.get());
+    int result = write_data(&stream);
     if (result != 0)
-    {
         return 3;
-    }
 
     return 0;
 }
@@ -57,7 +52,13 @@ void GameObjectSaveTask::onPostExecute(int result)
     {
         return Console::LogError("[ GameObjectSaveTask ] Fail to save gameObject");
     }
+
     auto filename = m_gameObject->getName() + ".gmdx";
+    {
+        auto file = m_path + "/" + filename;
+        if (gfile::exists(file))
+            gfile::remove(file);
+    }
 
     auto file = gfile::get_cache_directory() + "/" + filename;
 
@@ -339,6 +340,7 @@ int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
         return 1;
     }
 
+    /*
     if (!stream->write(go->getTag()))
     {
         return 2;
@@ -353,7 +355,7 @@ int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
     {
         return 4;
     }
-
+*/
     auto transform = go->getTransform();
 
     auto children = transform->getChildren();
@@ -366,7 +368,7 @@ int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
 
     for (auto &child : children)
     {
-        int result = write_gameobject(stream, child->getGameObject());
+        int result = write_gameobject(stream, child->GetGameObject());
         if (result != 0)
         {
             return 6;
@@ -380,65 +382,48 @@ int GameObjectSaveTask::write_script(Stream *stream)
 {
     auto count = m_componentdata.size();
     if (!stream->write(count))
-    {
         return 1;
-    }
 
-    for (auto &&[go_name, component_name, component] : m_componentdata)
+    for (auto &&[go_name, componentHash, component] : m_componentdata)
     {
         if (!stream->write(go_name))
-        {
             return 2;
-        }
 
-        if (!stream->write(component_name))
-        {
-            return 2;
-        }
-
-        auto pool = ComponentRegistry::Find(component_name);
-        if (pool == nullptr)
-        {
+        if (!stream->write(componentHash))
             return 3;
-        }
 
-        std::size_t bufferlength = {};
+        size_t bufferlength = {};
         {
             Stream temp;
-            pool->serialize((Component *)component, &temp);
+            component->Serialize(&temp);
             bufferlength = temp.getDataSize();
             temp.close();
         }
 
         if (!stream->write(bufferlength))
-        {
             return 4;
-        }
 
-        pool->serialize((Component *)component, stream);
+        if (bufferlength > 0)
+            component->Serialize(stream);
     }
     return 0;
 }
 
 void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
 {
-    auto entity = gameObject->getEntity();
+    for (uint64_t hash : gameObject->GetHashes())
+        m_componentdata.emplace_back(gameObject->getName(), hash, gameObject->getComponent(hash));
 
-    for (auto &&[name, component] : entity->getComponentMap())
-        m_componentdata.emplace_back(gameObject->getName(), name, component);
-
-    if (gameObject->hasComponent<MeshFilter>())
+    auto meshFilter = gameObject->getComponent<MeshFilter>();
+    if (meshFilter != nullptr)
     {
-        auto meshFilter = gameObject->getComponent<MeshFilter>();
         for (auto &meshID : meshFilter->getMesh())
-        {
             m_meshmap.emplace(meshID);
-        }
     }
 
-    if (gameObject->hasComponent<MeshRender>() || gameObject->hasComponent<SkinnedMeshRender>())
+    if (gameObject->getComponent<MeshRender>() || gameObject->getComponent<SkinnedMeshRender>())
     {
-        auto baseRender = gameObject->hasComponent<MeshRender>() ? static_cast<BaseRender *>(gameObject->getComponent<MeshRender>()) : static_cast<BaseRender *>(gameObject->getComponent<SkinnedMeshRender>());
+        auto baseRender = gameObject->getComponent<MeshRender>() ? static_cast<BaseRender *>(gameObject->getComponent<MeshRender>()) : static_cast<BaseRender *>(gameObject->getComponent<SkinnedMeshRender>());
         
         for (auto materialID : baseRender->getMaterialIDs())
         {
@@ -463,9 +448,7 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
 
     auto transform = gameObject->getTransform();
     for (auto &child : transform->getChildren())
-    {
-        read_gameobject(child->getGameObject());
-    }
+        read_gameobject(child->GetGameObject());
 }
 
 
