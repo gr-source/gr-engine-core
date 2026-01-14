@@ -123,6 +123,7 @@ GameObject* GameObjectManager::get(GameObjectID id)
     return &wrapper[GetIDIndex(id)].gameObject;
 }
 
+#include <string.h>
 void GameObjectManager::destroyImediate(GameObjectID id)
 {
     GameObjectWrapper* wrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
@@ -141,6 +142,8 @@ void GameObjectManager::destroyImediate(GameObjectID id)
     m_freeIDs = index;
 
     gameObject.~GameObject();
+
+    memset((void *)&gameObject, 0, sizeof(GameObject));
 
     m_count--;
 }

@@ -5,6 +5,7 @@
 
 #include "gr-base/core/file/stream.hpp"
 
+#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/thread/threadpool.hpp"
 #include "gr-base/managers/assetsManager.hpp"
@@ -35,6 +36,12 @@ MeshRender::MeshRender() : m_batchID(InvalidBatch)
             Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
         }
     }
+}
+
+MeshRender::~MeshRender()
+{
+    if (m_batchID != InvalidBatch)
+        BatchingManager::Destroy(m_batchID);
 }
 
 bool MeshRender::Serialize(Stream* stream) const

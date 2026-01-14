@@ -9,6 +9,7 @@ class MeshRender : public BaseRender
 {
 public:
     MeshRender();
+    ~MeshRender() override;
 
     bool Serialize(Stream *stream) const override;
 

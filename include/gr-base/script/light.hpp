@@ -69,8 +69,6 @@ private:
 
     int m_type;
 
-    Transform* m_transform;
-
     Color m_color;
 
     float m_attenuationConstant;
@@ -82,8 +80,6 @@ private:
     float m_angleInnerCone;
 
     float m_angleOuterCone;
-
-    void addInGlobalLight();
 };
 
 REGISTER_COMPONENT(Light)

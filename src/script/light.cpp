@@ -4,7 +4,7 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-#include <gr-ecs/entity.hpp>
+#include "gr-base/core/gameObject.hpp"
 
 #include <algorithm>
 
@@ -12,15 +12,14 @@ std::vector<Light *> Light::m_lights;
 
 Matrix4x4 Light::mProjection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
 
-std::vector<Light *> Light::GetListLight() {
+std::vector<Light *> Light::GetListLight()
+{
     return m_lights;
 }
 
-Light::Light(std::uint8_t type, const Color& color, float aConstant, float aLinear, float aQuadract, float inneCone, float outerCone) : m_type(static_cast<int>(type)), m_color(color), m_attenuationConstant(aConstant), m_attenuationLinear(aLinear), m_attenuationQuadratic(aQuadract), m_transform(nullptr), m_angleInnerCone(inneCone), m_angleOuterCone(outerCone)
+Light::Light(std::uint8_t type, const Color& color, float aConstant, float aLinear, float aQuadract, float inneCone, float outerCone) : m_type(static_cast<int>(type)), m_color(color), m_attenuationConstant(aConstant), m_attenuationLinear(aLinear), m_attenuationQuadratic(aQuadract), m_angleInnerCone(inneCone), m_angleOuterCone(outerCone)
 {
-    m_transform = entity->getComponent<Transform>();
-
-    addInGlobalLight();
+    m_lights.push_back(this);
 }
 
 Light::~Light()
@@ -30,7 +29,7 @@ Light::~Light()
 
 void Light::Enable()
 {
-    addInGlobalLight();
+    m_lights.push_back(this);
 }
 
 void Light::Disable()
@@ -63,11 +62,11 @@ bool Light::Deserialize(Stream *stream)
 }
 
 Vector3 Light::getPosition() const {
-    return m_transform->getPosition();
+    return GetGameObject()->getTransform()->getPosition();
 }
 
 Vector3 Light::getForward() const {
-    return m_transform->getForward();
+    return GetGameObject()->getTransform()->getForward();
 }
 
 Color Light::getColor() const {
@@ -126,16 +125,10 @@ void Light::setOutercone(float value) {
     m_angleOuterCone = value;
 }
 
-Matrix4x4 Light::getProjetion() const {
-    return mProjection * Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getForward(), m_transform->getUp());
+Matrix4x4 Light::getProjetion() const
+{
+    auto transform = GetGameObject()->getTransform();
+
+    return mProjection * Math::lookAt(transform->getPosition(), transform->getPosition() + transform->getForward(), transform->getUp());
 }
 
-void Light::addInGlobalLight()
-{
-    auto it = std::find(m_lights.begin(), m_lights.end(), this);
-    if (it != m_lights.end())
-    {
-        return;
-    }
-    m_lights.push_back(this);
-}
