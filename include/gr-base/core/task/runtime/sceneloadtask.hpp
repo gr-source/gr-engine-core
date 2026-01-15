@@ -12,7 +12,9 @@
 
 #include <gr-render/gCommon.h>
 
-class SceneLoadTask : public IAsyncTask<int>
+#include <functional>
+
+class SceneLoadTask : public IAsyncTask<Scene*>
 {
 public:
     SceneLoadTask() = delete;
@@ -35,9 +37,9 @@ private:
 
     std::string m_name;
 
-    int doInBackground() override;
+    Scene* doInBackground() override;
 
-    void onPostExecute(int result) override;
+    void onPostExecute(Scene* result) override;
 
     int read_metadata(Stream *stream);
 

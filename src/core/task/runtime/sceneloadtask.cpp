@@ -25,13 +25,13 @@ void SceneLoadTask::addFunction(std::function<void (Scene *)> func)
 }
 
 // ***** private ***** //
-int SceneLoadTask::doInBackground()
+Scene* SceneLoadTask::doInBackground()
 {
     auto stream = std::make_shared<Stream>(m_path, std::ios_base::in | std::ios_base::binary);
     if (!stream->is_open())
     {
         Console::LogError("[ SceneLoadTask ] Faleid to open scene: ", m_path.c_str());
-        return 1;
+        return nullptr;
     }
 
     // read header data
@@ -40,7 +40,7 @@ int SceneLoadTask::doInBackground()
         if (!stream->read(reinterpret_cast<char *>(&header), sizeof(FileHeader)))
         {
             Console::LogError("[ SceneLoadTask ] Failed to read binary header: %s", m_path.c_str());
-            return 2;
+            return nullptr;
         }
 
         Console::LogInfo("[ SceneLoadTask ] loading scene version: %f", header.version);
@@ -49,7 +49,7 @@ int SceneLoadTask::doInBackground()
 
     if (read_metadata(stream.get()) != 0)
     {
-        return 3;
+        return nullptr;
     }
 
     // read segment
@@ -58,7 +58,7 @@ int SceneLoadTask::doInBackground()
         DataSegment dataSegment;
         if (!stream->read(reinterpret_cast<char *>(&dataSegment), sizeof(DataSegment)))
         {
-            return 3;
+            return nullptr;
         }
         
         if (dataSegment.type == HeaderType::NONE && dataSegment.sizeData == 0)
@@ -122,9 +122,9 @@ int SceneLoadTask::doInBackground()
     return 0;
 }
 
-void SceneLoadTask::onPostExecute(int result)
+void SceneLoadTask::onPostExecute(Scene* result)
 {
-    if (result != 0)
+    if (result == nullptr)
     {
         Console::LogError("[ SceneLoadTask ] Fail to load scene");
     } else
@@ -180,8 +180,8 @@ int SceneLoadTask::read_shader(Stream *stream)
         auto shader = AssetsManager::FindShader(shadername);
         if (shader == nullptr)
         {
-            auto info = AssetsManager::LoadShader(GetShaderParamsFromName(shadername), [&shader](auto current) { shader = current; });
-            info->wait();
+            auto info = AssetsManager::LoadShaderAsync(GetShaderParamsFromName(shadername));
+            shader = info->get();
         }
         if (shader != nullptr)
             m_shadermap.emplace(shadername, shader);

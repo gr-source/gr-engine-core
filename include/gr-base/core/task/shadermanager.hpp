@@ -20,7 +20,7 @@ public:
 
     std::vector<grr::gShader *>get_shader(ShaderType type);
 
-    std::shared_ptr<TaskInfo> create_shader_task_load(ShaderParams shaderParams, grr::gShader *shader, std::function<void(grr::gShader *)> func);
+    std::shared_ptr<TaskInfo<grr::gShader*>> load(ShaderParams shaderParams, grr::gShader *shader, std::function<void(grr::gShader *)> onLoaded);
 
     bool remove_task(const std::string &name);
 
@@ -31,7 +31,7 @@ private:
 
     std::unordered_map<const grr::gShader *, const std::string> s_ShaderNameMap;
 
-    std::unordered_map<std::string, std::shared_ptr<TaskInfo>> s_ShaderTaskMap;
+    std::unordered_map<std::string, std::shared_ptr<TaskInfo<grr::gShader*>>> s_ShaderTaskMap;
 
     std::array<std::vector<grr::gShader *>, ShaderTypeCount> s_ShaderTypeList;
 };

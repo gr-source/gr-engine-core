@@ -25,7 +25,7 @@ void TextureLoadTask::invoke(grr::gTexture *texture)
         func(texture);
 }
 
-int TextureLoadTask::doInBackground()
+grr::gTexture* TextureLoadTask::doInBackground()
 {
     bool isHDR = stbi_is_hdr(m_path.c_str());
 
@@ -41,7 +41,7 @@ int TextureLoadTask::doInBackground()
     {
         Console::LogError("[ TextureLoadTask ] Fail to load texture '%s'", m_path.c_str());
         AssetsManager::RemoveTask(m_path);
-        return 1;
+        return nullptr;
     }
 
     switch (ch)
@@ -59,20 +59,19 @@ int TextureLoadTask::doInBackground()
         format = isHDR ? TextureFormat_RGBA16F : TextureFormat_RGBA;
         break;
     default:
-        return 2;
+        return nullptr;
     }
 
-    return 0;
+    return AssetsManager::CreateTexture(m_path);
 }
 
-void TextureLoadTask::onPostExecute(int result)
+void TextureLoadTask::onPostExecute(grr::gTexture* texture)
 {
-    if (result != 0)
+    if (texture == nullptr)
     {
-        Console::LogError("[!] The texture '%s' could not be loaded, error code %d.", m_path.c_str(), result);
+        Console::LogError("[!] The texture '%s' could not be loaded.", m_path.c_str());
     } else
     {
-        auto texture = AssetsManager::CreateTexture(m_path);
         texture->set_filtering(gTextureFlags_Filter_Trilinear);
         texture->set_texture(gTextureFlags_Texture);
         texture->set_format(format);

@@ -6,6 +6,11 @@
 
 #include <gr-render/gTexture.h>
 
+extern "C"
+{
+#include <gr-ecs/array.h>
+}
+
 class TextureManager
 {
 public:
@@ -23,7 +28,7 @@ public:
     std::size_t getcount();
 
 private:
-    std::unordered_map<std::string, std::shared_ptr<TaskInfo>> m_texturetaskmap;
+    std::unordered_map<std::string, std::shared_ptr<TaskInfo<grr::gTexture*>>> m_texturetaskmap;
 
     std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> m_texturemap;
 

@@ -54,7 +54,8 @@ BatchingManager::BatchingManager() : m_poolBatches(nullptr), m_freeID(BATCHID_IN
 }
 
 BatchingManager::~BatchingManager()
-{}
+{
+}
 
 BatchID BatchingManager::create(size_t key, MeshID mesheID, MaterialID materialID)
 {
@@ -67,8 +68,6 @@ BatchID BatchingManager::create(size_t key, MeshID mesheID, MaterialID materialI
         std::cerr << "Need resize " << std::endl;
         return BATCHID_INVALID;
     }
-
-    std::cout << "BatchingManager::Create " << key << " | " << mesheID << " | " << materialID << " | " << id << std::endl;
 
     m_batchCache[key] = id;
 

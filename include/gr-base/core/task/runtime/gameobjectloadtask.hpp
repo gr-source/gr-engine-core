@@ -12,7 +12,9 @@
 
 #include "gr-base/core/default.hpp"
 
-class GameObjectLoadTask : public IAsyncTask<int>
+#include <functional>
+
+class GameObjectLoadTask : public IAsyncTask<GameObject*>
 {
 public:
     GameObjectLoadTask(const std::string &path, std::function<void (GameObject *)> func);
@@ -30,9 +32,9 @@ private:
 
     std::unordered_map<std::string, MaterialID> m_materialmap;
 
-    int doInBackground();
+    GameObject* doInBackground() override;
 
-    void onPostExecute(int result);
+    void onPostExecute(GameObject* result) override;
 
     int read_metadata(Stream *stream);
 

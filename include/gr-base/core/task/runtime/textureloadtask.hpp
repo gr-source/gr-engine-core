@@ -11,7 +11,7 @@ using TextureLoadFlags_ = uint8_t;
 
 using TextureFunc = std::function<void (grr::gTexture *)>;
 
-class TextureLoadTask : public IAsyncTask<int>
+class TextureLoadTask : public IAsyncTask<grr::gTexture*>
 {
 public:
     TextureLoadTask(const std::string &path, TextureFunc func);
@@ -34,9 +34,9 @@ protected:
 
     int height;
 
-    int doInBackground() override;
+    grr::gTexture* doInBackground() override;
 
-    void onPostExecute(int result) override;
+    void onPostExecute(grr::gTexture* texture) override;
 };
 
 

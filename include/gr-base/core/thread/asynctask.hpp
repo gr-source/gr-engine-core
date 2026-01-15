@@ -1,8 +1,7 @@
 #pragma once
 
 #include <condition_variable>
-#include <functional>
-#include <string>
+#include <atomic>
 #include <mutex>
 
 #include "default.hpp"
@@ -12,9 +11,13 @@ class ITask
 public:
     TaskPriority priority;
     
+    bool finished;
     std::mutex mutex;
+    std::condition_variable cv;
 
-    ITask(TaskPriority taskPriority) : priority(taskPriority) {}
+    std::atomic<bool> bCancelable;
+
+    ITask(TaskPriority taskPriority) : priority(taskPriority), finished(false), bCancelable(false) {}
 
     virtual ~ITask() = default;
 
@@ -55,33 +58,16 @@ inline void IAsyncTask<R>::finish()
     return onPostExecute(result);
 }
 
+template <typename R>
 struct TaskInfo
 {
-    bool bFinish;
-    std::condition_variable cv;
+    std::shared_ptr<IAsyncTask<R>> task;
 
-    std::shared_ptr<ITask> task;
-
-    TaskInfo() : bFinish(false), task(nullptr) {}
-
-    void wait()
+    R get()
     {
         std::unique_lock<std::mutex> lock(task->mutex);
-        cv.wait(lock, [this] { return bFinish; });
-    }
-
-    void wait_for(std::chrono::duration<int64_t> second)
-    {
-        std::unique_lock<std::mutex> lock(task->mutex);
-        cv.wait_for(lock, second);
-    }
-
-    void finish()
-    {
-        std::lock_guard<std::mutex> lock(task->mutex);
-        bFinish = true;
-
-        cv.notify_all();
+        task->cv.wait(lock, [this] { return task->finished; });
+        return task->result;
     }
 };
 

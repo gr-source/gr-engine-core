@@ -67,7 +67,7 @@ DebugDraw::LineRender::LineRender() : m_vbo(grr::gVertexArray::CreateBuffer(Buff
     params.type = ShaderType::UNKNOWN;
     params.name = "debug_line";
 
-    AssetsManager::LoadShader(params, [&](grr::gShader *shader){
+    AssetsManager::LoadShaderAsync(params, [&](grr::gShader *shader){
                 m_shader = shader;
             });
 

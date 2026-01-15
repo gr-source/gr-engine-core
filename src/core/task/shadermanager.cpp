@@ -80,26 +80,24 @@ std::vector<grr::gShader *> ShaderManager::get_shader(ShaderType type)
     return s_ShaderTypeList[static_cast<int>(type)];
 }
 
-std::shared_ptr<TaskInfo> ShaderManager::create_shader_task_load(ShaderParams shaderParams, grr::gShader *shader, std::function<void(grr::gShader *)> func)
+std::shared_ptr<TaskInfo<grr::gShader*>> ShaderManager::load(ShaderParams shaderParams, grr::gShader *shader, std::function<void(grr::gShader *)> onLoaded)
 {
     auto taskname = GetShaderParamsName(shaderParams);
 
     std::unique_lock<std::mutex> lock(s_Mutex);
 
-    // Verifica se já existe uma task de caregamento, se ouver adiciona a func em func list
+    // Verifica se já existe uma task de caregamento, se houver adiciona a func em func list
     {
         auto it = s_ShaderTaskMap.find(taskname);
         if (it != s_ShaderTaskMap.end())
         {
-            if (func == nullptr)
-            {
+            if (onLoaded == nullptr)
                 return it->second;
-            }
 
             auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(it->second->task.get());
 
             lock.unlock();
-            shaderLoadTask->addFunction(func);
+            shaderLoadTask->addFunction(onLoaded);
 
             return it->second;
         }
@@ -109,30 +107,26 @@ std::shared_ptr<TaskInfo> ShaderManager::create_shader_task_load(ShaderParams sh
         auto it = s_ShaderMap.find(taskname);
         if (it != s_ShaderMap.end())
         {
-            if (func == nullptr)
-            {
+            if (onLoaded == nullptr)
                 return nullptr;
-            }
 
             auto shader = it->second.get();
 
             lock.unlock();
             
-            func(shader);
+            onLoaded(shader);
 
             return nullptr;
         }
     }
 
     // cria uma nova task
-    auto taskInfo = TaskManager::Add<ShaderLoadTask>(shaderParams, shader);
+    auto taskInfo = TaskManager::Add<grr::gShader*, ShaderLoadTask>(shaderParams, shader);
     s_ShaderTaskMap.emplace(taskname, taskInfo);
 
     auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(taskInfo->task.get());
-    if (func != nullptr)
-    {
-        shaderLoadTask->addFunction(func);
-    }
+    if (onLoaded != nullptr)
+        shaderLoadTask->addFunction(onLoaded);
 
     return taskInfo;
 }

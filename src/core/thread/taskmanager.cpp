@@ -12,18 +12,23 @@ TaskManager &TaskManager::GetInstance()
 TaskManager::TaskManager()
 {}
 
-void TaskManager::update(std::shared_ptr<TaskInfo> info)
+void TaskManager::update(std::shared_ptr<ITask> task)
 {
-    info->task->run();
+    task->run();
 
-    MainThreadDispatcher::Add(&TaskManager::finish, this, info);
+    MainThreadDispatcher::Add(&TaskManager::finish, this, task);
 }
 
-void TaskManager::finish(std::shared_ptr<TaskInfo> info)
+void TaskManager::finish(std::shared_ptr<ITask> task)
 {
-    info->task->finish();
+    task->finish();
 
-    info->finish();
+    {
+        std::lock_guard<std::mutex> lock(task->mutex);
+        task->finished = true;
+    }
+
+    task->cv.notify_all();
 }
 
 

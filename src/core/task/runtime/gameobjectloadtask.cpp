@@ -23,7 +23,7 @@ GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<vo
 {}
 
 // ***** private ***** //
-int GameObjectLoadTask::doInBackground()
+GameObject* GameObjectLoadTask::doInBackground()
 {
     Console::LogInfo("[ GameObjectLoadTask ] Loading file: %s...", m_path.c_str());
 
@@ -31,35 +31,31 @@ int GameObjectLoadTask::doInBackground()
 
     FileHeader fileHeader;
     if (!stream.read(reinterpret_cast<char *>(&fileHeader), sizeof(FileHeader)))
-        return 1;
+        return nullptr;
 
     if (strncmp(fileHeader.sign, "gmdx", 4) != 0)
     {
         Console::LogError("[ GameObjectLoadTask ] file is not gmdx: %s", m_path.c_str());
-        return 2;
+        return nullptr;
     }
 
     if (read_metadata(&stream) != 0)
-        return 3;
+        return nullptr;
 
     if (read_data(&stream) != 0)
-        return 4;
-    return 0;
+        return nullptr;
+    return m_gameObject;
 }
 
-void GameObjectLoadTask::onPostExecute(int result)
+void GameObjectLoadTask::onPostExecute(GameObject* result)
 {
-    if (result != 0)
-    {
-        return;
-    }
+    if (result == nullptr)
+        return Console::LogError("[ GameObjectLoadTask ] fail to load: %s", m_path.c_str());
 
     Console::LogInfo("[ GameObjectLoadTask ] Loaded: %s", m_path.c_str());
 
     if (m_func)
-    {
-        m_func(m_gameObject);
-    }
+        m_func(result);
 }
 
 int GameObjectLoadTask::read_metadata(Stream *stream)
@@ -148,9 +144,10 @@ int GameObjectLoadTask::read_shader(Stream *stream)
         auto shader = AssetsManager::FindShader(shadername);
         if (shader == nullptr)
         {
-            auto info = AssetsManager::LoadShader(GetShaderParamsFromName(shadername), [&shader](auto current) { shader = current; });
-            info->wait();
+            auto info = AssetsManager::LoadShaderAsync(GetShaderParamsFromName(shadername));
+            shader = info->get();
         }
+
         if (shader != nullptr)
             m_shadermap.emplace(shadername, shader);
     }

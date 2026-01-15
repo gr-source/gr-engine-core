@@ -22,8 +22,6 @@ AssetsManager* AssetsManager::s_AssetsManager = nullptr;
 // sshader property
 std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> AssetsManager::mShaderPropertyMap;
 
-#include "gr-base/core/stb/stb_image.h"
-
 void AssetsManager::Initialize()
 {
     if (s_AssetsManager == nullptr)
@@ -124,12 +122,7 @@ ShaderProperty *AssetsManager::GetShaderProperty(grr::gShader *shader)
 
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func)
 {
-    if (!gfile::exists(path))
-    {
-        return Console::LogError("[ AssetsManager::GameObject ] File not found: %s", path.c_str());
-    }
-
-    TaskManager::Add<GameObjectLoadTask>(path, func);
+    TaskManager::Add<GameObject*, GameObjectLoadTask>(path, func);
 }
 
 /*
@@ -239,16 +232,6 @@ void AssetsManager::RemoveTask(const std::string &name)
 
     if (s_AssetsManager->mShaderManager.remove_task(name))
         return;
-
-    /*
-    // Chck task is on AnimationLoadTask
-    if (mAnimationManager.remove_task(name))
-        return;
-    if (GetFilmboxManager().remove_task(name))
-    {
-        return;
-    }
-    */
 }
 
 

@@ -5,6 +5,8 @@
 
 #include "gr-base/core/thread/asynctask.hpp"
 
+#include <string>
+
 class MaterialSaveTask : public IAsyncTask<int>
 {
 public:

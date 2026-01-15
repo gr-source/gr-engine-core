@@ -4,7 +4,7 @@
 
 #include "gr-base/core/thread/taskmanager.hpp"
 
-std::shared_ptr<TaskInfo> SceneTaskManager::create_task(const std::string &path, std::function<void (Scene *)> func)
+std::shared_ptr<TaskInfo<Scene*>> SceneTaskManager::create_task(const std::string &path, std::function<void (Scene *)> func)
 {
     std::unique_lock<std::mutex> lock(m_mutex);
     auto it = m_taskMap.find(path);
@@ -12,7 +12,7 @@ std::shared_ptr<TaskInfo> SceneTaskManager::create_task(const std::string &path,
     {
         auto info = it->second;
         
-        auto sceneLoadtask = dynamic_cast<SceneLoadTask *>(info->task.get());
+        auto sceneLoadtask = static_cast<SceneLoadTask *>(info->task.get());
         
         lock.unlock();
 
@@ -20,8 +20,8 @@ std::shared_ptr<TaskInfo> SceneTaskManager::create_task(const std::string &path,
         return info;
     }
 
-    auto info = TaskManager::Add<SceneLoadTask>(path);
-    auto sceneLoadTask = dynamic_cast<SceneLoadTask *>(info->task.get());
+    auto info = TaskManager::Add<Scene*, SceneLoadTask>(path);
+    auto sceneLoadTask = static_cast<SceneLoadTask *>(info->task.get());
 
     m_taskMap.emplace(path, info);
 

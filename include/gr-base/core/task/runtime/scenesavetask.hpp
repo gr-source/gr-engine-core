@@ -10,7 +10,9 @@
 
 #include <gr-ecs/behavior.hpp>
 
+#include <unordered_map>
 #include <unordered_set>
+#include <functional>
 
 class SceneSaveTask : public IAsyncTask<int>
 {

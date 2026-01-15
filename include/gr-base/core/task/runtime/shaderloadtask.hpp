@@ -16,7 +16,7 @@ typedef struct
     u32 count;
 } ShaderUniform;
 
-class ShaderLoadTask : public IAsyncTask<int>
+class ShaderLoadTask : public IAsyncTask<grr::gShader*>
 {
 public:
     ShaderLoadTask() = delete;
@@ -31,16 +31,16 @@ private:
 
     const std::string m_path;
 
-    int doInBackground() override;
+    grr::gShader* doInBackground() override;
 
-    void onPostExecute(int result) override;
+    void onPostExecute(grr::gShader* result) override;
 
 protected:
     std::vector<ShaderUniform> s_shader_uniform_list;
 
     grr::gShader *m_shader;
 
-    const bool bShaderCreated;
+    bool bCanCreateShader;
 
     std::unordered_set<std::string> userfield;
 

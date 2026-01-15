@@ -77,7 +77,7 @@ void Skybox::build(grr::gTexture *texture)
     shaderParams.flags = ShaderOptimize_static;
     shaderParams.type = ShaderType::UNKNOWN;
     
-    AssetsManager::LoadShader(
+    AssetsManager::LoadShaderAsync(
         shaderParams,
         &Skybox::upload_cubemap_texture,
         this,
@@ -176,7 +176,7 @@ void Skybox::upload_cubemap_texture(grr::gTexture *texture, grr::gShader *shader
     shaderParams.flags = ShaderOptimize_static;
     shaderParams.type = ShaderType::UNKNOWN;
 
-    AssetsManager::LoadShader(shaderParams,
+    AssetsManager::LoadShaderAsync(shaderParams,
             &Skybox::set_skyshader, this
             );
 }

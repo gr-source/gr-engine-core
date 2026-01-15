@@ -13,6 +13,7 @@
 #include <gr-render/gCommon.h>
 
 #include <unordered_set>
+#include <functional>
 
 class GameObjectSaveTask : public IAsyncTask<int>
 {
