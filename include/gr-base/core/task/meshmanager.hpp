@@ -5,6 +5,8 @@
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
+#include <stack>
+
 class MeshManager
 {
 public:

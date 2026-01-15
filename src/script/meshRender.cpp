@@ -14,10 +14,8 @@
 #include "gr-base/script/meshFilter.hpp"
 
 
-MeshRender::MeshRender() : m_batchID(InvalidBatch)
+MeshRender::MeshRender()
 {
-    // MainThreadDispatcher::Add([this]()
-
     if (Threadpool::IsMainThread())
     {
         MeshFilter *meshFilter = entity->getComponent<MeshFilter>();
@@ -40,8 +38,12 @@ MeshRender::MeshRender() : m_batchID(InvalidBatch)
 
 MeshRender::~MeshRender()
 {
-    if (m_batchID != InvalidBatch)
-        BatchingManager::Destroy(m_batchID);
+    for (auto& batchID : m_batchCacheIDs)
+    {
+        auto& batching = BatchingManager::Get(batchID);
+        batching.remove(GetGameObject()->getTransform());
+    }
+        // BatchingManager::Destroy(batchID);
 }
 
 bool MeshRender::Serialize(Stream* stream) const
@@ -56,20 +58,45 @@ bool MeshRender::Deserialize(Stream* stream)
 
 void MeshRender::build(const std::vector<MeshID>& meshes)
 {
-    std::string batchname;
-    for (auto &meshID : meshes)
-        batchname += AssetsManager::GetMeshName(meshID);
+    if (!m_batchCacheIDs.empty())
+    {
+        std::cout << "Need destroy: MeshRender" << std::endl;
+        return;
+    }
 
-    if (m_batchID != InvalidBatch)
-        BatchingManager::Destroy(m_batchID);
+    if (m_materials.size() != meshes.size())
+        return Console::LogError("[ MeshRender ] Num meshes/materials incompative.");
 
-    m_batchID = BatchingManager::Find(batchname);
+    size_t key = 0;
+
+    size_t length = meshes.size();
+    for (size_t i=0;i<length;i++)
+    {
+        MaterialID materialID = m_materials[i];
+        MeshID meshID = meshes[i];
+
+        key ^= std::hash<size_t>{}(meshID) + 0x9e3779b9 + (key << 6) + (key >> 2);
+        key ^= std::hash<size_t>{}(materialID) + 0x9e3779b9 + (key << 6) + (key >> 2);
+
+        auto batchID = BatchingManager::Find(key);
+        if (batchID == InvalidBatch)
+            batchID = BatchingManager::Create(key, meshID, materialID);
+
+        Batching& batching = BatchingManager::Get(batchID);
+        batching.insert(GetGameObject()->getTransform());
+
+        m_batchCacheIDs.push_back(batchID);
+    }
+
+    /*
+    m_batchID = BatchingManager::Find(key);
     if (m_batchID == InvalidBatch)
-        m_batchID = BatchingManager::Create(batchname, meshes);
+        m_batchID = BatchingManager::Create(key, meshes, m_materials);
 
     auto &batch = BatchingManager::Get(m_batchID);
 
-    batch.insert(GetGameObject()->getTransform(), m_materials);
+    batch.insert(GetGameObject()->getTransform());
+    */
 }
 
 

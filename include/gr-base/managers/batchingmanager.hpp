@@ -2,6 +2,17 @@
 
 #include "gr-base/core/geometry/batching.hpp"
 
+extern "C"
+{
+#include <gr-ecs/array.h>
+}
+
+typedef struct BatchWrapper
+{
+    BatchID next;
+    Batching batch;
+} BatchWrapper;
+
 class BatchingManager
 {
 public:
@@ -9,9 +20,9 @@ public:
 
     static void Shutdown();
 
-    static BatchID Create(const std::string &name, const std::vector<MeshID> &meshes);
+    static BatchID Create(size_t key, MeshID mesheID, MaterialID materialID);
 
-    static BatchID Find(const std::string &name);
+    static BatchID Find(size_t key);
 
     static Batching &Get(BatchID id);
 
@@ -22,20 +33,20 @@ public:
 private:
     static BatchingManager* s_BatchingManager;
 
-    std::unordered_map<std::string, BatchID> m_namemaptobatchid;
+    std::unordered_map<size_t, BatchID> m_batchCache;
 
-    std::vector<Batching> m_entry;
+    array* m_poolBatches;
 
-    std::vector<BatchID> m_freeID;
+    BatchID m_freeID;
 
-    std::size_t m_count;
+    BatchID m_count;
 
     BatchingManager();
     ~BatchingManager();
 
-    BatchID create(const std::string &name, const std::vector<MeshID> &meshes);
+    BatchID create(size_t key, MeshID mesheID, MaterialID materialID);
 
-    BatchID find(const std::string &name);
+    BatchID find(size_t key);
 
     Batching &get(BatchID id);
 
@@ -43,7 +54,7 @@ private:
 
     void render();
 
-    void resize(const std::size_t &size);
+    void addFreeID(BatchID first);
 };
 /*
 #pragma once

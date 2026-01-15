@@ -1,63 +1,99 @@
 #include "gr-base/core/geometry/batching.hpp"
 
-// core
-#include "gr-base/core/gameObject.hpp"
-
 #include "gr-base/managers/assetsManager.hpp"
-
- // core, geometry
-#include "gr-base/core/geometry/material.hpp"
-
-// ecs
-#include "gr-base/core/console.hpp"
-
-// component
 #include "gr-base/script/transform.hpp"
-// #include "gr-base/script/animator.hpp"
 
-// gr-render
+#include <gr-render/gl.h>
 #include <gr-render/gVertexArray.h>
 
+#include <algorithm>
+
 // public
-Batching::Batching(const std::vector<MeshID> &meshes) : m_meshes(meshes)
-{}
+
+Batching::Batching() : vao(0) {}
 
 Batching::~Batching()
-{}
-
-void Batching::insert(Transform *transform, const std::vector<MaterialID> &materials)
 {
-    if (materials.empty())
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &ebo);
+}
+
+void Batching::insert(Transform *transform)
+{
+    instances.push_back(transform);
+}
+
+void Batching::remove(Transform *transform)
+{
+    instances.erase(std::remove(instances.begin(), instances.end(), transform), instances.end());
+}
+
+void Batching::build(MeshID meshID, MaterialID materialID)
+{
+    this->materialID = materialID;
+
+    const Mesh& data = AssetsManager::GetMesh(meshID);
+    this->vertexCount = data.getIndices().size();
+
+    if (vao == 0)
     {
-        Console::LogError("[ Batching ] this model don't have material");
-        return;
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ebo);
     }
 
-    auto gameObject = transform->GetGameObject();
+    glBindVertexArray(vao);
 
-    bool isanimated = false; //gameObject->getComponent<Animator>();
-    // bool isstatic = gameObject->getStatic();
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, data.getVertices().size() * sizeof(Vertex3D), data.getVertices().data(), GL_STATIC_DRAW);
 
-    std::string key;
-    for (auto &materialID : materials)
-        key += AssetsManager::GetMaterialName(materialID);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.getIndices().size() * sizeof(uint32_t), data.getIndices().data(), GL_STATIC_DRAW);
 
-    auto it = m_batchingdynamicmap.find(key);
-    if (it == m_batchingdynamicmap.end())
-    {
-        m_batchingdynamicmap.emplace(key, std::make_shared<BatchingDynamic>(materials, m_meshes));
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), (void*)offsetof(Vertex3D, position));
+    
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), (void*)offsetof(Vertex3D, normal));
 
-        m_batchingdynamiclist.push_back(m_batchingdynamicmap[key].get());
-    }
-                
-    m_batchingdynamicmap[key]->insert(transform);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), (void*)offsetof(Vertex3D, texCoords));
+
+    glBindVertexArray(0);
+    
+    std::cout << "[GPU] Batch criado com Mesh: " << meshID << " e Material: " << materialID << std::endl;
 }
 
 void Batching::render()
 {
-    for (auto &batching : m_batchingdynamiclist)
-        batching->render();
+    auto &material = AssetsManager::GetMaterial(materialID);
+    auto shader = material.getShader();
+
+    glBindVertexArray(vao);
+
+    bool enable[10] = {false};
+    int textureID[10] = {0};
+
+    shader->bind();
+    material.flush();
+
+    shader->setUniform("u_texture", textureID);
+    shader->setUniform("u_enable", enable);
+
+    for (auto transform : instances)
+    {
+        auto model = transform->getGlobalMatrix();
+
+        shader->setUniform("u_model", &model);
+        shader->flush();
+
+        glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
+    }
+    glBindVertexArray(0);
 }
+
+
 
 
 

@@ -55,7 +55,7 @@ private:
 template <typename ...Args>
 inline std::size_t Mesh::addVertex(Args&& ...args)
 {
-    m_vertices.emplace_back(std::forward<Args>(args)...);
+    m_vertices.push_back(Vertex3D{std::forward<Args>(args)...});
 
     return m_vertices.size() - 1;
 }

@@ -1,27 +1,31 @@
 #pragma once
 
-#include "gr-base/core/geometry/mesh.hpp"
+#include "gr-base/script/default.hpp"
 
-#include "gr-base/core/geometry/batchingdynamic.hpp"
+#include "default.hpp"
 
 class Batching
 {
 public:
-    Batching(const std::vector<MeshID> &meshes);
+    Batching();
     ~Batching();
 
-    std::string name;
+    void insert(Transform *transform);
 
-    void insert(Transform *transform, const std::vector<MaterialID> &materials);
+    void remove(Transform* transform);
+
+    void build(MeshID meshID, MaterialID materialID);
 
     void render();
 
 private:
-    std::unordered_map<std::string, std::shared_ptr<BatchingDynamic>> m_batchingdynamicmap;
+    uint32_t vao;
+    uint32_t vbo;
+    uint32_t ebo;
+    MaterialID materialID;
+    uint32_t vertexCount;
 
-    std::vector<BatchingDynamic *> m_batchingdynamiclist;
-
-    std::vector<MeshID> m_meshes;
+    std::vector<Transform*> instances;
 };
 
 /*

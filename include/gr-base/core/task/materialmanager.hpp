@@ -6,6 +6,8 @@
 
 #include "gr-base/core/geometry/default.hpp"
 
+#include <stack>
+
 class MaterialManager
 {
 public:

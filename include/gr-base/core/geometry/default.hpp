@@ -1,11 +1,10 @@
 #pragma once
 
-#include <unordered_map>
-#include <vector>
-#include <memory>
-#include <string>
 #include <limits>
-#include <stack>
+
+#include <stdint.h>
+
+#define BATCHID_INVALID (BatchID)-1
 
 class BoneWeight;
 class Vertex3D;
@@ -16,7 +15,8 @@ class Mesh;
 
 using MaterialID = std::size_t;
 using MeshID = std::size_t;
-using BatchID = std::size_t;
+
+typedef uint32_t BatchID;
 
 constexpr BatchID InvalidBatch = std::numeric_limits<BatchID>::max();
 

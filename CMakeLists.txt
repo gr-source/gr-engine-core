@@ -15,13 +15,9 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(gr-ecs)
 
 set(geometry
-    src/core/geometry/batchingdynamic.cpp
     src/core/geometry/boneWeight.cpp
-    src/core/geometry/vertex2D.cpp
-    src/core/geometry/vertex3D.cpp
     src/core/geometry/batching.cpp
     src/core/geometry/material.cpp
-    src/core/geometry/gpumesh.cpp
     src/core/geometry/shader.cpp
     src/core/geometry/mesh.cpp
 )

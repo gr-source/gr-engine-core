@@ -18,8 +18,7 @@ public:
     void build(const std::vector<MeshID> &meshes);
 
 private:
-
-    BatchID m_batchID;
+    std::vector<BatchID> m_batchCacheIDs;
 };
 
 REGISTER_COMPONENT(MeshRender)
