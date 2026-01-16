@@ -15,7 +15,7 @@ void MeshFilter::addMesh(MeshID id)
     m_meshes.push_back(id);
 }
 
-const std::vector<MeshID> &MeshFilter::getMesh() const
+std::vector<MeshID> MeshFilter::getMesh() const
 {
     return m_meshes;
 }

@@ -27,33 +27,33 @@ public:
 
     bool is_running() const;
 
-    std::vector<GameObject *> getObjectList() const;
+    std::vector<GameObjectID> getObjectList() const;
 
-    void insert(GameObject *gameObject);
+    void insert(GameObjectID gameObjectID);
 
-    void remove(GameObject *gameObject);
+    void remove(GameObjectID gameObjectID);
 
     void Clear();
 
-    GameObject *getCameraObject() const;
+    GameObjectID getCameraObject() const;
 
-    void setCamera(GameObject *go);
+    void setCamera(GameObjectID id);
 
     Camera *getCamera() const;
 
-    void select(GameObject *go);
+    void select(GameObjectID id);
 
-    void deselect(GameObject *go);
+    void deselect(GameObjectID id);
 
     void deselect_all();
 
     bool has_object_selected() const;
 
-    bool object_has_been_selected(GameObject *go) const;
+    bool object_has_been_selected(GameObjectID id) const;
 
-    std::vector<GameObject *> get_object_selected() const;
+    std::vector<GameObjectID> get_object_selected() const;
 
-    bool destroy(GameObject *gameObject);
+    bool destroy(GameObjectID gameObjectID);
 
     static void Play(GameObject *go);
 
@@ -61,15 +61,15 @@ public:
 private:
     std::vector<std::tuple<std::string, std::string, Component *>> m_componentCache; 
 
-    std::vector<GameObject *> m_tempInitObjects;
+    // std::vector<GameObject *> m_tempInitObjects;
 
-    std::vector<GameObject *> m_objects;
+    std::vector<GameObjectID> m_objects;
 
-    std::unordered_set<GameObject *> u_object_has_been_selected;
+    std::unordered_set<GameObjectID> u_object_has_been_selected;
 
-    std::vector<GameObject *> v_object_selected_list;
+    std::vector<GameObjectID> v_object_selected_list;
 
-    GameObject *m_goCamera;
+    GameObjectID m_goCamera;
 
     Camera *m_camera;
 
@@ -77,7 +77,7 @@ private:
 
     bool m_isrunning;
 
-    static GameObject *CreateEngineCamera();
+    static GameObjectID CreateEngineCamera();
 
     void setEnable(bool value);
 

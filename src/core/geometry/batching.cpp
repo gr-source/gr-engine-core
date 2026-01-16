@@ -19,12 +19,12 @@ Batching::~Batching()
     glDeleteBuffers(1, &ebo);
 }
 
-void Batching::insert(Transform *transform)
+void Batching::insert(ComponentID transform)
 {
     instances.push_back(transform);
 }
 
-void Batching::remove(Transform *transform)
+void Batching::remove(ComponentID transform)
 {
     instances.erase(std::remove(instances.begin(), instances.end(), transform), instances.end());
 }
@@ -81,8 +81,10 @@ void Batching::render()
     shader->setUniform("u_texture", textureID);
     shader->setUniform("u_enable", enable);
 
-    for (auto transform : instances)
+    for (auto &transformID : instances)
     {
+        auto transform = ComponentManager::GetComponent<Transform>(transformID);
+
         auto model = transform->getGlobalMatrix();
 
         shader->setUniform("u_model", &model);

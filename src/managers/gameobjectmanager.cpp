@@ -8,7 +8,7 @@
 
 #include "gr-base/managers/sceneManager.hpp"
 
-#include <cstddef>
+#include <string.h>
 
 typedef struct GameObjectWrapper
 {
@@ -32,9 +32,9 @@ void GameObjectManager::Shutdown()
     s_GameObjectManager = nullptr;
 }
 
-GameObject* GameObjectManager::Instantiate(const GameObject *other)
+GameObjectID GameObjectManager::Instantiate(const GameObject *other)
 {
-    return s_GameObjectManager->instantiate(other);
+    return s_GameObjectManager->instantiate(other->getCacheID());
 }
 
 GameObjectID GameObjectManager::Create(const std::string &name)
@@ -76,28 +76,26 @@ GameObjectManager::~GameObjectManager()
 }
 
 // private
-GameObject* GameObjectManager::instantiate(const GameObject *other)
+GameObjectID GameObjectManager::instantiate(GameObjectID other)
 {
-    auto handle = create(other->getName());
+    auto handle = create(GameObject::Get(other)->getName());
     if (handle == GID_INVALID)
-        return nullptr;
+        return GID_INVALID;
 
     auto gameObject = get(handle);
     gameObject->Copy(other);
 
     auto scene = SceneManager::GetCurrent();
     if (scene != nullptr)
-        scene->insert(gameObject);
+        scene->insert(handle);
 
-    return gameObject;
+    return handle;
 }
 
 GameObjectID GameObjectManager::create(const std::string &name)
 {
     if (m_freeIDs == n32nill)
-    {
         requestResize();
-    }
 
     GameObjectWrapper* wrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
 
@@ -123,7 +121,6 @@ GameObject* GameObjectManager::get(GameObjectID id)
     return &wrapper[GetIDIndex(id)].gameObject;
 }
 
-#include <string.h>
 void GameObjectManager::destroyImediate(GameObjectID id)
 {
     GameObjectWrapper* wrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
@@ -156,7 +153,28 @@ void GameObjectManager::requestResize()
     size_t lastsize = m_gameObjectPool->length;
     size_t newsize = lastsize + 1024;
 
-    m_gameObjectPool = array_resize(m_gameObjectPool, newsize, sizeof(GameObjectWrapper));
+    std::cout << "GameObject Resize: " << lastsize << " | " << newsize << std::endl;
+
+    // m_gameObjectPool = array_resize(m_gameObjectPool, newsize, sizeof(GameObjectWrapper));
+
+    auto newPool = array_create(newsize, sizeof(GameObjectWrapper));
+
+    GameObjectWrapper* laswrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
+    GameObjectWrapper* newwrapper = (GameObjectWrapper*)newPool->vector;
+    for (size_t i=0;i<lastsize;i++)
+    {
+        GameObjectWrapper& ilastwrapper = laswrapper[i];
+        GameObjectWrapper& inewwrapper = newwrapper[i];
+
+        memcpy((void*)&inewwrapper, (void*)&ilastwrapper, sizeof(GameObjectWrapper));
+
+        // auto gameObject = &wrapper[i].gameObject;
+
+        new (&inewwrapper.gameObject) GameObject(ilastwrapper.gameObject);
+    }
+
+    array_free(m_gameObjectPool);
+    m_gameObjectPool = newPool;
 
     addFreeID(lastsize);
 }

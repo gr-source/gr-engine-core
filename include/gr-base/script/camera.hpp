@@ -6,7 +6,7 @@
 
 #include <gr-render/gRender.h>
 
-#include <gr-ecs/behavior.hpp>
+#include "gr-base/ecs/behavior.hpp"
 
 class Camera : public BehaviorImpl<Camera>
 {
@@ -54,8 +54,6 @@ public:
 
 private:
     static std::vector<Camera*> m_cameraList;
-
-    Transform *m_transform;
 
     Matrix4x4 m_projection;
 

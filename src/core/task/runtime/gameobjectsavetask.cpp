@@ -16,15 +16,16 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/transform.hpp"
-#include "gr-ecs/componentmanager.hpp"
 
-GameObjectSaveTask::GameObjectSaveTask(const std::string &path, GameObject *gameObject, std::function<void (GameObject *)> func) : m_path(path), m_gameObject(gameObject), m_func(func)
+GameObjectSaveTask::GameObjectSaveTask(const std::string &path, GameObjectID gameObjectID, std::function<void (GameObjectID)> func) : m_path(path), m_gameObjectID(gameObjectID), m_func(func)
 {}
 
 // private
 int GameObjectSaveTask::doInBackground()
 {
-    Stream stream(gfile::get_cache_directory() + "/" + (m_gameObject->getName() + ".gmdx"), std::ios_base::out | std::ios_base::binary);
+    auto gameObject = GameObject::Get(m_gameObjectID);
+
+    Stream stream(gfile::get_cache_directory() + "/" + (gameObject->getName() + ".gmdx"), std::ios_base::out | std::ios_base::binary);
 
     // Header file
     {
@@ -53,7 +54,9 @@ void GameObjectSaveTask::onPostExecute(int result)
         return Console::LogError("[ GameObjectSaveTask ] Fail to save gameObject");
     }
 
-    auto filename = m_gameObject->getName() + ".gmdx";
+    auto gameObject = GameObject::Get(m_gameObjectID);
+
+    auto filename = gameObject->getName() + ".gmdx";
     {
         auto file = m_path + "/" + filename;
         if (gfile::exists(file))
@@ -76,14 +79,12 @@ void GameObjectSaveTask::onPostExecute(int result)
     Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", filename.c_str());
 
     if (m_func != nullptr)
-    {
-        m_func(m_gameObject);
-    }
+        m_func(m_gameObjectID);
 }
 
 int GameObjectSaveTask::write_metadata(Stream *stream)
 {
-    read_gameobject(m_gameObject);
+    read_gameobject(GameObject::Get(m_gameObjectID));
     return 0;
 }
 
@@ -148,7 +149,7 @@ int GameObjectSaveTask::write_data(Stream *stream)
 
     // write gameobject
     {
-        if (write_gameobject(stream, m_gameObject) != 0)
+        if (write_gameobject(stream, GameObject::Get(m_gameObjectID)) != 0)
         {
             return 7;
         }

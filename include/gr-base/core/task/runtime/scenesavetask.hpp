@@ -8,11 +8,12 @@
 
 #include "gr-base/core/geometry/default.hpp"
 
-#include <gr-ecs/behavior.hpp>
+#include "gr-base/ecs/default.hpp"
 
 #include <unordered_map>
 #include <unordered_set>
 #include <functional>
+#include <string>
 
 class SceneSaveTask : public IAsyncTask<int>
 {

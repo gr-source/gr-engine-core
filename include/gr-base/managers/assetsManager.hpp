@@ -86,7 +86,7 @@ public:
 
     static std::size_t GetMeshCount();
 
-    static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
+    static void SetGameObjectList(const std::string &path, std::function<void(GameObjectID)> func);
 
     static std::vector<grr::gShader *> GetShaderList(ShaderType type);
 
@@ -126,7 +126,7 @@ private:
 template <typename... Args>
 inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...args)
 {
-    std::function<void(GameObject *)> func = nullptr;
+    std::function<void(GameObjectID)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
 

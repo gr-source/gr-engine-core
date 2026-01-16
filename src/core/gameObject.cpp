@@ -5,14 +5,19 @@
 
 #include "gr-base/script/transform.hpp"
 
-GameObject* GameObject::Instantiate(GameObject *other)
+GameObjectID GameObject::Instantiate(GameObject *other)
 {
     return GameObjectManager::Instantiate(other);
 }
 
-GameObject* GameObject::Create(const std::string &name)
+GameObjectID GameObject::Create(const std::string &name)
 {
-    return GameObjectManager::Get(GameObjectManager::Create(name));
+    return GameObjectManager::Create(name);
+}
+
+GameObject* GameObject::Get(GameObjectID handle)
+{
+    return GameObjectManager::Get(handle);
 }
 
 void GameObject::DestroyImediate(GameObject* gameObject)
@@ -20,15 +25,25 @@ void GameObject::DestroyImediate(GameObject* gameObject)
     GameObjectManager::DestroyImediate(gameObject->getCacheID());
 }
 
+void GameObject::DestroyImediate(GameObjectID gameObjectID)
+{
+    GameObjectManager::DestroyImediate(gameObjectID);
+}
+
 void GameObject::Destroy(GameObject* gameObject)
 {
     GameObjectManager::Destroy(gameObject->getCacheID());
 }
 
-// public
-GameObject::GameObject(GameObjectID id) : m_id(id), m_transform(nullptr), m_name("noname")
+void GameObject::Destroy(GameObjectID gameObjectID)
 {
-    m_transform = addComponent<Transform>();
+    GameObjectManager::Destroy(gameObjectID);
+}
+
+// public
+GameObject::GameObject(GameObjectID id) : Entity(id), m_name("noname")
+{
+    addComponent<Transform>();
 }
 
 GameObject::~GameObject()
@@ -51,32 +66,32 @@ void GameObject::setName(const std::string& name)
 
 Transform* GameObject::getTransform() const
 {
-    return m_transform;
-}
-
-GameObjectID GameObject::getCacheID() const
-{
-    return m_id;
+    return getComponent<Transform>();
 }
 
 void GameObject::SetState(bool enable)
 {}
 
-void GameObject::Copy(const GameObject* other)
+void GameObject::Copy(GameObjectID other)
 {
-    for (auto& hash : other->GetHashes())
     {
-        Behavior* behavior = getComponent(hash);
-        if (behavior == nullptr)
+        auto gameObject = GameObject::Get(other);
+        for (auto& hash : gameObject->GetHashes())
         {
-            behavior = addComponent(hash);
-
-            ComponentManager::Reinstance(hash, behavior, other->getComponent(hash));
-            behavior->entity = this;
+            Behavior* behavior = getComponent(hash);
+            if (behavior == nullptr)
+                behavior = addComponent(hash, gameObject->GetID(hash));
+            /*
+            else
+            {
+                ComponentManager::Reinstance(hash, behavior, gameObject->getComponent(hash));
+                behavior->entityID = getCacheID();
+            }
+            */
         }
     }
 
-    auto targetTransform = other->getTransform();
+    auto targetTransform = GameObject::Get(other)->getTransform();
     
     auto localTransform = getTransform();
     localTransform->setLocalScale(targetTransform->getLocalScale());
@@ -92,16 +107,12 @@ void GameObject::Copy(const GameObject* other)
     {
         auto childGameObject = child->GetGameObject();
 
-        auto clonedObject = GameObject::Create(childGameObject->getName());
-        if (!clonedObject)
-        {
-            Console::LogError("[ Entity ] Failed to create child object %s->%s.", other->getName().c_str(), childGameObject->getName().c_str());
-            continue;
-        }
+        auto childID = GameObject::Create(childGameObject->getName());
 
-        clonedObject->Copy(childGameObject);
+        auto cloneObj = GameObjectManager::Get(childID);
+        cloneObj->Copy(childID);
 
-        auto clonedTransform = clonedObject->getTransform();
+        auto clonedTransform = cloneObj->getTransform();
         clonedTransform->setParent(localTransform);
     }
 }

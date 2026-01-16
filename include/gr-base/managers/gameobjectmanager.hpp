@@ -4,7 +4,7 @@
 
 extern "C"
 {
-#include <gr-ecs/array.h>
+#include "gr-base/externals/array.h"
 }
 
 #include <string>
@@ -19,7 +19,7 @@ public:
 
     static void Shutdown();
 
-    static GameObject* Instantiate(const GameObject* other);
+    static GameObjectID Instantiate(const GameObject* other);
 
     static GameObjectID Create(const std::string& name);
 
@@ -43,7 +43,7 @@ protected:
 
     std::atomic<size_t> m_count;
 
-    GameObject* instantiate(const GameObject* other);
+    GameObjectID instantiate(GameObjectID other);
 
     GameObjectID create(const std::string& name);
 

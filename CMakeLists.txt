@@ -4,16 +4,6 @@ project(gr-base VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
-## biblioteca do sistema ecs
-include(FetchContent)
-
-FetchContent_Declare(
-    gr-ecs
-    GIT_REPOSITORY git@github.com:gr-source/gr-ecs.git
-    GIT_TAG main
-)
-FetchContent_MakeAvailable(gr-ecs)
-
 set(geometry
     src/core/geometry/boneWeight.cpp
     src/core/geometry/batching.cpp
@@ -115,6 +105,13 @@ set(managers_src
     src/managers/assetsManager.cpp
     src/managers/sceneManager.cpp
 )
+
+set(ECS_SRC
+    src/ecs/componentmanager.cpp
+    src/ecs/behavior.cpp
+    src/ecs/entity.cpp
+)
+
 set(EXTERNALS
     src/externals/array.c
 )
@@ -125,16 +122,16 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${broadphase_src} ${managers_src} ${EXTERNALS})
+add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${broadphase_src} ${managers_src} ${EXTERNALS} ${ECS_SRC})
 
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     ${BULLET_INCLUDE_DIRS}
     imgui/src/backends
     imgui/src
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${BULLET_LIBRARIES} gr-ecs)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${BULLET_LIBRARIES})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC INTERNAL_REGISTER_SCRIPT)
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gr-ecs/behavior.hpp>
+#include "gr-base/ecs/behavior.hpp"
 
 #include <gr-math/gmath.hpp>
 

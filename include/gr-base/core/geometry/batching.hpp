@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/ecs/default.hpp"
 #include "gr-base/script/default.hpp"
 
 #include "default.hpp"
@@ -10,9 +11,9 @@ public:
     Batching();
     ~Batching();
 
-    void insert(Transform *transform);
+    void insert(ComponentID transform);
 
-    void remove(Transform* transform);
+    void remove(ComponentID transform);
 
     void build(MeshID meshID, MaterialID materialID);
 
@@ -25,7 +26,7 @@ private:
     MaterialID materialID;
     uint32_t vertexCount;
 
-    std::vector<Transform*> instances;
+    std::vector<ComponentID> instances;
 };
 
 /*

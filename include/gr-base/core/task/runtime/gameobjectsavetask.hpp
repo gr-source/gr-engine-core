@@ -8,7 +8,7 @@
 
 #include "gr-base/core/default.hpp"
 
-#include <gr-ecs/default.hpp>
+#include "gr-base/ecs/default.hpp"
 
 #include <gr-render/gCommon.h>
 
@@ -19,14 +19,14 @@ class GameObjectSaveTask : public IAsyncTask<int>
 {
 public:
     GameObjectSaveTask() = delete;
-    GameObjectSaveTask(const std::string &dir, GameObject *gameObject, std::function<void (GameObject *)> func);
+    GameObjectSaveTask(const std::string &dir, GameObjectID gameObject, std::function<void (GameObjectID)> func);
 
 private:
     const std::string m_path;
 
-    GameObject *m_gameObject;
+    GameObjectID m_gameObjectID;
 
-    std::function<void (GameObject *)> m_func;
+    std::function<void (GameObjectID)> m_func;
 
     std::vector<std::tuple<std::string, std::string, std::string>> m_textureMap;
 

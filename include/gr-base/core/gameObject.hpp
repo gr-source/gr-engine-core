@@ -2,20 +2,26 @@
 
 #include "default.hpp"
 
-#include <gr-ecs/entity.hpp>
+#include "gr-base/ecs/entity.hpp"
 
 #include "gr-base/script/default.hpp"
 
 class GameObject : public Entity
 {
 public:
-    static GameObject* Instantiate(GameObject* other);
+    static GameObjectID Instantiate(GameObject* other);
 
-    static GameObject* Create(const std::string& name);
+    static GameObjectID Create(const std::string& name);
+
+    static GameObject* Get(GameObjectID handle);
 
     static void DestroyImediate(GameObject* gameObject);
 
+    static void DestroyImediate(GameObjectID gameObjectID);
+
     static void Destroy(GameObject* gameObject);
+
+    static void Destroy(GameObjectID gameObjectID);
 
     GameObject() = delete;
 
@@ -28,17 +34,11 @@ public:
 
     Transform* getTransform() const;
 
-    GameObjectID getCacheID() const;
-
     void SetState(bool enable);
 
-    void Copy(const GameObject* other);
+    void Copy(GameObjectID other);
 
 private:
-    Transform* m_transform;
-
-    GameObjectID m_id;
-
     std::string m_name;
 };
 

@@ -19,11 +19,11 @@
 
 #include <gr-render/gShader.h>
 
-GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObject *)> func) : m_path(path), m_func(func), m_gameObject(nullptr)
+GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObjectID)> func) : m_path(path), m_func(func), m_gameObject(GID_INVALID)
 {}
 
 // ***** private ***** //
-GameObject* GameObjectLoadTask::doInBackground()
+GameObjectID GameObjectLoadTask::doInBackground()
 {
     Console::LogInfo("[ GameObjectLoadTask ] Loading file: %s...", m_path.c_str());
 
@@ -31,25 +31,25 @@ GameObject* GameObjectLoadTask::doInBackground()
 
     FileHeader fileHeader;
     if (!stream.read(reinterpret_cast<char *>(&fileHeader), sizeof(FileHeader)))
-        return nullptr;
+        return GID_INVALID;
 
     if (strncmp(fileHeader.sign, "gmdx", 4) != 0)
     {
         Console::LogError("[ GameObjectLoadTask ] file is not gmdx: %s", m_path.c_str());
-        return nullptr;
+        return GID_INVALID;
     }
 
     if (read_metadata(&stream) != 0)
-        return nullptr;
+        return GID_INVALID;
 
     if (read_data(&stream) != 0)
-        return nullptr;
+        return GID_INVALID;
     return m_gameObject;
 }
 
-void GameObjectLoadTask::onPostExecute(GameObject* result)
+void GameObjectLoadTask::onPostExecute(GameObjectID result)
 {
-    if (result == nullptr)
+    if (result == GID_INVALID)
         return Console::LogError("[ GameObjectLoadTask ] fail to load: %s", m_path.c_str());
 
     Console::LogInfo("[ GameObjectLoadTask ] Loaded: %s", m_path.c_str());
@@ -321,15 +321,14 @@ int GameObjectLoadTask::read_gameobject(Stream *stream, Transform *parent)
     }
     */
 
-    auto gameObject = GameObject::Create(name/*, tag */);
-    // gameObject->setActive(bactive);
-    // gameObject->setStatic(bstatic);
+    auto gameObjectID = GameObject::Create(name);
 
-    m_gameobjectmap.emplace(name, gameObject);
+    m_gameobjectmap.emplace(name, gameObjectID);
 
-    if (m_gameObject == nullptr)
-        m_gameObject = gameObject;
+    if (m_gameObject == GID_INVALID)
+        m_gameObject = gameObjectID;
 
+    auto gameObject = GameObject::Get(gameObjectID);
     auto transform = gameObject->getTransform();
     if (parent != nullptr)
         transform->setParent(parent);
@@ -377,7 +376,7 @@ int GameObjectLoadTask::read_script(Stream *stream)
         auto it = m_gameobjectmap.find(go_name);
         if (it != m_gameobjectmap.end())
         {
-            auto gameObject = it->second;
+            auto gameObject = GameObject::Get(it->second);
             
             auto component = gameObject->getComponent(componentHash);
             if (component == nullptr)

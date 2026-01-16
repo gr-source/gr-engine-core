@@ -287,16 +287,13 @@ int SceneSaveTask::write_gameobject(Stream *stream)
 
     auto gocount = objectList.size();
     if (!stream->write(gocount))
-    {
         return 1;
-    }
 
-    for (auto go : objectList)
+    for (auto& gameObjectID : objectList)
     {
-        if (!serialize(stream, go))
-        {
+        auto gameObject = GameObject::Get(gameObjectID);
+        if (!serialize(stream, gameObject))
             return 2;
-        }
     }
 
     return 0;
@@ -391,9 +388,11 @@ bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
 
 void SceneSaveTask::read_gameobject()
 {
-    for (auto &go : m_scene->getObjectList())
+    for (auto& gameObjectID : m_scene->getObjectList())
     {
-        read_data(go);
+        auto gameObject = GameObject::Get(gameObjectID);
+
+        read_data(gameObject);
     }
 }
 

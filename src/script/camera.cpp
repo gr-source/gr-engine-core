@@ -10,7 +10,7 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-#include <gr-ecs/entity.hpp>
+#include "gr-base/ecs/entity.hpp"
 
 #include <algorithm>
 
@@ -38,10 +38,8 @@ Camera *Camera::Current() {
     return s_current;
 }
 
-Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(1024, 1024), background(Color::black)
+Camera::Camera() : m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(1024, 1024), background(Color::black)
 {
-    m_transform = entity->getComponent<Transform>();
-
     auto rect = Display::GetDisplayRect();
     
     m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
@@ -180,7 +178,9 @@ Matrix4x4 Camera::getPerspesctive() const
 
 Matrix4x4 Camera::getViewmatrix() const
 {
-    return Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getForward(), m_transform->getUp());
+    auto transform = GetEntity()->getComponent<Transform>();
+
+    return Math::lookAt(transform->getPosition(), transform->getPosition() + transform->getForward(), transform->getUp());
 }
 
 void Camera::setAspectRatio(float aspect)
@@ -211,11 +211,14 @@ void Camera::setActive(bool value) {
 
 Vector3 Camera::getPosition() const
 {
-    return m_transform->getPosition();
+    auto transform = GetEntity()->getComponent<Transform>();
+    return transform->getPosition();
 }
 
-void Camera::lookIt(const Vector3 &direction) {
-    m_transform->setLocalRotation(Math::normalize(Math::lookRotation(direction, Vector3::up)));
+void Camera::lookIt(const Vector3 &direction)
+{
+    auto transform = GetEntity()->getComponent<Transform>();
+    transform->setLocalRotation(Math::normalize(Math::lookRotation(direction, Vector3::up)));
 }
 
 void Camera::setRect(const Rect &rect) {

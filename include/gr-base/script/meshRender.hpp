@@ -11,6 +11,8 @@ public:
     MeshRender();
     ~MeshRender() override;
 
+    void Init() override;
+
     bool Serialize(Stream *stream) const override;
 
     bool Deserialize(Stream *stream) override;

@@ -330,7 +330,7 @@ int SceneLoadTask::read_script(Stream *stream)
         auto it = m_gameobjectmap.find(go_name);
         if (it != m_gameobjectmap.end())
         {
-            auto gameObject = it->second;
+            auto gameObject = GameObject::Get(it->second);
             auto component = gameObject->getComponent(componentHash);
             if (component == nullptr)
                 component = gameObject->addComponent(componentHash);
@@ -385,12 +385,11 @@ GameObject *SceneLoadTask::deserialize(Stream *stream, Transform *parent)
     }
     */
 
-    auto gameObject = GameObject::Create(name/*, tag*/);
-    // gameObject->setActive(bactive);
-    // gameObject->setStatic(bstatic);
+    auto gameObjectID = GameObject::Create(name);
 
-    m_gameobjectmap.emplace(name, gameObject);
+    m_gameobjectmap.emplace(name, gameObjectID);
 
+    auto gameObject = GameObject::Get(gameObjectID);
     auto transform = gameObject->getTransform();
     if (parent != nullptr)
     {

@@ -8,7 +8,7 @@
 
 extern "C"
 {
-#include <gr-ecs/array.h>
+#include "gr-base/externals/array.h"
 }
 
 class TextureManager

@@ -14,27 +14,27 @@
 
 #include <functional>
 
-class GameObjectLoadTask : public IAsyncTask<GameObject*>
+class GameObjectLoadTask : public IAsyncTask<GameObjectID>
 {
 public:
-    GameObjectLoadTask(const std::string &path, std::function<void (GameObject *)> func);
+    GameObjectLoadTask(const std::string &path, std::function<void (GameObjectID )> func);
 
 private:
     const std::string m_path;
 
-    std::function<void (GameObject *)> m_func;
+    std::function<void (GameObjectID)> m_func;
 
-    GameObject *m_gameObject;
+    GameObjectID m_gameObject;
 
-    std::unordered_map<std::string, GameObject *> m_gameobjectmap;
+    std::unordered_map<std::string, GameObjectID> m_gameobjectmap;
 
     std::unordered_map<std::string, grr::gShader *> m_shadermap;
 
     std::unordered_map<std::string, MaterialID> m_materialmap;
 
-    GameObject* doInBackground() override;
+    GameObjectID doInBackground() override;
 
-    void onPostExecute(GameObject* result) override;
+    void onPostExecute(GameObjectID result) override;
 
     int read_metadata(Stream *stream);
 

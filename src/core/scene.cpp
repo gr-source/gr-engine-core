@@ -1,8 +1,10 @@
 #include "gr-base/core/scene.hpp"
 
+#include "gr-base/core/default.hpp"
 #include "gr-base/core/gameObject.hpp"
 
 // #include "gr-base/core/scenemanager.hpp"
+#include "gr-base/managers/gameobjectmanager.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
@@ -55,7 +57,7 @@ void Scene::Stop(GameObject *gameObject)
 }
 
 // public
-Scene::Scene() : m_enable(true), m_goCamera(nullptr), m_camera(nullptr), m_isrunning(false) {}
+Scene::Scene() : m_enable(true), m_goCamera(GID_INVALID), m_camera(nullptr), m_isrunning(false) {}
 
 Scene::~Scene()
 {
@@ -64,9 +66,9 @@ Scene::~Scene()
         GameObject::Destroy(gameObject);
     }
 
-    if (m_goCamera != nullptr)
+    if (m_goCamera != GID_INVALID)
     {
-        GameObject::Destroy(m_goCamera);
+        GameObject::DestroyImediate(GameObject::Get(m_goCamera));
     }
 }
 
@@ -74,41 +76,50 @@ void Scene::init()
 {
     m_goCamera = CreateEngineCamera();
 
-    m_camera = m_goCamera->getComponent<Camera>();
+    auto gameObject = GameObject::Get(m_goCamera);
+
+    m_camera = gameObject->getComponent<Camera>();
 }
 
 void Scene::play()
 {
+    /*
     m_isrunning = true;
 
     for (auto &go : getObjectList())
     {
         Scene::Play(go);
     }
+    */
 }
 
 void Scene::stop()
 {
+    /*
     m_isrunning = false;
 
     for (auto &go : getObjectList())
     {
         Scene::Stop(go);
     }
+    */
 }
 
 void Scene::create_main_camra()
 {
-    auto go = GameObject::Create("MainCamera_");
-    go->addComponent<Camera>();
+    auto gameObjectID = GameObject::Create("MainCamera_");
 
-    auto MainCamera = GameObject::Instantiate(go);
-    if (MainCamera)
+    auto gameObject = GameObjectManager::Get(gameObjectID);
+    gameObject->addComponent<Camera>();
+
+    auto cloneID = GameObject::Instantiate(gameObject);
+    if (cloneID != GID_INVALID)
     {
-        MainCamera->setName("MainCamera");
+        auto clone = GameObject::Get(cloneID);
+        clone->setName("MainCamera");
     }
 
-    GameObject::DestroyImediate(go);
+    GameObject::DestroyImediate(gameObject);
 }
 
 bool Scene::is_running() const
@@ -116,27 +127,27 @@ bool Scene::is_running() const
     return m_isrunning;
 }
 
-std::vector<GameObject *> Scene::getObjectList() const
+std::vector<GameObjectID> Scene::getObjectList() const
 {
     return m_objects;
 }
 
-void Scene::insert(GameObject *gameObject)
+void Scene::insert(GameObjectID gameObjectID)
 {
-    auto it = std::find(m_objects.begin(), m_objects.end(), gameObject);
+    auto it = std::find(m_objects.begin(), m_objects.end(), gameObjectID);
     if (it != m_objects.end())
     {
         return;
     }
 
-    m_objects.push_back(gameObject);
+    m_objects.push_back(gameObjectID);
 }
 
-void Scene::remove(GameObject *gameObject)
+void Scene::remove(GameObjectID gameObjectID)
 {
-    m_tempInitObjects.erase(std::remove(m_tempInitObjects.begin(), m_tempInitObjects.end(), gameObject), m_tempInitObjects.end());
+    // m_tempInitObjects.erase(std::remove(m_tempInitObjects.begin(), m_tempInitObjects.end(), gameObjectID), m_tempInitObjects.end());
 
-    m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObject), m_objects.end());
+    m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObjectID), m_objects.end());
 }
 
 void Scene::Clear()
@@ -144,17 +155,19 @@ void Scene::Clear()
     m_objects.clear();
 }
 
-GameObject *Scene::getCameraObject() const
+GameObjectID Scene::getCameraObject() const
 {
     return m_goCamera;
 }
 
-void Scene::setCamera(GameObject *go)
+void Scene::setCamera(GameObjectID id)
 {
-    m_goCamera = go;
+    m_goCamera = id;
 
-    if (go != nullptr)
-        m_camera = go->getComponent<Camera>();
+    if (id != GID_INVALID)
+    {
+        // m_camera = go->getComponent<Camera>();
+    }
 }
 
 Camera *Scene::getCamera() const
@@ -163,18 +176,18 @@ Camera *Scene::getCamera() const
 }
 
 // ********** public ********** //
-void Scene::select(GameObject *go)
+void Scene::select(GameObjectID id)
 {
-    v_object_selected_list.push_back(go);
+    v_object_selected_list.push_back(id);
 
-    u_object_has_been_selected.emplace(go);
+    u_object_has_been_selected.emplace(id);
 }
 
-void Scene::deselect(GameObject *go)
+void Scene::deselect(GameObjectID id)
 {
-    v_object_selected_list.erase(std::remove(v_object_selected_list.begin(), v_object_selected_list.end(),  go), v_object_selected_list.end());
+    v_object_selected_list.erase(std::remove(v_object_selected_list.begin(), v_object_selected_list.end(), id), v_object_selected_list.end());
 
-    u_object_has_been_selected.erase(go);
+    u_object_has_been_selected.erase(id);
 }
 
 void Scene::deselect_all()
@@ -188,41 +201,44 @@ bool Scene::has_object_selected() const
     return !v_object_selected_list.empty();
 }
 
-bool Scene::object_has_been_selected(GameObject *go) const
+bool Scene::object_has_been_selected(GameObjectID id) const
 {
-    return u_object_has_been_selected.find(go) != u_object_has_been_selected.end();
+    return u_object_has_been_selected.find(id) != u_object_has_been_selected.end();
 }
 
-std::vector<GameObject *> Scene::get_object_selected() const
+std::vector<GameObjectID> Scene::get_object_selected() const
 {
     return v_object_selected_list;
 }
 
-bool Scene::destroy(GameObject *gameObject)
+bool Scene::destroy(GameObjectID gameObjectID)
 {
-    remove(gameObject);
+    remove(gameObjectID);
 
-    GameObject::DestroyImediate(gameObject);
+    GameObject::DestroyImediate(gameObjectID);
     return true;
 }
 
-GameObject *Scene::CreateEngineCamera()
+GameObjectID Scene::CreateEngineCamera()
 {
-    auto go = GameObject::Create("MainEngineCamera");
-    if (!go)
-        return nullptr;
+    auto gameObjectID = GameObject::Create("MainEngineCamera");
+    if (gameObjectID == GID_INVALID)
+        return GID_INVALID;
 
-    auto camera = go->addComponent<Camera>();
+    auto gameObject = GameObject::Get(gameObjectID);
+    auto camera = gameObject->addComponent<Camera>();
     if (!camera)
-        return nullptr;
+        return GID_INVALID;
 
-    return go;
+    return gameObjectID;
 }
 
 void Scene::setEnable(bool value)
 {
-    for (auto &gameObject : m_objects)
+    for (auto &gameObjectID : m_objects)
     {
+        auto gameObject = GameObject::Get(gameObjectID);
+
         setDisableEntity(gameObject->getTransform(), value);
     }
     m_enable = value;
@@ -255,9 +271,11 @@ void Scene::SetupScene(Scene *scene)
 
 void Scene::for_each(std::function<void(GameObject *)> func)
 {
-    for (auto object : m_objects)
+    for (auto& gameObjectID : m_objects)
     {
-        for_each(object->getTransform(), func);
+        auto gameObject = GameObject::Get(gameObjectID);
+
+        for_each(gameObject->getTransform(), func);
     }
 }
 

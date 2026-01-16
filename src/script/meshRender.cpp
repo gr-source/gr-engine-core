@@ -12,38 +12,48 @@
 #include "gr-base/managers/batchingmanager.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
-
+#include <utility>
 
 MeshRender::MeshRender()
-{
-    if (Threadpool::IsMainThread())
-    {
-        MeshFilter *meshFilter = entity->getComponent<MeshFilter>();
-        if (meshFilter != nullptr)
-        {
-            auto meshes = meshFilter->getMesh();
-            if (meshes.empty())
-            {
-                Console::LogError("[ SkinnedMeshRender ] this meshfilter don't has mesh1");
-            } else
-            {
-                MainThreadDispatcher::Add(&MeshRender::build, this, meshes);
-            }
-        } else
-        {
-            Console::LogError("[ SkinnedMeshRender ] this gameobject don't has MeshFilter!");
-        }
-    }
-}
+{}
 
 MeshRender::~MeshRender()
 {
     for (auto& batchID : m_batchCacheIDs)
     {
         auto& batching = BatchingManager::Get(batchID);
-        batching.remove(GetGameObject()->getTransform());
+        batching.remove(GetGameObject()->GetID<Transform>());
     }
-        // BatchingManager::Destroy(batchID);
+}
+
+void MeshRender::Init()
+{
+    if (Threadpool::IsMainThread())
+    {
+
+        MainThreadDispatcher::Add([entityID = std::forward<EntityID>(entityID)]{
+            auto gameobject = GameObject::Get(entityID);
+
+            MeshFilter *meshFilter = gameobject->getComponent<MeshFilter>();
+            if (meshFilter != nullptr)
+            {
+                auto meshes = meshFilter->getMesh();
+                if (meshes.empty())
+                {
+                    Console::LogError("[ MeshRender ] this meshfilter don't has mesh1");
+                } else
+                {
+                    auto meshRender = gameobject->getComponent<MeshRender>();
+                    if (meshRender != nullptr)
+                        meshRender->build(meshes);
+                }
+            } else
+            {
+                Console::LogError("[ MeshRender ] this gameobject don't has MeshFilter!");
+            }
+
+        });
+    }
 }
 
 bool MeshRender::Serialize(Stream* stream) const
@@ -83,7 +93,7 @@ void MeshRender::build(const std::vector<MeshID>& meshes)
             batchID = BatchingManager::Create(key, meshID, materialID);
 
         Batching& batching = BatchingManager::Get(batchID);
-        batching.insert(GetGameObject()->getTransform());
+        batching.insert(GetGameObject()->GetID<Transform>());
 
         m_batchCacheIDs.push_back(batchID);
     }

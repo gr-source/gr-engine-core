@@ -29,7 +29,7 @@ private:
 
     std::vector<GameObject *> m_rootList;
 
-    std::unordered_map<std::string, GameObject *> m_gameobjectmap;
+    std::unordered_map<std::string, GameObjectID> m_gameobjectmap;
 
     std::unordered_map<std::string, grr::gShader *> m_shadermap;
 
