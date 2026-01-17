@@ -190,9 +190,9 @@ std::vector<grr::gShader *> AssetsManager::GetShaderList(ShaderType type)
     return s_AssetsManager->mShaderManager.get_shader(type);
 }
 
-MaterialID AssetsManager::CreateMaterial(const std::string &name, grr::gShader *shader)
+MaterialID AssetsManager::CreateMaterial(const std::string &name)
 {
-    return s_AssetsManager->mMaterialManager.create(shader, name);
+    return s_AssetsManager->mMaterialManager.create(name);
 }
 
 Material &AssetsManager::GetMaterial(MaterialID id)

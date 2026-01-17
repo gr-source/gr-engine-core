@@ -227,7 +227,7 @@ int SceneLoadTask::read_material(Stream *stream)
         auto it = m_materialmap.find(name);
         if (it == m_materialmap.end() && m_shadermap.find(shadername) != m_shadermap.end())
         {
-            auto materialID = AssetsManager::CreateMaterial(name, m_shadermap[shadername]);
+            auto materialID = AssetsManager::CreateMaterial(name/*, m_shadermap[shadername] */);
             
             {
                 auto &material = AssetsManager::GetMaterial(materialID);

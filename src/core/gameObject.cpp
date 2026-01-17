@@ -76,6 +76,7 @@ void GameObject::Copy(GameObjectID other)
 {
     {
         auto gameObject = GameObject::Get(other);
+
         for (auto& hash : gameObject->GetHashes())
         {
             Behavior* behavior = getComponent(hash);
@@ -110,7 +111,7 @@ void GameObject::Copy(GameObjectID other)
         auto childID = GameObject::Create(childGameObject->getName());
 
         auto cloneObj = GameObjectManager::Get(childID);
-        cloneObj->Copy(childID);
+        cloneObj->Copy(child->GetGameObject()->getCacheID());
 
         auto clonedTransform = cloneObj->getTransform();
         clonedTransform->setParent(localTransform);

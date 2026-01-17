@@ -17,6 +17,7 @@ Batching::~Batching()
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
+    glDeleteBuffers(1, &pbo);
 }
 
 void Batching::insert(ComponentID transform)
@@ -41,6 +42,7 @@ void Batching::build(MeshID meshID, MaterialID materialID)
         glGenVertexArrays(1, &vao);
         glGenBuffers(1, &vbo);
         glGenBuffers(1, &ebo);
+        glGenBuffers(1, &pbo);
     }
 
     glBindVertexArray(vao);
@@ -60,6 +62,20 @@ void Batching::build(MeshID meshID, MaterialID materialID)
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), (void*)offsetof(Vertex3D, texCoords));
 
+    glBindBuffer(GL_ARRAY_BUFFER, pbo);
+    for (int j=0;j<4;j++)
+    {
+        glEnableVertexAttribArray(6 + j);
+    
+        glVertexAttribPointer(6 + j, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4x4), (void*)(uintptr_t)(j * sizeof(Vector4)));
+
+        glVertexAttribDivisor(6 + j, 1);
+        /*
+        grr::gVertexArray::SetAttrib(6 + j, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(j * sizeof(Vector4)));
+        grr::gVertexArray::SetAttribDivisor(6 + j, 1);
+        */
+    }
+
     glBindVertexArray(0);
     
     std::cout << "[GPU] Batch criado com Mesh: " << meshID << " e Material: " << materialID << std::endl;
@@ -67,8 +83,10 @@ void Batching::build(MeshID meshID, MaterialID materialID)
 
 void Batching::render()
 {
+    bool isInstancing = instances.size() > 1;
+
     auto &material = AssetsManager::GetMaterial(materialID);
-    auto shader = material.getShader();
+    auto shader = material.GetShader(isInstancing);
 
     glBindVertexArray(vao);
 
@@ -76,14 +94,37 @@ void Batching::render()
     int textureID[10] = {0};
 
     shader->bind();
-    material.flush();
+    material.flush(shader);
 
     shader->setUniform("u_texture", textureID);
     shader->setUniform("u_enable", enable);
 
-    for (auto &transformID : instances)
+    if (isInstancing)
     {
-        auto transform = ComponentManager::GetComponent<Transform>(transformID);
+        static size_t lastSize = 0;
+        if (lastSize != instances.size())
+        {
+            std::vector<Matrix4x4> models;
+            for (auto& transformID : instances)
+            {
+                auto transform = ComponentManager::GetComponent<Transform>(transformID);
+
+                models.push_back(transform->getGlobalMatrix());
+            }
+
+            glBindBuffer(GL_ARRAY_BUFFER, pbo);
+            glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(Matrix4x4), models.data(), GL_STATIC_DRAW);
+
+            lastSize = instances.size();
+        }
+        
+        shader->flush();
+
+        glDrawElementsInstanced(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr, lastSize);
+
+    } else if (!instances.empty())
+    {
+        auto transform = ComponentManager::GetComponent<Transform>(instances[0]);
 
         auto model = transform->getGlobalMatrix();
 
@@ -92,6 +133,7 @@ void Batching::render()
 
         glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
     }
+    
     glBindVertexArray(0);
 }
 

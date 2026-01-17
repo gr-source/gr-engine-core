@@ -90,6 +90,7 @@ int GameObjectSaveTask::write_metadata(Stream *stream)
 
 int GameObjectSaveTask::write_data(Stream *stream)
 {
+    /*
     // write shader
     {
         if (write_shader(stream) != 0)
@@ -104,6 +105,7 @@ int GameObjectSaveTask::write_data(Stream *stream)
         }
         stream->flush();
     }
+    */
 
     // write texture
     {
@@ -190,6 +192,7 @@ int GameObjectSaveTask::write_data(Stream *stream)
     return 0;
 }
 
+/*
 int GameObjectSaveTask::write_shader(Stream *stream)
 {
     auto length = m_shadermap.size();
@@ -207,6 +210,7 @@ int GameObjectSaveTask::write_shader(Stream *stream)
     }
     return 0;
 }
+*/
 
 int GameObjectSaveTask::write_texture(Stream *stream)
 {
@@ -269,26 +273,16 @@ int GameObjectSaveTask::write_material(Stream *stream)
 {
     auto length = m_materialmap.size();
     if (!stream->write(length))
-    {
         return 1;
-    }
 
     for (auto &&[name, materialID] : m_materialmap)
     {
         auto &material = AssetsManager::GetMaterial(materialID);
 
         if (!stream->write(name))
-        {
             return 2;
-        }
 
-        auto shadername = AssetsManager::GetShaderName(material.getShader());
-        if (!stream->write(shadername))
-        {
-            return 3;
-        }
-
-        // deserialize material
+        // serialize material
         std::size_t bufferSize = 0;
         {
             Stream temp;
@@ -299,9 +293,7 @@ int GameObjectSaveTask::write_material(Stream *stream)
         }
 
         if (!stream->write(bufferSize))
-        {
             return 4;
-        }
 
         material.serialize(stream);
     }
@@ -337,43 +329,21 @@ int GameObjectSaveTask::write_mesh(Stream *stream)
 int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
 {
     if (!stream->write(go->getName()))
-    {
         return 1;
-    }
 
-    /*
-    if (!stream->write(go->getTag()))
-    {
-        return 2;
-    }
-
-    if (!stream->write(go->getActive()))
-    {
-        return 3;
-    }
-
-    if (!stream->write(go->getStatic()))
-    {
-        return 4;
-    }
-*/
     auto transform = go->getTransform();
 
     auto children = transform->getChildren();
 
     auto ccount = children.size();
     if (!stream->write(ccount))
-    {
         return 5;
-    }
 
     for (auto &child : children)
     {
         int result = write_gameobject(stream, child->GetGameObject());
         if (result != 0)
-        {
             return 6;
-        }
     }
 
     return 0;
@@ -430,14 +400,6 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
         {
             auto material_name = AssetsManager::GetMaterialName(materialID);
             auto &material = AssetsManager::GetMaterial(materialID);
-
-            auto shader_name = AssetsManager::GetShaderName(material.getShader());
-
-            {
-                auto it = m_shadermap.find(shader_name);
-                if (it == m_shadermap.end())
-                    m_shadermap.emplace(shader_name);
-            }
 
             {
                 auto it = m_materialmap.find(material_name);

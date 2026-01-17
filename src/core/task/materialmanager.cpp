@@ -9,7 +9,7 @@ MaterialManager::MaterialManager()
     resize(1024);
 }
 
-MaterialID MaterialManager::create(grr::gShader *shader, const std::string &name)
+MaterialID MaterialManager::create(const std::string &name)
 {
     std::unique_lock<std::mutex> lock(m_mutex);
     if (m_freeIDs.empty())
@@ -25,7 +25,7 @@ MaterialID MaterialManager::create(grr::gShader *shader, const std::string &name
     m_freeIDs.pop();
 
     Material *material = &m_materials[id];
-    new (material) Material(shader);
+    new (material) Material();
 
     m_materialnamemap[name] = id;
     m_materialmap[id] = name;
@@ -77,7 +77,7 @@ void MaterialManager::resize(std::size_t size)
 
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_materials.resize(newsize, Material{nullptr});
+        m_materials.resize(newsize);
     }
 
     addfreelist(oldsize);

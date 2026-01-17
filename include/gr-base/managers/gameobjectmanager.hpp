@@ -9,6 +9,7 @@ extern "C"
 
 #include <string>
 #include <atomic>
+#include <mutex>
 
 #define n32nill (uint32_t)-1
 
@@ -36,6 +37,8 @@ protected:
 
     GameObjectManager();
     ~GameObjectManager();
+
+    std::mutex m_mutex;
 
     array* m_gameObjectPool;
 

@@ -93,9 +93,11 @@ int GameObjectLoadTask::read_data(Stream *stream)
 
         switch (dataSegment.type)
         {
+            /*
             case HeaderType::SHADER:
                 result = read_shader(stream);
                 break;
+                */
             case HeaderType::TEXTURE:
                 result = read_texture(stream);
                 break;
@@ -126,6 +128,7 @@ int GameObjectLoadTask::read_data(Stream *stream)
     return 0;
 }
 
+/*
 int GameObjectLoadTask::read_shader(Stream *stream)
 {
     std::size_t length = {};
@@ -153,6 +156,7 @@ int GameObjectLoadTask::read_shader(Stream *stream)
     }
     return 0;
 }
+*/
 
 int GameObjectLoadTask::read_texture(Stream *stream)
 {
@@ -212,29 +216,18 @@ int GameObjectLoadTask::read_material(Stream *stream)
 {
     std::size_t length = {};
     if (!stream->read(length))
-    {
         return 1;
-    }
 
     for (std::size_t i=0;i<length;i++)
     {
-        std::string name, shadername;
+        std::string name;
         if (!stream->read(name))
-        {
             return 2;
-        }
-
-        if (!stream->read(shadername))
-        {
-            return 3;
-        }
 
         // deserialize material
         std::size_t bufferSize = {};
         if (!stream->read(bufferSize))
-        {
             return 4;
-        }
 
         auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
 
@@ -242,9 +235,9 @@ int GameObjectLoadTask::read_material(Stream *stream)
         if (materialID == nill)
         {
             auto it = m_materialmap.find(name);
-            if (it == m_materialmap.end() && m_shadermap.find(shadername) != m_shadermap.end())
+            if (it == m_materialmap.end()/* && m_shadermap.find(shadername) != m_shadermap.end() */)
             {
-                materialID = AssetsManager::CreateMaterial(name, m_shadermap[shadername]);
+                materialID = AssetsManager::CreateMaterial(name);
                 {
                     auto &material = AssetsManager::GetMaterial(materialID);
                     material.deserialize(stream);
@@ -296,30 +289,10 @@ int GameObjectLoadTask::read_mesh(Stream *stream)
 
 int GameObjectLoadTask::read_gameobject(Stream *stream, Transform *parent)
 {
-    std::string name/*, tag*/;
-    // bool bactive, bstatic;
+    std::string name;
 
     if (!stream->read(name))
-    {
         return 1;
-    }
-
-    /*
-    if (!stream->read(tag))
-    {
-        return 2;
-    }
-
-    if (!stream->read(bactive))
-    {
-        return 3;
-    }
-
-    if (!stream->read(bstatic))
-    {
-        return 4;
-    }
-    */
 
     auto gameObjectID = GameObject::Create(name);
 
@@ -335,9 +308,7 @@ int GameObjectLoadTask::read_gameobject(Stream *stream, Transform *parent)
 
     std::size_t ccount = {};
     if (!stream->read(ccount))
-    {
         return 5;
-    }
 
     for (std::size_t i={};i<ccount;i++)
     {
@@ -387,9 +358,7 @@ int GameObjectLoadTask::read_script(Stream *stream)
         }
 
         if (stream->tellg() != next)
-        {
             stream->seekg(next, std::ios_base::beg);
-        }
     }
     return 0;
 }

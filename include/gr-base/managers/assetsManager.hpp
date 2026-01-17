@@ -90,7 +90,7 @@ public:
 
     static std::vector<grr::gShader *> GetShaderList(ShaderType type);
 
-    static MaterialID CreateMaterial(const std::string &name, grr::gShader *shader);
+    static MaterialID CreateMaterial(const std::string &name);
 
     static Material &GetMaterial(MaterialID id);
 

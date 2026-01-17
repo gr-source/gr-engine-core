@@ -48,13 +48,14 @@ void BatchingManager::Render()
 // private
 BatchingManager::BatchingManager() : m_poolBatches(nullptr), m_freeID(BATCHID_INVALID), m_count(0)
 {
-    m_poolBatches = array_create(1024, sizeof(BatchWrapper));
+    m_poolBatches = array_create(512, sizeof(BatchWrapper));
 
     addFreeID(0);
 }
 
 BatchingManager::~BatchingManager()
 {
+    array_free(m_poolBatches);
 }
 
 BatchID BatchingManager::create(size_t key, MeshID mesheID, MaterialID materialID)

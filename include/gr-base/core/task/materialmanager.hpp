@@ -13,7 +13,7 @@ class MaterialManager
 public:
     MaterialManager();
 
-    MaterialID create(grr::gShader *shader, const std::string &name);
+    MaterialID create(const std::string &name);
 
     Material &get(MaterialID id);
 

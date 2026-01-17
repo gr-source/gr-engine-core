@@ -229,7 +229,7 @@ int SceneSaveTask::write_material(Stream *stream)
             return 2;
         }
 
-        auto shadername = AssetsManager::GetShaderName(material.getShader());
+        auto shadername = AssetsManager::GetShaderName(material.GetShader(false));
         if (!stream->write(shadername))
         {
             return 3;
@@ -417,7 +417,7 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
             auto material_name = AssetsManager::GetMaterialName(materialID);
             auto &material = AssetsManager::GetMaterial(materialID);
 
-            auto shader_name = AssetsManager::GetShaderName(material.getShader());
+            auto shader_name = AssetsManager::GetShaderName(material.GetShader(false));
 
             {
                 auto it = m_shadermap.find(shader_name);

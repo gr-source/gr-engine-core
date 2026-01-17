@@ -9,7 +9,7 @@
 
 #include <gr-render/gShader.h>
 
-Material::Material(grr::gShader *shader) : m_shader(shader), m_scalling{1.0f, 1.0f}, m_offset{0.0f, 0.0f}
+Material::Material() : m_shader(nullptr), m_shaderInstancing(nullptr), m_scalling{1.0f, 1.0f}, m_offset{0.0f, 0.0f}
 {
     m_textures.fill(nullptr);
 }
@@ -42,14 +42,22 @@ std::array<grr::gTexture *, 10> Material::getTextures() const
     return m_textures;
 }
 
-grr::gShader *Material::getShader() const
+grr::gShader *Material::GetShader(bool instancing) const
 {
-    return m_shader;
+    return instancing ? m_shaderInstancing : m_shader;
 }
 
-void Material::setShader(grr::gShader *shader)
+void Material::SetShader(grr::gShader *shader, bool instancing)
 {
-    m_shader = shader;
+    if (instancing)
+        m_shaderInstancing = shader;
+    else
+        m_shader = shader;
+}
+
+bool Material::supportsInstancing() const
+{
+    return m_shaderInstancing != nullptr;
 }
 
 void Material::set_scaling(const Vector2 &value)
@@ -74,16 +82,19 @@ Vector2 &Material::get_offset()
 
 void Material::serialize(Stream *stream) const
 {
-    bool hasShader = m_shader != nullptr;
-
-    if (!stream->write(&hasShader, sizeof(bool)))
-    {
-        return;
-    }
-
-    if (hasShader)
     {
         auto name = AssetsManager::GetShaderName(m_shader);
+        if (!stream->write(name))
+            return;
+    }
+
+    bool isInstancing = supportsInstancing();
+    if (!stream->write(isInstancing))
+        return;
+
+    if (isInstancing)
+    {
+        auto name = AssetsManager::GetShaderName(m_shaderInstancing);
         if (!stream->write(name))
             return;
     }
@@ -174,26 +185,37 @@ void Material::serialize(Stream *stream) const
 
 void Material::deserialize(Stream *stream)
 {
-    bool hasShader = false;
-    if (!stream->read(reinterpret_cast<char *>(&hasShader), sizeof(bool)))
     {
+        std::string shadername;
+        if (!stream->read(shadername))
+            return;
+
+        m_shader = AssetsManager::FindShader(shadername);
+        if (m_shader == nullptr)
+        {
+            auto info = AssetsManager::LoadShaderAsync(GetShaderParamsFromName(shadername));
+            m_shader = info->get();
+        }
+    }
+
+    bool isInstancing = false;
+    if (!stream->read(isInstancing))
         return;
-    }
 
-    if (hasShader)
+    if (isInstancing)
     {
-        std::size_t nsize = 0;
-        if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t)))
-        {
+        std::string shadername;
+        if (!stream->read(shadername))
             return;
-        }
 
-        std::string shader_name(nsize, '\0');
-        if (!stream->read(shader_name.data(), nsize * sizeof(char)))
+        m_shaderInstancing = AssetsManager::FindShader(shadername);
+        if (m_shaderInstancing == nullptr)
         {
-            return;
+            auto info = AssetsManager::LoadShaderAsync(GetShaderParamsFromName(shadername));
+            m_shaderInstancing = info->get();
         }
     }
+
 
     std::size_t tCount = 0;
     if (!stream->read(reinterpret_cast<char *>(&tCount), sizeof(std::size_t)))
@@ -267,16 +289,14 @@ void Material::deserialize(Stream *stream)
         return;
 }
 
-void Material::flush() const
+void Material::flush(grr::gShader* shader) const
 {
     for (auto &&[data, id] : m_field_list)
-    {
-        m_shader->setUniform(id, data);
-    }
+        shader->setUniform(id, data);
 
     auto u_transform = m_scalling + m_offset;
 
-    m_shader->setUniform("u_transform", &u_transform);
+    shader->setUniform("u_transform", &u_transform);
 }
 
 bool Material::setupTexture(int id, grr::gTexture *texture)

@@ -159,18 +159,16 @@ void GameObjectManager::requestResize()
 
     auto newPool = array_create(newsize, sizeof(GameObjectWrapper));
 
-    GameObjectWrapper* laswrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
-    GameObjectWrapper* newwrapper = (GameObjectWrapper*)newPool->vector;
+    GameObjectWrapper* oldWrapperPool = (GameObjectWrapper*)m_gameObjectPool->vector;
+    GameObjectWrapper* newWrapperPool = (GameObjectWrapper*)newPool->vector;
     for (size_t i=0;i<lastsize;i++)
     {
-        GameObjectWrapper& ilastwrapper = laswrapper[i];
-        GameObjectWrapper& inewwrapper = newwrapper[i];
+        GameObjectWrapper& oldwrapper = oldWrapperPool[i];
+        GameObjectWrapper& newwrapper = newWrapperPool[i];
 
-        memcpy((void*)&inewwrapper, (void*)&ilastwrapper, sizeof(GameObjectWrapper));
+        newwrapper.next = oldwrapper.next;
 
-        // auto gameObject = &wrapper[i].gameObject;
-
-        new (&inewwrapper.gameObject) GameObject(ilastwrapper.gameObject);
+        new (&newwrapper.gameObject) GameObject(oldwrapper.gameObject);
     }
 
     array_free(m_gameObjectPool);

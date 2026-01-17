@@ -18,8 +18,7 @@ typedef struct
 class Material
 {
 public:
-    Material() = delete;
-    Material(grr::gShader *shader);
+    Material();
     ~Material();
     
     void setTexture(int idx, grr::gTexture *texture);
@@ -28,9 +27,11 @@ public:
 
     std::array<grr::gTexture *, 10> getTextures() const;
 
-    grr::gShader *getShader() const;
+    grr::gShader *GetShader(bool instancing) const;
 
-    void setShader(grr::gShader *shader);
+    void SetShader(grr::gShader* shader, bool instancing);
+
+    bool supportsInstancing() const;
 
     void set_scaling(const Vector2 &value);
 
@@ -53,7 +54,7 @@ public:
     template <typename T>
     T *setValue(const std::string &name, u8 count, const T &value);
 
-    void flush() const;
+    void flush(grr::gShader* shader) const;
 
 private:
     std::unordered_map<std::string, std::tuple<void *, std::size_t>> m_field_data;
@@ -67,6 +68,7 @@ private:
     Vector2 m_offset;
 
     grr::gShader *m_shader;
+    grr::gShader *m_shaderInstancing;
 
     bool setupTexture(int id, grr::gTexture *texture);
 

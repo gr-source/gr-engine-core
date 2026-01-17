@@ -36,7 +36,7 @@ private:
 
     std::unordered_set<MeshID> m_meshmap;
 
-    std::unordered_set<std::string> m_shadermap;
+    // std::unordered_set<std::string> m_shadermap;
 
     int doInBackground() override;
 
@@ -46,7 +46,7 @@ private:
 
     int write_data(Stream *stream);
 
-    int write_shader(Stream *stream);
+    // int write_shader(Stream *stream);
 
     int write_texture(Stream *stream);
 
