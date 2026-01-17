@@ -51,6 +51,7 @@ set(binary
 
 set(script
     src/script/skinnedMeshRender.cpp
+    src/script/LODComponent.cpp
     src/script/meshFilter.cpp
     src/script/baserender.cpp
     src/script/meshRender.cpp

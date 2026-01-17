@@ -1,5 +1,6 @@
 #include "gr-base/core/culling/octreemanager.hpp"
 
+#include "gr-base/core/culling/frustum.hpp"
 #include "gr-base/core/debugdraw.hpp"
 
 #include "gr-base/script/transform.hpp"
@@ -9,9 +10,14 @@
 #include <string.h>
 
 // public
-bool OctreeManager::Insert(NodeID id, Transform *transform)
+void OctreeManager::InsertGlobal(NodeData data)
 {
-    return GetInstance().insert(id, transform);
+    GetInstance().insertGlobal(data);
+}
+
+bool OctreeManager::Insert(NodeID id, NodeData data)
+{
+    return GetInstance().insert(id, data);
 }
 
 bool OctreeManager::Remove(NodeID id, Transform *transform)
@@ -44,23 +50,88 @@ OctreeManager &OctreeManager::GetInstance()
 
 OctreeManager::OctreeManager() : m_nodes(nullptr), m_count(0), m_size(0), m_root(InvalidNode), m_freeID(InvalidNode)
 {
-    resize(1024);
+    resizeNodes(1024);
 
-    m_root = create(Vector3::zero, 64.0f);
+    m_root = allocate(Vector3::zero, 64.0f);
 }
 
 OctreeManager::~OctreeManager()
 {}
 
-bool OctreeManager::insert(NodeID id, Transform *transform)
+void OctreeManager::insertGlobal(NodeData data)
 {
-    if (!contains(id, transform->getPosition()))
+    while (!contains(m_root, data.position))
+        expandRoot(data.position);
+
+    insert(m_root, data);
+}
+
+void OctreeManager::expandRoot(const Vector3& point)
+{
+    NodeID oldRoot = m_root;
+    OctreeNode* oldNode = m_nodes + oldRoot;
+
+    int x = point.x >= oldNode->position.x ? 1 : 0;
+    int y = point.y >= oldNode->position.y ? 1 : 0;
+    int z = point.z >= oldNode->position.z ? 1 : 0;
+
+    int childIndex = (x << 2) | (y << 1) | z;
+
+    float oldR = oldNode->radius;
+    float newR = oldR * 2.0f;
+
+    Vector3 newCenter = oldNode->position;
+    newCenter.x += (x ? 1 : -1) * oldR;
+    newCenter.y += (y ? 1 : -1) * oldR;
+    newCenter.z += (z ? 1 : -1) * oldR;
+
+    NodeID newRoot = allocate(newCenter, newR);
+    OctreeNode* root = m_nodes + newRoot;
+
+    root->divided = true;
+    root->count = 0;
+
+    subdivide(newRoot);
+
+    NodeID prev = InvalidNode;
+    NodeID child = root->first;
+    for (int i = 0; i < 8; ++i)
+    {
+        if (child == InvalidNode)
+            break;
+
+        if (i == childIndex)
+        {
+            if (prev != InvalidNode)
+                m_nodes[prev].next = oldRoot;
+            else
+                root->first = oldRoot;
+
+            m_nodes[oldRoot].next = m_nodes[child].next;
+            m_nodes[oldRoot].parent = newRoot;
+
+            break;
+        }
+
+        prev = child;
+        child = m_nodes[child].next;
+    }
+
+    m_root = newRoot;
+}
+
+bool OctreeManager::insert(NodeID id, NodeData data)
+{
+    if (!contains(id, data.position))
         return false;
 
     OctreeNode *node = m_nodes + id;
+
+    float radius = node->radius / 2;
+
     if (node->count < MAX_OBJECT_IN_NODE)
     {
-        node->data[node->count] = {transform, id};
+        node->data[node->count] = data;
         node->count++;
         return true;
     } else
@@ -70,11 +141,24 @@ bool OctreeManager::insert(NodeID id, Transform *transform)
             subdivide(id);
 
             node = m_nodes + id;
+
+            for (int j = 0; j < node->count; ++j)
+            {
+                NodeData oldData = node->data[j];
+
+                for (NodeID i = node->first; i != InvalidNode; i = m_nodes[i].next)
+                {
+                    if (insert(i, oldData))
+                        break;
+                }
+            }
+
+            node->count = 0;
         }
 
         for (NodeID i=node->first;i!=InvalidNode;i=m_nodes[i].next)
         {
-            if (insert(i, transform))
+            if (insert(i, data))
             {
                 return true;
             }
@@ -85,6 +169,7 @@ bool OctreeManager::insert(NodeID id, Transform *transform)
 
 bool OctreeManager::remove(NodeID id, Transform *transform)
 {
+    /*
     OctreeNode *node = m_nodes + id;
     for (int i=0;i<node->count;i++)
     {
@@ -107,19 +192,18 @@ bool OctreeManager::remove(NodeID id, Transform *transform)
                 return true;
         }
     }
+    */
     return false;
 }
 
 void OctreeManager::for_each(NodeID id, std::function<bool (OctreeNode *)> &func)
 {
-    OctreeNode *node = m_nodes + id;
-    if (func(node))
+    OctreeNode& node = m_nodes[id];
+    if (!func(&node))
         return;
 
-    for (NodeID i=node->first;i!=InvalidNode;i=m_nodes[i].next)
-    {
+    for (NodeID i=node.first;i!=InvalidNode;i=m_nodes[i].next)
         for_each(i, func);
-    }
 }
 
 bool OctreeManager::check(NodeID id)
@@ -208,29 +292,18 @@ void OctreeManager::render_node(NodeID id)
 {
     OctreeNode &node = m_nodes[id];
 
-    /*
-    Camera *camera = Camera::Current();
-    if (camera == nullptr)
-        return;
-
     Vector3 position = node.position;
     float radius = node.radius;
 
-    Vector3 min = position - Vector3{radius, radius, radius};
-    Vector3 max = position + Vector3{radius, radius, radius};
-
-    if (!Frustum::IsCubeInFrustumAABB(min, max))
+    if (!Frustum::IsSphereInFrustum(position, radius))
         return;
-    */
 
     drawWireCube(node.position, node.radius);
 
     if (node.divided)
     {
         for (NodeID i=node.first;i!=InvalidNode;i=m_nodes[i].next)
-        {
             render_node(i);
-        }
     }
 }
 
@@ -269,10 +342,10 @@ void OctreeManager::drawWireCube(const Vector3 &center, float size)
     DebugDraw::DrawLine(v[3], v[7]);
 }
 
-NodeID OctreeManager::create(const Vector3 &position, float radius, NodeID parent)
+NodeID OctreeManager::allocate(const Vector3 &position, float radius, NodeID parent)
 {
     if (m_freeID == InvalidNode)
-        resize(1024);
+        resizeNodes(1024);
 
     NodeID id = m_freeID;
     m_freeID = m_nodes[id].next;
@@ -286,9 +359,6 @@ NodeID OctreeManager::create(const Vector3 &position, float radius, NodeID paren
     node.position = position;
     node.radius = radius;
 
-    for (int i=0;i<MAX_OBJECT_IN_NODE;i++)
-        node.data[i] = {nullptr, InvalidNode};
-
     m_count++;
 
     return id;
@@ -296,39 +366,28 @@ NodeID OctreeManager::create(const Vector3 &position, float radius, NodeID paren
 
 void OctreeManager::subdivide(NodeID id)
 {
-    OctreeNode *node = m_nodes + id;
-    node->divided = true;
+    OctreeNode& node = m_nodes[id];
+    node.divided = true;
 
-    Vector3 center = node->position;
-    float radius = node->radius / 2;
+    Vector3 c = node.position;
+    float r = node.radius * 0.5f;
 
-    Vector3 tfr{center.x + radius, center.y - radius, center.z - radius}; // Top Front Right
-    Vector3 tfl{center.x - radius, center.y + radius, center.z - radius}; // Top Front Left
-    Vector3 tbr{center.x + radius, center.y + radius, center.z + radius}; // Top Back Right
-    Vector3 tbl{center.x - radius, center.y + radius, center.z + radius}; // Top Back Left
+    Vector3 centers[8] = {
+        {c.x - r, c.y - r, c.z - r},
+        {c.x + r, c.y - r, c.z - r},
+        {c.x - r, c.y + r, c.z - r},
+        {c.x + r, c.y + r, c.z - r},
+        {c.x - r, c.y - r, c.z + r},
+        {c.x + r, c.y - r, c.z + r},
+        {c.x - r, c.y + r, c.z + r},
+        {c.x + r, c.y + r, c.z + r},
+    };
 
-    Vector3 bfr{center.x + radius, center.y - radius, center.z - radius}; // Bottom Front Right
-    Vector3 bfl{center.x - radius, center.y - radius, center.z - radius}; // Bottom Front Left
-    Vector3 bbr{center.x + radius, center.y - radius, center.z + radius}; // Bottom Back Right
-    Vector3 bbl{center.x - radius, center.y - radius, center.z + radius}; // Bottom Back Left
-    
-    NodeID id0 = create(tfr, radius, id);
-    NodeID id1 = create(tfl, radius, id);
-    NodeID id2 = create(tbr, radius, id);
-    NodeID id3 = create(tbl, radius, id);
-    NodeID id4 = create(bfr, radius, id);
-    NodeID id5 = create(bfl, radius, id);
-    NodeID id6 = create(bbr, radius, id);
-    NodeID id7 = create(bbl, radius, id);
-
-    emplace(id, id0);
-    emplace(id, id1);
-    emplace(id, id2);
-    emplace(id, id3);
-    emplace(id, id4);
-    emplace(id, id5);
-    emplace(id, id6);
-    emplace(id, id7);
+    for (int i = 0; i < 8; ++i)
+    {
+        NodeID child = allocate(centers[i], r, id);
+        emplace(id, child);
+    }
 }
 
 void OctreeManager::emplace(NodeID id, NodeID first)
@@ -348,7 +407,7 @@ void OctreeManager::emplace(NodeID id, NodeID first)
     }
 }
 
-void OctreeManager::resize(std::size_t size)
+void OctreeManager::resizeNodes(size_t size)
 {
     std::size_t oldsize = m_size;
     std::size_t newsize = oldsize + size;
@@ -363,27 +422,29 @@ void OctreeManager::resize(std::size_t size)
     m_nodes = nodes;
     m_size = newsize;
 
-    addfreelist(oldsize);
+    addFreeListID(oldsize);
 }
 
-void OctreeManager::addfreelist(NodeID id)
+void OctreeManager::addFreeListID(NodeID first)
 {
-    for (NodeID i=id;i<m_size-1;i++)
+    NodeID lastID = m_size - 1;
+    for (NodeID i=first;i<lastID;i++)
         m_nodes[i].next = i + 1;
 
-    m_nodes[m_size - 1].next = m_freeID;
-    m_freeID = id;
+    m_nodes[lastID].next = m_freeID;
+    m_freeID = first;
 }
 
-bool OctreeManager::contains(NodeID id, const Vector3 &point)
+bool OctreeManager::contains(NodeID id, const Vector3 &p)
 {
-    OctreeNode &node = m_nodes[id];
+    OctreeNode &n = m_nodes[id];
 
-    Vector3 position = node.position;
+    Vector3 min = n.position - Vector3{n.radius, n.radius, n.radius};
+    Vector3 max = n.position + Vector3{n.radius, n.radius, n.radius};
 
-    return (point.x >= position.x - node.radius && point.x <= position.x + node.radius &&
-            point.y >= position.y - node.radius && point.y <= position.y + node.radius &&
-            point.z >= position.z - node.radius && point.z <= position.z + node.radius);
+    return p.x >= min.x && p.x < max.x &&
+           p.y >= min.y && p.y < max.y &&
+           p.z >= min.z && p.z < max.z;
 }
 
 

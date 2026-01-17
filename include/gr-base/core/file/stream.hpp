@@ -76,6 +76,17 @@ bool Stream::readS(T *data, std::streamsize count) {
     return Stream::read(reinterpret_cast<char *>(data), static_cast<std::streamsize>(count * sizeof(T)));
 }
 
+template <typename T>
+bool Stream::write(const T &value)
+{
+    return write(&value, sizeof(T));
+}
+
+template <typename T>
+bool Stream::read(T &value)
+{
+    return read(reinterpret_cast<char *>(&value), sizeof(T));
+}
 
 
 

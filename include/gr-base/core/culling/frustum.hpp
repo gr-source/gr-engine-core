@@ -14,6 +14,8 @@ public:
 
     static bool IsCubeInFrustumAABB(const Vector3& min, const Vector3& max);
 
+    static bool IsSphereInFrustum(const Vector3& center, float radius);
+
 private:
     static float m_Frustum[6][4];
 

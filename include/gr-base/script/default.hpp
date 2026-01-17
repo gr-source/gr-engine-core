@@ -6,6 +6,7 @@
 class Component;
 
 class SkinnedMeshRender;
+class LODComponent;
 class MeshCollider;
 class BoxCollider;
 class MeshFilter;
@@ -13,7 +14,6 @@ class MeshRender;
 class Rigidbody;
 class Transform;
 class Animator;
-class LODGroup;
 class Camera;
 class Light;
 

@@ -15,7 +15,7 @@
 
 #define PRINT_ERROR(func, property, type) \
     if (func == InvalidID) { \
-        Console::LogError("[ ShaderLoadTask ] Shader.Regiter uniform: %s", grr::error()); \
+        Console::LogWarning("[ ShaderLoadTask ] Shader.Regiter uniform: %s", grr::error()); \
     } else if (userfield.find(name) != userfield.end()) { \
         property->addProperty(variablename, name, type); \
     }

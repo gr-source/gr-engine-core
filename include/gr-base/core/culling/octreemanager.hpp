@@ -3,21 +3,26 @@
 
 #include "gr-base/core/culling/octree.hpp"
 
+#include "gr-base/core/geometry/default.hpp"
+#include "gr-base/core/default.hpp"
+
 #include "gr-base/script/default.hpp"
+
 #include <functional>
 
 using NodeID = std::size_t;
 
 constexpr NodeID InvalidNode = static_cast<NodeID>(-1);
 
-#define MAX_OBJECT_IN_NODE 4
+#define MAX_OBJECT_IN_NODE 8
 
-typedef struct nquery
+typedef struct NodeData
 {
-    Transform *transform;
+    GameObjectID gameObjectID;
+    BatchID batchID;
 
-    NodeID id;
-} nquery;
+    Vector3 position;
+} NodeData;
 
 typedef struct OctreeNode
 {
@@ -29,7 +34,7 @@ typedef struct OctreeNode
 
     bool divided;
 
-    nquery data[MAX_OBJECT_IN_NODE];
+    NodeData data[MAX_OBJECT_IN_NODE];
 
     std::size_t count;
 
@@ -41,7 +46,9 @@ typedef struct OctreeNode
 class OctreeManager
 {
 public:
-    static bool Insert(NodeID id, Transform *transform);
+    static void InsertGlobal(NodeData data);
+
+    static bool Insert(NodeID id, NodeData data);
 
     static bool Remove(NodeID id, Transform *transform);
 
@@ -67,7 +74,11 @@ private:
 
     NodeID m_freeID;
 
-    bool insert(NodeID id, Transform *transform);
+    void insertGlobal(NodeData data);
+
+    void expandRoot(const Vector3& point);
+
+    bool insert(NodeID id, NodeData data);
 
     bool remove(NodeID id, Transform *transform);
 
@@ -87,17 +98,17 @@ private:
 
     void drawWireCube(const Vector3 &center, float size);
 
-    NodeID create(const Vector3 &position, float radius, NodeID parent = InvalidNode);
+    NodeID allocate(const Vector3 &position, float radius, NodeID parent = InvalidNode);
 
     void subdivide(NodeID id);
 
     void emplace(NodeID id, NodeID child);
 
-    void resize(std::size_t size);
+    void resizeNodes(size_t size);
 
-    void addfreelist(NodeID id);
+    void addFreeListID(NodeID first);
 
-    bool contains(NodeID id, const Vector3 &point);
+    bool contains(NodeID id, const Vector3 &p);
 };
 
 

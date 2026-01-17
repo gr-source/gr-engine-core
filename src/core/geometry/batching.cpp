@@ -1,14 +1,9 @@
 #include "gr-base/core/geometry/batching.hpp"
 
 #include "gr-base/managers/assetsManager.hpp"
-#include "gr-base/script/transform.hpp"
 
 #include <gr-render/gl.h>
 #include <gr-render/gVertexArray.h>
-
-#include <algorithm>
-
-// public
 
 Batching::Batching() : vao(0) {}
 
@@ -20,14 +15,9 @@ Batching::~Batching()
     glDeleteBuffers(1, &pbo);
 }
 
-void Batching::insert(ComponentID transform)
+void Batching::insert(const Matrix4x4& matrix)
 {
-    instances.push_back(transform);
-}
-
-void Batching::remove(ComponentID transform)
-{
-    instances.erase(std::remove(instances.begin(), instances.end(), transform), instances.end());
+    instances.push_back(matrix);
 }
 
 void Batching::build(MeshID meshID, MaterialID materialID)
@@ -66,14 +56,8 @@ void Batching::build(MeshID meshID, MaterialID materialID)
     for (int j=0;j<4;j++)
     {
         glEnableVertexAttribArray(6 + j);
-    
         glVertexAttribPointer(6 + j, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4x4), (void*)(uintptr_t)(j * sizeof(Vector4)));
-
         glVertexAttribDivisor(6 + j, 1);
-        /*
-        grr::gVertexArray::SetAttrib(6 + j, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(j * sizeof(Vector4)));
-        grr::gVertexArray::SetAttribDivisor(6 + j, 1);
-        */
     }
 
     glBindVertexArray(0);
@@ -101,40 +85,23 @@ void Batching::render()
 
     if (isInstancing)
     {
-        static size_t lastSize = 0;
-        if (lastSize != instances.size())
-        {
-            std::vector<Matrix4x4> models;
-            for (auto& transformID : instances)
-            {
-                auto transform = ComponentManager::GetComponent<Transform>(transformID);
-
-                models.push_back(transform->getGlobalMatrix());
-            }
-
-            glBindBuffer(GL_ARRAY_BUFFER, pbo);
-            glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(Matrix4x4), models.data(), GL_STATIC_DRAW);
-
-            lastSize = instances.size();
-        }
+        glBindBuffer(GL_ARRAY_BUFFER, pbo);
+        glBufferData(GL_ARRAY_BUFFER, instances.size() * sizeof(Matrix4x4), instances.data(), GL_STATIC_DRAW);
         
         shader->flush();
-
-        glDrawElementsInstanced(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr, lastSize);
+        glDrawElementsInstanced(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr, instances.size());
 
     } else if (!instances.empty())
     {
-        auto transform = ComponentManager::GetComponent<Transform>(instances[0]);
-
-        auto model = transform->getGlobalMatrix();
-
-        shader->setUniform("u_model", &model);
+        shader->setUniform("u_model", &instances[0]);
         shader->flush();
 
         glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
     }
     
     glBindVertexArray(0);
+
+    instances.clear();
 }
 
 

@@ -153,8 +153,6 @@ void GameObjectManager::requestResize()
     size_t lastsize = m_gameObjectPool->length;
     size_t newsize = lastsize + 1024;
 
-    std::cout << "GameObject Resize: " << lastsize << " | " << newsize << std::endl;
-
     // m_gameObjectPool = array_resize(m_gameObjectPool, newsize, sizeof(GameObjectWrapper));
 
     auto newPool = array_create(newsize, sizeof(GameObjectWrapper));

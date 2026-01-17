@@ -171,6 +171,19 @@ bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) {
 	return true;
 }
 
+bool Frustum::IsSphereInFrustum(const Vector3 &center, float radius)
+{
+    for (int i = 0; i < 6; i++) {
+        float distance = m_Frustum[i][A] * center.x +
+                         m_Frustum[i][B] * center.y +
+                         m_Frustum[i][C] * center.z +
+                         m_Frustum[i][D];
+        if (distance < -radius)
+            return false;
+    }
+    return true;
+}
+
 void Frustum::DrawCube(Vector3 points[8]) {
 	/*
 	DebugDraw::AddLine(points[0], points[1], Color::blue);

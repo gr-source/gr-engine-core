@@ -11,6 +11,7 @@
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/batchingmanager.hpp"
 
+#include "gr-base/managers/rendermanager.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include <utility>
 
@@ -19,15 +20,22 @@ MeshRender::MeshRender()
 
 MeshRender::~MeshRender()
 {
+    if (Threadpool::IsMainThread())
+        RenderManager::Remove(entityID);
+    /*
     for (auto& batchID : m_batchCacheIDs)
     {
         auto& batching = BatchingManager::Get(batchID);
         batching.remove(GetGameObject()->GetID<Transform>());
     }
+    */
 }
 
 void MeshRender::Init()
 {
+    if (Threadpool::IsMainThread())
+        RenderManager::Insert(entityID);
+    /*
     if (Threadpool::IsMainThread())
     {
 
@@ -54,6 +62,7 @@ void MeshRender::Init()
 
         });
     }
+    */
 }
 
 bool MeshRender::Serialize(Stream* stream) const
@@ -68,6 +77,7 @@ bool MeshRender::Deserialize(Stream* stream)
 
 void MeshRender::build(const std::vector<MeshID>& meshes)
 {
+    /*
     if (!m_batchCacheIDs.empty())
     {
         std::cout << "Need destroy: MeshRender" << std::endl;
@@ -97,15 +107,6 @@ void MeshRender::build(const std::vector<MeshID>& meshes)
 
         m_batchCacheIDs.push_back(batchID);
     }
-
-    /*
-    m_batchID = BatchingManager::Find(key);
-    if (m_batchID == InvalidBatch)
-        m_batchID = BatchingManager::Create(key, meshes, m_materials);
-
-    auto &batch = BatchingManager::Get(m_batchID);
-
-    batch.insert(GetGameObject()->getTransform());
     */
 }
 

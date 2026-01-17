@@ -1,7 +1,8 @@
 #pragma once
 
-#include "gr-base/ecs/default.hpp"
-#include "gr-base/script/default.hpp"
+#include <gr-math/gmath.hpp>
+
+#include <vector>
 
 #include "default.hpp"
 
@@ -11,9 +12,7 @@ public:
     Batching();
     ~Batching();
 
-    void insert(ComponentID transform);
-
-    void remove(ComponentID transform);
+    void insert(const Matrix4x4& matrix);
 
     void build(MeshID meshID, MaterialID materialID);
 
@@ -27,7 +26,7 @@ private:
     MaterialID materialID;
     uint32_t vertexCount;
 
-    std::vector<ComponentID> instances;
+    std::vector<Matrix4x4> instances;
 };
 
 /*

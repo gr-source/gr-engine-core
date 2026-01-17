@@ -18,9 +18,6 @@ public:
     bool Deserialize(Stream *stream) override;
 
     void build(const std::vector<MeshID> &meshes);
-
-private:
-    std::vector<BatchID> m_batchCacheIDs;
 };
 
 REGISTER_COMPONENT(MeshRender)

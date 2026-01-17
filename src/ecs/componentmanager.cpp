@@ -173,15 +173,11 @@ bool ComponentManager::replace(ComponentInfo* dest, const ComponentInfo* src)
     return false;
 }
 
-#include <iostream>
-
 // TODO: Precisa otimizar
 static void ResizeComponentArray(ComponentInfo* info, size_t count)
 {
     size_t lastsize = info->pool->length;
     size_t newsize = lastsize + count;
-
-    std::cout << "Resize " << info->name << " | " << lastsize << " | " << newsize << std::endl;
 
     auto newPool = array_create(newsize, info->size);
 

@@ -16,7 +16,7 @@ void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end, const Color &
 
 void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end)
 {
-    return GetInstance().drawLine(start, end, Color::white, Color::white);
+    return GetInstance().drawLine(start, end, Color::white, Color::blue);
 }
 
 void DebugDraw::Render(const Camera *camera)
@@ -63,14 +63,13 @@ DebugDraw::LineRender::LineRender() : m_vbo(grr::gVertexArray::CreateBuffer(Buff
 {
     ShaderParams params;
     params.base = gfile::get_data_directory("/assets/shader/line.glsl");
-    params.flags = ShaderOptimize_dynamic;
-    params.type = ShaderType::UNKNOWN;
+    params.flags = 0;
+    params.type = ShaderType::LINE;
     params.name = "debug_line";
 
     AssetsManager::LoadShaderAsync(params, [&](grr::gShader *shader){
                 m_shader = shader;
             });
-
 
     m_vertexarray->bind();
 
