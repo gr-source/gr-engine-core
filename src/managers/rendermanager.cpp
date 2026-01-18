@@ -81,50 +81,43 @@ void RenderManager::insert(GameObjectID gameObjectID)
     if (materials.size() != meshes.size())
         return Console::LogError("[ MeshRender ] Num meshes/materials incompative.");
 
-    if (lodComponent != nullptr)
-    {
-        // auto lods = lodComponent->levels;
-
-        // if (lods.size() != meshes.size())
-            // return Console::LogError("[ RenderManager ] Num nodes not compatible with meshes.");
-    }
-
     auto transform = gameObject->getTransform();
 
     if (lodComponent != nullptr)
     {
         size_t length = meshes.size();
-        for (size_t i=0;i<length;i++)
+        auto lodMeshes = lodComponent->meshesLOD;
+
+        array* batchPerLOD = array_create(length, sizeof(array*));
+        array** vector = reinterpret_cast<array**>(batchPerLOD->vector);
+
+        for (size_t lod = 0; lod < lodMeshes.size(); lod++)
         {
-            MaterialID materialID = materials[i];
-            auto meshLOD = lodComponent->meshesLOD[i];
+            auto& meshes = lodMeshes[lod].meshes;
+            size_t meshCount = meshes.size();
 
-            auto gg = meshLOD.levels;
+            vector[lod] = array_create(meshCount, sizeof(BatchID));
 
-            array* levels = array_create(gg.size(), sizeof(BatchID));
-            BatchID* vector = (BatchID*)levels->vector;
+            BatchID* vectorn = reinterpret_cast<BatchID*>(vector[lod]->vector);
 
-            for (size_t j=0;j<gg.size();j++)
-            {
-                BatchID batchID = GetBatchID(gg[j].meshID, materialID);
-
-                vector[j] = batchID;
-            }
-
-            OctreeManager::InsertGlobal({gameObjectID, ID_INVALID, transform->getPosition(), levels});
+            for (size_t m = 0; m < meshCount; m++)
+                vectorn[m] = GetBatchID(meshes[m], materials[m]);
         }
+
+        OctreeManager::InsertGlobal({gameObjectID, nullptr, transform->getPosition(), batchPerLOD});
     } else
     {
         size_t length = meshes.size();
-        for (size_t i=0;i<length;i++)
-        {
-            BatchID batchID = GetBatchID(meshes[i], materials[i]);
 
-            OctreeManager::InsertGlobal({gameObjectID, batchID, transform->getPosition()});
-        }
+        array* batchIDS = array_create(length, sizeof(BatchID));
+        BatchID* vector = reinterpret_cast<BatchID*>(batchIDS->vector);
+
+        for (size_t i=0;i<length;i++)
+            vector[i] = GetBatchID(meshes[i], materials[i]);
+
+        OctreeManager::InsertGlobal({gameObjectID, batchIDS, transform->getPosition(), nullptr});
     }
 }
-
 
 BatchID RenderManager::GetBatchID(MeshID meshID, MaterialID materialID) const
 {
@@ -140,6 +133,17 @@ BatchID RenderManager::GetBatchID(MeshID meshID, MaterialID materialID) const
 
 void RenderManager::remove(GameObjectID id)
 {}
+
+
+size_t SelectLOD(float distance, const std::vector<LODMesh>& lods)
+{
+    for (size_t i = 0; i < lods.size(); i++)
+    {
+        if (distance < lods[i].minDistance)
+            return i;
+    }
+    return lods.size() - 1;
+}
 
 void RenderManager::preRender(const Camera *camera)
 {
@@ -171,7 +175,12 @@ void RenderManager::preRender(const Camera *camera)
         Vector3 max = position + Vector3{radius, radius, radius};
 
         if (!Frustum::IsCubeInFrustumAABB(min, max))
-            return false;
+            return true;
+
+        auto camera = SceneManager::GetCurrent()->getCamera();
+        auto cameraTransform = camera->GetGameObject()->getTransform();
+
+        auto cameraPosition = cameraTransform->getPosition();
 
         for (int i=0;i<node->count;i++)
         {
@@ -181,23 +190,64 @@ void RenderManager::preRender(const Camera *camera)
             auto lodComponent = gameObject->getComponent<LODComponent>();
             auto transform = gameObject->getTransform();
 
+            auto objectPosition = transform->getPosition();
+
             auto model = transform->getGlobalMatrix();
 
-            auto lods = data.levels;
-            if (lodComponent == nullptr)
+            if (data.batchIDs != nullptr)
             {
-                auto& batching = BatchingManager::Get(data.batchID);
-                batching.insert(model);
+                array* arr = data.batchIDs;
+
+                BatchID* vector = reinterpret_cast<BatchID*>(arr->vector);
+                for (BatchID id=0;id<arr->length;id++)
+                {
+                    auto& batching = BatchingManager::Get(vector[id]);
+                    batching.insert(model);
+                }
             } else
             {
-                auto camera = SceneManager::GetCurrent()->getCamera();
-                auto t = camera->GetGameObject()->getTransform();
+                float distance = Math::distance(cameraPosition, objectPosition);
 
-                float distance = Math::distance(t->getPosition(), transform->getPosition());
+                size_t lodID = SelectLOD(distance, lodComponent->meshesLOD);
 
+                array* batchArray = data.batchPerLOD;
+                array** vector = reinterpret_cast<array**>(batchArray->vector);
+
+                BatchID* nvector = reinterpret_cast<BatchID*>(vector[lodID]->vector);
+
+                for (size_t m = 0; m < batchArray->length; m++)
+                {
+                    auto& batching = BatchingManager::Get(nvector[m]);
+                    batching.insert(model);
+                }
+                /*
+                auto lods = data.levels;
+
+                BatchID* vector = reinterpret_cast<BatchID*>(lods->vector);
+
+                auto lodMeshes = lodComponent->meshesLOD;
+
+                size_t length = lodMeshes.size();
+                for (size_t j=0;j<length;j++)
+                {
+                    if (distance < lodMeshes[j].minDistance)
+                    {
+                        auto meshes = lodMeshes[j].meshes;
+                        size_t numMeshes = meshes.size();
+
+                        for (size_t k=0;k<numMeshes;k++)
+                        {
+                            auto& batching = BatchingManager::Get(vector[k]);
+                            batching.insert(model);
+                        }
+                        break;
+                    }
+                }
+                */
+
+                /*
                 for (auto& mesh : lodComponent->meshesLOD)
                 {
-                    BatchID* vector = (BatchID*)lods->vector;
                     for (size_t j=0;j<lods->length;j++)
                     {
                         if (distance < mesh.levels[j].minDistance)
@@ -208,9 +258,10 @@ void RenderManager::preRender(const Camera *camera)
                         }
                     }
                 }
+                */
             }
         }
-        return true;
+        return false;
     });
 }
 

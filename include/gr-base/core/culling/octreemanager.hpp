@@ -24,10 +24,10 @@ constexpr NodeID InvalidNode = static_cast<NodeID>(-1);
 typedef struct NodeData
 {
     GameObjectID gameObjectID;
-    BatchID batchID;
+    array* batchIDs;
     Vector3 position;
 
-    array* levels;
+    array* batchPerLOD;
 } NodeData;
 
 typedef struct OctreeNode

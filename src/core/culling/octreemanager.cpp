@@ -199,7 +199,7 @@ bool OctreeManager::remove(NodeID id, Transform *transform)
 void OctreeManager::for_each(NodeID id, std::function<bool (OctreeNode *)> &func)
 {
     OctreeNode& node = m_nodes[id];
-    if (!func(&node))
+    if (func(&node))
         return;
 
     for (NodeID i=node.first;i!=InvalidNode;i=m_nodes[i].next)

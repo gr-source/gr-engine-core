@@ -4,15 +4,10 @@
 #include "gr-base/ecs/behavior.hpp"
 #include <vector>
 
-typedef struct LODLevel
-{
-    MeshID meshID;
-    float minDistance;
-} LODLevel;
-
 typedef struct LODMesh
 {
-    std::vector<LODLevel> levels;
+    std::vector<MeshID> meshes;
+    float minDistance;
 } LODMesh;
 
 class LODComponent : public BehaviorImpl<LODComponent>

@@ -11,21 +11,20 @@ bool LODComponent::Serialize(Stream* stream) const
             return false;
     }
 
-    for (auto &meshLOD : meshesLOD)
+    for (auto &lod : meshesLOD)
     {
-        size_t count = meshLOD.levels.size();
+        if (!stream->write(lod.minDistance))
+            return false;
+
+        size_t count = lod.meshes.size();
         if (!stream->write(count))
             return false;
 
-        for (auto& level : meshLOD.levels)
+        for (auto& meshID : lod.meshes)
         {
-            auto name = AssetsManager::GetMeshName(level.meshID);
+            auto name = AssetsManager::GetMeshName(meshID);
             if (!stream->write(name))
                 return false;
-
-            if (!stream->write(level.minDistance))
-                return false;
-
         }
     }
     return true;
@@ -33,13 +32,16 @@ bool LODComponent::Serialize(Stream* stream) const
 
 bool LODComponent::Deserialize(Stream* stream)
 {
-    size_t meshescout;
-    if (!stream->read(meshescout))
+    size_t lodcount;
+    if (!stream->read(lodcount))
         return false;
 
-    for (size_t i=0;i<meshescout;i++)
+    for (size_t i=0;i<lodcount;i++)
     {
-        auto& meshLOD = meshesLOD.emplace_back();
+        auto& lod = meshesLOD.emplace_back();
+
+        if (!stream->read(lod.minDistance))
+            return false;
 
         size_t levelcount;
         if (!stream->read(levelcount))
@@ -51,15 +53,9 @@ bool LODComponent::Deserialize(Stream* stream)
             if (!stream->read(name))
                 return false;
 
-            float distance;
-            if (!stream->read(distance))
-                return false;
-
             auto meshID = AssetsManager::FindMesh(name);
-            if (meshID != nill)
-                meshLOD.levels.push_back(LODLevel{meshID, distance});
-
-            // meshLOD.levels.push_back("");
+            if (meshID != ID_INVALID)
+                lod.meshes.push_back(meshID);
         }
     }
     return true;
