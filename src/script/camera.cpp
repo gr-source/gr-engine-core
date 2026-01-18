@@ -6,8 +6,6 @@
 
 #include "gr-base/script/transform.hpp"
 
-#include "gr-base/core/display.hpp"
-
 #include "gr-base/core/file/stream.hpp"
 
 #include "gr-base/ecs/entity.hpp"
@@ -39,16 +37,7 @@ Camera *Camera::Current() {
 }
 
 Camera::Camera() : m_fov(45.0f), m_aspect(1.0f), m_farPlane(500.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(512, 512), background(Color::black)
-{
-    auto rect = Display::GetDisplayRect();
-    
-    m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
-
-    updateProjection();
-
-    if (Threadpool::IsMainThread())
-        rendertarget.init();
-}
+{}
 
 Camera::~Camera()
 {
@@ -63,20 +52,13 @@ Camera::~Camera()
         rendertarget.shutdown();
 }
 
-void Camera::Start()
+void Camera::Init()
 {
-    if (s_current == nullptr)
-        s_current = this;
-
-    addInGlobalCam();
-
-    auto rect = Display::GetDisplayRect();
-    
-    m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
+    m_aspect = static_cast<float>(m_rect.w) / static_cast<float>(m_rect.h);
 
     updateProjection();
 
-    if (Threadpool::IsMainThread() && !rendertarget.is_valid())
+    if (Threadpool::IsMainThread())
         rendertarget.init();
 }
 
@@ -84,13 +66,10 @@ void Camera::Enable()
 {
     addInGlobalCam();
 
-    if (!s_current) {
+    if (!s_current)
         s_current = this;
-    }
 
-    auto rect = Display::GetDisplayRect();
-
-    m_aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
+    m_aspect = static_cast<float>(m_rect.w) / static_cast<float>(m_rect.h);
 
     updateProjection();
 }
@@ -183,28 +162,15 @@ Matrix4x4 Camera::getViewmatrix() const
     return Math::lookAt(transform->getPosition(), transform->getPosition() + transform->getForward(), transform->getUp());
 }
 
-void Camera::setAspectRatio(float aspect)
+void Camera::setActive(bool value)
 {
-    if (aspect <= 0.0f) {
-        return;
-    }
-    m_aspect = aspect;
-
-    updateProjection();
-}
-
-float Camera::get_aspect_ratio() const
-{
-    return m_aspect;
-}
-
-void Camera::setActive(bool value) {
     if (value) {
         s_current = this;
         return;
     }
 
-    if (s_current == this) {
+    if (s_current == this)
+    {
         s_current = nullptr;
     }
 }
@@ -221,15 +187,31 @@ void Camera::lookIt(const Vector3 &direction)
     transform->setLocalRotation(Math::normalize(Math::lookRotation(direction, Vector3::up)));
 }
 
-void Camera::setRect(const Rect &rect) {
-    m_rect = rect;
+void Camera::setRect(const Rect &rect)
+{
+    float aspect = static_cast<float>(rect.w) / static_cast<float>(rect.h);
+    if (aspect <= 0.0f)
+        return;
+
+    if (Threadpool::IsMainThread())
+        rendertarget.resize(rect.w, rect.h);
+
+    m_aspect = aspect;
+
+    updateProjection();
 }
 
 Rect Camera::getRect() const {
     return m_rect;
 }
 
-void Camera::updateProjection() {
+RenderTarget* Camera::getRenderTarget()
+{
+    return &rendertarget;
+}
+
+void Camera::updateProjection()
+{
     m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_nearPlane, m_farPlane);
 }
 

@@ -42,7 +42,7 @@ typedef struct OctreeNode
 
     NodeData data[MAX_OBJECT_IN_NODE];
 
-    std::size_t count;
+    uint8_t count;
 
     Vector3 position;
 
@@ -52,11 +52,15 @@ typedef struct OctreeNode
 class OctreeManager
 {
 public:
-    static void InsertGlobal(NodeData data);
+    static void Initialize();
+
+    static void Shutdown();
+
+    static NodeID InsertGlobal(NodeData data);
 
     static bool Insert(NodeID id, NodeData data);
 
-    static bool Remove(NodeID id, Transform *transform);
+    static bool Remove(NodeID id, GameObjectID handle);
 
     static void Foreach(std::function<bool (OctreeNode *)> func);
 
@@ -65,34 +69,30 @@ public:
     static void Render();
 
 private:
-    static OctreeManager &GetInstance();
+    static OctreeManager* s_OctreeManager;
 
     OctreeManager();
     ~OctreeManager();
 
-    OctreeNode *m_nodes;
+    array* m_nodes;
 
     std::size_t m_count;
-
-    std::size_t m_size;
 
     NodeID m_root;
 
     NodeID m_freeID;
 
-    void insertGlobal(NodeData data);
+    NodeID insertGlobal(NodeData data);
 
     void expandRoot(const Vector3& point);
 
-    bool insert(NodeID id, NodeData data);
+    NodeID insert(NodeID id, NodeData data);
 
-    bool remove(NodeID id, Transform *transform);
+    bool remove(NodeID id, GameObjectID handle, const Vector3& position);
 
     void for_each(NodeID id, std::function<bool (OctreeNode *)> &func);
 
-    bool check(NodeID id);
-
-    bool tryCollapse(NodeID id);
+    void tryCollapse(NodeID id);
 
     void deallocate(NodeID id);
 

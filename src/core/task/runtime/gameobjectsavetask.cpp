@@ -12,6 +12,7 @@
 #include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/file/file.hpp"
 
+#include "gr-base/script/LODComponent.hpp"
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/meshFilter.hpp"
@@ -390,6 +391,17 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
     {
         for (auto &meshID : meshFilter->getMesh())
             m_meshmap.emplace(meshID);
+    }
+
+
+    auto lodComponent = gameObject->getComponent<LODComponent>();
+    if (lodComponent != nullptr)
+    {
+        for (auto &lod : lodComponent->meshesLOD)
+        {
+            for (auto& meshID : lod.meshes)
+                m_meshmap.emplace(meshID);
+        }
     }
 
     if (gameObject->getComponent<MeshRender>() || gameObject->getComponent<SkinnedMeshRender>())

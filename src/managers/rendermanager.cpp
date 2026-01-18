@@ -3,7 +3,8 @@
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/culling/frustum.hpp"
 
-#include "gr-base/core/culling/octreemanager.hpp"
+#include "gr-base/managers/octreemanager.hpp"
+
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/scene.hpp"
@@ -26,6 +27,7 @@ void RenderManager::Initialize()
     if (s_RenderManager == nullptr)
         s_RenderManager = new RenderManager();
 
+    OctreeManager::Initialize();
     BatchingManager::Initialize();
 }
 
@@ -36,6 +38,7 @@ void RenderManager::Shutdown()
     s_RenderManager = nullptr;
 
     BatchingManager::Shutdown();
+    OctreeManager::Shutdown();
 }
 
 void RenderManager::Insert(GameObjectID id)
@@ -66,6 +69,9 @@ void RenderManager::PosRender()
 // private
 void RenderManager::insert(GameObjectID gameObjectID)
 {
+    if (m_objectInOctree.find(gameObjectID) != m_objectInOctree.end())
+        return;
+
     auto gameObject = GameObject::Get(gameObjectID);
 
     auto lodComponent = gameObject->getComponent<LODComponent>();
@@ -104,7 +110,7 @@ void RenderManager::insert(GameObjectID gameObjectID)
                 vectorn[m] = GetBatchID(meshes[m], materials[m]);
         }
 
-        OctreeManager::InsertGlobal({gameObjectID, nullptr, transform->getPosition(), batchPerLOD});
+        m_objectInOctree[gameObjectID] = OctreeManager::InsertGlobal({gameObjectID, nullptr, transform->getPosition(), batchPerLOD});
     } else
     {
         size_t length = meshes.size();
@@ -115,7 +121,7 @@ void RenderManager::insert(GameObjectID gameObjectID)
         for (size_t i=0;i<length;i++)
             vector[i] = GetBatchID(meshes[i], materials[i]);
 
-        OctreeManager::InsertGlobal({gameObjectID, batchIDS, transform->getPosition(), nullptr});
+        m_objectInOctree[gameObjectID] = OctreeManager::InsertGlobal({gameObjectID, batchIDS, transform->getPosition(), nullptr});
     }
 }
 
@@ -132,8 +138,15 @@ BatchID RenderManager::GetBatchID(MeshID meshID, MaterialID materialID) const
 }
 
 void RenderManager::remove(GameObjectID id)
-{}
+{
+    auto it = m_objectInOctree.find(id);
+    if (it == m_objectInOctree.end())
+        return;
 
+    OctreeManager::Remove(it->second, id);
+
+    m_objectInOctree.erase(it);
+}
 
 size_t SelectLOD(float distance, const std::vector<LODMesh>& lods)
 {
@@ -220,45 +233,6 @@ void RenderManager::preRender(const Camera *camera)
                     auto& batching = BatchingManager::Get(nvector[m]);
                     batching.insert(model);
                 }
-                /*
-                auto lods = data.levels;
-
-                BatchID* vector = reinterpret_cast<BatchID*>(lods->vector);
-
-                auto lodMeshes = lodComponent->meshesLOD;
-
-                size_t length = lodMeshes.size();
-                for (size_t j=0;j<length;j++)
-                {
-                    if (distance < lodMeshes[j].minDistance)
-                    {
-                        auto meshes = lodMeshes[j].meshes;
-                        size_t numMeshes = meshes.size();
-
-                        for (size_t k=0;k<numMeshes;k++)
-                        {
-                            auto& batching = BatchingManager::Get(vector[k]);
-                            batching.insert(model);
-                        }
-                        break;
-                    }
-                }
-                */
-
-                /*
-                for (auto& mesh : lodComponent->meshesLOD)
-                {
-                    for (size_t j=0;j<lods->length;j++)
-                    {
-                        if (distance < mesh.levels[j].minDistance)
-                        {
-                            auto& batching = BatchingManager::Get(vector[j]);
-                            batching.insert(model);
-                            break;
-                        }
-                    }
-                }
-                */
             }
         }
         return false;

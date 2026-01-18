@@ -65,7 +65,6 @@ set(physics
 )
 
 set(culling
-    src/core/culling/octreemanager.cpp
     src/core/culling/quadtree.cpp
     src/core/culling/frustum.cpp
     src/core/culling/octree.cpp
@@ -105,6 +104,7 @@ set(managers_src
     src/managers/gameobjectmanager.cpp
     src/managers/batchingmanager.cpp
     src/managers/rendermanager.cpp
+    src/managers/octreemanager.cpp
     src/managers/assetsManager.cpp
     src/managers/sceneManager.cpp
     src/managers/meshmanager.cpp

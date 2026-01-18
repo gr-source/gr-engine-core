@@ -2,9 +2,11 @@
 
 #include "gr-base/core/default.hpp"
 #include "gr-base/core/geometry/default.hpp"
+#include "gr-base/managers/octreemanager.hpp"
 #include "gr-base/script/default.hpp"
 
 #include <gr-render/gCommon.h>
+#include <unordered_map>
 
 class RenderManager
 {
@@ -25,6 +27,8 @@ public:
 
 private:
     static RenderManager* s_RenderManager;
+
+    std::unordered_map<GameObjectID, NodeID> m_objectInOctree;
 
     void insert(GameObjectID id);
 
