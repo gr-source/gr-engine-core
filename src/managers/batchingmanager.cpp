@@ -58,11 +58,8 @@ BatchingManager::~BatchingManager()
     array_free(m_poolBatches);
 }
 
-BatchID BatchingManager::create(size_t key, MeshID mesheID, MaterialID materialID)
+BatchID BatchingManager::create(size_t key, MeshID meshID, MaterialID materialID)
 {
-    if (m_batchCache.find(key) != m_batchCache.end())
-        return InvalidBatch;
-
     BatchID id = m_freeID;
     if (id == BATCHID_INVALID)
     {
@@ -73,10 +70,14 @@ BatchID BatchingManager::create(size_t key, MeshID mesheID, MaterialID materialI
     m_batchCache[key] = id;
 
     BatchWrapper* wrapper = (BatchWrapper*)m_poolBatches->vector;
+    m_freeID = wrapper[id].next;
+
     Batching* batch = &wrapper[id].batch;
 
     new (batch) Batching();
-    batch->build(mesheID, materialID);
+    batch->build(meshID, materialID);
+
+    std::cout << "[GPU] Batch criado com Mesh: " << key << " | " << meshID << " | " << materialID << std::endl;
 
     m_count++;
 

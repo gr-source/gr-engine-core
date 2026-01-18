@@ -88,11 +88,13 @@ set(task
 
     src/core/task/runtime/shaderloadtask.cpp
 
+    src/core/task/runtime/meshLoadTask.cpp
+    src/core/task/runtime/meshSaveTask.cpp
+
     src/core/task/scenetaskmanager.cpp
     src/core/task/materialmanager.cpp
     src/core/task/texturemanager.cpp
     src/core/task/shadermanager.cpp
-    src/core/task/meshmanager.cpp
 )
 
 set(broadphase_src
@@ -105,6 +107,7 @@ set(managers_src
     src/managers/rendermanager.cpp
     src/managers/assetsManager.cpp
     src/managers/sceneManager.cpp
+    src/managers/meshmanager.cpp
 )
 
 set(ECS_SRC

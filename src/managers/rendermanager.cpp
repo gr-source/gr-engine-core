@@ -5,14 +5,19 @@
 
 #include "gr-base/core/culling/octreemanager.hpp"
 #include "gr-base/core/gameObject.hpp"
+#include "gr-base/core/geometry/default.hpp"
+#include "gr-base/core/scene.hpp"
 #include "gr-base/managers/batchingmanager.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
+#include "gr-base/managers/sceneManager.hpp"
+#include "gr-base/script/LODComponent.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 #include "gr-base/script/light.hpp"
+#include <gr-math/gmath.hpp>
 
 RenderManager* RenderManager::s_RenderManager = nullptr;
 
@@ -63,6 +68,7 @@ void RenderManager::insert(GameObjectID gameObjectID)
 {
     auto gameObject = GameObject::Get(gameObjectID);
 
+    auto lodComponent = gameObject->getComponent<LODComponent>();
     auto meshFilter = gameObject->getComponent<MeshFilter>();
     auto meshRender = gameObject->getComponent<MeshRender>();
 
@@ -75,25 +81,61 @@ void RenderManager::insert(GameObjectID gameObjectID)
     if (materials.size() != meshes.size())
         return Console::LogError("[ MeshRender ] Num meshes/materials incompative.");
 
+    if (lodComponent != nullptr)
+    {
+        // auto lods = lodComponent->levels;
+
+        // if (lods.size() != meshes.size())
+            // return Console::LogError("[ RenderManager ] Num nodes not compatible with meshes.");
+    }
+
     auto transform = gameObject->getTransform();
 
-    size_t key = 0;
-
-    size_t length = meshes.size();
-    for (size_t i=0;i<length;i++)
+    if (lodComponent != nullptr)
     {
-        MaterialID materialID = materials[i];
-        MeshID meshID = meshes[i];
+        size_t length = meshes.size();
+        for (size_t i=0;i<length;i++)
+        {
+            MaterialID materialID = materials[i];
+            auto meshLOD = lodComponent->meshesLOD[i];
 
-        key ^= std::hash<size_t>{}(meshID) + 0x9e3779b9 + (key << 6) + (key >> 2);
-        key ^= std::hash<size_t>{}(materialID) + 0x9e3779b9 + (key << 6) + (key >> 2);
+            auto gg = meshLOD.levels;
 
-        auto batchID = BatchingManager::Find(key);
-        if (batchID == InvalidBatch)
-            batchID = BatchingManager::Create(key, meshID, materialID);
+            array* levels = array_create(gg.size(), sizeof(BatchID));
+            BatchID* vector = (BatchID*)levels->vector;
 
-        OctreeManager::InsertGlobal({gameObjectID, batchID, transform->getPosition()});
+            for (size_t j=0;j<gg.size();j++)
+            {
+                BatchID batchID = GetBatchID(gg[j].meshID, materialID);
+
+                vector[j] = batchID;
+            }
+
+            OctreeManager::InsertGlobal({gameObjectID, ID_INVALID, transform->getPosition(), levels});
+        }
+    } else
+    {
+        size_t length = meshes.size();
+        for (size_t i=0;i<length;i++)
+        {
+            BatchID batchID = GetBatchID(meshes[i], materials[i]);
+
+            OctreeManager::InsertGlobal({gameObjectID, batchID, transform->getPosition()});
+        }
     }
+}
+
+
+BatchID RenderManager::GetBatchID(MeshID meshID, MaterialID materialID) const
+{
+    size_t key = 0;
+    key ^= std::hash<size_t>{}(meshID) + 0x9e3779b9 + (key << 6) + (key >> 2);
+    key ^= std::hash<size_t>{}(materialID) + 0x9e3779b9 + (key << 6) + (key >> 2);
+
+    BatchID batchID = BatchingManager::Find(key);
+    if (batchID == InvalidBatch)
+        batchID = BatchingManager::Create(key, meshID, materialID);
+    return batchID;
 }
 
 void RenderManager::remove(GameObjectID id)
@@ -109,9 +151,7 @@ void RenderManager::preRender(const Camera *camera)
     for (auto &shader : list)
     {
         if (!shader || !shader->isValid())
-        {
             continue;
-        }
 
         shader->setUniform("u_projection", &projection);
         shader->setUniform("u_view",       &view);
@@ -138,10 +178,37 @@ void RenderManager::preRender(const Camera *camera)
             auto& data = node->data[i];
 
             auto gameObject = GameObject::Get(data.gameObjectID);
+            auto lodComponent = gameObject->getComponent<LODComponent>();
             auto transform = gameObject->getTransform();
 
-            auto& batching = BatchingManager::Get(data.batchID);
-            batching.insert(transform->getGlobalMatrix());
+            auto model = transform->getGlobalMatrix();
+
+            auto lods = data.levels;
+            if (lodComponent == nullptr)
+            {
+                auto& batching = BatchingManager::Get(data.batchID);
+                batching.insert(model);
+            } else
+            {
+                auto camera = SceneManager::GetCurrent()->getCamera();
+                auto t = camera->GetGameObject()->getTransform();
+
+                float distance = Math::distance(t->getPosition(), transform->getPosition());
+
+                for (auto& mesh : lodComponent->meshesLOD)
+                {
+                    BatchID* vector = (BatchID*)lods->vector;
+                    for (size_t j=0;j<lods->length;j++)
+                    {
+                        if (distance < mesh.levels[j].minDistance)
+                        {
+                            auto& batching = BatchingManager::Get(vector[j]);
+                            batching.insert(model);
+                            break;
+                        }
+                    }
+                }
+            }
         }
         return true;
     });

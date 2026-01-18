@@ -1,5 +1,6 @@
 #include "gr-base/core/task/runtime/sceneloadtask.hpp"
 
+#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 
@@ -262,12 +263,12 @@ int SceneLoadTask::read_mesh(Stream *stream)
         auto next = stream->tellg() + static_cast<std::streampos>(buffsize);
 
         auto meshID = AssetsManager::FindMesh(name);
-        if (meshID == nill)
+        if (meshID == ID_INVALID)
         {
             meshID = AssetsManager::CreateMesh(name);
 
-            auto &mesh = AssetsManager::GetMesh(meshID);
-            mesh.deserialize(stream);
+            Mesh* mesh = AssetsManager::GetMesh(meshID);
+            mesh->deserialize(stream);
         } else
         {
             stream->seekg(next, std::ios_base::beg);

@@ -24,8 +24,8 @@ void Batching::build(MeshID meshID, MaterialID materialID)
 {
     this->materialID = materialID;
 
-    const Mesh& data = AssetsManager::GetMesh(meshID);
-    this->vertexCount = data.getIndices().size();
+    Mesh* data = AssetsManager::GetMesh(meshID);
+    this->vertexCount = data->getIndices().size();
 
     if (vao == 0)
     {
@@ -38,10 +38,10 @@ void Batching::build(MeshID meshID, MaterialID materialID)
     glBindVertexArray(vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, data.getVertices().size() * sizeof(Vertex3D), data.getVertices().data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, data->getVertices().size() * sizeof(Vertex3D), data->getVertices().data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.getIndices().size() * sizeof(uint32_t), data.getIndices().data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, data->getIndices().size() * sizeof(uint32_t), data->getIndices().data(), GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), (void*)offsetof(Vertex3D, position));
@@ -60,9 +60,7 @@ void Batching::build(MeshID meshID, MaterialID materialID)
         glVertexAttribDivisor(6 + j, 1);
     }
 
-    glBindVertexArray(0);
-    
-    std::cout << "[GPU] Batch criado com Mesh: " << meshID << " e Material: " << materialID << std::endl;
+    glBindVertexArray(0);    
 }
 
 void Batching::render()

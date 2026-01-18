@@ -114,10 +114,10 @@ bool Transform::hasParent() const {
     return m_parent != nullptr;
 }
 
-void Transform::setParent(Transform *transform, bool remove) {
-    if (remove && m_parent != nullptr) {
+void Transform::setParent(Transform *transform, bool remove)
+{
+    if (remove && m_parent != nullptr)
         m_parent->m_children.erase(std::remove(m_parent->m_children.begin(), m_parent->m_children.end(), this), m_parent->m_children.end());
-    }
     
     if (transform != nullptr)
         transform->addChildren(this);

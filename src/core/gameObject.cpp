@@ -81,8 +81,9 @@ void GameObject::Copy(GameObjectID other)
         {
             Behavior* behavior = getComponent(hash);
             if (behavior == nullptr)
+            {
                 behavior = addComponent(hash, gameObject->GetID(hash));
-            else
+            } else if (hash != GetHashByType<Transform>(nullptr))
             {
                 ComponentManager::Reinstance(hash, behavior, gameObject->getComponent(hash));
                 behavior->entityID = getCacheID();

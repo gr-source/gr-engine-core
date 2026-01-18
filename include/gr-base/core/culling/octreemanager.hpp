@@ -10,6 +10,11 @@
 
 #include <functional>
 
+extern "C"
+{
+#include "gr-base/externals/array.h"
+}
+
 using NodeID = std::size_t;
 
 constexpr NodeID InvalidNode = static_cast<NodeID>(-1);
@@ -20,8 +25,9 @@ typedef struct NodeData
 {
     GameObjectID gameObjectID;
     BatchID batchID;
-
     Vector3 position;
+
+    array* levels;
 } NodeData;
 
 typedef struct OctreeNode

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gr-base/core/default.hpp"
+#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/script/default.hpp"
 
 #include <gr-render/gCommon.h>
@@ -26,6 +27,8 @@ private:
     static RenderManager* s_RenderManager;
 
     void insert(GameObjectID id);
+
+    BatchID GetBatchID(MeshID meshID, MaterialID materialID) const;
 
     void remove(GameObjectID id);
 

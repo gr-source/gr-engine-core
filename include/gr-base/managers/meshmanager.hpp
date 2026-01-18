@@ -5,39 +5,46 @@
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
-#include <stack>
+#include <atomic>
+
+extern "C"
+{
+#include "gr-base/externals/array.h"
+}
 
 class MeshManager
 {
 public:
     MeshManager();
 
-    MeshID create(const std::string &name);
+    MeshID allocate(const std::string &name);
 
-    void remove(MeshID id);
+    void deallocate(MeshID id);
 
-    Mesh &get(MeshID id);
+    Mesh *get(MeshID id);
 
     MeshID find(const std::string &name);
 
     const char *getname(MeshID id);
 
-    std::size_t getcount();
+    size_t getCount() const;
 
 private:
     std::unordered_map<MeshID, std::string> m_meshnamemap;
 
     std::unordered_map<std::string, MeshID> m_meshidmap;
 
-    std::stack<MeshID> m_freeIDs;
+    array* m_pool;
 
-    std::vector<Mesh> m_meshes;
+    MeshID m_freeID;
 
-    std::size_t m_count;
+    std::atomic<MeshID> m_count;
 
     std::mutex m_mutex;
 
-    void addfree(MeshID id);
+    void realloc(size_t count);
+
+    void addFreeID(MeshID first);
 };
 
 

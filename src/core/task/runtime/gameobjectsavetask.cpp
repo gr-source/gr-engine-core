@@ -312,16 +312,16 @@ int GameObjectSaveTask::write_mesh(Stream *stream)
         if (!stream->write(name))
             return 2;
 
-        auto &mesh = AssetsManager::GetMesh(meshID);
+        Mesh* mesh = AssetsManager::GetMesh(meshID);
 
         Stream temp;
-        mesh.serialize(&temp);
+        mesh->serialize(&temp);
 
         std::size_t length = temp.getDataSize();
         if (!stream->write(length))
             return 3;
 
-        mesh.serialize(stream);
+        mesh->serialize(stream);
     }
     return 0;
 }

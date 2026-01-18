@@ -34,7 +34,7 @@ MeshRender::~MeshRender()
 void MeshRender::Init()
 {
     if (Threadpool::IsMainThread())
-        RenderManager::Insert(entityID);
+        MainThreadDispatcher::Add(&RenderManager::Insert, entityID);
     /*
     if (Threadpool::IsMainThread())
     {

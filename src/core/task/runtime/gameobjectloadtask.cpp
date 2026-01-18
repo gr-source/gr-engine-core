@@ -273,12 +273,12 @@ int GameObjectLoadTask::read_mesh(Stream *stream)
         auto next = stream->tellg() + static_cast<std::streampos>(buffsize);
 
         auto meshID = AssetsManager::FindMesh(name);
-        if (meshID == nill)
+        if (meshID == ID_INVALID)
         {
             meshID = AssetsManager::CreateMesh(name);
 
-            auto &mesh = AssetsManager::GetMesh(meshID);
-            mesh.deserialize(stream);
+            Mesh* mesh = AssetsManager::GetMesh(meshID);
+            mesh->deserialize(stream);
         } else
         {
             stream->seekg(next, std::ios_base::beg);

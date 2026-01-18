@@ -10,7 +10,6 @@
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include "gr-base/core/task/materialmanager.hpp"
-#include "gr-base/core/task/meshmanager.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/task/texturemanager.hpp"
 
@@ -19,6 +18,7 @@
 #include "gr-base/core/task/animationmanager.hpp"
 #include "gr-base/core/task/shadermanager.hpp"
 
+#include "gr-base/managers/meshmanager.hpp"
 
 class AssetsManager
 {
@@ -69,7 +69,7 @@ public:
     // ********** Mesh ********** //
     static MeshID CreateMesh(const std::string &name);
 
-    static Mesh &GetMesh(MeshID id);
+    static Mesh *GetMesh(MeshID id);
 
     static MeshID FindMesh(const std::string &name);
 
@@ -84,7 +84,7 @@ public:
 
     static usize GetTextureCount();
 
-    static std::size_t GetMeshCount();
+    static size_t GetMeshCount();
 
     static void SetGameObjectList(const std::string &path, std::function<void(GameObjectID)> func);
 
