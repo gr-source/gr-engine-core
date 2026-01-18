@@ -41,7 +41,6 @@ set(core
     src/core/status.cpp
     src/core/skybox.cpp
     src/core/scene.cpp
-    src/core/clock.cpp
     src/core/input.cpp
 )
 

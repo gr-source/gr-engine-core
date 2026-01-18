@@ -94,6 +94,8 @@ void RenderTarget::unbind()
 
 void RenderTarget::resize(std::uint32_t w, std::uint32_t h)
 {
+    if (width == w && height == h)
+        return;
     width = w;
     height = h;
 
