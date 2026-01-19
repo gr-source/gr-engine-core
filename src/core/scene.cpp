@@ -107,19 +107,12 @@ void Scene::stop()
 
 void Scene::create_main_camra()
 {
-    auto gameObjectID = GameObject::Create("MainCamera_");
+    auto gameObjectID = GameObject::Create("MainCamera");
 
     auto gameObject = GameObjectManager::Get(gameObjectID);
     gameObject->addComponent<Camera>();
 
-    auto cloneID = GameObject::Instantiate(gameObject);
-    if (cloneID != GID_INVALID)
-    {
-        auto clone = GameObject::Get(cloneID);
-        clone->setName("MainCamera");
-    }
-
-    GameObject::DestroyImediate(gameObject);
+    insert(gameObjectID);
 }
 
 bool Scene::is_running() const

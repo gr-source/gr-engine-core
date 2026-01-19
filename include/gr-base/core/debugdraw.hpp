@@ -11,6 +11,10 @@
 class DebugDraw
 {
 public:
+    static void Initialize();
+
+    static void Shutdown();
+
     static void DrawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor);
 
     static void DrawLine(const Vector3 &start, const Vector3 &end);
@@ -20,7 +24,7 @@ public:
     static void PosRender();
 
 private:
-    static DebugDraw &GetInstance();
+    static DebugDraw *s_DebugDraw;
 
     typedef struct Line3D
     {

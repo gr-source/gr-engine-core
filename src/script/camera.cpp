@@ -60,16 +60,21 @@ void Camera::Init()
 
     if (Threadpool::IsMainThread())
         rendertarget.init();
+
+    if (s_current == nullptr)
+        s_current = this;
+
+    m_cameraList.push_back(this);
 }
 
 void Camera::Enable()
 {
-    addInGlobalCam();
-
-    if (!s_current)
+    if (s_current == nullptr)
         s_current = this;
 
     m_aspect = static_cast<float>(m_rect.w) / static_cast<float>(m_rect.h);
+
+    m_cameraList.push_back(this);
 
     updateProjection();
 }
@@ -197,6 +202,7 @@ void Camera::setRect(const Rect &rect)
         rendertarget.resize(rect.w, rect.h);
 
     m_aspect = aspect;
+    m_rect = rect;
 
     updateProjection();
 }
@@ -215,14 +221,6 @@ void Camera::updateProjection()
     m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_nearPlane, m_farPlane);
 }
 
-void Camera::addInGlobalCam()
-{
-    auto it = std::find(m_cameraList.begin(), m_cameraList.end(), this);
-    if (it != m_cameraList.end())
-    {
-        return;
-    }
-    m_cameraList.push_back(this);
-}
+
 
 

@@ -8,34 +8,43 @@
 
 #include "gr-base/script/camera.hpp"
 
+DebugDraw* DebugDraw::s_DebugDraw = nullptr;
+
 // public
+void DebugDraw::Initialize()
+{
+    if (s_DebugDraw == nullptr)
+        s_DebugDraw = new DebugDraw();
+}
+
+void DebugDraw::Shutdown()
+{
+    if (s_DebugDraw != nullptr)
+        delete s_DebugDraw;
+    s_DebugDraw = nullptr;
+}
+
 void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor)
 {
-    return GetInstance().drawLine(start, end, startColor, endColor);
+    return s_DebugDraw->drawLine(start, end, startColor, endColor);
 }
 
 void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end)
 {
-    return GetInstance().drawLine(start, end, Color::white, Color::blue);
+    return s_DebugDraw->drawLine(start, end, Color::white, Color::blue);
 }
 
 void DebugDraw::Render(const Camera *camera)
 {
-    return GetInstance().render(camera);
+    return s_DebugDraw->render(camera);
 }
 
 void DebugDraw::PosRender()
 {
-    return GetInstance().posRender();
+    return s_DebugDraw->posRender();
 }
 
 // private
-DebugDraw &DebugDraw::GetInstance()
-{
-    static DebugDraw instance;
-    return instance;
-}
-
 DebugDraw::DebugDraw()
 {}
 

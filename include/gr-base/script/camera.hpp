@@ -68,8 +68,6 @@ private:
     static Camera *s_current;
 
     void updateProjection();
-
-    void addInGlobalCam();
 };
 
 REGISTER_COMPONENT(Camera)

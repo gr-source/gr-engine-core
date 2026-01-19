@@ -3,6 +3,7 @@
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/culling/frustum.hpp"
 
+#include "gr-base/core/debugdraw.hpp"
 #include "gr-base/managers/octreemanager.hpp"
 
 #include "gr-base/core/gameObject.hpp"
@@ -27,8 +28,9 @@ void RenderManager::Initialize()
     if (s_RenderManager == nullptr)
         s_RenderManager = new RenderManager();
 
-    OctreeManager::Initialize();
     BatchingManager::Initialize();
+    OctreeManager::Initialize();
+    DebugDraw::Initialize();
 }
 
 void RenderManager::Shutdown()
@@ -39,6 +41,7 @@ void RenderManager::Shutdown()
 
     BatchingManager::Shutdown();
     OctreeManager::Shutdown();
+    DebugDraw::Shutdown();
 }
 
 void RenderManager::Insert(GameObjectID id)
@@ -202,7 +205,7 @@ void RenderManager::preRender(const Camera *camera)
 
     Frustum::CalculateFrustum(projection * view);
 
-    OctreeManager::Foreach([](OctreeNode* node)
+    OctreeManager::Foreach([camera = std::forward<const Camera*>(camera)](OctreeNode* node)
     {
         Vector3 position = node->position;
         float radius = node->radius;
@@ -213,7 +216,6 @@ void RenderManager::preRender(const Camera *camera)
         if (!Frustum::IsCubeInFrustumAABB(min, max))
             return true;
 
-        auto camera = SceneManager::GetCurrent()->getCamera();
         auto cameraTransform = camera->GetGameObject()->getTransform();
 
         auto cameraPosition = cameraTransform->getPosition();
