@@ -51,6 +51,11 @@ void RenderManager::Remove(GameObjectID id)
     s_RenderManager->remove(id);
 }
 
+void RenderManager::MarkDirt(GameObjectID id, const Vector3& position)
+{
+    s_RenderManager->markDirt(id, position);
+}
+
 void RenderManager::PreRender(const Camera *camera)
 {
     s_RenderManager->preRender(camera);
@@ -144,6 +149,24 @@ void RenderManager::remove(GameObjectID id)
         return;
 
     OctreeManager::Remove(it->second, id);
+
+    m_objectInOctree.erase(it);
+}
+
+void RenderManager::markDirt(GameObjectID id, const Vector3& position)
+{
+    auto it = m_objectInOctree.find(id);
+    if (it == m_objectInOctree.end())
+        return;
+
+    NodeID nodeID = OctreeManager::Get(id, position);
+    if (nodeID == InvalidNode)
+        return;
+
+    if (!OctreeManager::Remove(nodeID, id))
+        return;
+
+    // std::cout << "Remove: " << id << " from: " << nodeID << std::endl;
 
     m_objectInOctree.erase(it);
 }

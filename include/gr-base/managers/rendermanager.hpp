@@ -19,6 +19,8 @@ public:
 
     static void Remove(GameObjectID id);
 
+    static void MarkDirt(GameObjectID id, const Vector3& position);
+
     static void PreRender(const Camera *camera);
 
     static void Render();
@@ -35,6 +37,8 @@ private:
     BatchID GetBatchID(MeshID meshID, MaterialID materialID) const;
 
     void remove(GameObjectID id);
+
+    void markDirt(GameObjectID id, const Vector3& position);
 
     void preRender(const Camera *camera);
 
