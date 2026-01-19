@@ -25,6 +25,8 @@ public:
 
     Behavior* getComponent(uint64_t hash) const;
 
+    void destroy(uint64_t hash);
+
     bool reinstance(const char* name, Behavior* dest, const Behavior* src);
 
     std::vector<uint64_t> GetHashes() const;

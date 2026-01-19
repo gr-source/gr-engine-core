@@ -4,6 +4,8 @@
 
 #include "gr-base/ecs/behavior.hpp"
 
+#include <algorithm>
+
 #include <cstdint>
 
 Entity::Entity(EntityID id) : m_id(id)
@@ -45,6 +47,21 @@ Behavior* Entity::getComponent(uint64_t hash) const
     if (m_signature.test(tableID))
         return ComponentManager::GetComponent(hash, m_lookupTable[tableID]);
     return nullptr;
+}
+
+void Entity::destroy(uint64_t hash)
+{
+    size_t tableID = hash % COMPONENT_TABLE_SIZE;
+    if (!m_signature.test(tableID))
+        return;
+
+    m_signature.set(tableID, false);
+
+    ComponentID id = m_lookupTable[tableID];
+
+    m_activeHashes.erase(std::remove(m_activeHashes.begin(), m_activeHashes.end(), hash), m_activeHashes.end());
+
+    ComponentManager::Deallocate(hash, id);
 }
 
 bool Entity::reinstance(const char* name, Behavior* dest, const Behavior* src)

@@ -127,7 +127,7 @@ endif()
 
 add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${broadphase_src} ${managers_src} ${EXTERNALS} ${ECS_SRC})
 
-target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
+target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     ${BULLET_INCLUDE_DIRS}
     imgui/src/backends
