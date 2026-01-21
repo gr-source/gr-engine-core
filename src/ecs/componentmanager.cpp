@@ -32,9 +32,19 @@ Behavior* ComponentManager::GetComponent(uint64_t hash, ComponentID id)
     return GetInstance().getComponent(hash, id);
 }
 
+void ComponentManager::Start()
+{
+    GetInstance().start();
+}
+
 void ComponentManager::Update()
 {
     GetInstance().update();
+}
+
+void ComponentManager::Destroy()
+{
+    GetInstance().destroy();
 }
 
 std::vector<size_t> ComponentManager::GetActiveBehaviorIDs()
@@ -117,6 +127,7 @@ void ComponentManager::registry(ComponentInfo* info)
 void ComponentManager::unregistry(uint64_t hash)
 {
     size_t poolID = hash % COMPONENT_TABLE_SIZE;
+
     if (!m_bitmask.test(poolID))
         return;
     m_bitmask.set(poolID, false);
@@ -271,6 +282,28 @@ bool ComponentManager::reinstance(uint64_t hash, Behavior* dest, const Behavior*
     return true;
 }
 
+void ComponentManager::start()
+{
+    for (auto& poolID : m_componentPoolIDs)
+    {
+        ComponentInfo& info = ((ComponentInfo*)m_infos->vector)[poolID];
+
+        if (!info.starthash)
+            continue;
+
+        uint8_t* ptr = (uint8_t*)info.pool->vector + info.offset;
+        size_t stride = info.size;
+
+        for (ComponentID i=0;i<info.count;i++)
+        {
+            Behavior* behavior = (Behavior*)ptr;
+            behavior->Start();
+
+            ptr += stride;
+        }
+    }
+}
+
 void ComponentManager::update()
 {
     for (auto& poolID : m_componentPoolIDs)
@@ -292,5 +325,26 @@ void ComponentManager::update()
     }
 }
 
+void ComponentManager::destroy()
+{
+    for (auto& poolID : m_componentPoolIDs)
+    {
+        ComponentInfo& info = ((ComponentInfo*)m_infos->vector)[poolID];
+
+        if (!info.destroyhash)
+            continue;
+
+        uint8_t* ptr = (uint8_t*)info.pool->vector + info.offset;
+        size_t stride = info.size;
+
+        for (ComponentID i=0;i<info.count;i++)
+        {
+            Behavior* behavior = (Behavior*)ptr;
+            behavior->Destroy();
+
+            ptr += stride;
+        }
+    }
+}
 
 

@@ -186,6 +186,8 @@ size_t SelectLOD(float distance, const std::vector<LODMesh>& lods)
 
 void RenderManager::preRender(const Camera *camera)
 {
+    auto scene = Scene::GetCurrent();
+
     auto projection = camera->getPerspesctive();
     auto view = camera->getViewmatrix();
     auto position = camera->getPosition();
@@ -200,7 +202,7 @@ void RenderManager::preRender(const Camera *camera)
         shader->setUniform("u_view",       &view);
         shader->setUniform("u_eye",        &position);
 
-        setuplight(shader);
+        setuplight(scene, shader);
     }
 
     Frustum::CalculateFrustum(projection * view);
@@ -273,9 +275,9 @@ void RenderManager::posRender()
 {
 }
 
-void RenderManager::setuplight(grr::gShader *shader)
+void RenderManager::setuplight(const Scene* scene, grr::gShader *shader)
 {
-    auto lights = Light::GetListLight();
+    auto lights = scene->GetLights();
 
     int numLight = static_cast<int>(lights.size());
 
@@ -287,7 +289,7 @@ void RenderManager::setuplight(grr::gShader *shader)
 
     for (std::size_t i={};i<lights.size();i++)
     {
-        auto &light = lights[i];
+        auto light = ComponentManager::GetComponent<Light>(lights[i]);
 
         auto position   = light->getPosition();
         auto forward    = light->getForward();

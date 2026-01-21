@@ -1,75 +1,36 @@
 #include "gr-base/core/scene.hpp"
 
+#include "LinearMath/btQuaternion.h"
 #include "gr-base/core/default.hpp"
+#include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/gameObject.hpp"
 
 // #include "gr-base/core/scenemanager.hpp"
+#include "gr-base/core/thread/threadpool.hpp"
+#include "gr-base/ecs/default.hpp"
+#include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/gameobjectmanager.hpp"
+#include "gr-base/managers/sceneManager.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
 #include <algorithm>
 
-/*
-void Scene::CheckRequestReinstanceScript()
-{
-    auto script = ComponentRegistry::GetScriptRequestReinstance();
-    if (script.empty())
-    {
-        return;
-    }
-
-    for (auto &scene : SceneManager::GetScenes())
-    {
-        for (auto scriptname : script)
-        {
-            scene->reinstanceScript(scriptname);
-        }
-    }
-}
-*/
-void Scene::Play(GameObject *gameObject)
-{
-    /*
-    gameObject->play();
-
-    auto transform = gameObject->getComponent<Transform>();
-
-    for (auto child : transform->getChildren())
-    {
-        Scene::Play(child->getGameObject());
-    }
-    */
-}
-
-void Scene::Stop(GameObject *gameObject)
-{
-    /*
-    gameObject->stop();
-
-    auto transform = gameObject->getComponent<Transform>();
-
-    for (auto child : transform->getChildren())
-    {
-        Scene::Stop(child->getGameObject());
-    }
-    */
-}
-
 // public
-Scene::Scene() : m_enable(true), m_goCamera(GID_INVALID), m_camera(nullptr), m_isrunning(false) {}
+Scene* Scene::GetCurrent()
+{
+    return SceneManager::GetCurrent();
+}
+
+Scene::Scene() : m_goCamera(GID_INVALID), m_camera(nullptr) {}
 
 Scene::~Scene()
 {
     for (auto gameObject : getObjectList())
-    {
-        GameObject::Destroy(gameObject);
-    }
+        GameObject::DestroyImediate(gameObject);
 
     if (m_goCamera != GID_INVALID)
-    {
         GameObject::DestroyImediate(GameObject::Get(m_goCamera));
-    }
 }
 
 void Scene::init()
@@ -81,30 +42,6 @@ void Scene::init()
     m_camera = gameObject->getComponent<Camera>();
 }
 
-void Scene::play()
-{
-    /*
-    m_isrunning = true;
-
-    for (auto &go : getObjectList())
-    {
-        Scene::Play(go);
-    }
-    */
-}
-
-void Scene::stop()
-{
-    /*
-    m_isrunning = false;
-
-    for (auto &go : getObjectList())
-    {
-        Scene::Stop(go);
-    }
-    */
-}
-
 void Scene::create_main_camra()
 {
     auto gameObjectID = GameObject::Create("MainCamera");
@@ -113,11 +50,6 @@ void Scene::create_main_camra()
     gameObject->addComponent<Camera>();
 
     insert(gameObjectID);
-}
-
-bool Scene::is_running() const
-{
-    return m_isrunning;
 }
 
 std::vector<GameObjectID> Scene::getObjectList() const
@@ -212,6 +144,115 @@ bool Scene::destroy(GameObjectID gameObjectID)
     return true;
 }
 
+void Scene::AddLight(ComponentID id)
+{
+    if (Threadpool::IsMainThread())
+        m_lights.push_back(id);
+}
+
+void Scene::RemoveLight(ComponentID id)
+{
+    if (Threadpool::IsMainThread())
+        m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), id), m_lights.end());
+}
+
+std::vector<ComponentID> Scene::GetLights() const
+{
+    return m_lights;
+}
+
+void Scene::AddCamera(ComponentID id)
+{
+    if (Threadpool::IsMainThread())
+        m_cameras.push_back(id);
+}
+
+void Scene::RemoveCamera(ComponentID id)
+{
+    if (Threadpool::IsMainThread())
+        m_cameras.erase(std::remove(m_cameras.begin(), m_cameras.end(), id), m_cameras.end());
+}
+
+std::vector<ComponentID> Scene::GetCameras() const
+{
+    return m_cameras;
+}
+
+void Scene::Serialize(Stream* stream) const
+{
+    {
+        uint64_t meshCount = static_cast<uint64_t>(m_meshes.size());
+        if (!stream->write(meshCount))
+            return;
+
+        for (auto meshID : m_meshes)
+        {
+            auto meshKey = AssetsManager::GetMeshName(meshID);
+
+            if (!stream->write<std::string>(meshKey))
+                return;
+        }
+    }
+
+    auto objects = getObjectList();
+
+    uint64_t objectCount = static_cast<uint64_t>(objects.size());
+    if (!stream->write(objectCount))
+        return;
+
+    for (GameObjectID gameObjectID : objects)
+    {
+        GameObject* gameObject = GameObject::Get(gameObjectID);
+        gameObject->Serialize(stream);
+    }
+}
+
+void Scene::Deserialize(Stream* stream)
+{
+    {
+        uint64_t meshCount = 0;
+        if (!stream->read(meshCount))
+            return;
+
+        for (uint64_t i=0;i<meshCount;i++)
+        {
+            std::string meshKey;
+            if (!stream->read<std::string>(meshKey))
+                return;
+
+            std::cout << "Load: " << meshKey << std::endl;
+        }
+    }
+    uint64_t objectCount = 0;
+    if (!stream->read(objectCount))
+        return;
+
+    for (uint64_t i=0;i<objectCount;i++)
+    {
+        GameObjectID id = GameObject::Create("unknow");
+
+        GameObject* gameObject = GameObject::Get(id);
+        gameObject->Deserialize(stream);
+
+        insert(id);
+    }
+}
+
+void Scene::SetName(const std::string& name)
+{
+    m_name = name;
+}
+
+std::string Scene::GetName() const
+{
+    return m_name;
+}
+
+void Scene::AddMesh(MeshID meshID)
+{
+    m_meshes.push_back(meshID);
+}
+
 GameObjectID Scene::CreateEngineCamera()
 {
     auto gameObjectID = GameObject::Create("MainEngineCamera");
@@ -225,42 +266,6 @@ GameObjectID Scene::CreateEngineCamera()
 
     return gameObjectID;
 }
-
-void Scene::setEnable(bool value)
-{
-    for (auto &gameObjectID : m_objects)
-    {
-        auto gameObject = GameObject::Get(gameObjectID);
-
-        setDisableEntity(gameObject->getTransform(), value);
-    }
-    m_enable = value;
-}
-
-void Scene::setDisableEntity(Transform *transform, bool value)
-{
-    transform->GetGameObject()->SetState(value);
-
-    for (auto &child : transform->getChildren())
-    {
-        setDisableEntity(child, value);
-    }
-}
-
-/*
-void Scene::SetupScene(Scene *scene)
-{
-    auto it = m_scenes.find(scene->getName());
-    if (it == m_scenes.end())
-        m_scenes.emplace(scene->getName(), std::unique_ptr<Scene>(scene));
-
-    for (auto &go : scene->getObjectList())
-    {
-        Scene::Init(go);
-    }
-}
-*/
-
 
 void Scene::for_each(std::function<void(GameObject *)> func)
 {

@@ -14,7 +14,7 @@
 
 #include <functional>
 
-class SceneLoadTask : public IAsyncTask<Scene*>
+class SceneLoadTask : public IAsyncTask<int>
 {
 public:
     SceneLoadTask() = delete;
@@ -37,9 +37,9 @@ private:
 
     std::string m_name;
 
-    Scene* doInBackground() override;
+    int doInBackground() override;
 
-    void onPostExecute(Scene* result) override;
+    void onPostExecute(int result) override;
 
     int read_metadata(Stream *stream);
 

@@ -46,7 +46,7 @@ private:
 
     void posRender();
 
-    void setuplight(grr::gShader *shader);
+    void setuplight(const Scene* scene, grr::gShader *shader);
 };
 
 

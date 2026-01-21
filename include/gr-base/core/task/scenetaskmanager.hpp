@@ -14,12 +14,12 @@ public:
     SceneTaskManager() = default;
     ~SceneTaskManager() = default;
 
-    std::shared_ptr<TaskInfo<Scene*>> create_task(const std::string &path, std::function<void (Scene *)> func);
+    std::shared_ptr<TaskInfo<int>> create_task(const std::string &path, std::function<void (Scene *)> func);
 
     bool remove_task(const std::string &name);
 
 private:
-    std::unordered_map<std::string, std::shared_ptr<TaskInfo<Scene*>>> m_taskMap;
+    std::unordered_map<std::string, std::shared_ptr<TaskInfo<int>>> m_taskMap;
 
     std::mutex m_mutex;
 };

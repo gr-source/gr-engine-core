@@ -11,20 +11,12 @@
 class Camera : public BehaviorImpl<Camera>
 {
 public:
-    static std::vector<Camera*> GetCameras();
-
-    static Camera *Main();
-
     static Camera *Current();
 
     Camera();
     ~Camera() override;
 
     void Init() override;
-
-    void Enable() override;
-
-    void Disable() override;
 
     bool Serialize(Stream *stream) const override;
 
@@ -33,8 +25,6 @@ public:
     Matrix4x4 getPerspesctive() const;
 
     Matrix4x4 getViewmatrix() const;
-
-    void setActive(bool value);
 
     Vector3 getPosition() const;
 
@@ -49,8 +39,6 @@ public:
     Color background;
 
 private:
-    static std::vector<Camera*> m_cameraList;
-
     RenderTarget rendertarget;
 
     Matrix4x4 m_projection;
@@ -64,8 +52,6 @@ private:
     float m_fov;
 
     Rect m_rect;
-
-    static Camera *s_current;
 
     void updateProjection();
 };

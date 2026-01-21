@@ -26,48 +26,43 @@ void SceneLoadTask::addFunction(std::function<void (Scene *)> func)
 }
 
 // ***** private ***** //
-Scene* SceneLoadTask::doInBackground()
+int SceneLoadTask::doInBackground()
 {
-    auto stream = std::make_shared<Stream>(m_path, std::ios_base::in | std::ios_base::binary);
-    if (!stream->is_open())
+    Stream stream(m_path, std::ios_base::in | std::ios_base::binary);
+    if (!stream.is_open())
     {
         Console::LogError("[ SceneLoadTask ] Faleid to open scene: ", m_path.c_str());
-        return nullptr;
+        return 1;
     }
 
     // read header data
     {
         FileHeader header;
-        if (!stream->read(reinterpret_cast<char *>(&header), sizeof(FileHeader)))
+        if (!stream.read(reinterpret_cast<char *>(&header), sizeof(FileHeader)))
         {
             Console::LogError("[ SceneLoadTask ] Failed to read binary header: %s", m_path.c_str());
-            return nullptr;
+            return 2;
         }
 
         Console::LogInfo("[ SceneLoadTask ] loading scene version: %f", header.version);
     }
 
-
-    if (read_metadata(stream.get()) != 0)
-    {
-        return nullptr;
-    }
+    if (read_metadata(&stream) != 0)
+        return 3;
 
     // read segment
     while (true)
     {
         DataSegment dataSegment;
-        if (!stream->read(reinterpret_cast<char *>(&dataSegment), sizeof(DataSegment)))
-        {
-            return nullptr;
-        }
+        if (!stream.read(reinterpret_cast<char *>(&dataSegment), sizeof(DataSegment)))
+            return 4;
         
         if (dataSegment.type == HeaderType::NONE && dataSegment.sizeData == 0)
         {
             break;
         }
         
-        auto nextPosition = stream->tellg() + static_cast<std::streampos>(dataSegment.sizeData);
+        auto nextPosition = stream.tellg() + static_cast<std::streampos>(dataSegment.sizeData);
         auto headerName = HeaderName[dataSegment.type];
 
         if (dataSegment.sizeData <= 0)
@@ -80,33 +75,33 @@ Scene* SceneLoadTask::doInBackground()
         {
             case HeaderType::SHADER:
                 // if (flags & SceneLoadFlags_Shader)
-                    result = read_shader(stream.get());
+                    result = read_shader(&stream);
                 break;
             case HeaderType::TEXTURE:
                 // if (flags & SceneLoadFlags_Texture)
-                    result = read_texture(stream.get());
+                    result = read_texture(&stream);
                 break;
             case HeaderType::MATERIAL:
                 // if (flags & SceneLoadFlags_Material)
-                    result = read_material(stream.get());
+                    result = read_material(&stream);
                 break;
             case HeaderType::MESH:
                 // if (flags & SceneLoadFlags_Mesh)
-                    result = read_mesh(stream.get());
+                    result = read_mesh(&stream);
                 break;
             case HeaderType::OBJECT:
                 // if (flags & SceneLoadFlags_Object)
-                    result = read_gameobject(stream.get());
+                    result = read_gameobject(&stream);
                 break;
             case HeaderType::SCRIPT:
                 // if (flags & SceneLoadFlags_Script)
-                    result = read_script(stream.get());
+                    result = read_script(&stream);
                 break;
             default:
                 break;
         }
  
-        if (stream->tellg() != nextPosition)
+        if (stream.tellg() != nextPosition)
         {
 
             if (result != 0)
@@ -116,16 +111,17 @@ Scene* SceneLoadTask::doInBackground()
             {
                 Console::LogWarning("[ SceneLoadTask ] Data segment: %s is not fully loaded.", headerName.c_str());
             }
-            stream->seekg(nextPosition, std::ios_base::beg);
+            stream.seekg(nextPosition, std::ios_base::beg);
             continue;
         }
     }
+
     return 0;
 }
 
-void SceneLoadTask::onPostExecute(Scene* result)
+void SceneLoadTask::onPostExecute(int result)
 {
-    if (result == nullptr)
+    if (result != 0)
     {
         Console::LogError("[ SceneLoadTask ] Fail to load scene");
     } else

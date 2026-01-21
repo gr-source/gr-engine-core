@@ -15,17 +15,11 @@ public:
         eSpot      = 2,
     };
 
-    static std::vector<Light *> GetListLight();
-
     Light(uint8_t type = eDirection, const Color& color = Color::white, float aConstant = 1.0f, float aLinear = 1.0f, float aQuadract = 1.0f, float inneCone = 1.0f, float outerCone = 1.0f);
     ~Light();
 
     void Init() override;
     
-    void Enable() override;
-
-    void Disable() override;
-
     bool Serialize(Stream *stream) const override;
 
     bool Deserialize(Stream *stream) override;
@@ -65,8 +59,6 @@ public:
     Matrix4x4 getProjetion() const;
 
 private:
-    static std::vector<Light *> m_lights;
-
     static Matrix4x4 mProjection;
 
     int m_type;

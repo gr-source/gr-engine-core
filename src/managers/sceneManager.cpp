@@ -54,7 +54,7 @@ void SceneManager::SetActive(Scene *scene)
 
 Scene *SceneManager::GetCurrent()
 {
-    return s_SceneManager != nullptr ? s_SceneManager->get_current() : nullptr;
+    return s_SceneManager->get_current();
 }
 
 // ***** private ***** //

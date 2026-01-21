@@ -1,5 +1,6 @@
 #include "gr-base/script/light.hpp"
 
+#include "gr-base/core/scene.hpp"
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/core/file/stream.hpp"
@@ -8,36 +9,23 @@
 
 #include <algorithm>
 
-std::vector<Light *> Light::m_lights;
-
 Matrix4x4 Light::mProjection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
-
-std::vector<Light *> Light::GetListLight()
-{
-    return m_lights;
-}
 
 Light::Light(std::uint8_t type, const Color& color, float aConstant, float aLinear, float aQuadract, float inneCone, float outerCone) : m_type(static_cast<int>(type)), m_color(color), m_attenuationConstant(aConstant), m_attenuationLinear(aLinear), m_attenuationQuadratic(aQuadract), m_angleInnerCone(inneCone), m_angleOuterCone(outerCone)
 {}
 
 Light::~Light()
 {
-    m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), this), m_lights.end());
+    auto scene = Scene::GetCurrent();
+    if (scene != nullptr)
+        scene->RemoveLight(GetGameObject()->GetID<Light>());
 }
 
 void Light::Init()
 {
-    m_lights.push_back(this);
-}
-
-void Light::Enable()
-{
-    m_lights.push_back(this);
-}
-
-void Light::Disable()
-{
-    m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), this), m_lights.end());
+    auto scene = Scene::GetCurrent();
+    if (scene != nullptr)
+        scene->AddLight(GetGameObject()->GetID<Light>());
 }
 
 bool Light::Serialize(Stream *stream) const

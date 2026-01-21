@@ -8,7 +8,8 @@
 
 #include "gr-base/core/file/default.hpp"
 
-class Mesh {
+class Mesh
+{
 public:
     Mesh();
 
@@ -42,6 +43,10 @@ public:
 
     int deserialize(Stream *stream);
 
+    void SetName(const std::string& name);
+
+    std::string GetName() const;
+
 private:
     std::vector<BoneWeight> m_boneWeight;
 
@@ -50,6 +55,8 @@ private:
     std::vector<int> m_indices;
 
     Boundbox m_boundbox;
+
+    std::string m_name;
 };
 
 template <typename ...Args>

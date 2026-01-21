@@ -28,27 +28,22 @@ int SceneSaveTask::doInBackground()
 
     Console::LogInfo("[ SceneSaveTask ] Writing scene %s...", file.c_str());
 
-    auto stream = std::make_shared<Stream>(file, std::ios_base::out | std::ios_base::binary);
+    Stream stream(file, std::ios_base::out | std::ios_base::binary);
     // header data
     {
-        FileHeader header{{'g', 'r', 's', 'c'}, 1.0f, static_cast<std::size_t>(stream->getDataSize())};
+        FileHeader header{{'g', 'r', 's', 'c'}, 1.0f, static_cast<std::size_t>(stream.getDataSize())};
 
-        if (!stream->writeS(&header, 1, false))
-        {
+        if (!stream.writeS(&header, 1, false))
             return 1;
-        }
     }
 
-    if (write_metadata(stream.get()) != 0)
-    {
+    if (write_metadata(&stream) != 0)
         return 2;
-    }
-    stream->flush();
 
-    if (write_data(stream.get()) != 0)
-    {
+    stream.flush();
+
+    if (write_data(&stream) != 0)
         return 3;
-    }
 
     return 0;
 }
@@ -180,9 +175,7 @@ int SceneSaveTask::write_metadata(Stream *stream)
     std::string name = SceneManager::GetSceneName(m_scene);
 
     if (!stream->write(name))
-    {
         return 1;
-    }
 
     read_gameobject();
 

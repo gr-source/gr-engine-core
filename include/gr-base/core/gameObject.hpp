@@ -6,6 +6,8 @@
 
 #include "gr-base/script/default.hpp"
 
+#include "gr-base/core/file/default.hpp"
+
 class GameObject : public Entity
 {
 public:
@@ -38,8 +40,16 @@ public:
 
     void Copy(GameObjectID other);
 
+    void Serialize(Stream* stream) const;
+
+    void Deserialize(Stream* stream);
+
 private:
     std::string m_name;
+
+    static void Serialize(GameObjectID id, Stream* stream);
+
+    static void Deserialize(Stream* stream, GameObjectID id, ComponentID parent);
 };
 
 

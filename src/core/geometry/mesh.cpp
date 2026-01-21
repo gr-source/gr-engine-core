@@ -123,3 +123,14 @@ int Mesh::deserialize(Stream *stream)
     return 0;
 }
 
+void Mesh::SetName(const std::string& name)
+{
+    m_name = name;
+}
+
+std::string Mesh::GetName() const
+{
+    return m_name;
+}
+
+

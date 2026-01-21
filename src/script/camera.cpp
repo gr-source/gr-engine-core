@@ -2,6 +2,9 @@
 
 #include "gr-base/core/rendertarget.hpp"
 
+#include "gr-base/core/gameObject.hpp"
+#include "gr-base/core/scene.hpp"
+
 #include "gr-base/core/thread/threadpool.hpp"
 
 #include "gr-base/script/transform.hpp"
@@ -10,30 +13,11 @@
 
 #include "gr-base/ecs/entity.hpp"
 
-#include <algorithm>
-
 #include <gr-render/gTexture.h>
 
-std::vector<Camera*> Camera::m_cameraList;
-
-Camera *Camera::s_current = nullptr;
-
-std::vector<Camera*> Camera::GetCameras()
+Camera *Camera::Current()
 {
-    return m_cameraList;
-}
-
-Camera *Camera::Main()
-{
-    if (m_cameraList.empty())
-    {
-        return s_current;
-    }
-    return m_cameraList[0];
-}
-
-Camera *Camera::Current() {
-    return s_current;
+    return Scene::GetCurrent()->getCamera();
 }
 
 Camera::Camera() : m_fov(45.0f), m_aspect(1.0f), m_farPlane(500.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(512, 512), background(Color::black)
@@ -41,12 +25,9 @@ Camera::Camera() : m_fov(45.0f), m_aspect(1.0f), m_farPlane(500.0f), m_nearPlane
 
 Camera::~Camera()
 {
-    if (this == s_current)
-    {
-        s_current = nullptr;
-    }
-
-    m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
+    auto scene = Scene::GetCurrent();
+    if (scene != nullptr)
+        scene->RemoveCamera(GetGameObject()->GetID<Camera>());
 
     if (Threadpool::IsMainThread())
         rendertarget.shutdown();
@@ -61,30 +42,9 @@ void Camera::Init()
     if (Threadpool::IsMainThread())
         rendertarget.init();
 
-    if (s_current == nullptr)
-        s_current = this;
-
-    m_cameraList.push_back(this);
-}
-
-void Camera::Enable()
-{
-    if (s_current == nullptr)
-        s_current = this;
-
-    m_aspect = static_cast<float>(m_rect.w) / static_cast<float>(m_rect.h);
-
-    m_cameraList.push_back(this);
-
-    updateProjection();
-}
-
-void Camera::Disable()
-{
-    if (this == s_current) {
-        s_current = nullptr;
-    }
-    m_cameraList.erase(std::remove(m_cameraList.begin(), m_cameraList.end(), this), m_cameraList.end());
+    auto scene = Scene::GetCurrent();
+    if (scene != nullptr)
+        scene->AddCamera(GetGameObject()->GetID<Camera>());
 }
 
 bool Camera::Serialize(Stream *stream) const
@@ -165,19 +125,6 @@ Matrix4x4 Camera::getViewmatrix() const
     auto transform = GetEntity()->getComponent<Transform>();
 
     return Math::lookAt(transform->getPosition(), transform->getPosition() + transform->getForward(), transform->getUp());
-}
-
-void Camera::setActive(bool value)
-{
-    if (value) {
-        s_current = this;
-        return;
-    }
-
-    if (s_current == this)
-    {
-        s_current = nullptr;
-    }
 }
 
 Vector3 Camera::getPosition() const

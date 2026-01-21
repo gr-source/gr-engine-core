@@ -26,7 +26,11 @@ public:
 
     static Behavior* GetComponent(uint64_t hash, ComponentID id);
 
+    static void Start();
+
     static void Update();
+
+    static void Destroy();
 
     static std::vector<size_t> GetActiveBehaviorIDs();
 
@@ -60,7 +64,11 @@ private:
 
     bool reinstance(uint64_t hash, Behavior* dest, const Behavior* src);
 
+    void start();
+
     void update();
+
+    void destroy();
 
     void resizeComponentInfo();
 
@@ -70,12 +78,6 @@ private:
     template <typename T>
     static void Destructor(Behavior* behavior);
 };
-
-template <typename Derived, typename Base, typename Method>
-constexpr bool has_override(Method Base::*m)
-{
-    return &Derived::Update != m; // compara ponteiro de membro
-}
 
 template <typename T>
 inline ComponentInfo ComponentManager::Registry(const char* name, uint64_t hash)
@@ -89,8 +91,9 @@ inline ComponentInfo ComponentManager::Registry(const char* name, uint64_t hash)
     info.constructor = (MethodPointer)&ComponentManager::Constructor<T>;
     info.destructor = (MethodPointer)&ComponentManager::Destructor<T>;
 
-    info.start = (MethodPointer)GetMethodPointer(&T::Start);
+    info.start = has_start<T>::value ? (MethodPointer)GetMethodPointer(&T::Start) : 0;
     info.update = has_update<T>::value ? (MethodPointer)GetMethodPointer(&T::Update) : 0;
+    info.destroy = has_destroy<T>::value ? (MethodPointer)GetMethodPointer(&T::Destroy) : 0;
 
     GetInstance().registry(&info);
 

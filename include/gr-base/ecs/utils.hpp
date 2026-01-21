@@ -44,11 +44,28 @@ struct ComponentWrapper
 #include <type_traits>
 
 template <typename T>
+struct has_start
+{
+    static constexpr bool value =
+        std::is_same<decltype(&T::Start), void (T::*)()>::value &&
+        !std::is_same<decltype(&T::Start), void (Behavior::*)()>::value;
+};
+
+template <typename T>
 struct has_update
 {
     static constexpr bool value =
         std::is_same<decltype(&T::Update), void (T::*)()>::value &&
         !std::is_same<decltype(&T::Update), void (Behavior::*)()>::value;
 };
+
+template <typename T>
+struct has_destroy
+{
+    static constexpr bool value =
+        std::is_same<decltype(&T::Destroy), void (T::*)()>::value &&
+        !std::is_same<decltype(&T::Destroy), void (Behavior::*)()>::value;
+};
+
 
 

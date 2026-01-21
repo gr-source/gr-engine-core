@@ -1,5 +1,10 @@
 #pragma once
 
+#include "gr-base/core/file/default.hpp"
+
+#include "gr-base/core/geometry/default.hpp"
+#include "gr-base/ecs/default.hpp"
+
 #include "gr-base/script/default.hpp"
 
 #include "default.hpp"
@@ -8,24 +13,17 @@
 #include <functional>
 #include <string>
 
-class Stream;
-
-class Scene {
+class Scene
+{
 public:
-    // static void CheckRequestReinstanceScript();
+    static Scene* GetCurrent();
 
     Scene();
     ~Scene();
 
     void init();
 
-    void play();
-
-    void stop();
-
     void create_main_camra();
-
-    bool is_running() const;
 
     std::vector<GameObjectID> getObjectList() const;
 
@@ -55,13 +53,32 @@ public:
 
     bool destroy(GameObjectID gameObjectID);
 
-    static void Play(GameObject *go);
+    void AddLight(ComponentID id);
 
-    static void Stop(GameObject *go);
+    void RemoveLight(ComponentID id);
+
+    std::vector<ComponentID> GetLights() const;
+
+    void AddCamera(ComponentID id);
+
+    void RemoveCamera(ComponentID id);
+
+    std::vector<ComponentID> GetCameras() const;
+
+    void Serialize(Stream* stream) const;
+
+    void Deserialize(Stream* stream);
+
+    void SetName(const std::string& name);
+
+    std::string GetName() const;
+
+    void AddMesh(MeshID meshID);
+
 private:
-    std::vector<std::tuple<std::string, std::string, Component *>> m_componentCache; 
+    std::vector<ComponentID> m_cameras;
 
-    // std::vector<GameObject *> m_tempInitObjects;
+    std::vector<ComponentID> m_lights;
 
     std::vector<GameObjectID> m_objects;
 
@@ -69,25 +86,22 @@ private:
 
     std::vector<GameObjectID> v_object_selected_list;
 
+    std::vector<MeshID> m_meshes;
+
+    std::string m_name;
+
     GameObjectID m_goCamera;
 
     Camera *m_camera;
 
-    bool m_enable;
-
-    bool m_isrunning;
-
     static GameObjectID CreateEngineCamera();
-
-    void setEnable(bool value);
-
-    void setDisableEntity(Transform *transform, bool value);
 
     void for_each(std::function<void (GameObject *)> func);
 
     void for_each(Transform *transform, std::function<void (GameObject *)> func);
 
     void reinstanceScript(const std::string &name);
-
 };
+
+
 

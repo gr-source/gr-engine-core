@@ -50,7 +50,7 @@ public:
     static void LoadGameObject(const std::string &path, Args &&...args);
 
     template <typename ...Args>
-    static std::shared_ptr<TaskInfo<Scene*>> LoadScene(const std::string &path, Args &&...args);
+    static std::shared_ptr<TaskInfo<int>> LoadScene(const std::string &path, Args &&...args);
 
     /*
     template <typename ...Args>
@@ -134,13 +134,11 @@ inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...arg
 }
 
 template <typename... Args>
-inline std::shared_ptr<TaskInfo<Scene*>> AssetsManager::LoadScene(const std::string &path, Args &&...args)
+inline std::shared_ptr<TaskInfo<int>> AssetsManager::LoadScene(const std::string &path, Args &&...args)
 {
     std::function<void (Scene *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
-    {
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
-    }
 
     return s_AssetsManager->mSceneTaskManager.create_task(path, func);
 }

@@ -1,6 +1,7 @@
 #include "gr-base/managers/meshmanager.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
+#include "gr-base/core/scene.hpp"
 #include "gr-base/externals/array.h"
 
 typedef struct MeshWrapper
@@ -15,21 +16,28 @@ MeshManager::MeshManager() : m_pool(nullptr), m_count(0), m_freeID(ID_INVALID)
 
 MeshID MeshManager::allocate(const std::string &name)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_freeID == ID_INVALID)
-        realloc(512);
+    MeshID id = ID_INVALID;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (m_freeID == ID_INVALID)
+            realloc(256);
 
-    MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
+        MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
 
-    MeshID id = m_freeID;
-    m_freeID = wrapper[id].next;
+        id = m_freeID;
+        m_freeID = wrapper[id].next;
 
-    new (&wrapper[id].mesh) Mesh();
+        new (&wrapper[id].mesh) Mesh();
 
-    m_meshnamemap[id] = name;
-    m_meshidmap[name] = id;
+        m_meshnamemap[id] = name;
+        m_meshidmap[name] = id;
+    }
 
     m_count++;
+
+    auto scene = Scene::GetCurrent();
+    if (scene != nullptr)
+        scene->AddMesh(id);
 
     return id;
 }
@@ -37,7 +45,6 @@ MeshID MeshManager::allocate(const std::string &name)
 void MeshManager::deallocate(MeshID id)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
-
     MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
     wrapper[id].mesh.~Mesh();
 
