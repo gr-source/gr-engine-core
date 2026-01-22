@@ -40,6 +40,7 @@ set(core
     src/core/string.cpp
     src/core/status.cpp
     src/core/skybox.cpp
+    src/core/clock.cpp
     src/core/scene.cpp
     src/core/input.cpp
 )
@@ -110,7 +111,8 @@ set(managers_src
 )
 
 set(ECS_SRC
-    src/ecs/componentmanager.cpp
+    src/ecs/behaviorRegistry.cpp
+    src/ecs/behaviorStorage.cpp
     src/ecs/behavior.cpp
     src/ecs/entity.cpp
 )

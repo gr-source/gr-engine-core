@@ -134,15 +134,11 @@ void SceneLoadTask::onPostExecute(int result)
         {
             GameObject::Instantiate(go);
 
-            GameObject::Destroy(go);
+            GameObject::DestroyImediate(go);
         }
-
-        scene->init();
 
         for (auto &func : m_funcList)
-        {
             func(scene);
-        }
     }
 
     AssetsManager::RemoveTask(m_path);
@@ -224,7 +220,9 @@ int SceneLoadTask::read_material(Stream *stream)
         auto it = m_materialmap.find(name);
         if (it == m_materialmap.end() && m_shadermap.find(shadername) != m_shadermap.end())
         {
-            auto materialID = AssetsManager::CreateMaterial(name/*, m_shadermap[shadername] */);
+            MaterialID materialID = AssetsManager::FindMaterial(name);
+            if (materialID == nill)
+                materialID = AssetsManager::CreateMaterial(name);
             
             {
                 auto &material = AssetsManager::GetMaterial(materialID);

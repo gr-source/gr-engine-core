@@ -3,7 +3,8 @@
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/default.hpp"
 #include "gr-base/core/file/stream.hpp"
-#include "gr-base/ecs/componentmanager.hpp"
+
+#include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/managers/gameobjectmanager.hpp"
 
@@ -54,7 +55,7 @@ GameObject::~GameObject()
 {
     for (auto &hash : GetHashes())
     {
-        ComponentManager::Deallocate(hash, GetID(hash));
+        BehaviorStorage::Deallocate(hash, GetID(hash));
     }
 }
 
@@ -89,7 +90,7 @@ void GameObject::Copy(GameObjectID other)
                 behavior = addComponent(hash, gameObject->GetID(hash));
             } else if (hash != GetHashByType<Transform>(nullptr))
             {
-                ComponentManager::Reinstance(hash, behavior, gameObject->getComponent(hash));
+                BehaviorStorage::Reinstance(hash, behavior, gameObject->getComponent(hash));
                 behavior->entityID = getCacheID();
             }
         }
@@ -186,7 +187,7 @@ void GameObject::Deserialize(Stream* stream, GameObjectID id, ComponentID parent
     auto transform = gameObject->getTransform();
 
     if (parent != INVALID_COMPONENT_ID)
-        transform->setParent(ComponentManager::GetComponent<Transform>(parent));
+        transform->setParent(BehaviorStorage::GetComponent<Transform>(parent));
 
     uint64_t hashcount = 0;
     if (!stream->read(hashcount))

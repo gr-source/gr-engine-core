@@ -19,9 +19,8 @@ typedef struct ComponentInfo
     uint64_t hash;
     size_t offset;
 
-    array* pool;
-    size_t count;
-    ComponentID freeID;
+    MethodPointer getwrappernext;
+    MethodPointer getwrapperbehavior;
 
     union
     {

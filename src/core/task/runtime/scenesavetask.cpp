@@ -16,19 +16,15 @@
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/transform.hpp"
 
-SceneSaveTask::SceneSaveTask(const std::string &path, const Scene *scene, std::function<void (const Scene *)> func) : m_path(path), m_scene(scene), m_func(func)
+SceneSaveTask::SceneSaveTask(const std::string &file, const Scene *scene, std::function<void ()> func) : m_file(file), m_scene(scene), m_func(func)
 {}
 
 // ***** private ***** //
 int SceneSaveTask::doInBackground()
 {
-    auto name = SceneManager::GetSceneName(m_scene);
+    Console::LogInfo("[ SceneSaveTask ] Writing scene %s...", m_file.c_str());
 
-    auto file = m_path + "/" + name + ".scn";
-
-    Console::LogInfo("[ SceneSaveTask ] Writing scene %s...", file.c_str());
-
-    Stream stream(file, std::ios_base::out | std::ios_base::binary);
+    Stream stream(m_file, std::ios_base::out | std::ios_base::binary);
     // header data
     {
         FileHeader header{{'g', 'r', 's', 'c'}, 1.0f, static_cast<std::size_t>(stream.getDataSize())};
@@ -51,11 +47,12 @@ int SceneSaveTask::doInBackground()
 void SceneSaveTask::onPostExecute(int result)
 {
     if (result != 0)
-    {
         return Console::LogError("[ SceneSaveTask ] Fail to write scene, code: %d", result);
-    }
 
     Console::LogInfo("[ SceneSaveTask ] Scene writed sucess fully!");
+
+    if (m_func != nullptr)
+        m_func();
 }
 
 int SceneSaveTask::write_data(Stream *stream)

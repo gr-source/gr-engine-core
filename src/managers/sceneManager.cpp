@@ -4,10 +4,10 @@
 
 #include <algorithm>
 
-
 SceneManager* SceneManager::s_SceneManager = nullptr;
 
 // ***** public ***** //
+/*
 void SceneManager::Initialize()
 {
     if (s_SceneManager == nullptr)
@@ -20,6 +20,12 @@ void SceneManager::Shutdown()
         delete s_SceneManager;
 
     s_SceneManager = nullptr;
+}
+*/
+
+void SceneManager::SetInstance(SceneManager *sceneManager)
+{
+    s_SceneManager = sceneManager;
 }
 
 Scene *SceneManager::Create(const std::string &name)

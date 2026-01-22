@@ -11,9 +11,11 @@
 class SceneManager
 {
 public:
-    static void Initialize();
+    // static void Initialize();
 
-    static void Shutdown();
+    // static void Shutdown();
+
+    static void SetInstance(SceneManager* sceneManager);
 
     static Scene *Create(const std::string &name);
 
@@ -29,6 +31,9 @@ public:
 
     static Scene *GetCurrent();
 
+    SceneManager();
+    ~SceneManager();
+
 private:
     std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenemap;
 
@@ -41,9 +46,6 @@ private:
     Scene *m_current;
 
     static SceneManager* s_SceneManager;
-
-    SceneManager();
-    ~SceneManager();
 
     Scene *create(const std::string &name);
 

@@ -19,6 +19,7 @@ typedef struct GameObjectWrapper
 
 GameObjectManager* GameObjectManager::s_GameObjectManager = nullptr;
 
+/*
 void GameObjectManager::Initialize()
 {
     if (s_GameObjectManager == nullptr)
@@ -30,6 +31,12 @@ void GameObjectManager::Shutdown()
     if (s_GameObjectManager != nullptr)
         delete s_GameObjectManager;
     s_GameObjectManager = nullptr;
+}
+*/
+
+void GameObjectManager::SetInstance(GameObjectManager* gameobjectmanager)
+{
+    s_GameObjectManager = gameobjectmanager;
 }
 
 GameObjectID GameObjectManager::Instantiate(const GameObject *other)

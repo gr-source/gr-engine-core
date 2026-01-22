@@ -39,8 +39,10 @@ void Camera::Init()
 
     updateProjection();
 
-    if (Threadpool::IsMainThread())
-        rendertarget.init();
+    if (!Threadpool::IsMainThread())
+        return;
+    
+    rendertarget.init();
 
     auto scene = Scene::GetCurrent();
     if (scene != nullptr)

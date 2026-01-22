@@ -35,6 +35,11 @@ void MainThreadDispatcher::update()
     }
 }
 
+void MainThreadDispatcher::add(std::function<void()> func)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_events.push_back(func);
+}
 
 
 

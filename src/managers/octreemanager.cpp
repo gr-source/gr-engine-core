@@ -14,6 +14,7 @@
 OctreeManager* OctreeManager::s_OctreeManager = nullptr;
 
 // public
+/*
 void OctreeManager::Initialize()
 {
     if (s_OctreeManager == nullptr)
@@ -25,6 +26,12 @@ void OctreeManager::Shutdown()
     if (s_OctreeManager != nullptr)
         delete s_OctreeManager;
     s_OctreeManager = nullptr;
+}
+*/
+
+void OctreeManager::SetInstance(OctreeManager *octreeManager)
+{
+    s_OctreeManager = octreeManager;
 }
 
 NodeID OctreeManager::InsertGlobal(NodeData data)

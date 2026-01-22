@@ -4,6 +4,8 @@
 #include "gr-base/core/culling/frustum.hpp"
 
 #include "gr-base/core/debugdraw.hpp"
+#include "gr-base/core/mainthreaddispatcher.hpp"
+#include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/managers/octreemanager.hpp"
 
 #include "gr-base/core/gameObject.hpp"
@@ -29,7 +31,7 @@ void RenderManager::Initialize()
         s_RenderManager = new RenderManager();
 
     BatchingManager::Initialize();
-    OctreeManager::Initialize();
+    // OctreeManager::Initialize();
     DebugDraw::Initialize();
 }
 
@@ -40,7 +42,7 @@ void RenderManager::Shutdown()
     s_RenderManager = nullptr;
 
     BatchingManager::Shutdown();
-    OctreeManager::Shutdown();
+    // OctreeManager::Shutdown();
     DebugDraw::Shutdown();
 }
 
@@ -289,7 +291,7 @@ void RenderManager::setuplight(const Scene* scene, grr::gShader *shader)
 
     for (std::size_t i={};i<lights.size();i++)
     {
-        auto light = ComponentManager::GetComponent<Light>(lights[i]);
+        auto light = BehaviorStorage::GetComponent<Light>(lights[i]);
 
         auto position   = light->getPosition();
         auto forward    = light->getForward();

@@ -2,7 +2,6 @@
 
 #include <functional>
 #include <mutex>
-#include <list>
 
 class MainThreadDispatcher
 {
@@ -19,23 +18,15 @@ private:
     
     std::mutex m_mutex;
 
-    template <typename ...Args>
-    void add(Args &&...args);
-
     void update();
+
+    void add(std::function<void()> func);
 };
 
 template <typename... Args>
 inline void MainThreadDispatcher::Add(Args&&... args)
 {
-    return GetInstance().add(std::forward<Args>(args)...);
-}
-
-template <typename... Args>
-inline void MainThreadDispatcher::add(Args&&... args)
-{
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_events.emplace_back(std::bind(std::forward<Args>(args)...));
+    return GetInstance().add(std::bind(std::forward<Args>(args)...));
 }
 
 

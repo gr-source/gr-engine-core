@@ -21,10 +21,6 @@ public:
     Scene();
     ~Scene();
 
-    void init();
-
-    void create_main_camra();
-
     std::vector<GameObjectID> getObjectList() const;
 
     void insert(GameObjectID gameObjectID);
@@ -33,9 +29,7 @@ public:
 
     void Clear();
 
-    GameObjectID getCameraObject() const;
-
-    void setCamera(GameObjectID id);
+    void SetCamera(ComponentID id);
 
     Camera *getCamera() const;
 
@@ -90,9 +84,7 @@ private:
 
     std::string m_name;
 
-    GameObjectID m_goCamera;
-
-    Camera *m_camera;
+    ComponentID m_cameraID;
 
     static GameObjectID CreateEngineCamera();
 

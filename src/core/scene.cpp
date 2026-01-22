@@ -7,6 +7,7 @@
 
 // #include "gr-base/core/scenemanager.hpp"
 #include "gr-base/core/thread/threadpool.hpp"
+#include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/gameobjectmanager.hpp"
@@ -22,34 +23,12 @@ Scene* Scene::GetCurrent()
     return SceneManager::GetCurrent();
 }
 
-Scene::Scene() : m_goCamera(GID_INVALID), m_camera(nullptr) {}
+Scene::Scene() : m_cameraID(INVALID_COMPONENT_ID) {}
 
 Scene::~Scene()
 {
     for (auto gameObject : getObjectList())
         GameObject::DestroyImediate(gameObject);
-
-    if (m_goCamera != GID_INVALID)
-        GameObject::DestroyImediate(GameObject::Get(m_goCamera));
-}
-
-void Scene::init()
-{
-    m_goCamera = CreateEngineCamera();
-
-    auto gameObject = GameObject::Get(m_goCamera);
-
-    m_camera = gameObject->getComponent<Camera>();
-}
-
-void Scene::create_main_camra()
-{
-    auto gameObjectID = GameObject::Create("MainCamera");
-
-    auto gameObject = GameObjectManager::Get(gameObjectID);
-    gameObject->addComponent<Camera>();
-
-    insert(gameObjectID);
 }
 
 std::vector<GameObjectID> Scene::getObjectList() const
@@ -80,24 +59,14 @@ void Scene::Clear()
     m_objects.clear();
 }
 
-GameObjectID Scene::getCameraObject() const
+void Scene::SetCamera(ComponentID id)
 {
-    return m_goCamera;
-}
-
-void Scene::setCamera(GameObjectID id)
-{
-    m_goCamera = id;
-
-    if (id != GID_INVALID)
-    {
-        // m_camera = go->getComponent<Camera>();
-    }
+    m_cameraID = id;
 }
 
 Camera *Scene::getCamera() const
 {
-    return m_camera;
+    return m_cameraID != INVALID_COMPONENT_ID ? BehaviorStorage::GetComponent<Camera>(m_cameraID) : nullptr;
 }
 
 // ********** public ********** //
@@ -164,7 +133,12 @@ std::vector<ComponentID> Scene::GetLights() const
 void Scene::AddCamera(ComponentID id)
 {
     if (Threadpool::IsMainThread())
+    {
         m_cameras.push_back(id);
+
+        if (m_cameraID == INVALID_COMPONENT_ID)
+            SetCamera(id);
+    }
 }
 
 void Scene::RemoveCamera(ComponentID id)

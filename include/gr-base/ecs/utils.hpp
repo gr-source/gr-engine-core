@@ -24,22 +24,23 @@ inline uint64_t GetHashByType(const char* key) noexcept
 }
 
 template <typename T>
-inline constexpr void *GetMethodPointer(void (T::*method)()) noexcept
-{
-    union {
-        void (T::*m)();
-        void* addr;
-    } helper;
-    helper.m = method;
-    return helper.addr;
-}
-
-template <typename T>
 struct ComponentWrapper
 {
     ComponentID next;
     T component;
 };
+
+template <typename T>
+inline void StartWrapper(Behavior* obj)
+{
+    static_cast<T*>(obj)->Start();
+}
+
+template <typename T>
+inline void UpdateWrapper(Behavior* obj)
+{
+    static_cast<T*>(obj)->Start();
+}
 
 #include <type_traits>
 

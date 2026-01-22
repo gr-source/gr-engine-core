@@ -1,8 +1,14 @@
 #include "gr-base/core/task/scenetaskmanager.hpp"
 
 #include "gr-base/core/task/runtime/sceneloadtask.hpp"
+#include "gr-base/core/task/runtime/scenesavetask.hpp"
 
 #include "gr-base/core/thread/taskmanager.hpp"
+
+std::shared_ptr<TaskInfo<int>> SceneTaskManager::create_save_task(const std::string &path, const Scene *scene, std::function<void ()> func)
+{
+    return TaskManager::Add<int, SceneSaveTask>(path, scene, func);
+}
 
 std::shared_ptr<TaskInfo<int>> SceneTaskManager::create_task(const std::string &path, std::function<void (Scene *)> func)
 {

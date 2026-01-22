@@ -14,6 +14,8 @@ public:
     SceneTaskManager() = default;
     ~SceneTaskManager() = default;
 
+    std::shared_ptr<TaskInfo<int>> create_save_task(const std::string &path, const Scene* scene, std::function<void ()> func);
+
     std::shared_ptr<TaskInfo<int>> create_task(const std::string &path, std::function<void (Scene *)> func);
 
     bool remove_task(const std::string &name);

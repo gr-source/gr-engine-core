@@ -16,9 +16,11 @@ extern "C"
 class GameObjectManager
 {
 public:
-    static void Initialize();
+    // static void Initialize();
 
-    static void Shutdown();
+    // static void Shutdown();
+
+    static void SetInstance(GameObjectManager* gameObjectManager);
 
     static GameObjectID Instantiate(const GameObject* other);
 
@@ -32,11 +34,11 @@ public:
 
     static size_t GetCount();
 
-protected:
-    static GameObjectManager* s_GameObjectManager;
-
     GameObjectManager();
     ~GameObjectManager();
+
+protected:
+    static GameObjectManager* s_GameObjectManager;
 
     std::mutex m_mutex;
 

@@ -1,10 +1,11 @@
 #pragma once
 
-namespace Clock
+class Clock
 {
-    inline double deltaTime = 0.0f;
-    inline double time = 0.0;
-}
+public:
+    static double deltaTime;
+    static double time;
+};
 
 
 

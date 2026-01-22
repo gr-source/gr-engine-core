@@ -20,7 +20,7 @@ MeshRender::MeshRender()
 
 MeshRender::~MeshRender()
 {
-    if (Threadpool::IsMainThread())
+    // if (Threadpool::IsMainThread())
         RenderManager::Remove(entityID);
     /*
     for (auto& batchID : m_batchCacheIDs)
@@ -33,7 +33,7 @@ MeshRender::~MeshRender()
 
 void MeshRender::Init()
 {
-    if (Threadpool::IsMainThread())
+    // if (Threadpool::IsMainThread())
         MainThreadDispatcher::Add(&RenderManager::Insert, entityID);
     /*
     if (Threadpool::IsMainThread())

@@ -52,6 +52,9 @@ public:
     template <typename ...Args>
     static std::shared_ptr<TaskInfo<int>> LoadScene(const std::string &path, Args &&...args);
 
+    template <typename ...Args>
+    static std::shared_ptr<TaskInfo<int>> SceneSaveAsync(const std::string &path, const Scene* scene, Args &&...args);
+
     /*
     template <typename ...Args>
     static void LoadAnimation(const std::string &path, Args &&...args);
@@ -141,6 +144,16 @@ inline std::shared_ptr<TaskInfo<int>> AssetsManager::LoadScene(const std::string
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
 
     return s_AssetsManager->mSceneTaskManager.create_task(path, func);
+}
+
+template <typename... Args>
+inline std::shared_ptr<TaskInfo<int>> AssetsManager::SceneSaveAsync(const std::string &path, const Scene* scene, Args &&...args)
+{
+    std::function<void ()> func = nullptr;
+    if constexpr (sizeof...(Args) > 0)
+        func = std::bind(std::forward<Args>(args)...);
+
+    return s_AssetsManager->mSceneTaskManager.create_save_task(path, scene, func);
 }
 
 template <typename ...Args>

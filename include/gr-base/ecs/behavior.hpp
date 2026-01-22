@@ -65,12 +65,12 @@ public:
     }
 
 
-#include "gr-base/ecs/componentmanager.hpp"
+#include "gr-base/ecs/behaviorRegistry.hpp"
 
 // static_assert(std::is_base_of<BehaviorImpl<k>, k>::value, "Esta classe precisa ser herdade de BehaviorImpl<T>");
 #define REGISTER_COMPONENT(k) \
     inline static uint64_t k##Hash = GetHashByType<k>(#k); \
-    inline static ComponentInfo k##Info = ComponentManager::Registry<k>(#k, k##Hash);
+    inline static ComponentInfo k##Info = BehaviorRegistry::Registry<k>(#k, k##Hash);
 
 
 

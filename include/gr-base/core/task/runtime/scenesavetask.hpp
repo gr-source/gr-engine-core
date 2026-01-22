@@ -18,14 +18,14 @@
 class SceneSaveTask : public IAsyncTask<int>
 {
 public:
-    SceneSaveTask(const std::string &path, const Scene *scene, std::function<void (const Scene *)> func = nullptr);
+    SceneSaveTask(const std::string &file, const Scene *scene, std::function<void ()> func = nullptr);
 
 private:
-    const std::string m_path;
+    const std::string m_file;
 
     const Scene *m_scene;
 
-    std::function<void (const Scene *)> m_func;
+    std::function<void ()> m_func;
 
     std::vector<std::tuple<std::string, uint64_t, const Behavior *>> m_componentdata;
 
