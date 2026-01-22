@@ -39,7 +39,7 @@ std::size_t Threadpool::GetCount()
 }
 
 // private
-Threadpool::Threadpool(std::uint32_t maxThread) : m_bStop(false), m_available(0), m_mainThreadID(std::this_thread::get_id())
+Threadpool::Threadpool(std::uint32_t maxThread) : m_bStop(false), m_hasTask(false), m_available(0), m_mainThreadID(std::this_thread::get_id())
 {
     Console::LogInfo("[ Threadpool ] Initialize");
 
@@ -53,16 +53,15 @@ Threadpool::~Threadpool()
 {
     Console::LogInfo("[ Threadpool ] Shutdown");
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_cv.wait(lock, [&] { return m_available == 0 && m_task.empty(); });
-    }
-
-    {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_bStop = true;
     }
-
     m_cv.notify_all();
+
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_cv.wait(lock, [&] { return !m_available || !m_hasTask; });
+    }
 
     for (auto &thread : m_threads)
     {
@@ -80,67 +79,79 @@ bool Threadpool::isMainThread() const
     return std::this_thread::get_id() == m_mainThreadID;
 }
 
+void Threadpool::add(TaskPriority priority, std::function<void()> func)
+{
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_task[static_cast<uint8_t>(priority)].push_back(std::move(func));
+        m_hasTask = true;
+    }
+
+    m_cv.notify_all();
+}
+
 void Threadpool::update()
 {
-    Console::LogInfo("[ Threadpool ] thread %ld, in background...", std::this_thread::get_id());
-
     while (true)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_cv.wait(lock, std::bind(&Threadpool::wait_for, this));
+        std::function<void()> task;
 
-        if (m_bStop)
-            break;
-
-
-        if (m_available >= 3)
         {
-            bool haspriority = false;
-            for (auto &&[priority, task] : m_task)
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_cv.wait(lock, [this]{ return m_bStop || m_hasTask; });
+
+            if (m_bStop && !m_hasTask)
+                break;
+
+            bool found = false;
+            for (uint8_t i = 0; i < static_cast<uint8_t>(TaskPriority::COUNT); i++)
             {
-                if (priority == TaskPriority::HIGH)
+                if (!m_task[i].empty())
                 {
-                    haspriority = true;
-                    break;
+                    task = std::move(m_task[i].front());
+                    m_task[i].pop_front();
+                    found = true;
+                    
+                    bool stillHasWork = false;
+                    for(uint8_t j = 0; j < static_cast<uint8_t>(TaskPriority::COUNT); j++)
+                    {
+                        if(!m_task[j].empty())
+                        {
+                            stillHasWork = true;
+                            break;
+                        }
+                    }
+                    m_hasTask = stillHasWork;
+                    break; 
                 }
             }
 
-            if (!haspriority)
+            if (!found)
             {
+                m_hasTask = false;
                 continue;
+            }
+
+            m_available++; 
+        }
+
+        if (task)
+        {
+            try
+            {
+                task();
+            } catch (const std::exception &e)
+            {
+                Console::LogError("[ Threadpool ] Exception: %s", e.what());
             }
         }
 
         {
-            m_available++;
-            m_cv.notify_all();
-        }
-
-        auto temp = std::move(m_task);
-        lock.unlock();
-
-        temp.sort([](auto &lhs, auto &rhs) { return std::get<0>(lhs) > std::get<0>(rhs); });
-
-        try
-        {
-            for (auto &&[priority, task] : temp)
-                task();
-        } catch (const std::exception &e)
-        {
-            Console::LogError("[ Threadpool ] Exception detected: %s", e.what());
-        }
-
-        lock.lock();
-        {
+            std::lock_guard<std::mutex> lock(m_mutex);
             m_available--;
-            m_cv.notify_all();
+            m_cv.notify_all(); 
         }
     }
-}
-
-bool Threadpool::wait_for()
-{
-    return m_bStop || !m_task.empty();
 }
 
 std::size_t Threadpool::get_thread_count()

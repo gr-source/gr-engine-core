@@ -2,11 +2,11 @@
 
 #include <condition_variable>
 #include <functional>
+#include <list>
 #include <thread>
 #include <utility>
 #include <vector>
 #include <mutex>
-#include <list>
 
 #include "default.hpp"
 
@@ -32,7 +32,7 @@ public:
 private:
     static Threadpool* s_Threadpool;
 
-    std::list<std::tuple<TaskPriority, std::function<void()>>> m_task;
+    std::list<std::function<void()>> m_task[static_cast<uint8_t>(TaskPriority::COUNT)];
 
     std::vector<std::thread> m_threads;
 
@@ -41,6 +41,8 @@ private:
     std::mutex m_mutex;
 
     bool m_bStop;
+
+    bool m_hasTask;
 
     std::uint8_t m_available;
 
@@ -51,12 +53,10 @@ private:
 
     bool isMainThread() const;
 
-    template <typename ...Args>
-    void add(TaskPriority priority, Args &&...args);
+    void add(TaskPriority priority, std::function<void()> func);
 
     void update();
 
-    bool wait_for();
 
     std::size_t get_thread_count();
 
@@ -66,26 +66,15 @@ private:
 template <typename... Args>
 inline void Threadpool::AddTask(Args &&...args)
 {
-    return s_Threadpool->add(TaskPriority::LOW, std::forward<Args>(args)...);
+    return s_Threadpool->add(TaskPriority::LOW, std::move(std::bind(std::forward<Args>(args)...)));
 }
 
 template <typename... Args>
 inline void Threadpool::AddTask(TaskPriority priority, Args &&...args)
 {
-    return s_Threadpool->add(priority, std::forward<Args>(args)...);
+    return s_Threadpool->add(priority, std::move(std::bind(std::forward<Args>(args)...)));
 }
 
-// private
-template <typename ...Args>
-inline void Threadpool::add(TaskPriority priority, Args &&...args)
-{
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_task.emplace_back(priority, std::bind(std::forward<Args>(args)...));
-    }
-
-    m_cv.notify_all();
-}
 
 
 

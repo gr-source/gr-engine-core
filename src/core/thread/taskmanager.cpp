@@ -16,7 +16,7 @@ void TaskManager::update(std::shared_ptr<ITask> task)
 {
     task->run();
 
-    MainThreadDispatcher::Add(&TaskManager::finish, this, task);
+    MainThreadDispatcher::Add(Priority::LOW, &TaskManager::finish, this, task);
 }
 
 void TaskManager::finish(std::shared_ptr<ITask> task)

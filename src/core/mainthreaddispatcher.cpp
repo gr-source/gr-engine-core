@@ -18,13 +18,28 @@ MainThreadDispatcher &MainThreadDispatcher::GetInstance()
 
 void MainThreadDispatcher::update()
 {
-    std::vector<std::function<void()>> events;
+    if (!m_hasEvent.load(std::memory_order_acquire))
+        return;
+
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        events = std::move(m_events);
+        for (uint8_t i=0;i<static_cast<uint8_t>(Priority::COUNT);i++)
+        {
+            if (m_events[i].empty())
+                continue;
+
+            m_processingEvents.insert(
+                m_processingEvents.end(),
+                std::make_move_iterator(m_events[i].begin()),
+                std::make_move_iterator(m_events[i].end())
+            );
+            
+            m_events[i].clear();
+        }
+        m_hasEvent.store(false, std::memory_order_release);
     }
 
-    for (auto &event : events)
+    for (auto &event : m_processingEvents)
     {
         try {
             event();
@@ -33,12 +48,19 @@ void MainThreadDispatcher::update()
             Console::LogError("[ MainThreadDispatcher ] Exception deceted: %s", e.what());
         }
     }
+
+    m_processingEvents.clear();
 }
 
-void MainThreadDispatcher::add(std::function<void()> func)
+void MainThreadDispatcher::add(Priority priority, std::function<void()> func)
 {
+    if (func == nullptr)
+        return;
+
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_events.push_back(func);
+    m_events[static_cast<int>(priority)].push_back(std::move(func));
+
+    m_hasEvent.store(true, std::memory_order_release);
 }
 
 

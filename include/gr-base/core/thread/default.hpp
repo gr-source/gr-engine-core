@@ -1,9 +1,13 @@
 #pragma once
 
-enum class TaskPriority
+#include <cstdint>
+
+enum class TaskPriority : uint8_t
 {
-    LOW,
-    HIGH
+    HIGH = 0,
+    NORMAL = 1,
+    LOW = 2,
+    COUNT
 };
 
 
