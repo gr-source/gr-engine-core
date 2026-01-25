@@ -21,7 +21,7 @@ public:
 
     Behavior* getComponent(const char* name) const;
 
-    Behavior* addComponent(uint64_t hash, ComponentID source = INVALID_COMPONENT_ID);
+    Behavior* addComponent(uint64_t hash, ComponentHandle source = INVALID_COMPONENT_HANDLE);
 
     Behavior* getComponent(uint64_t hash) const;
 
@@ -31,15 +31,15 @@ public:
 
     std::vector<uint64_t> GetHashes() const;
 
-    ComponentID GetID(uint64_t hash) const;
+    ComponentHandle GetID(uint64_t hash) const;
 
     template <typename T>
-    ComponentID GetID() const;
+    ComponentHandle GetID() const;
 
     EntityID getCacheID() const;
     
 private:
-    ComponentID m_lookupTable[COMPONENT_TABLE_SIZE];
+    ComponentHandle m_lookupTable[COMPONENT_TABLE_SIZE];
 
     std::bitset<COMPONENT_TABLE_SIZE> m_signature;
 
@@ -63,7 +63,7 @@ inline T* Entity::getComponent() const
 }
 
 template <typename T>
-inline ComponentID Entity::GetID() const
+inline ComponentHandle Entity::GetID() const
 {
     return GetID(GetHashByType<T>(nullptr));
 }

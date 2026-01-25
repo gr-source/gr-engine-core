@@ -8,13 +8,13 @@
 #define GID_VERSION_MASK    0xFFFFFFFF00000000
 #define GID_VERSION_SHIFT   32
 
-#define CreateGameObjectID(i, v) \
+#define CreateHandle(i, v) \
     static_cast<uint64_t>(i) | (static_cast<uint64_t>(v) << GID_VERSION_SHIFT)
 
-#define GetIDIndex(i) \
+#define GetHandleID(i) \
     static_cast<uint32_t>(i & GID_INDEX_MASK)
 
-#define GetIDVersion(i) \
+#define GetHandleVersion(i) \
     static_cast<uint32_t>(i >> GID_VERSION_SHIFT)
 
 typedef uint64_t GameObjectID;

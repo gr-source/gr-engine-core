@@ -1,6 +1,7 @@
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/core/file/stream.hpp"
+#include "gr-base/core/gameObject.hpp"
 
 #include <algorithm>
 
@@ -114,27 +115,31 @@ bool Transform::hasParent() const {
     return m_parent != nullptr;
 }
 
-void Transform::setParent(Transform *transform, bool remove)
+void Transform::setParent(Transform* newParent, bool)
 {
-    if (remove && m_parent != nullptr)
-        m_parent->m_children.erase(std::remove(m_parent->m_children.begin(), m_parent->m_children.end(), this), m_parent->m_children.end());
-    
-    if (transform != nullptr)
-        transform->addChildren(this);
-    m_parent = transform;
+    if (m_parent == newParent)
+        return;
 
-    updateLocalMatrix();
+    if (m_parent != nullptr)
+    {
+        auto& children = m_parent->m_children;
+        children.erase(std::remove(children.begin(), children.end(), this), children.end());
+    }
+
+    m_parent = newParent;
+
+    if (m_parent != nullptr)
+        m_parent->m_children.push_back(this);
+
+    updateLocalMatrix(); 
 }
 
 Transform *Transform::getParent() const {
     return m_parent;
 }
 
-void Transform::addChildren(Transform *child) {
-    if (!child || std::find(m_children.begin(), m_children.end(), child) != m_children.end()) {
-        return;
-    }
-    
+void Transform::addChildren(Transform *child)
+{
     m_children.push_back(child);
 }
 
@@ -142,7 +147,8 @@ std::vector<Transform *> Transform::getChildren() const {
     return m_children;
 }
 
-bool Transform::hasChildren() const {
+bool Transform::hasChildren() const
+{
     return !m_children.empty();
 }
 

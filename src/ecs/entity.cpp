@@ -20,20 +20,23 @@ Behavior* Entity::getComponent(const char* name) const
     return getComponent(GetHash(name));
 }
 
-Behavior* Entity::addComponent(uint64_t hash, ComponentID source)
+Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
 {
     size_t tableID = hash % COMPONENT_TABLE_SIZE;
     if (m_signature.test(tableID))
         return BehaviorStorage::GetComponent(hash, m_lookupTable[tableID]);
 
+    ComponentHandle handle = BehaviorStorage::Allocate(hash, source);
+    if (handle == INVALID_COMPONENT_HANDLE)
+        return nullptr;
+
     m_signature.set(tableID, true);
 
-    ComponentID id = BehaviorStorage::Allocate(hash, source);
-    m_lookupTable[tableID] = id;
+    m_lookupTable[tableID] = handle;
 
     m_activeHashes.push_back(hash);
 
-    auto behavior = BehaviorStorage::GetComponent(hash, id);
+    auto behavior = BehaviorStorage::GetComponent(hash, handle);
     behavior->entityID = m_id;
     behavior->Init();
 
@@ -73,7 +76,7 @@ std::vector<uint64_t> Entity::GetHashes() const
     return m_activeHashes;
 }
 
-ComponentID Entity::GetID(uint64_t hash) const
+ComponentHandle Entity::GetID(uint64_t hash) const
 {
     size_t tableID = hash % COMPONENT_TABLE_SIZE;
     if (!m_signature.test(tableID))

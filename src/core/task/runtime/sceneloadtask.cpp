@@ -330,7 +330,8 @@ int SceneLoadTask::read_script(Stream *stream)
             if (component == nullptr)
                 component = gameObject->addComponent(componentHash);
 
-            component->Deserialize(stream);
+            if (component != nullptr)
+                component->Deserialize(stream);
 
             /*
             auto pool = ComponentManager::Find(component_name);

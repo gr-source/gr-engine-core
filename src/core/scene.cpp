@@ -59,7 +59,7 @@ void Scene::Clear()
     m_objects.clear();
 }
 
-void Scene::SetCamera(ComponentID id)
+void Scene::SetCamera(ComponentHandle id)
 {
     m_cameraID = id;
 }
@@ -113,24 +113,24 @@ bool Scene::destroy(GameObjectID gameObjectID)
     return true;
 }
 
-void Scene::AddLight(ComponentID id)
+void Scene::AddLight(ComponentHandle id)
 {
     if (Threadpool::IsMainThread())
         m_lights.push_back(id);
 }
 
-void Scene::RemoveLight(ComponentID id)
+void Scene::RemoveLight(ComponentHandle id)
 {
     if (Threadpool::IsMainThread())
         m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), id), m_lights.end());
 }
 
-std::vector<ComponentID> Scene::GetLights() const
+std::vector<ComponentHandle> Scene::GetLights() const
 {
     return m_lights;
 }
 
-void Scene::AddCamera(ComponentID id)
+void Scene::AddCamera(ComponentHandle id)
 {
     if (Threadpool::IsMainThread())
     {
@@ -141,13 +141,13 @@ void Scene::AddCamera(ComponentID id)
     }
 }
 
-void Scene::RemoveCamera(ComponentID id)
+void Scene::RemoveCamera(ComponentHandle id)
 {
     if (Threadpool::IsMainThread())
         m_cameras.erase(std::remove(m_cameras.begin(), m_cameras.end(), id), m_cameras.end());
 }
 
-std::vector<ComponentID> Scene::GetCameras() const
+std::vector<ComponentHandle> Scene::GetCameras() const
 {
     return m_cameras;
 }

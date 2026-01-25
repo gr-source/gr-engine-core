@@ -77,48 +77,44 @@ Transform* GameObject::getTransform() const
 void GameObject::SetState(bool enable)
 {}
 
-void GameObject::Copy(GameObjectID other)
+void GameObject::Copy(GameObjectID otherID)
 {
-    {
-        auto gameObject = GameObject::Get(other);
+    auto otherGO = GameObject::Get(otherID);
+    if (!otherGO)
+        return;
 
-        for (auto& hash : gameObject->GetHashes())
-        {
-            Behavior* behavior = getComponent(hash);
-            if (behavior == nullptr)
-            {
-                behavior = addComponent(hash, gameObject->GetID(hash));
-            } else if (hash != GetHashByType<Transform>(nullptr))
-            {
-                BehaviorStorage::Reinstance(hash, behavior, gameObject->getComponent(hash));
-                behavior->entityID = getCacheID();
-            }
-        }
+    for (auto& hash : otherGO->GetHashes())
+    {
+        if (hash == GetHashByType<Transform>(nullptr))
+            continue;
+
+        Behavior* sourceComp = otherGO->getComponent(hash);
+
+        Behavior* myComp = getComponent(hash);
+        if (!myComp)
+            myComp = addComponent(hash, otherGO->GetID(hash));
+
+        BehaviorStorage::Reinstance(hash, myComp, sourceComp);
+        myComp->entityID = this->getCacheID();
     }
 
-    auto targetTransform = GameObject::Get(other)->getTransform();
-    
-    auto localTransform = getTransform();
-    localTransform->setLocalScale(targetTransform->getLocalScale());
-    localTransform->setLocalRotation(targetTransform->getLocalRotation());
-    localTransform->setLocalPosition(targetTransform->getLocalPosition());
+    auto otherTrans = otherGO->getTransform();
 
-    if (targetTransform->hasParent())
+    auto myTrans = this->getTransform();
+    myTrans->setLocalPosition(otherTrans->getLocalPosition());
+    myTrans->setLocalRotation(otherTrans->getLocalRotation());
+    myTrans->setLocalScale(otherTrans->getLocalScale());
+
+    for (const auto& childTrans : otherTrans->getChildren())
     {
-        localTransform->setParent(targetTransform->getParent());
-    }
+        auto childGO = childTrans->GetGameObject();
+        
+        GameObjectID newChildID = GameObject::Create(childGO->getName());
+        auto newChildGO = GameObject::Get(newChildID);
+        
+        newChildGO->Copy(childGO->getCacheID());
 
-    for (const auto& child : targetTransform->getChildren())
-    {
-        auto childGameObject = child->GetGameObject();
-
-        auto childID = GameObject::Create(childGameObject->getName());
-
-        auto cloneObj = GameObjectManager::Get(childID);
-        cloneObj->Copy(child->GetGameObject()->getCacheID());
-
-        auto clonedTransform = cloneObj->getTransform();
-        clonedTransform->setParent(localTransform);
+        newChildGO->getTransform()->setParent(this->getTransform());
     }
 }
 

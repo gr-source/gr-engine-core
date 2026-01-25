@@ -109,7 +109,7 @@ GameObjectID GameObjectManager::create(const std::string &name)
     uint32_t id = m_freeIDs;
     m_freeIDs = wrapper[id].next;
 
-    GameObjectID cacheID = CreateGameObjectID(id, 0);
+    GameObjectID cacheID = CreateHandle(id, 0);
 
     GameObject* gameObject = &wrapper[id].gameObject;
 
@@ -125,14 +125,14 @@ GameObject* GameObjectManager::get(GameObjectID id)
 {
     GameObjectWrapper* wrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
 
-    return &wrapper[GetIDIndex(id)].gameObject;
+    return &wrapper[GetHandleID(id)].gameObject;
 }
 
 void GameObjectManager::destroyImediate(GameObjectID id)
 {
     GameObjectWrapper* wrapper = (GameObjectWrapper*)m_gameObjectPool->vector;
 
-    uint32_t index = GetIDIndex(id);
+    uint32_t index = GetHandleID(id);
 
     auto& gameObject = wrapper[index].gameObject;
 

@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <functional>
+#include <map>
 #include <mutex>
 
 enum class Priority : uint8_t
@@ -16,6 +17,9 @@ class MainThreadDispatcher
 {
 public:
     template <typename ...Args>
+    static void AddDelayed(float seconds, Args &&...args);
+
+    template <typename ...Args>
     static void Add(Priority priority, Args &&...args);
 
     static void Update();
@@ -27,6 +31,8 @@ private:
 
     std::vector<std::function<void()>> m_processingEvents;
 
+    std::multimap<float, std::function<void()>> m_timerHeap;
+
     std::atomic<bool> m_hasEvent;
     
     std::mutex m_mutex;
@@ -36,8 +42,16 @@ private:
 
     void update();
 
+    void addDelayed(float seconds, std::function<void()> func);
+
     void add(Priority priority, std::function<void()> func);
 };
+
+template <typename... Args>
+inline void MainThreadDispatcher::AddDelayed(float seconds, Args&&... args)
+{
+    return GetInstance().addDelayed(seconds, std::move(std::bind(std::forward<Args>(args)...)));
+}
 
 template <typename... Args>
 inline void MainThreadDispatcher::Add(Priority priority, Args&&... args)

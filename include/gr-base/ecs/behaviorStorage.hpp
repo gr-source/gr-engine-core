@@ -9,29 +9,35 @@ extern "C"
 #include "gr-base/externals/array.h"
 }
 
-typedef struct BehaviorPool
+typedef struct ComponentSparseSet
 {
-    array* elements;
-    array* sparse;
-    size_t count;
+    array* slot;
+    array* dense;
+    ComponentID count;
     ComponentID freeID;
-} BehaviorPool;
+} ComponentSparseSet;
+
+typedef struct ComponentSlot
+{
+    ComponentID denseIndex;
+    ComponentID version;
+} ComponentSlot;
 
 class BehaviorStorage
 {
 public:
     static void SetInstance(BehaviorStorage* behaviorStorage);
 
-    static ComponentID Allocate(uint64_t hash, ComponentID source);
+    static ComponentHandle Allocate(uint64_t hash, ComponentHandle source);
 
-    static void Deallocate(uint64_t hash, ComponentID id);
+    static void Deallocate(uint64_t hash, ComponentHandle handle);
 
     static bool Reinstance(uint64_t hash, Behavior* dest, const Behavior* src);
 
     template <typename T>
-    static T* GetComponent(ComponentID id);
+    static T* GetComponent(ComponentHandle id);
 
-    static Behavior* GetComponent(uint64_t hash, ComponentID id);
+    static Behavior* GetComponent(uint64_t hash, ComponentHandle id);
 
     static void Start();
 
@@ -47,13 +53,13 @@ private:
 
     array* m_storage;
 
-    ComponentID allocate(uint64_t hash, ComponentID source);
+    ComponentHandle allocate(uint64_t hash, ComponentHandle source);
 
-    void resize(ComponentInfo* info, BehaviorPool* pool, size_t count);
+    void resize(ComponentInfo* info, ComponentSparseSet* set, size_t count);
 
-    void deallocate(uint64_t hash, ComponentID id);
+    void deallocate(uint64_t hash, ComponentHandle handle);
 
-    Behavior* getComponent(uint64_t hash, ComponentID id);
+    Behavior* getComponent(uint64_t hash, ComponentHandle handle);
 
     bool reinstance(uint64_t hash, Behavior* dest, const Behavior* src);
 
@@ -65,7 +71,7 @@ private:
 };
 
 template <typename T>
-inline T* BehaviorStorage::GetComponent(ComponentID id)
+inline T* BehaviorStorage::GetComponent(ComponentHandle id)
 {
     return static_cast<T*>(s_BehaviorStorage->getComponent(GetHashByType<T>("nill"), id));
 }

@@ -29,7 +29,7 @@ public:
 
     void Clear();
 
-    void SetCamera(ComponentID id);
+    void SetCamera(ComponentHandle id);
 
     Camera *getCamera() const;
 
@@ -47,17 +47,17 @@ public:
 
     bool destroy(GameObjectID gameObjectID);
 
-    void AddLight(ComponentID id);
+    void AddLight(ComponentHandle id);
 
-    void RemoveLight(ComponentID id);
+    void RemoveLight(ComponentHandle id);
 
-    std::vector<ComponentID> GetLights() const;
+    std::vector<ComponentHandle> GetLights() const;
 
-    void AddCamera(ComponentID id);
+    void AddCamera(ComponentHandle id);
 
-    void RemoveCamera(ComponentID id);
+    void RemoveCamera(ComponentHandle id);
 
-    std::vector<ComponentID> GetCameras() const;
+    std::vector<ComponentHandle> GetCameras() const;
 
     void Serialize(Stream* stream) const;
 
@@ -70,9 +70,9 @@ public:
     void AddMesh(MeshID meshID);
 
 private:
-    std::vector<ComponentID> m_cameras;
+    std::vector<ComponentHandle> m_cameras;
 
-    std::vector<ComponentID> m_lights;
+    std::vector<ComponentHandle> m_lights;
 
     std::vector<GameObjectID> m_objects;
 
@@ -84,7 +84,7 @@ private:
 
     std::string m_name;
 
-    ComponentID m_cameraID;
+    ComponentHandle m_cameraID;
 
     static GameObjectID CreateEngineCamera();
 

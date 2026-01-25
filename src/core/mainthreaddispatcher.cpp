@@ -1,6 +1,8 @@
 #include "gr-base/core/mainthreaddispatcher.hpp"
 
+#include "gr-base/core/clock.hpp"
 #include "gr-base/core/console.hpp"
+#include <ctime>
 #include <vector>
 
 // public
@@ -23,6 +25,14 @@ void MainThreadDispatcher::update()
 
     {
         std::lock_guard<std::mutex> lock(m_mutex);
+        
+        auto it = m_timerHeap.begin();
+        while (it != m_timerHeap.end() && it->first <= Clock::time)
+        {
+            m_events[static_cast<int>(Priority::NORMAL)].push_back(std::move(it->second));
+            it = m_timerHeap.erase(it);
+        }
+
         for (uint8_t i=0;i<static_cast<uint8_t>(Priority::COUNT);i++)
         {
             if (m_events[i].empty())
@@ -36,7 +46,10 @@ void MainThreadDispatcher::update()
             
             m_events[i].clear();
         }
-        m_hasEvent.store(false, std::memory_order_release);
+
+        if (m_timerHeap.empty()) {
+            m_hasEvent.store(false, std::memory_order_release);
+        }
     }
 
     for (auto &event : m_processingEvents)
@@ -50,6 +63,17 @@ void MainThreadDispatcher::update()
     }
 
     m_processingEvents.clear();
+}
+
+void MainThreadDispatcher::addDelayed(float seconds, std::function<void()> func)
+{
+    if (func == nullptr)
+        return;
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_timerHeap.insert({Clock::time + seconds, func});
+
+    m_hasEvent.store(true, std::memory_order_release);
 }
 
 void MainThreadDispatcher::add(Priority priority, std::function<void()> func)
