@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/core/binary/gHeader.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 
 #include "gr-base/core/default.hpp"
@@ -38,6 +39,8 @@ private:
     int doInBackground() override;
 
     void onPostExecute(int result) override;
+
+    int write_segment(Stream* stream, HeaderType_ type, std::function<int(Stream*)> func);
 
     int write_metadata(Stream *stream);
 

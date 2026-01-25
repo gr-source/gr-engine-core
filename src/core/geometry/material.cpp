@@ -9,6 +9,8 @@
 
 #include <gr-render/gShader.h>
 
+#include <string.h>
+
 Material::Material() : m_shader(nullptr), m_shaderInstancing(nullptr), m_scalling{1.0f, 1.0f}, m_offset{0.0f, 0.0f}
 {
     m_textures.fill(nullptr);
@@ -328,7 +330,7 @@ void *Material::internal_set_value(const char *name, u8 count, const void *data)
 
     if (data != nullptr)
     {
-        std::memcpy(ptr, data, stride);
+        memcpy(ptr, data, stride);
     }
 
     return ptr;

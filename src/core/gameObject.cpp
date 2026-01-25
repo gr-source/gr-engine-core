@@ -107,7 +107,9 @@ void GameObject::Copy(GameObjectID otherID)
 
     for (const auto& childTrans : otherTrans->getChildren())
     {
-        auto childGO = childTrans->GetGameObject();
+        auto c = BehaviorStorage::GetComponent<Transform>(childTrans);
+
+        auto childGO = c->GetGameObject();
         
         GameObjectID newChildID = GameObject::Create(childGO->getName());
         auto newChildGO = GameObject::Get(newChildID);
@@ -131,6 +133,7 @@ void GameObject::Deserialize(Stream* stream)
 // private
 void GameObject::Serialize(GameObjectID id, Stream* stream)
 {
+    /*
     auto gameObject = GameObject::Get(id);
     if (!stream->write(gameObject->m_name))
         return;
@@ -172,10 +175,12 @@ void GameObject::Serialize(GameObjectID id, Stream* stream)
 
     for (auto child : children)
         Serialize(child->entityID, stream);
+    */
 }
 
 void GameObject::Deserialize(Stream* stream, GameObjectID id, ComponentID parent)
 {
+    /*
     auto gameObject = GameObject::Get(id);
     if (!stream->read(gameObject->m_name))
         return;
@@ -220,6 +225,7 @@ void GameObject::Deserialize(Stream* stream, GameObjectID id, ComponentID parent
 
     for (uint64_t i=0;i<childCount;i++)
         Deserialize(stream, GameObject::Create("unknow"), gameObject->GetID<Transform>());
+    */
 }
 
 

@@ -28,8 +28,6 @@ private:
 
     std::unordered_map<std::string, GameObjectID> m_gameobjectmap;
 
-    // std::unordered_map<std::string, grr::gShader *> m_shadermap;
-
     std::unordered_map<std::string, MaterialID> m_materialmap;
 
     GameObjectID doInBackground() override;

@@ -1,5 +1,8 @@
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 
+#include "gr-base/core/file/fileStream.hpp"
+#include "gr-base/core/file/memoryStream.hpp"
+#include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
@@ -17,8 +20,9 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/transform.hpp"
+#include <functional>
 
-GameObjectSaveTask::GameObjectSaveTask(const std::string &path, GameObjectID gameObjectID, std::function<void (GameObjectID)> func) : m_path(path), m_gameObjectID(gameObjectID), m_func(func)
+GameObjectSaveTask::GameObjectSaveTask(const std::string &file, GameObjectID gameObjectID, std::function<void (GameObjectID)> func) : m_file(file), m_gameObjectID(gameObjectID), m_func(func)
 {}
 
 // private
@@ -26,12 +30,12 @@ int GameObjectSaveTask::doInBackground()
 {
     auto gameObject = GameObject::Get(m_gameObjectID);
 
-    Stream stream(gfile::get_cache_directory() + "/" + (gameObject->getName() + ".gmdx"), std::ios_base::out | std::ios_base::binary);
+    FileStream stream(m_file, StreamType::OUTPUT);
 
     // Header file
     {
         FileHeader header{{'g', 'm', 'd', 'x'}, 1.1f, 0};
-        if (!stream.writeS(&header, 1, false))
+        if (!stream.write(&header, sizeof(FileHeader)))
         {
             Console::LogError("[ GameObjectSaveTask ] Fail to write header.");
             return 1;
@@ -57,27 +61,28 @@ void GameObjectSaveTask::onPostExecute(int result)
 
     auto gameObject = GameObject::Get(m_gameObjectID);
 
+    /*
+
     auto filename = gameObject->getName() + ".gmdx";
-    {
-        auto file = m_path + "/" + filename;
-        if (gfile::exists(file))
-            gfile::remove(file);
-    }
+    if (gfile::exists(m_file))
+        gfile::remove(m_file);
 
     auto file = gfile::get_cache_directory() + "/" + filename;
 
-    if (!gfile::exists(file) || !gfile::exists(m_path))
+    if (!gfile::exists(file))
         return;
+    
 
     try
     {
-        gfile::move(file.c_str(), m_path.c_str());
+        gfile::move(file.c_str(), m_file.c_str());
     } catch (const std::exception &e)
     {
         return Console::LogError("[ GameObjectSaveTask ] %s", e.what());
     }
+    */
 
-    Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", filename.c_str());
+    Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", gameObject->getName().c_str());
 
     if (m_func != nullptr)
         m_func(m_gameObjectID);
@@ -89,107 +94,55 @@ int GameObjectSaveTask::write_metadata(Stream *stream)
     return 0;
 }
 
+int GameObjectSaveTask::write_segment(Stream* stream, HeaderType_ type, std::function<int(Stream*)> func)
+{
+    size_t first = stream->tellp();
+
+    DataSegment dataSegment = {type, 0};
+    if (!stream->write(&dataSegment, sizeof(DataSegment)))
+        return 1;
+
+    if (func != nullptr && func(stream) != 0)
+        return 2;
+
+    size_t current = stream->tellp();
+
+    stream->seekp(first);
+
+    dataSegment = {type, current - first - sizeof(DataSegment)};
+    if (!stream->write(&dataSegment, sizeof(DataSegment)))
+        return 2;
+
+    stream->seekp(current);
+    return 0;
+}
+
 int GameObjectSaveTask::write_data(Stream *stream)
 {
-    /*
-    // write shader
-    {
-        if (write_shader(stream) != 0)
-        {
-            return 1;
-        }
-
-        DataSegment dataSegment = {HeaderType::SHADER, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 2;
-        }
-        stream->flush();
-    }
-    */
-
     // write texture
-    {
-        if (write_texture(stream) != 0)
-        {
-            return 3;
-        }
-        
-        DataSegment dataSegment = {HeaderType::TEXTURE, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 4;
-        }
-        stream->flush(); 
-    }
+    if (write_segment(stream, HeaderType::TEXTURE, std::bind(&GameObjectSaveTask::write_texture, this, std::placeholders::_1)))
+        return 1;
 
     // write material
-    {
-        if (write_material(stream) != 0)
-        {
-            return 5;
-        }
+    if (write_segment(stream, HeaderType::MATERIAL, std::bind(&GameObjectSaveTask::write_material, this, std::placeholders::_1)))
+        return 2;
 
-        DataSegment dataSegment = {HeaderType::MATERIAL, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 6;
-        }
-        stream->flush();
-    }
-    
     // write mesh
-    {
-        if (write_mesh(stream) != 0)
-            return 7;
-
-        DataSegment dataSegment = {HeaderType::MESH, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-            return 8;
-
-        stream->flush();
-    }
+    if (write_segment(stream, HeaderType::MESH, std::bind(&GameObjectSaveTask::write_mesh, this, std::placeholders::_1)))
+        return 3;
 
     // write gameobject
-    {
-        if (write_gameobject(stream, GameObject::Get(m_gameObjectID)) != 0)
-        {
-            return 7;
-        }
-
-        DataSegment dataSegment = {HeaderType::OBJECT, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 8;
-        }
-        stream->flush();
-    }
+    if (write_segment(stream, HeaderType::OBJECT, std::bind(&GameObjectSaveTask::write_gameobject, this, std::placeholders::_1, GameObject::Get(m_gameObjectID))))
+        return 5;
 
     // write script
-    {
-        if (write_script(stream) != 0)
-        {
-            return 9;
-        }
-
-        DataSegment dataSegment = {HeaderType::SCRIPT, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 10;
-        }
-        stream->flush();
-    }
+    if (write_segment(stream, HeaderType::SCRIPT, std::bind(&GameObjectSaveTask::write_script, this, std::placeholders::_1)))
+        return 6;
 
     // end file
-    {
-        DataSegment dataSegment = {HeaderType::NONE, 0};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 11;
-        }
+    if (write_segment(stream, HeaderType::NONE, nullptr))
+        return 7;
 
-        stream->flush();
-    }
     return 0;
 }
 
@@ -286,9 +239,9 @@ int GameObjectSaveTask::write_material(Stream *stream)
         // serialize material
         std::size_t bufferSize = 0;
         {
-            Stream temp;
+            MemoryStream temp;
             material.serialize(&temp);
-            bufferSize = temp.getDataSize();
+            bufferSize = temp.tellg();
 
             temp.close();
         }
@@ -315,10 +268,10 @@ int GameObjectSaveTask::write_mesh(Stream *stream)
 
         Mesh* mesh = AssetsManager::GetMesh(meshID);
 
-        Stream temp;
+        MemoryStream temp;
         mesh->serialize(&temp);
 
-        std::size_t length = temp.getDataSize();
+        std::size_t length = temp.tellg();
         if (!stream->write(length))
             return 3;
 
@@ -342,7 +295,7 @@ int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
 
     for (auto &child : children)
     {
-        int result = write_gameobject(stream, child->GetGameObject());
+        int result = write_gameobject(stream, BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
         if (result != 0)
             return 6;
     }
@@ -366,9 +319,9 @@ int GameObjectSaveTask::write_script(Stream *stream)
 
         size_t bufferlength = {};
         {
-            Stream temp;
+            MemoryStream temp;
             component->Serialize(&temp);
-            bufferlength = temp.getDataSize();
+            bufferlength = temp.tellg();
             temp.close();
         }
 
@@ -423,7 +376,7 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
 
     auto transform = gameObject->getTransform();
     for (auto &child : transform->getChildren())
-        read_gameobject(child->GetGameObject());
+        read_gameobject(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
 }
 
 

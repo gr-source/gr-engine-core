@@ -13,6 +13,8 @@ MaterialSaveTask::MaterialSaveTask(const std::string& file, const Material* mate
 // private
 int MaterialSaveTask::doInBackground()
 {
+    return 1;
+    /*
     Stream stream(m_file, std::ios_base::out | std::ios_base::binary);
     if (!stream.is_open())
         return 1;
@@ -27,6 +29,7 @@ int MaterialSaveTask::doInBackground()
     stream.close();
 
     return 0;
+    */
 }
 
 void MaterialSaveTask::onPostExecute(int result)

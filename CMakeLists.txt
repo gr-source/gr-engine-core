@@ -19,7 +19,8 @@ set(animation
 )
 
 set(file
-    src/core/file/stream.cpp
+    src/core/file/memoryStream.cpp
+    src/core/file/fileStream.cpp
     src/core/file/file.cpp
 )
 

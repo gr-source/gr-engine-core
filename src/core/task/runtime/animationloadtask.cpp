@@ -52,6 +52,7 @@ void AnimationLoadTask::upload(std::string path)
 
 void AnimationLoadTask::doInBackground(std::string path)
 {
+    /*
     Stream stream(path, std::ios_base::in | std::ios_base::binary);
 
     {
@@ -71,22 +72,12 @@ void AnimationLoadTask::doInBackground(std::string path)
         }
     }
 
-    /*
-    m_animation = AssetsManager::CreateAnimation(path);
-
-    if (!m_animation->deserialize(&stream))
-    {
-        stream.close();
-        Console::LogError("[ AnimationTask ] Fail to load animation 2-%s.", path.c_str());
-        return AssetsManager::RemoveTask(path);
-    }
-    */
-
     stream.close();
 
     AssetsManager::RemoveTask(path);
 
     Console::LogInfo("[ AnimationTask ] Animation loaded %s.", m_animation->getName().c_str());
+    */
 }
 
 

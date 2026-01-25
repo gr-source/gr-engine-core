@@ -257,7 +257,7 @@ void Scene::for_each(Transform *transform, std::function<void(GameObject *)> fun
 
     for (auto child : transform->getChildren())
     {
-        for_each(child, func);
+        // for_each(child, func);
     }
 }
 

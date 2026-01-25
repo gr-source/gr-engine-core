@@ -2,29 +2,13 @@
 
 #include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/gameObject.hpp"
+#include "gr-base/ecs/behaviorStorage.hpp"
 
 #include <algorithm>
 
-Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix)
+Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(INVALID_COMPONENT_HANDLE), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix)
 {}
 
-/*
-void Transform::onStart()
-{
-    m_lastposition = m_position;
-    m_lastrotation = m_rotation;
-    m_lastscale = m_scale;
-}
-
-void Transform::onDestroy()
-{
-    m_position = m_lastposition;
-    m_rotation = m_lastrotation;
-    m_scale = m_lastscale;
-
-    updateLocalMatrix();
-}
-*/
 void Transform::setLocalScale(const Vector3 &value)
 {
     m_scale = value;
@@ -51,7 +35,13 @@ const Quaternion &Transform::getLocalRotation() const
 
 Quaternion Transform::getRotation() const
 {
-    return m_parent != nullptr ? m_parent->getRotation() * m_rotation : m_rotation;
+    if (m_parent != INVALID_COMPONENT_HANDLE)
+    {
+        auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
+
+        return parent->getRotation() * m_rotation;
+    }
+    return m_rotation;
 }
 
 void Transform::setLocalPosition(const Vector3 &value)
@@ -75,9 +65,11 @@ void Transform::addLocalPosition(const Vector3 &value)
 
 Vector3 Transform::getPosition() const
 {
-    if (m_parent)
+    if (m_parent != INVALID_COMPONENT_HANDLE)
     {
-        Vector4 position = m_parent->getGlobalMatrix() * Vector4{m_position.x, m_position.y, m_position.z, 1.0f};
+        auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
+
+        Vector4 position = parent->getGlobalMatrix() * Vector4{m_position.x, m_position.y, m_position.z, 1.0f};
 
         return Vector3{position.x, position.y, position.z};
     }
@@ -112,38 +104,50 @@ const Matrix4x4 &Transform::getLocalMatrix() const {
 }
 
 bool Transform::hasParent() const {
-    return m_parent != nullptr;
+    return m_parent != INVALID_COMPONENT_HANDLE;
 }
 
 void Transform::setParent(Transform* newParent, bool)
 {
-    if (m_parent == newParent)
+    ComponentHandle handle = newParent != nullptr ? newParent->GetEntity()->GetID<Transform>() : INVALID_COMPONENT_HANDLE;
+    if (m_parent == handle)
         return;
 
-    if (m_parent != nullptr)
+    if (m_parent != INVALID_COMPONENT_HANDLE)
     {
-        auto& children = m_parent->m_children;
-        children.erase(std::remove(children.begin(), children.end(), this), children.end());
+        auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
+
+        auto& children = parent->m_children;
+        children.erase(std::remove(children.begin(), children.end(), GetEntity()->GetID<Transform>()), children.end());
     }
 
-    m_parent = newParent;
+    m_parent = handle;
 
-    if (m_parent != nullptr)
-        m_parent->m_children.push_back(this);
+    if (m_parent != INVALID_COMPONENT_HANDLE)
+    {
+        auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
+
+        auto& children = parent->m_children;
+        children.push_back(GetEntity()->GetID<Transform>());
+    }
 
     updateLocalMatrix(); 
 }
 
-Transform *Transform::getParent() const {
-    return m_parent;
+Transform *Transform::getParent() const
+{
+    return m_parent != INVALID_COMPONENT_HANDLE ? BehaviorStorage::GetComponent<Transform>(m_parent) : nullptr;
 }
 
 void Transform::addChildren(Transform *child)
 {
-    m_children.push_back(child);
+    child->m_parent = child->GetEntity()->GetID<Transform>();
+
+    m_children.push_back(child->GetEntity()->GetID<Transform>());
 }
 
-std::vector<Transform *> Transform::getChildren() const {
+std::vector<ComponentHandle> Transform::getChildren() const
+{
     return m_children;
 }
 
@@ -163,13 +167,18 @@ void Transform::updateGlobalMatrix()
 {
     m_globalMatrix = getLocalMatrix();
 
-    if (m_parent)
+    if (m_parent != INVALID_COMPONENT_HANDLE)
     {
-        m_globalMatrix = m_parent->getGlobalMatrix() * m_globalMatrix;
+        auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
+
+        m_globalMatrix = parent->getGlobalMatrix() * m_globalMatrix;
     }
 
-    for (auto &child : m_children)
-            child->updateLocalMatrix();
+    for (auto &handle : m_children)
+    {
+        auto transform = BehaviorStorage::GetComponent<Transform>(handle);
+        transform->updateLocalMatrix();
+    }
 }
 
 bool Transform::Serialize(Stream *stream) const

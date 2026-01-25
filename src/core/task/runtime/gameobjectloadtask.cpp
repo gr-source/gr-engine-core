@@ -2,6 +2,7 @@
 
 #include "gr-base/core/binary/gHeader.hpp"
 
+#include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/stream.hpp"
 
 #include "gr-base/managers/assetsManager.hpp"
@@ -27,10 +28,10 @@ GameObjectID GameObjectLoadTask::doInBackground()
 {
     Console::LogInfo("[ GameObjectLoadTask ] Loading file: %s...", m_path.c_str());
 
-    Stream stream(m_path, std::ios_base::in | std::ios_base::binary);
+    FileStream stream(m_path, StreamType::INPUT);
 
     FileHeader fileHeader;
-    if (!stream.read(reinterpret_cast<char *>(&fileHeader), sizeof(FileHeader)))
+    if (!stream.read(&fileHeader, sizeof(FileHeader)))
         return GID_INVALID;
 
     if (strncmp(fileHeader.sign, "gmdx", 4) != 0)
@@ -44,6 +45,7 @@ GameObjectID GameObjectLoadTask::doInBackground()
 
     if (read_data(&stream) != 0)
         return GID_INVALID;
+
     return m_gameObject;
 }
 
@@ -81,7 +83,7 @@ int GameObjectLoadTask::read_data(Stream *stream)
         auto next = stream->tellg() + static_cast<std::streampos>(dataSegment.sizeData);
         if (dataSegment.sizeData <= 0)
         {
-            stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next);
             continue;
         }
 
@@ -93,11 +95,6 @@ int GameObjectLoadTask::read_data(Stream *stream)
 
         switch (dataSegment.type)
         {
-            /*
-            case HeaderType::SHADER:
-                result = read_shader(stream);
-                break;
-                */
             case HeaderType::TEXTURE:
                 result = read_texture(stream);
                 break;
@@ -123,7 +120,7 @@ int GameObjectLoadTask::read_data(Stream *stream)
         }
 
         if (stream->tellg() != next)
-            stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next);
     }
     return 0;
 }
@@ -235,7 +232,7 @@ int GameObjectLoadTask::read_material(Stream *stream)
         if (materialID == nill)
         {
             auto it = m_materialmap.find(name);
-            if (it == m_materialmap.end()/* && m_shadermap.find(shadername) != m_shadermap.end() */)
+            if (it == m_materialmap.end())
             {
                 materialID = AssetsManager::CreateMaterial(name);
                 {
@@ -249,7 +246,7 @@ int GameObjectLoadTask::read_material(Stream *stream)
             m_materialmap.emplace(name, materialID);
 
         if (stream->tellg() != next)
-            stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next);
     }
     return 0;
 }
@@ -281,7 +278,7 @@ int GameObjectLoadTask::read_mesh(Stream *stream)
             mesh->deserialize(stream);
         } else
         {
-            stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next);
         }
     }
     return 0;
@@ -358,7 +355,7 @@ int GameObjectLoadTask::read_script(Stream *stream)
         }
 
         if (stream->tellg() != next)
-            stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next);
     }
     return 0;
 }

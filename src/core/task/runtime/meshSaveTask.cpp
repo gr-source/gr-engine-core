@@ -14,6 +14,7 @@ MeshSaveTask::MeshSaveTask(const std::string& file, MeshID id, std::function<voi
 // private
 MeshID MeshSaveTask::doInBackground()
 {
+    /*
     auto meshName = AssetsManager::GetMeshName(m_meshID);
 
     Stream stream(gfile::get_cache_directory() + "/" + (meshName + ".gmsh"), std::ios_base::out | std::ios_base::binary);
@@ -34,6 +35,8 @@ MeshID MeshSaveTask::doInBackground()
     stream.close();
 
     return m_meshID;
+    */
+    return ID_INVALID;
 }
 
 void MeshSaveTask::onPostExecute(MeshID result)

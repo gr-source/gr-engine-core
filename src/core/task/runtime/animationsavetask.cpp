@@ -24,6 +24,7 @@ void AnimationSaveTask::doInBackground(std::string path, const Animation *animat
 {
     auto name = animation->getName();
 
+    /*
     Stream stream(path, std::ios_base::out | std::ios_base::binary);
 
     {
@@ -47,6 +48,7 @@ void AnimationSaveTask::doInBackground(std::string path, const Animation *animat
     stream.close();
 
     Console::LogInfo("[ AnimationTask ] Animation saved %s.", name.c_str());
+    */
 }
 
 

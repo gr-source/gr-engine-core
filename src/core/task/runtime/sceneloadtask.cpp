@@ -1,5 +1,6 @@
 #include "gr-base/core/task/runtime/sceneloadtask.hpp"
 
+#include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
@@ -28,13 +29,7 @@ void SceneLoadTask::addFunction(std::function<void (Scene *)> func)
 // ***** private ***** //
 int SceneLoadTask::doInBackground()
 {
-    Stream stream(m_path, std::ios_base::in | std::ios_base::binary);
-    if (!stream.is_open())
-    {
-        Console::LogError("[ SceneLoadTask ] Faleid to open scene: ", m_path.c_str());
-        return 1;
-    }
-
+    FileStream stream(m_path, StreamType::INPUT);
     // read header data
     {
         FileHeader header;
@@ -111,7 +106,7 @@ int SceneLoadTask::doInBackground()
             {
                 Console::LogWarning("[ SceneLoadTask ] Data segment: %s is not fully loaded.", headerName.c_str());
             }
-            stream.seekg(nextPosition, std::ios_base::beg);
+            stream.seekg(nextPosition);
             continue;
         }
     }
@@ -233,7 +228,7 @@ int SceneLoadTask::read_material(Stream *stream)
         }
 
         if (stream->tellg() != next)
-            stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next);
     }
     return 0;
 }
@@ -265,7 +260,7 @@ int SceneLoadTask::read_mesh(Stream *stream)
             mesh->deserialize(stream);
         } else
         {
-            stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next);
         }
     }
     return 0;
@@ -332,23 +327,11 @@ int SceneLoadTask::read_script(Stream *stream)
 
             if (component != nullptr)
                 component->Deserialize(stream);
-
-            /*
-            auto pool = ComponentManager::Find(component_name);
-            if (pool != nullptr)
-            {
-                auto entity = it->second;
-
-                auto component = entity->hasComponent(component_name) ? entity->getComponent(component_name) : entity->addComponent(component_name);
-
-                pool->deserialize(component, stream);
-            }
-            */
         }
 
         if (stream->tellg() != next)
         {
-            stream->seekg(next, std::ios_base::beg);
+            stream->seekg(next);
         }
     }
     return 0;

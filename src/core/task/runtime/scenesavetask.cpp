@@ -1,5 +1,8 @@
 #include "gr-base/core/task/runtime/scenesavetask.hpp"
 
+#include "gr-base/core/file/fileStream.hpp"
+#include "gr-base/core/file/memoryStream.hpp"
+#include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 
@@ -15,6 +18,7 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/transform.hpp"
+#include <functional>
 
 SceneSaveTask::SceneSaveTask(const std::string &file, const Scene *scene, std::function<void ()> func) : m_file(file), m_scene(scene), m_func(func)
 {}
@@ -24,19 +28,17 @@ int SceneSaveTask::doInBackground()
 {
     Console::LogInfo("[ SceneSaveTask ] Writing scene %s...", m_file.c_str());
 
-    Stream stream(m_file, std::ios_base::out | std::ios_base::binary);
+    FileStream stream(m_file, StreamType::OUTPUT);
     // header data
     {
-        FileHeader header{{'g', 'r', 's', 'c'}, 1.0f, static_cast<std::size_t>(stream.getDataSize())};
+        FileHeader header{{'g', 'r', 's', 'c'}, 1.0f, 0};
 
-        if (!stream.writeS(&header, 1, false))
+        if (!stream.write(&header, sizeof(FileHeader)))
             return 1;
     }
 
     if (write_metadata(&stream) != 0)
         return 2;
-
-    stream.flush();
 
     if (write_data(&stream) != 0)
         return 3;
@@ -55,113 +57,58 @@ void SceneSaveTask::onPostExecute(int result)
         m_func();
 }
 
+int SceneSaveTask::write_segment(Stream* stream, HeaderType_ type, std::function<int(Stream*)> func)
+{
+    size_t first = stream->tellp();
+
+    DataSegment dataSegment = {type, 0};
+    if (!stream->write(&dataSegment, sizeof(DataSegment)))
+        return 1;
+
+    if (func != nullptr && func(stream) != 0)
+        return 2;
+
+    size_t current = stream->tellp();
+
+    stream->seekp(first);
+
+    dataSegment = {type, current - first - sizeof(DataSegment)};
+    if (!stream->write(&dataSegment, sizeof(DataSegment)))
+        return 2;
+
+    stream->seekp(current);
+    return 0;
+}
+
 int SceneSaveTask::write_data(Stream *stream)
 {
     // shader
-    {
-        if (write_shader(stream) != 0)
-        {
-            return 2;
-        }
-
-        DataSegment dataSegment = {HeaderType::SHADER, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 4;
-        }
-
-        stream->flush();
-    }
+    if (write_segment(stream, HeaderType::SHADER, std::bind(&SceneSaveTask::write_shader, this, std::placeholders::_1)))
+        return 1;
 
     // textures
-    {
-        if (write_texture(stream) != 0)
-        {
-            return 3;
-        }
-    
-        DataSegment dataSegment = {HeaderType::TEXTURE, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 4;
-        }
-    
-        stream->flush();
-    }
+    if (write_segment(stream, HeaderType::TEXTURE, std::bind(&SceneSaveTask::write_texture, this, std::placeholders::_1)))
+        return 2;
 
     // material
-    {
-        if (write_material(stream) != 0)
-        {
-            return 5;
-        }
-    
-        DataSegment dataSegment = {HeaderType::MATERIAL, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 6;
-        }
-    
-        stream->flush();
-    }
+    if (write_segment(stream, HeaderType::MATERIAL, std::bind(&SceneSaveTask::write_material, this, std::placeholders::_1)))
+        return 3;
 
     // Mesh
-    {
-        if (write_mesh(stream) != 0)
-        {
-            return 7;
-        }
+    if (write_segment(stream, HeaderType::MESH, std::bind(&SceneSaveTask::write_mesh, this, std::placeholders::_1)))
+        return 4;
 
-        DataSegment dataSegment = {HeaderType::MESH, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 8;
-        }
-
-        stream->flush();
-    }
-    
     // Objects
-    {
-        if (write_gameobject(stream) != 0)
-        {
-            return 9;
-        }
-        
-        DataSegment dataSegment = {HeaderType::OBJECT, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 10;
-        }
-
-        stream->flush();
-    }
+    if (write_segment(stream, HeaderType::OBJECT, std::bind(&SceneSaveTask::write_gameobject, this, std::placeholders::_1)))
+        return 5;
 
     // script
-    {
-        if (write_script(stream) != 0)
-        {
-            return 11;
-        }
-        
-        DataSegment dataSegment = {HeaderType::SCRIPT, static_cast<std::size_t>(stream->getDataSize())};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            return 12;
-        }
-
-        stream->flush();
-    }
+    if (write_segment(stream, HeaderType::SCRIPT, std::bind(&SceneSaveTask::write_script, this, std::placeholders::_1)))
+        return 6;
 
     // end file
-    {
-        DataSegment dataSegment{HeaderType::NONE, 0};
-        if (!stream->writeS(&dataSegment, 1, false))
-        {
-            Console::LogError("[ Scene ] Failed to write scene: 1");
-        }
-        stream->flush();
-    }
+    if (write_segment(stream, HeaderType::NONE, nullptr))
+        return 7;
 
     return 0;
 }
@@ -228,9 +175,9 @@ int SceneSaveTask::write_material(Stream *stream)
         // deserialize material
         std::size_t bufferSize = 0;
         {
-            Stream temp;
+            MemoryStream temp;
             material.serialize(&temp);
-            bufferSize = temp.getDataSize();
+            bufferSize = temp.tellg();
 
             temp.close();
         }
@@ -259,10 +206,10 @@ int SceneSaveTask::write_mesh(Stream *stream)
 
         Mesh* mesh = AssetsManager::GetMesh(meshID);
 
-        Stream temp;
+        MemoryStream temp;
         mesh->serialize(&temp);
 
-        std::size_t length = temp.getDataSize();
+        std::size_t length = temp.tellg();
         if (!stream->write(length))
             return 3;
 
@@ -305,27 +252,17 @@ int SceneSaveTask::write_script(Stream *stream)
         if (!stream->write(componentHash))
             return 2;
 
-        /*
-        auto pool = ComponentManager::Find(component_name);
-        if (pool == nullptr)
-        {
-            return 3;
-        }
-        */
-
         std::size_t bufferlength = {};
         {
-            Stream temp;
+            MemoryStream temp;
             component->Serialize(&temp);
-            // pool->serialize((Component *)component, &temp);
-            bufferlength = temp.getDataSize();
+            bufferlength = temp.tellg();
             temp.close();
         }
 
         if (!stream->write(bufferlength))
             return 4;
 
-        // pool->serialize((Component *)component, stream);
         component->Serialize(stream);
     }
     return 0;
@@ -367,7 +304,7 @@ bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
 
     for (auto &child : children)
     {
-        if (!serialize(stream, child->GetGameObject()))
+        if (!serialize(stream, BehaviorStorage::GetComponent<Transform>(child)->GetGameObject()))
         {
             return false;
         }
@@ -425,7 +362,7 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
 
     auto transform = gameObject->getTransform();
     for (auto &child : transform->getChildren())
-        read_data(child->GetGameObject());
+        read_data(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
 }
 
 

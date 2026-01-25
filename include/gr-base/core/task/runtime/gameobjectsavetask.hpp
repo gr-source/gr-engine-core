@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/core/binary/gHeader.hpp"
 #include "gr-base/core/geometry/default.hpp"
 
 #include "gr-base/core/file/default.hpp"
@@ -19,10 +20,10 @@ class GameObjectSaveTask : public IAsyncTask<int>
 {
 public:
     GameObjectSaveTask() = delete;
-    GameObjectSaveTask(const std::string &dir, GameObjectID gameObject, std::function<void (GameObjectID)> func);
+    GameObjectSaveTask(const std::string &file, GameObjectID gameObject, std::function<void (GameObjectID)> func);
 
 private:
-    const std::string m_path;
+    const std::string m_file;
 
     GameObjectID m_gameObjectID;
 
@@ -43,6 +44,8 @@ private:
     void onPostExecute(int result) override;
 
     int write_metadata(Stream *stream);
+
+    int write_segment(Stream* stream, HeaderType_ type, std::function<int(Stream*)> func);
 
     int write_data(Stream *stream);
 

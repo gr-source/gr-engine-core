@@ -11,10 +11,6 @@ class Transform : public BehaviorImpl<Transform>
 public:
     Transform();
 
-    // void onStart() override;
-
-    // void onDestroy() override;
-
     void setLocalScale(const Vector3 &value);
 
     const Vector3 &getLocalScale() const;
@@ -55,7 +51,7 @@ public:
 
     void addChildren(Transform *transform);
 
-    std::vector<Transform *> getChildren() const;
+    std::vector<ComponentHandle> getChildren() const;
 
     bool hasChildren() const;
 
@@ -70,15 +66,9 @@ private:
 
     Vector3 m_position;
 
-    Vector3 m_lastscale;
+    std::vector<ComponentHandle> m_children;
 
-    Quaternion m_lastrotation;
-
-    Vector3 m_lastposition;
-
-    std::vector<Transform *> m_children;
-
-    Transform* m_parent;
+    ComponentHandle m_parent;
 
     Matrix4x4 m_localMatrix;
 

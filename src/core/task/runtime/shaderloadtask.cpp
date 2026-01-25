@@ -7,11 +7,11 @@
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 
-#include <algorithm>
-#include <cstdarg>
 #include <gr-render/gError.h>
-#include <stack>
+
 #include <stdexcept>
+#include <fstream>
+#include <stack>
 
 #define PRINT_ERROR(func, property, type) \
     if (func == InvalidID) { \

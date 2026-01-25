@@ -4,6 +4,7 @@
 #include "gr-base/core/default.hpp"
 #include "gr-base/core/scene.hpp"
 
+#include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/managers/sceneManager.hpp"
@@ -139,7 +140,7 @@ void GameObjectManager::destroyImediate(GameObjectID id)
     {
         auto transform = gameObject.getTransform();
         for (auto child : transform->getChildren())
-            destroyImediate(child->GetGameObject()->getCacheID());
+            destroyImediate(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject()->getCacheID());
     }
 
     wrapper[index].next = m_freeIDs;

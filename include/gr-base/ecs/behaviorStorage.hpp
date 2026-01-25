@@ -21,6 +21,7 @@ typedef struct ComponentSlot
 {
     ComponentID denseIndex;
     ComponentID version;
+    ComponentID next;
 } ComponentSlot;
 
 class BehaviorStorage

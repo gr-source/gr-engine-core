@@ -13,6 +13,7 @@ MeshLoadTask::MeshLoadTask(const std::string& file, std::function<void (MeshID)>
 // private
 MeshID MeshLoadTask::doInBackground()
 {
+    /*
     Stream stream(m_file, std::ios_base::in | std::ios_base::binary);
 
     // Header file
@@ -41,6 +42,8 @@ MeshID MeshLoadTask::doInBackground()
     stream.close();
 
     return meshID;
+    */
+    return ID_INVALID;
 }
 
 void MeshLoadTask::onPostExecute(MeshID result)
