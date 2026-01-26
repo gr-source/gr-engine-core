@@ -200,7 +200,9 @@ void GameObjectManager::destroyImediate(GameObjectID id)
 }
 
 void GameObjectManager::destroy(GameObjectID id)
-{}
+{
+    MainThreadDispatcher::Add(Priority::HIGHT, &GameObjectManager::destroyImediate, this, id);
+}
 
 void GameObjectManager::requestResize()
 {

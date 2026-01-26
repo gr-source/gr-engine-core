@@ -139,15 +139,20 @@
 #define MOUSE_BUTTON_RIGHT     MOUSE_BUTTON_2
 #define MOUSE_BUTTON_MIDDLE    MOUSE_BUTTON_3
 
-class Input {
+class Input
+{
 public:
     static bool (*IsKeyPress)(int key);
 
     static void (*SetCursorPos)(const Vector2 &pos);
 
-    static Vector2 (*GetCursorPos)();
+    static Vector2 (*GetCursorPos)(void);
 
     static bool (*IsMousePress)(int button);
+
+    static Vector2 (*GetMouseDelta)(void);
+
+    static Vector2 (*GetMouseScroll)(void);
 };
 
 

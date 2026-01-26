@@ -365,7 +365,7 @@ void BehaviorStorage::update()
     for (auto& hash : BehaviorRegistry::GetActiveBehaviorActive())
     {
         ComponentInfo* info = BehaviorRegistry::Get(hash);
-        if (!info->starthash)
+        if (!info->update)
             continue;
 
         size_t poolID = hash % COMPONENT_TABLE_SIZE;
