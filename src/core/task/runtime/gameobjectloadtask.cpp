@@ -3,6 +3,7 @@
 #include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/core/file/fileStream.hpp"
+#include "gr-base/core/file/memoryStream.hpp"
 #include "gr-base/core/file/stream.hpp"
 
 #include "gr-base/managers/assetsManager.hpp"
@@ -20,11 +21,11 @@
 
 #include <gr-render/gShader.h>
 
-GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObjectID)> func) : m_path(path), m_func(func), m_gameObject(GID_INVALID)
+GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObjectID)> func) : m_path(path), m_func(func), m_gameObject(GID_INVALID), m_root(nullptr)
 {}
 
 // ***** private ***** //
-GameObjectID GameObjectLoadTask::doInBackground()
+int GameObjectLoadTask::doInBackground()
 {
     Console::LogInfo("[ GameObjectLoadTask ] Loading file: %s...", m_path.c_str());
 
@@ -32,33 +33,62 @@ GameObjectID GameObjectLoadTask::doInBackground()
 
     FileHeader fileHeader;
     if (!stream.read(&fileHeader, sizeof(FileHeader)))
-        return GID_INVALID;
+        return 1;
 
     if (strncmp(fileHeader.sign, "gmdx", 4) != 0)
     {
         Console::LogError("[ GameObjectLoadTask ] file is not gmdx: %s", m_path.c_str());
-        return GID_INVALID;
+        return 2;
     }
 
     if (read_metadata(&stream) != 0)
-        return GID_INVALID;
+        return 3;
 
     if (read_data(&stream) != 0)
-        return GID_INVALID;
+        return 5;
 
-    return m_gameObject;
+    return 0;
 }
 
-void GameObjectLoadTask::onPostExecute(GameObjectID result)
+void GameObjectLoadTask::onPostExecute(int result)
 {
-    if (result == GID_INVALID)
+    if (result != 0)
         return Console::LogError("[ GameObjectLoadTask ] fail to load: %s", m_path.c_str());
+
+    auto gameObjectID = CreateFromCache(m_root.get());
 
     Console::LogInfo("[ GameObjectLoadTask ] Loaded: %s", m_path.c_str());
 
     if (m_func)
-        m_func(result);
+        m_func(gameObjectID);
 }
+
+GameObjectID GameObjectLoadTask::CreateFromCache(GameObjectCache* cache)
+{
+    auto gameObjectID = GameObject::Create(cache->name);
+
+    auto gameObject = GameObject::Get(gameObjectID);
+
+    MemoryStream stream(cache->buffer.data(), cache->buffer.size());
+    if (read_script_from_cache(gameObject, &stream) != 0)
+    {
+        Console::LogWarning("[ GameObjectLoadTask ] Adding Script falied: %s", cache->name.c_str());
+    }
+
+    auto transform = gameObject->getTransform();
+
+    for (auto &child : cache->chindren)
+    {
+        auto childID = CreateFromCache(child.get());
+
+        auto goChild = GameObject::Get(childID);
+
+        transform->addChildren(goChild->getTransform());
+    }
+
+    return gameObjectID;
+}
+
 
 int GameObjectLoadTask::read_metadata(Stream *stream)
 {
@@ -75,21 +105,21 @@ int GameObjectLoadTask::read_data(Stream *stream)
             break;
         }
 
-        if (dataSegment.type == HeaderType::NONE && dataSegment.sizeData == 0)
+        if (dataSegment.type == HeaderType::NONE && dataSegment.size == 0)
         {
             break;
         }
 
-        auto next = stream->tellg() + static_cast<std::streampos>(dataSegment.sizeData);
-        if (dataSegment.sizeData <= 0)
+        auto next = stream->tellg() + static_cast<std::streampos>(dataSegment.size);
+        if (dataSegment.size <= 0)
         {
             stream->seekg(next);
             continue;
         }
 
-        auto name = HeaderName[dataSegment.type];
+        auto name = HeaderName[static_cast<uint8_t>(dataSegment.type)];
 
-        Console::LogWarning("segment: %s", HeaderName[dataSegment.type].c_str());
+        Console::LogWarning("segment: %s", name.c_str());
 
         int result = 0;
 
@@ -105,8 +135,12 @@ int GameObjectLoadTask::read_data(Stream *stream)
                 result = read_mesh(stream);
                 break;
             case HeaderType::OBJECT:
-                result = read_gameobject(stream);
-                break;
+                {
+                    auto root = read_gameobject(stream);
+                    if (m_root == nullptr)
+                        m_root = std::move(root);
+                    break;
+                }
             case HeaderType::SCRIPT:
                 result = read_script(stream);
                 break;
@@ -284,53 +318,68 @@ int GameObjectLoadTask::read_mesh(Stream *stream)
     return 0;
 }
 
-int GameObjectLoadTask::read_gameobject(Stream *stream, Transform *parent)
+std::unique_ptr<GameObjectLoadTask::GameObjectCache> GameObjectLoadTask::read_gameobject(Stream *stream)
 {
     std::string name;
-
     if (!stream->read(name))
-        return 1;
+        return nullptr;
 
-    auto gameObjectID = GameObject::Create(name);
+    auto data = std::make_unique<GameObjectCache>();
+    data->name = name;
 
-    m_gameobjectmap.emplace(name, gameObjectID);
-
-    if (m_gameObject == GID_INVALID)
-        m_gameObject = gameObjectID;
-
-    auto gameObject = GameObject::Get(gameObjectID);
-    auto transform = gameObject->getTransform();
-    if (parent != nullptr)
-        transform->setParent(parent);
+    m_gameobjectmap.emplace(name, data.get());
 
     std::size_t ccount = {};
     if (!stream->read(ccount))
-        return 5;
+        return nullptr;
 
     for (std::size_t i={};i<ccount;i++)
     {
-        int result = read_gameobject(stream, transform);
-        if (result != 0)
-        {
-            return 6;
-        }
+        auto result = read_gameobject(stream);
+        if (result == nullptr)
+            break;
+
+        data->chindren.push_back(std::move(result));
     }
 
-    return 0;
+    return data;
 }
 
 int GameObjectLoadTask::read_script(Stream *stream)
 {
-    std::size_t count = {};
-    if (!stream->read(count))
+    std::size_t gocount = {};
+    if (!stream->read(gocount))
         return 1;
 
-    for (std::size_t i=0;i<count;i++)
+    for (std::size_t i=0;i<gocount;i++)
     {
-        std::string go_name;
-        if (!stream->read(go_name))
+        std::string name;
+        if (!stream->read(name))
             return 2;
 
+        uint64_t buffersize;
+        if (!stream->read(buffersize))
+            return 4;
+
+        std::vector<uint8_t> buffer(buffersize, 0);
+        if (!stream->read(buffer.data(), buffersize))
+            return 5;
+
+        auto cache = m_gameobjectmap.find(name);
+        if (cache != m_gameobjectmap.end())
+            cache->second->buffer = buffer;
+    }
+    return 0;
+}
+
+int GameObjectLoadTask::read_script_from_cache(GameObject* gameObject, Stream* stream)
+{
+    uint32_t behaviorCount;
+    if (!stream->read(behaviorCount))
+        return 1;
+
+    for (uint32_t j=0;j<behaviorCount;j++)
+    {
         uint64_t componentHash;
         if (!stream->read(componentHash))
             return 3;
@@ -341,18 +390,12 @@ int GameObjectLoadTask::read_script(Stream *stream)
 
         auto next = stream->tellg() + static_cast<std::streampos>(bufferlength);
 
-        auto it = m_gameobjectmap.find(go_name);
-        if (it != m_gameobjectmap.end())
-        {
-            auto gameObject = GameObject::Get(it->second);
-            
-            auto component = gameObject->getComponent(componentHash);
-            if (component == nullptr)
-                component = gameObject->addComponent(componentHash);
+        auto component = gameObject->getComponent(componentHash);
+        if (component == nullptr)
+            component = gameObject->addComponent(componentHash);
 
-            if (bufferlength > 0)
-                component->Deserialize(stream);
-        }
+        if (component != nullptr && bufferlength > 0)
+            component->Deserialize(stream);
 
         if (stream->tellg() != next)
             stream->seekg(next);

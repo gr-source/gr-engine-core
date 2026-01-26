@@ -83,6 +83,8 @@ void RenderManager::insert(GameObjectID gameObjectID)
         return;
 
     auto gameObject = GameObject::Get(gameObjectID);
+    if (gameObject == nullptr)
+        return;
 
     auto lodComponent = gameObject->getComponent<LODComponent>();
     auto meshFilter = gameObject->getComponent<MeshFilter>();

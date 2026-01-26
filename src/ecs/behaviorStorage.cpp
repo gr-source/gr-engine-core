@@ -105,6 +105,8 @@ ComponentHandle BehaviorStorage::allocate(uint64_t hash, ComponentHandle source)
     ComponentSlot& slot = slots[slotID];
     slot.denseIndex = set.count++;
 
+    *(ComponentID*)(wraper + (slot.denseIndex * info->size)) = slotID;
+
     Behavior* behavior = (Behavior*)(wraper + (slot.denseIndex * info->size + info->offset));
     ((void(*)(Behavior*, const Behavior*))(info->constructor))(behavior, source != INVALID_COMPONENT_HANDLE ? GetComponent(hash, source) : nullptr);
 
@@ -149,18 +151,13 @@ void BehaviorStorage::deallocate(uint64_t hash, ComponentHandle handle)
 
         ((void(*)(Behavior*, const Behavior*))(info->constructor))(behavior, lastBehavior);
 
-        // ((void(*)(Behavior*))(info->destructor))(lastBehavior);
-
         // memset((void*)lastBehavior, 0, info->size - info->offset);
 
-        for (uint32_t i = 0; i < set.slot->length; ++i)
-        {
-            if (slots[i].denseIndex == lastIndex)
-            {
-                slots[i].denseIndex = removeIndex;
-                break;
-            }
-        }
+        ComponentID newSlotID = *(ComponentID*)(wrapper + (lastIndex * info->size));
+
+        *(ComponentID*)(wrapper + (removeIndex * info->size)) = newSlotID;
+
+        slots[newSlotID].denseIndex = removeIndex;
     }
 
     slot->denseIndex = INVALID_COMPONENT_ID;

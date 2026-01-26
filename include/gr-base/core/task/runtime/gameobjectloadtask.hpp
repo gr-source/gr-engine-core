@@ -14,25 +14,38 @@
 
 #include <functional>
 
-class GameObjectLoadTask : public IAsyncTask<GameObjectID>
+class GameObjectLoadTask : public IAsyncTask<int>
 {
 public:
     GameObjectLoadTask(const std::string &path, std::function<void (GameObjectID )> func);
 
 private:
+    struct GameObjectCache
+    {
+        std::string name;
+
+        std::vector<uint8_t> buffer;
+
+        std::vector<std::unique_ptr<GameObjectCache>> chindren;
+    };
+
     const std::string m_path;
 
     std::function<void (GameObjectID)> m_func;
 
+    std::unique_ptr<GameObjectCache> m_root;
+
     GameObjectID m_gameObject;
 
-    std::unordered_map<std::string, GameObjectID> m_gameobjectmap;
+    std::unordered_map<std::string, GameObjectCache*> m_gameobjectmap;
 
     std::unordered_map<std::string, MaterialID> m_materialmap;
 
-    GameObjectID doInBackground() override;
+    int doInBackground() override;
 
-    void onPostExecute(GameObjectID result) override;
+    void onPostExecute(int result) override;
+
+    GameObjectID CreateFromCache(GameObjectCache* cache);
 
     int read_metadata(Stream *stream);
 
@@ -46,9 +59,11 @@ private:
 
     int read_mesh(Stream *stream);
 
-    int read_gameobject(Stream *stream, Transform *parent = nullptr);
+    std::unique_ptr<GameObjectCache> read_gameobject(Stream *stream);
 
     int read_script(Stream *stream);
+
+    int read_script_from_cache(GameObject* gameObject, Stream *stream);
 };
 
 

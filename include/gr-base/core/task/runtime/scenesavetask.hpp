@@ -40,7 +40,7 @@ private:
 
     void onPostExecute(int result) override;
 
-    int write_segment(Stream* stream, HeaderType_ type, std::function<int(Stream*)> func);
+    int write_segment(Stream* stream, HeaderType type, std::function<int(Stream*)> func);
 
     int write_metadata(Stream *stream);
 

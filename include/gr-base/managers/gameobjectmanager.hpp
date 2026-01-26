@@ -43,6 +43,7 @@ protected:
     std::mutex m_mutex;
 
     array* m_gameObjectPool;
+    array* m_slot;
 
     uint32_t m_freeIDs;
 

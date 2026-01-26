@@ -31,7 +31,7 @@ int SceneSaveTask::doInBackground()
     FileStream stream(m_file, StreamType::OUTPUT);
     // header data
     {
-        FileHeader header{{'g', 'r', 's', 'c'}, 1.0f, 0};
+        FileHeader header{{'g', 'r', 's', 'c'}, 1.0f};
 
         if (!stream.write(&header, sizeof(FileHeader)))
             return 1;
@@ -57,7 +57,7 @@ void SceneSaveTask::onPostExecute(int result)
         m_func();
 }
 
-int SceneSaveTask::write_segment(Stream* stream, HeaderType_ type, std::function<int(Stream*)> func)
+int SceneSaveTask::write_segment(Stream* stream, HeaderType type, std::function<int(Stream*)> func)
 {
     size_t first = stream->tellp();
 

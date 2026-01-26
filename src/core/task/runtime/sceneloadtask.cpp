@@ -52,15 +52,15 @@ int SceneLoadTask::doInBackground()
         if (!stream.read(reinterpret_cast<char *>(&dataSegment), sizeof(DataSegment)))
             return 4;
         
-        if (dataSegment.type == HeaderType::NONE && dataSegment.sizeData == 0)
+        if (dataSegment.type == HeaderType::NONE && dataSegment.size == 0)
         {
             break;
         }
         
-        auto nextPosition = stream.tellg() + static_cast<std::streampos>(dataSegment.sizeData);
-        auto headerName = HeaderName[dataSegment.type];
+        auto nextPosition = stream.tellg() + static_cast<std::streampos>(dataSegment.size);
+        auto headerName = HeaderName[static_cast<uint8_t>(dataSegment.type)];
 
-        if (dataSegment.sizeData <= 0)
+        if (dataSegment.size <= 0)
         {
             continue;
         }
@@ -339,30 +339,9 @@ int SceneLoadTask::read_script(Stream *stream)
 
 GameObject *SceneLoadTask::deserialize(Stream *stream, Transform *parent)
 {
-    std::string name /*, tag;
-    bool bactive, bstatic */;
-
+    std::string name;
     if (!stream->read(name))
-    {
         return nullptr;
-    }
-
-    /*
-    if (!stream->read(tag))
-    {
-        return nullptr;
-    }
-    
-    if (!stream->read(bactive))
-    {
-        return nullptr;
-    }
-
-    if (!stream->read(bstatic))
-    {
-        return nullptr;
-    }
-    */
 
     auto gameObjectID = GameObject::Create(name);
 
@@ -371,22 +350,16 @@ GameObject *SceneLoadTask::deserialize(Stream *stream, Transform *parent)
     auto gameObject = GameObject::Get(gameObjectID);
     auto transform = gameObject->getTransform();
     if (parent != nullptr)
-    {
         transform->setParent(parent);
-    }
 
     std::size_t count = {};
     if (!stream->read(count))
-    {
         return nullptr;
-    }
 
     for (std::size_t i={};i<count;i++)
     {
         if (!deserialize(stream, transform))
-        {
             return nullptr;
-        }
     }
 
     return gameObject;

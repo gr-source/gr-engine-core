@@ -3,7 +3,7 @@
 #include <string.h>
 
 MemoryStream::MemoryStream(uint8_t* data, size_t size)
-    : begin(data), current(data), end(data + size), capacity(1024) {}
+    : begin(data), current(data), end(data + size), capacity(size) {}
 
 MemoryStream::MemoryStream(size_t size)
 {

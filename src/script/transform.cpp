@@ -65,15 +65,11 @@ void Transform::addLocalPosition(const Vector3 &value)
 
 Vector3 Transform::getPosition() const
 {
-    if (m_parent != INVALID_COMPONENT_HANDLE)
-    {
-        auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
-
-        Vector4 position = parent->getGlobalMatrix() * Vector4{m_position.x, m_position.y, m_position.z, 1.0f};
-
-        return Vector3{position.x, position.y, position.z};
-    }
-    return m_position;
+    return {
+        m_globalMatrix[3][0],
+        m_globalMatrix[3][1],
+        m_globalMatrix[3][2]
+    };
 }
 
 Vector3 Transform::getLocalForward() const

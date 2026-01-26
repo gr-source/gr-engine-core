@@ -34,7 +34,7 @@ int GameObjectSaveTask::doInBackground()
 
     // Header file
     {
-        FileHeader header{{'g', 'm', 'd', 'x'}, 1.1f, 0};
+        FileHeader header{{'g', 'm', 'd', 'x'}, 1.1f};
         if (!stream.write(&header, sizeof(FileHeader)))
         {
             Console::LogError("[ GameObjectSaveTask ] Fail to write header.");
@@ -48,6 +48,8 @@ int GameObjectSaveTask::doInBackground()
     int result = write_data(&stream);
     if (result != 0)
         return 3;
+
+    stream.close();
 
     return 0;
 }
@@ -94,7 +96,7 @@ int GameObjectSaveTask::write_metadata(Stream *stream)
     return 0;
 }
 
-int GameObjectSaveTask::write_segment(Stream* stream, HeaderType_ type, std::function<int(Stream*)> func)
+int GameObjectSaveTask::write_segment(Stream* stream, HeaderType type, std::function<int(Stream*)> func)
 {
     size_t first = stream->tellp();
 
@@ -305,39 +307,67 @@ int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
 
 int GameObjectSaveTask::write_script(Stream *stream)
 {
-    auto count = m_componentdata.size();
-    if (!stream->write(count))
-        return 1;
-
-    for (auto &&[go_name, componentHash, component] : m_componentdata)
     {
-        if (!stream->write(go_name))
+        auto count = m_componentdata.size();
+        if (!stream->write(count))
+            return 1;
+    }
+
+    for (auto&& [name, behaviorList] : m_componentdata)
+    {
+        if (!stream->write(name))
             return 2;
 
-        if (!stream->write(componentHash))
+        size_t startbuffer = stream->tellp();
+
+        uint64_t buffersize = 0;
+        if (!stream->write(buffersize))
             return 3;
 
-        size_t bufferlength = {};
-        {
-            MemoryStream temp;
-            component->Serialize(&temp);
-            bufferlength = temp.tellg();
-            temp.close();
-        }
-
-        if (!stream->write(bufferlength))
+        uint32_t count = static_cast<uint32_t>(behaviorList.size());
+        if (!stream->write(count))
             return 4;
 
-        if (bufferlength > 0)
-            component->Serialize(stream);
+        for (auto&& [hash, behavior] : behaviorList)
+        {
+            if (!stream->write(hash))
+                return 4;
+
+            size_t bufferlength = {};
+            {
+                MemoryStream temp;
+                behavior->Serialize(&temp);
+                bufferlength = temp.tellg();
+                temp.close();
+            }
+
+            if (!stream->write(bufferlength))
+                return 5;
+
+            if (bufferlength > 0)
+                behavior->Serialize(stream);
+        }
+
+        size_t current = stream->tellp();
+
+        buffersize = static_cast<uint64_t>(current - startbuffer - sizeof(uint64_t));
+        
+        stream->seekp(startbuffer);
+        if (!stream->write(buffersize))
+            return 6;
+
+        stream->seekp(current);
     }
     return 0;
 }
 
 void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
 {
+    std::vector<std::tuple<uint64_t, const Behavior*>> behaviorList;
     for (uint64_t hash : gameObject->GetHashes())
-        m_componentdata.emplace_back(gameObject->getName(), hash, gameObject->getComponent(hash));
+        behaviorList.emplace_back(hash, gameObject->getComponent(hash));
+
+    m_componentdata.emplace_back(gameObject->getName(), behaviorList);
 
     auto meshFilter = gameObject->getComponent<MeshFilter>();
     if (meshFilter != nullptr)
