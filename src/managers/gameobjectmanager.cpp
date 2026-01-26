@@ -10,6 +10,7 @@
 
 #include "gr-base/managers/sceneManager.hpp"
 
+#include <cassert>
 #include <string.h>
 
 typedef struct GameObjectWrapper
@@ -200,7 +201,7 @@ void GameObjectManager::destroy(GameObjectID id)
 
 void GameObjectManager::requestResize()
 {
-    std::cout << "Resize go" << std::endl;
+    assert(false && "GameObjectManager out of IDs");
     return;
     size_t lastsize = m_gameObjectPool->length;
     size_t newsize = lastsize + 1024;

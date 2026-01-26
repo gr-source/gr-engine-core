@@ -28,7 +28,7 @@ private:
 
     std::function<void ()> m_func;
 
-    std::vector<std::tuple<std::string, uint64_t, const Behavior *>> m_componentdata;
+    std::vector<std::tuple<std::string, std::vector<std::tuple<uint64_t, const Behavior *>>>> m_componentdata;
 
     std::unordered_map<std::string, MaterialID> m_materialmap;
 

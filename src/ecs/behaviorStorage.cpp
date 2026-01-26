@@ -6,6 +6,7 @@
 #include "gr-base/ecs/behaviorRegistry.hpp"
 
 #include "gr-base/ecs/behavior.hpp"
+#include <cassert>
 
 
 BehaviorStorage* BehaviorStorage::s_BehaviorStorage = nullptr;
@@ -222,6 +223,7 @@ void BehaviorStorage::resize(ComponentInfo* info, ComponentSparseSet* set, size_
 
     if (lastsize > 0)
     {
+        assert(false && "GameObjectManager out of IDs");
         /*
         auto newPool = array_create(newsize, info->size);
 

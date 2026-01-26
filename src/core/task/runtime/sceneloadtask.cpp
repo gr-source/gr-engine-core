@@ -1,6 +1,7 @@
 #include "gr-base/core/task/runtime/sceneloadtask.hpp"
 
 #include "gr-base/core/file/fileStream.hpp"
+#include "gr-base/core/file/memoryStream.hpp"
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
@@ -125,11 +126,11 @@ void SceneLoadTask::onPostExecute(int result)
 
         auto scene = SceneManager::Create(m_name);
 
-        for (auto &go : m_rootList)
+        for (auto &root : m_rootList)
         {
-            GameObject::Instantiate(go);
-
-            GameObject::DestroyImediate(go);
+            auto gameObjectID = CreateFromCache(root.get());
+            
+            scene->insert(gameObjectID);
         }
 
         for (auto &func : m_funcList)
@@ -137,6 +138,32 @@ void SceneLoadTask::onPostExecute(int result)
     }
 
     AssetsManager::RemoveTask(m_path);
+}
+
+GameObjectID SceneLoadTask::CreateFromCache(GameObjectCache* cache)
+{
+    auto gameObjectID = GameObject::Create(cache->name);
+
+    auto gameObject = GameObject::Get(gameObjectID);
+
+    MemoryStream stream(cache->buffer.data(), cache->buffer.size());
+    if (read_script_from_cache(gameObject, &stream) != 0)
+    {
+        Console::LogWarning("[ GameObjectLoadTask ] Adding Script falied: %s", cache->name.c_str());
+    }
+
+    auto transform = gameObject->getTransform();
+
+    for (auto &child : cache->chindren)
+    {
+        auto childID = CreateFromCache(child.get());
+
+        auto goChild = GameObject::Get(childID);
+
+        transform->addChildren(goChild->getTransform());
+    }
+
+    return gameObjectID;
 }
 
 int SceneLoadTask::read_metadata(Stream *stream)
@@ -270,18 +297,15 @@ int SceneLoadTask::read_gameobject(Stream *stream)
 {
     std::size_t count = {};
     if (!stream->read(count))
-    {
         return 1;
-    }
 
     for (std::size_t i={};i<count;i++)
     {
         auto gameObject = deserialize(stream);
         if (gameObject == nullptr)
-        {
             return 2;
-        }
-        m_rootList.push_back(gameObject);
+
+        m_rootList.push_back(std::move(gameObject));
     }
 
     return 0;
@@ -291,66 +315,71 @@ int SceneLoadTask::read_script(Stream *stream)
 {
     std::size_t count = {};
     if (!stream->read(count))
-    {
         return 1;
-    }
 
     for (std::size_t i=0;i<count;i++)
     {
-        std::string go_name;
-        if (!stream->read(go_name))
-        {
+        std::string name;
+        if (!stream->read(name))
             return 2;
-        }
 
-        uint64_t componentHash;
-        if (!stream->read(componentHash))
-        {
-            return 2;
-        }
+        uint64_t buffersize;
+        if (!stream->read(buffersize))
+            return 3;
 
-        std::size_t bufferlength = {};
-        if (!stream->read(bufferlength))
-        {
+        std::vector<uint8_t> buffer(buffersize, 0);
+        if (!stream->read(buffer.data(), buffersize))
             return 4;
-        }
 
-        auto next = stream->tellg() + static_cast<std::streampos>(bufferlength);
-
-        auto it = m_gameobjectmap.find(go_name);
-        if (it != m_gameobjectmap.end())
-        {
-            auto gameObject = GameObject::Get(it->second);
-            auto component = gameObject->getComponent(componentHash);
-            if (component == nullptr)
-                component = gameObject->addComponent(componentHash);
-
-            if (component != nullptr)
-                component->Deserialize(stream);
-        }
-
-        if (stream->tellg() != next)
-        {
-            stream->seekg(next);
-        }
+        auto cache = m_gameobjectmap.find(name);
+        if (cache != m_gameobjectmap.end())
+            cache->second->buffer = buffer;
     }
     return 0;
 }
 
-GameObject *SceneLoadTask::deserialize(Stream *stream, Transform *parent)
+int SceneLoadTask::read_script_from_cache(GameObject* gameObject, Stream* stream)
+{
+    uint32_t behaviorCount;
+    if (!stream->read(behaviorCount))
+        return 1;
+
+    for (uint32_t j=0;j<behaviorCount;j++)
+    {
+        uint64_t componentHash;
+        if (!stream->read(componentHash))
+            return 3;
+
+        size_t bufferlength = {};
+        if (!stream->read(bufferlength))
+            return 4;
+
+        auto next = stream->tellg() + static_cast<std::streampos>(bufferlength);
+
+        auto component = gameObject->getComponent(componentHash);
+        if (component == nullptr)
+            component = gameObject->addComponent(componentHash);
+
+        if (component != nullptr && bufferlength > 0)
+            component->Deserialize(stream);
+
+        if (stream->tellg() != next)
+            stream->seekg(next);
+    }
+    return 0;
+}
+
+
+std::unique_ptr<SceneLoadTask::GameObjectCache> SceneLoadTask::deserialize(Stream *stream)
 {
     std::string name;
     if (!stream->read(name))
         return nullptr;
 
-    auto gameObjectID = GameObject::Create(name);
+    auto data = std::make_unique<GameObjectCache>();
+    data->name = name;
 
-    m_gameobjectmap.emplace(name, gameObjectID);
-
-    auto gameObject = GameObject::Get(gameObjectID);
-    auto transform = gameObject->getTransform();
-    if (parent != nullptr)
-        transform->setParent(parent);
+    m_gameobjectmap.emplace(name, data.get());
 
     std::size_t count = {};
     if (!stream->read(count))
@@ -358,10 +387,13 @@ GameObject *SceneLoadTask::deserialize(Stream *stream, Transform *parent)
 
     for (std::size_t i={};i<count;i++)
     {
-        if (!deserialize(stream, transform))
-            return nullptr;
+        auto result = deserialize(stream);
+        if (result == nullptr)
+            break;
+
+        data->chindren.push_back(std::move(result));
     }
 
-    return gameObject;
+    return data;
 }
 

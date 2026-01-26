@@ -238,32 +238,56 @@ int SceneSaveTask::write_gameobject(Stream *stream)
 
 int SceneSaveTask::write_script(Stream *stream)
 {
-    auto count = m_componentdata.size();
-    if (!stream->write(count))
     {
-        return 1;
+        auto count = m_componentdata.size();
+        if (!stream->write(count))
+            return 1;
     }
 
-    for (auto &&[go_name, componentHash, component] : m_componentdata)
+    for (auto&& [name, behaviorList] : m_componentdata)
     {
-        if (!stream->write(go_name))
+        if (!stream->write(name))
             return 2;
 
-        if (!stream->write(componentHash))
-            return 2;
+        size_t startbuffer = stream->tellp();
 
-        std::size_t bufferlength = {};
-        {
-            MemoryStream temp;
-            component->Serialize(&temp);
-            bufferlength = temp.tellg();
-            temp.close();
-        }
+        uint64_t buffersize = 0;
+        if (!stream->write(buffersize))
+            return 3;
 
-        if (!stream->write(bufferlength))
+        uint32_t count = static_cast<uint32_t>(behaviorList.size());
+        if (!stream->write(count))
             return 4;
 
-        component->Serialize(stream);
+        for (auto&& [hash, behavior] : behaviorList)
+        {
+            if (!stream->write(hash))
+                return 4;
+
+            size_t bufferlength = {};
+            {
+                MemoryStream temp;
+                behavior->Serialize(&temp);
+                bufferlength = temp.tellg();
+                temp.close();
+            }
+
+            if (!stream->write(bufferlength))
+                return 5;
+
+            if (bufferlength > 0)
+                behavior->Serialize(stream);
+        }
+
+        size_t current = stream->tellp();
+
+        buffersize = static_cast<uint64_t>(current - startbuffer - sizeof(uint64_t));
+        
+        stream->seekp(startbuffer);
+        if (!stream->write(buffersize))
+            return 6;
+
+        stream->seekp(current);
     }
     return 0;
 }
@@ -325,8 +349,11 @@ void SceneSaveTask::read_gameobject()
 
 void SceneSaveTask::read_data(const GameObject *gameObject)
 {
-    for (auto &hash : gameObject->GetHashes())
-        m_componentdata.emplace_back(gameObject->getName(), hash, gameObject->getComponent(hash));
+    std::vector<std::tuple<uint64_t, const Behavior*>> behaviorList;
+    for (uint64_t hash : gameObject->GetHashes())
+        behaviorList.emplace_back(hash, gameObject->getComponent(hash));
+
+    m_componentdata.emplace_back(gameObject->getName(), behaviorList);
 
     auto meshFilter = gameObject->getComponent<MeshFilter>();
     if (meshFilter != nullptr)

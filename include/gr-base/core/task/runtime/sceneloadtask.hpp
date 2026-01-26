@@ -23,13 +23,22 @@ public:
     void addFunction(std::function<void (Scene *)> func);
 
 private:
+    struct GameObjectCache
+    {
+        std::string name;
+
+        std::vector<uint8_t> buffer;
+
+        std::vector<std::unique_ptr<GameObjectCache>> chindren;
+    };
+
     const std::string m_path;
 
     std::vector<std::function<void (Scene *)>> m_funcList;
 
-    std::vector<GameObject *> m_rootList;
+    std::vector<std::unique_ptr<GameObjectCache>> m_rootList;
 
-    std::unordered_map<std::string, GameObjectID> m_gameobjectmap;
+    std::unordered_map<std::string, GameObjectCache*> m_gameobjectmap;
 
     std::unordered_map<std::string, grr::gShader *> m_shadermap;
 
@@ -40,6 +49,8 @@ private:
     int doInBackground() override;
 
     void onPostExecute(int result) override;
+
+    GameObjectID CreateFromCache(GameObjectCache* cache);
 
     int read_metadata(Stream *stream);
 
@@ -55,6 +66,8 @@ private:
 
     int read_script(Stream *stream);
 
-    GameObject *deserialize(Stream *stream, Transform *parent = nullptr);
+    int read_script_from_cache(GameObject* gameObject, Stream* stream);
+
+    std::unique_ptr<GameObjectCache> deserialize(Stream *stream);
 };
 
