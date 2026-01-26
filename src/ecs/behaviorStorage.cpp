@@ -6,6 +6,7 @@
 #include "gr-base/ecs/behaviorRegistry.hpp"
 
 #include "gr-base/ecs/behavior.hpp"
+#include "gr-base/externals/array.h"
 #include <cassert>
 
 
@@ -37,6 +38,11 @@ Behavior* BehaviorStorage::GetComponent(uint64_t hash, ComponentHandle handle)
     return s_BehaviorStorage->getComponent(hash, handle);
 }
 
+void BehaviorStorage::RequestResize(uint64_t hash, size_t stride)
+{
+    s_BehaviorStorage->requestResize(hash, stride);
+}
+
 void BehaviorStorage::Start()
 {
     s_BehaviorStorage->start();
@@ -45,11 +51,6 @@ void BehaviorStorage::Start()
 void BehaviorStorage::Update()
 {
     s_BehaviorStorage->update();
-}
-
-void BehaviorStorage::Destroy()
-{
-    s_BehaviorStorage->destroy();
 }
 
 BehaviorStorage::BehaviorStorage() : m_storage(nullptr)
@@ -83,7 +84,48 @@ BehaviorStorage::~BehaviorStorage()
     array_free(m_storage);
 }
 
+#include <iostream>
 // private
+void BehaviorStorage::requestResize(uint64_t hash, size_t stride)
+{
+    ComponentInfo* info = BehaviorRegistry::Get(hash);
+    if (info == nullptr)
+        return;
+
+    size_t storageID = hash % COMPONENT_TABLE_SIZE;
+
+    ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
+    if (set.dense == nullptr)
+        return;
+
+    array* beforpool = set.dense;
+
+    uint8_t* beforeWrapper = (uint8_t*)beforpool->vector;
+
+    size_t length = beforpool->length;
+    array* newpool = array_create(length, stride);
+
+    uint8_t* newWrapper = (uint8_t*)newpool->vector;
+
+    for (size_t i=0;i<length;i++)
+        *(ComponentID*)(newWrapper + (i * stride)) = *(ComponentID*)(beforeWrapper + (info->size * stride));
+
+    array_free(set.dense);
+    set.dense = newpool;
+
+    uint8_t* ptr = (uint8_t*)set.dense->vector + info->offset;
+    for (ComponentID i=0;i<set.count;i++)
+    {
+        Behavior* behavior = (Behavior*)ptr;
+
+        ((void(*)(Behavior*, const Behavior*))(info->constructor))(behavior, nullptr);
+
+        ptr += stride;
+    }
+
+    std::cout << "Resize: " << info->name << std::endl;
+}
+
 ComponentHandle BehaviorStorage::allocate(uint64_t hash, ComponentHandle source)
 {
     ComponentInfo* info = BehaviorRegistry::Get(hash);
@@ -223,11 +265,9 @@ void BehaviorStorage::resize(ComponentInfo* info, ComponentSparseSet* set, size_
 
     if (lastsize > 0)
     {
-        assert(false && "GameObjectManager out of IDs");
-        /*
         auto newPool = array_create(newsize, info->size);
 
-        uint8_t* lastComponentWrapper = (uint8_t*)pool->dense->vector;
+        uint8_t* lastComponentWrapper = (uint8_t*)set->dense->vector;
         uint8_t* newComponentWrapper = (uint8_t*)newPool->vector;
 
         for (size_t i=0;i<lastsize;i++)
@@ -235,15 +275,36 @@ void BehaviorStorage::resize(ComponentInfo* info, ComponentSparseSet* set, size_
             {
                 *(ComponentID*)(newComponentWrapper + (i * info->size)) = *(ComponentID*)(lastComponentWrapper + (i * info->size));
             }
+            // Behavior* lastbehavior = (Behavior *)((lastComponentWrapper + (i * info->size)) + info->offset);
+            // Behavior* newbehavior = (Behavior *)((newComponentWrapper + (i * info->size)) + info->offset);
+
+            // memcpy((void*)newbehavior, (void*)lastbehavior, info->size - info->offset);
+
+            // ((void(*)(Behavior*, const Behavior*))(info->constructor))(newbehavior, lastbehavior);
+        }
+
+        for (size_t i=0;i<set->count;i++)
+        {
             Behavior* lastbehavior = (Behavior *)((lastComponentWrapper + (i * info->size)) + info->offset);
             Behavior* newbehavior = (Behavior *)((newComponentWrapper + (i * info->size)) + info->offset);
+
+            // memcpy((void*)newbehavior, (void*)lastbehavior, info->size - info->offset);
 
             ((void(*)(Behavior*, const Behavior*))(info->constructor))(newbehavior, lastbehavior);
         }
 
-        array_free(pool->dense);
-        pool->dense = newPool;
-        */
+        array_free(set->dense);
+        set->dense = newPool;
+
+        auto slot = array_create(newsize, sizeof(ComponentSlot));
+        memcpy((void*)slot->vector, (void*)set->slot->vector, lastsize * sizeof(ComponentSlot));
+
+        auto slots = (ComponentSlot*)slot->vector;
+        for (ComponentID i=lastsize;i<newsize;i++)
+            slots[i] = {INVALID_COMPONENT_ID, 1, INVALID_COMPONENT_ID};
+
+        array_free(set->slot);
+        set->slot = slot;
     } else
     {
         set->slot = array_create(newsize, sizeof(ComponentSlot));
@@ -259,10 +320,9 @@ void BehaviorStorage::resize(ComponentInfo* info, ComponentSparseSet* set, size_
 
 void BehaviorStorage::start()
 {
-    /*
     array* infos = BehaviorRegistry::GetBehaviorInfos();
 
-    BehaviorPool* pools = (BehaviorPool*)m_storage->vector;
+    ComponentSparseSet* vector = (ComponentSparseSet*)m_storage->vector;
 
     for (auto& hash : BehaviorRegistry::GetActiveBehaviorActive())
     {
@@ -272,11 +332,12 @@ void BehaviorStorage::start()
 
         size_t poolID = hash % COMPONENT_TABLE_SIZE;
 
-        BehaviorPool& pool = pools[poolID];
+        ComponentSparseSet& set = vector[poolID];
+        if (set.dense == nullptr)
+            continue;
 
-        uint8_t* ptr = (uint8_t*)pool.dense->vector + info->offset;
+        uint8_t* ptr = (uint8_t*)set.dense->vector + info->offset;
         size_t stride = info->size;
-
 
         void** vtable = (void**)ptr;
         if (*vtable == nullptr)
@@ -285,9 +346,7 @@ void BehaviorStorage::start()
             continue;
         }
 
-        std::cout << "Go: " << info->name << " | " << info->start << std::endl;
-
-        for (ComponentID i=0;i<pool.count;i++)
+        for (ComponentID i=0;i<set.count;i++)
         {
             Behavior* behavior = (Behavior*)ptr;
             behavior->Start();
@@ -295,11 +354,38 @@ void BehaviorStorage::start()
             ptr += stride;
         }
     }
-    */
 }
 
 void BehaviorStorage::update()
 {
+    array* infos = BehaviorRegistry::GetBehaviorInfos();
+
+    ComponentSparseSet* vector = (ComponentSparseSet*)m_storage->vector;
+
+    for (auto& hash : BehaviorRegistry::GetActiveBehaviorActive())
+    {
+        ComponentInfo* info = BehaviorRegistry::Get(hash);
+        if (!info->starthash)
+            continue;
+
+        size_t poolID = hash % COMPONENT_TABLE_SIZE;
+
+        ComponentSparseSet& set = vector[poolID];
+        if (set.dense == nullptr)
+            continue;
+
+        uint8_t* ptr = (uint8_t*)set.dense->vector + info->offset;
+        size_t stride = info->size;
+
+        for (ComponentID i=0;i<set.count;i++)
+        {
+            Behavior* behavior = (Behavior*)ptr;
+            // ((void(*)(Behavior*))(info->update))(behavior);
+            behavior->Update();
+
+            ptr += stride;
+        }
+    }
 }
 
 void BehaviorStorage::destroy()

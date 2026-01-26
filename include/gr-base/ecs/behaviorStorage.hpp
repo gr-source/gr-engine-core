@@ -40,11 +40,11 @@ public:
 
     static Behavior* GetComponent(uint64_t hash, ComponentHandle id);
 
+    static void RequestResize(uint64_t hash, size_t stride);
+
     static void Start();
 
     static void Update();
-
-    static void Destroy();
 
     BehaviorStorage();
     ~BehaviorStorage();
@@ -53,6 +53,8 @@ private:
     static BehaviorStorage* s_BehaviorStorage;
 
     array* m_storage;
+
+    void requestResize(uint64_t hash, size_t stride);
 
     ComponentHandle allocate(uint64_t hash, ComponentHandle source);
 

@@ -39,7 +39,7 @@ inline void StartWrapper(Behavior* obj)
 template <typename T>
 inline void UpdateWrapper(Behavior* obj)
 {
-    static_cast<T*>(obj)->Start();
+    static_cast<T*>(obj)->Update();
 }
 
 #include <type_traits>

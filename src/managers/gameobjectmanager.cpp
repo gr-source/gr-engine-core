@@ -2,6 +2,7 @@
 
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/default.hpp"
+#include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/ecs/behaviorStorage.hpp"
@@ -109,7 +110,9 @@ GameObjectID GameObjectManager::instantiate(GameObjectID other)
 
     auto scene = SceneManager::GetCurrent();
     if (scene != nullptr)
+    {
         scene->insert(handle);
+    }
 
     return handle;
 }
@@ -201,8 +204,6 @@ void GameObjectManager::destroy(GameObjectID id)
 
 void GameObjectManager::requestResize()
 {
-    assert(false && "GameObjectManager out of IDs");
-    return;
     size_t lastsize = m_gameObjectPool->length;
     size_t newsize = lastsize + 1024;
 
@@ -217,13 +218,22 @@ void GameObjectManager::requestResize()
         GameObjectWrapper& oldwrapper = oldWrapperPool[i];
         GameObjectWrapper& newwrapper = newWrapperPool[i];
 
-        // newwrapper.next = oldwrapper.next;
+        // memcpy((void*)&newwrapper, (void*)&oldwrapper, sizeof(GameObjectWrapper));
+
+        newwrapper.slotID = oldwrapper.slotID;
 
         new (&newwrapper.gameObject) GameObject(oldwrapper.gameObject);
     }
 
     array_free(m_gameObjectPool);
     m_gameObjectPool = newPool;
+
+
+    m_slot = array_resize(m_slot, newsize, sizeof(GameObjectSlot));
+
+    GameObjectSlot* slots = (GameObjectSlot*)m_slot->vector;
+    for (int i=lastsize;i<m_slot->length;i++)
+        slots[i] = {INVALID_COMPONENT_ID, 1, INVALID_COMPONENT_ID};
 
     addFreeID(lastsize);
 }

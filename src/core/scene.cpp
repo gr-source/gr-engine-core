@@ -23,7 +23,7 @@ Scene* Scene::GetCurrent()
     return SceneManager::GetCurrent();
 }
 
-Scene::Scene() : m_cameraID(INVALID_COMPONENT_ID) {}
+Scene::Scene() : bRunning(false), m_cameraID(INVALID_COMPONENT_ID) {}
 
 Scene::~Scene()
 {

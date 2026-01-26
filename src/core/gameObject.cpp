@@ -88,13 +88,11 @@ void GameObject::Copy(GameObjectID otherID)
         if (hash == GetHashByType<Transform>(nullptr))
             continue;
 
-        Behavior* sourceComp = otherGO->getComponent(hash);
-
         Behavior* myComp = getComponent(hash);
-        if (!myComp)
+        if (myComp == nullptr)
             myComp = addComponent(hash, otherGO->GetID(hash));
 
-        BehaviorStorage::Reinstance(hash, myComp, sourceComp);
+        BehaviorStorage::Reinstance(hash, myComp, otherGO->getComponent(hash));
         myComp->entityID = this->getCacheID();
     }
 

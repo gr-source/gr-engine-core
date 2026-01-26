@@ -202,7 +202,8 @@ bool OctreeManager::remove(NodeID id, GameObjectID handle)
     OctreeNode* nodes = (OctreeNode*)m_nodes->vector;
     OctreeNode& node = nodes[id];
 
-    assert(!node.divided);
+    if (!node.divided)
+        return false;
 
     for (uint8_t i = 0; i < node.count; ++i)
     {

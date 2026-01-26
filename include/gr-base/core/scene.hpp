@@ -18,6 +18,8 @@ class Scene
 public:
     static Scene* GetCurrent();
 
+    bool bRunning;
+
     Scene();
     ~Scene();
 

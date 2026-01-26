@@ -1,5 +1,7 @@
 #include "gr-base/ecs/entity.hpp"
 
+#include "gr-base/core/mainthreaddispatcher.hpp"
+#include "gr-base/core/scene.hpp"
 #include "gr-base/ecs/behavior.hpp"
 #include "gr-base/ecs/behaviorStorage.hpp"
 
@@ -18,6 +20,15 @@ Behavior* Entity::addComponent(const char* name)
 Behavior* Entity::getComponent(const char* name) const
 {
     return getComponent(GetHash(name));
+}
+
+static void OnStart(uint64_t hash, ComponentHandle handle)
+{
+    auto behavior = BehaviorStorage::GetComponent(hash, handle);
+    if (behavior == nullptr)
+        return;
+
+    behavior->Start();
 }
 
 Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
@@ -39,6 +50,10 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
     auto behavior = BehaviorStorage::GetComponent(hash, handle);
     behavior->entityID = m_id;
     behavior->Init();
+
+    auto scene = Scene::GetCurrent();
+    if (scene != nullptr && scene->bRunning)
+        MainThreadDispatcher::Add(Priority::NORMAL, &OnStart, hash, handle);
 
     return behavior;
 }

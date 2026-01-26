@@ -1,6 +1,7 @@
 #include "gr-base/ecs/behaviorRegistry.hpp"
 
 #include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/behaviorStorage.hpp"
 
 #include <algorithm>
 
@@ -102,7 +103,9 @@ bool BehaviorRegistry::replace(ComponentInfo* dest, const ComponentInfo* src)
 
     if (dest->size != src->size)
     {
-        std::cout << "Request Resize: " << dest->name << std::endl;
+        BehaviorStorage::RequestResize(dest->hash, src->size);
+
+        dest->size = src->size;
         return true;
     }
 
