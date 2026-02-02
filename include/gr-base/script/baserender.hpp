@@ -13,8 +13,6 @@ public:
 
     virtual bool Deserialize(Stream *stream) override;
 
-    virtual void build(std::vector<Mesh> *meshlist) {}
-
     void addMaterial(MaterialID id);
 
     bool hasMaterial(MaterialID id) const;

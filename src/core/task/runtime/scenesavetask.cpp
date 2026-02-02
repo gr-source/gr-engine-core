@@ -295,16 +295,12 @@ int SceneSaveTask::write_script(Stream *stream)
 bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
 {
     if (!stream->write(go->getName()))
-    {
         return false;
-    }
 
-    /*
-    if (!stream->write(go->getTag()))
-    {
+    if (!stream->write(go->GetIsStatic()))
         return false;
-    }
     
+    /*
     if (!stream->write(go->getActive()))
     {
         return false;

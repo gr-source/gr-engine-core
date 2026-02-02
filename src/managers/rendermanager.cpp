@@ -122,7 +122,11 @@ void RenderManager::insert(GameObjectID gameObjectID)
                 vectorn[m] = GetBatchID(meshes[m], materials[m]);
         }
 
-        m_objectInOctree[gameObjectID] = OctreeManager::InsertGlobal({gameObjectID, nullptr, transform->getPosition(), batchPerLOD});
+        Vector3 point = transform->getPosition();
+
+        OctreeManager::InsertGlobal({gameObjectID, nullptr, point, batchPerLOD});
+
+        m_objectInOctree.emplace(gameObjectID, point);
     } else
     {
         size_t length = meshes.size();
@@ -133,7 +137,11 @@ void RenderManager::insert(GameObjectID gameObjectID)
         for (size_t i=0;i<length;i++)
             vector[i] = GetBatchID(meshes[i], materials[i]);
 
-        m_objectInOctree[gameObjectID] = OctreeManager::InsertGlobal({gameObjectID, batchIDS, transform->getPosition(), nullptr});
+        Vector3 point = transform->getPosition();
+
+        OctreeManager::InsertGlobal({gameObjectID, batchIDS, point, nullptr});
+
+        m_objectInOctree.emplace(gameObjectID, point);
     }
 }
 
@@ -155,7 +163,12 @@ void RenderManager::remove(GameObjectID id)
     if (it == m_objectInOctree.end())
         return;
 
-    OctreeManager::Remove(it->second, id);
+    NodeID nodeID = OctreeManager::Get(id, it->second);
+    if (nodeID == InvalidNode)
+        return;
+
+    if (!OctreeManager::Remove(nodeID, id))
+        return;
 
     m_objectInOctree.erase(it);
 }

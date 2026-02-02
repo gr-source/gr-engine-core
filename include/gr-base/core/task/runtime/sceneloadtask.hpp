@@ -27,6 +27,8 @@ private:
     {
         std::string name;
 
+        bool IsStatic;
+
         std::vector<uint8_t> buffer;
 
         std::vector<std::unique_ptr<GameObjectCache>> chindren;

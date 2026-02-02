@@ -30,7 +30,7 @@ public:
 private:
     static RenderManager* s_RenderManager;
 
-    std::unordered_map<GameObjectID, NodeID> m_objectInOctree;
+    std::unordered_map<GameObjectID, Vector3> m_objectInOctree;
 
     void insert(GameObjectID id);
 

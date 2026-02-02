@@ -145,6 +145,7 @@ GameObjectID SceneLoadTask::CreateFromCache(GameObjectCache* cache)
     auto gameObjectID = GameObject::Create(cache->name);
 
     auto gameObject = GameObject::Get(gameObjectID);
+    gameObject->SetIsStatic(cache->IsStatic);
 
     MemoryStream stream(cache->buffer.data(), cache->buffer.size());
     if (read_script_from_cache(gameObject, &stream) != 0)
@@ -376,8 +377,13 @@ std::unique_ptr<SceneLoadTask::GameObjectCache> SceneLoadTask::deserialize(Strea
     if (!stream->read(name))
         return nullptr;
 
+    bool IsStatic = false;
+    if (!stream->read(IsStatic))
+        return nullptr;
+
     auto data = std::make_unique<GameObjectCache>();
     data->name = name;
+    data->IsStatic = IsStatic;
 
     m_gameobjectmap.emplace(name, data.get());
 

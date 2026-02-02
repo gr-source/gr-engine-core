@@ -46,7 +46,7 @@ void GameObject::Destroy(GameObjectID gameObjectID)
 }
 
 // public
-GameObject::GameObject(GameObjectID id) : Entity(id), m_name("noname"), m_scene(nullptr)
+GameObject::GameObject(GameObjectID id) : Entity(id), m_name("noname"), m_scene(nullptr), m_isStatic(true)
 {
     addComponent<Transform>();
 }
@@ -136,6 +136,16 @@ void GameObject::SetScene(Scene* scene)
 Scene* GameObject::GetScene() const
 {
     return m_scene;
+}
+
+void GameObject::SetIsStatic(bool b)
+{
+    m_isStatic = b;
+}
+
+bool GameObject::GetIsStatic() const
+{
+    return m_isStatic;
 }
 
 // private

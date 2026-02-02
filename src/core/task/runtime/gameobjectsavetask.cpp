@@ -287,19 +287,22 @@ int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
     if (!stream->write(go->getName()))
         return 1;
 
+    if (!stream->write(go->GetIsStatic()))
+        return 2;
+
     auto transform = go->getTransform();
 
     auto children = transform->getChildren();
 
     auto ccount = children.size();
     if (!stream->write(ccount))
-        return 5;
+        return 3;
 
     for (auto &child : children)
     {
         int result = write_gameobject(stream, BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
         if (result != 0)
-            return 6;
+            return 4;
     }
 
     return 0;

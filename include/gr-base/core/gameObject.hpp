@@ -48,10 +48,16 @@ public:
 
     Scene* GetScene() const;
 
+    void SetIsStatic(bool b);
+
+    bool GetIsStatic() const;
+
 private:
     std::string m_name;
 
     Scene* m_scene;
+
+    bool m_isStatic;
 
     static void Serialize(GameObjectID id, Stream* stream);
 

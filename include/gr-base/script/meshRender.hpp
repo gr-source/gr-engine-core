@@ -16,8 +16,6 @@ public:
     bool Serialize(Stream *stream) const override;
 
     bool Deserialize(Stream *stream) override;
-
-    void build(const std::vector<MeshID> &meshes);
 };
 
 REGISTER_COMPONENT(MeshRender)
