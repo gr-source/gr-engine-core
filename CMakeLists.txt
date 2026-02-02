@@ -94,7 +94,6 @@ set(task
     src/core/task/scenetaskmanager.cpp
     src/core/task/materialmanager.cpp
     src/core/task/texturemanager.cpp
-    src/core/task/shadermanager.cpp
 )
 
 set(broadphase_src
@@ -107,6 +106,7 @@ set(managers_src
     src/managers/rendermanager.cpp
     src/managers/octreemanager.cpp
     src/managers/assetsManager.cpp
+    src/managers/shadermanager.cpp
     src/managers/sceneManager.cpp
     src/managers/meshmanager.cpp
 )

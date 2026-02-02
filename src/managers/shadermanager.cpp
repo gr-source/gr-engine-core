@@ -1,4 +1,4 @@
-#include "gr-base/core/task/shadermanager.hpp"
+#include "gr-base/managers/shadermanager.hpp"
 
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"

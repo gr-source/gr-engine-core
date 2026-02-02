@@ -16,8 +16,8 @@
 #include "gr-base/core/default.hpp"
 
 #include "gr-base/core/task/animationmanager.hpp"
-#include "gr-base/core/task/shadermanager.hpp"
 
+#include "gr-base/managers/shadermanager.hpp"
 #include "gr-base/managers/meshmanager.hpp"
 
 class AssetsManager

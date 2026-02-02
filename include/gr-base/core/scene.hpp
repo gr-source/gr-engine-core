@@ -93,8 +93,6 @@ private:
     void for_each(std::function<void (GameObject *)> func);
 
     void for_each(Transform *transform, std::function<void (GameObject *)> func);
-
-    void reinstanceScript(const std::string &name);
 };
 
 

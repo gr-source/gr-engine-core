@@ -44,8 +44,14 @@ public:
 
     void Deserialize(Stream* stream);
 
+    void SetScene(Scene* scene);
+
+    Scene* GetScene() const;
+
 private:
     std::string m_name;
+
+    Scene* m_scene;
 
     static void Serialize(GameObjectID id, Stream* stream);
 

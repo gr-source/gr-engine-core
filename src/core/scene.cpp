@@ -49,8 +49,6 @@ void Scene::insert(GameObjectID gameObjectID)
 
 void Scene::remove(GameObjectID gameObjectID)
 {
-    // m_tempInitObjects.erase(std::remove(m_tempInitObjects.begin(), m_tempInitObjects.end(), gameObjectID), m_tempInitObjects.end());
-
     m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObjectID), m_objects.end());
 }
 
@@ -261,15 +259,3 @@ void Scene::for_each(Transform *transform, std::function<void(GameObject *)> fun
     }
 }
 
-void Scene::reinstanceScript(const std::string &name)
-{
-    Scene::for_each([name](GameObject *go)
-    {
-        // if (!go->hasComponent(name))
-            // return;
-
-        // go->free(name);
-
-        // go->addComponent(name.c_str());
-    });
-}

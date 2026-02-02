@@ -46,7 +46,7 @@ void GameObject::Destroy(GameObjectID gameObjectID)
 }
 
 // public
-GameObject::GameObject(GameObjectID id) : Entity(id), m_name("noname")
+GameObject::GameObject(GameObjectID id) : Entity(id), m_name("noname"), m_scene(nullptr)
 {
     addComponent<Transform>();
 }
@@ -126,6 +126,16 @@ void GameObject::Serialize(Stream* stream) const
 void GameObject::Deserialize(Stream* stream)
 {
     Deserialize(stream, getCacheID(), INVALID_COMPONENT_ID);
+}
+
+void GameObject::SetScene(Scene* scene)
+{
+    m_scene = scene;
+}
+
+Scene* GameObject::GetScene() const
+{
+    return m_scene;
 }
 
 // private

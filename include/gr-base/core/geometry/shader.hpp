@@ -4,9 +4,8 @@
 
 using ShaderOptimize_ = std::uint8_t;
 
-enum class ShaderType
+enum class ShaderType : uint8_t
 {
-    UNKNOWN,
     SHADER2D,
     SHADER3D,
     SKY,
@@ -14,7 +13,7 @@ enum class ShaderType
     COUNT
 };
 
-constexpr std::size_t ShaderTypeCount = static_cast<std::size_t>(ShaderType::COUNT);
+constexpr uint8_t ShaderTypeCount = static_cast<uint8_t>(ShaderType::COUNT);
 
 enum ShaderOptimize : ShaderOptimize_
 {

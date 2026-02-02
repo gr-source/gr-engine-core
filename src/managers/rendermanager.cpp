@@ -231,6 +231,7 @@ void RenderManager::preRender(const Camera *camera)
             auto& data = node->data[i];
 
             auto gameObject = GameObject::Get(data.gameObjectID);
+
             auto lodComponent = gameObject->getComponent<LODComponent>();
             auto transform = gameObject->getTransform();
 

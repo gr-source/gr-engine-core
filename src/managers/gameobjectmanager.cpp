@@ -12,6 +12,7 @@
 #include "gr-base/managers/sceneManager.hpp"
 
 #include <cassert>
+#include <cstddef>
 #include <string.h>
 
 typedef struct GameObjectWrapper
@@ -170,6 +171,10 @@ void GameObjectManager::destroyImediate(GameObjectID id)
     uint32_t removeIndex = slot.denseIndex;
 
     auto& gameObject = wrapper[removeIndex].gameObject;
+
+    auto scene = gameObject.GetScene();
+    if (scene != nullptr)
+        scene->remove(id);
 
     {
         auto transform = gameObject.getTransform();
