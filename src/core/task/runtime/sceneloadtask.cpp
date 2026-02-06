@@ -126,12 +126,20 @@ void SceneLoadTask::onPostExecute(int result)
 
         auto scene = SceneManager::Create(m_name);
 
+        auto current = Scene::GetCurrent();
+
+        SceneManager::SetActive(scene);
+
         for (auto &root : m_rootList)
         {
             auto gameObjectID = CreateFromCache(root.get());
+
+            GameObject::Instantiate(GameObject::Get(gameObjectID));
             
-            scene->insert(gameObjectID);
+            GameObject::DestroyImediate(gameObjectID);
         }
+
+        SceneManager::SetActive(current);
 
         for (auto &func : m_funcList)
             func(scene);

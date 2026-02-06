@@ -38,8 +38,6 @@ void Rigidbody::Init()
 {
     m_transform = GetEntity()->getComponent<Transform>();
 
-    std::cout << GetGameObject()->getName() << ": " << m_mass << std::endl;
-
     auto meshCollider = GetEntity()->getComponent<MeshCollider>();
     if (meshCollider != NULL)
     {
