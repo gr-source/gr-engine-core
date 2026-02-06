@@ -53,10 +53,13 @@ set(binary
 set(script
     src/script/skinnedMeshRender.cpp
     src/script/LODComponent.cpp
+    src/script/meshCollider.cpp
+    src/script/boxCollider.cpp
     src/script/meshFilter.cpp
     src/script/baserender.cpp
     src/script/meshRender.cpp
     src/script/transform.cpp
+    src/script/rigidbody.cpp
     src/script/camera.cpp
     src/script/light.cpp
 )

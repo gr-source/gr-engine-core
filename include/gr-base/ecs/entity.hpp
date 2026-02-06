@@ -37,6 +37,8 @@ public:
     ComponentHandle GetID() const;
 
     EntityID getCacheID() const;
+
+    void Init();
     
 private:
     ComponentHandle m_lookupTable[COMPONENT_TABLE_SIZE];

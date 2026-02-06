@@ -49,11 +49,10 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
 
     auto behavior = BehaviorStorage::GetComponent(hash, handle);
     behavior->entityID = m_id;
-    behavior->Init();
 
     auto scene = Scene::GetCurrent();
     if (scene != nullptr && scene->bRunning)
-        MainThreadDispatcher::Add(Priority::NORMAL, &OnStart, hash, handle);
+        MainThreadDispatcher::Add(Priority::LOW, &OnStart, hash, handle);
 
     return behavior;
 }
@@ -103,6 +102,16 @@ ComponentHandle Entity::GetID(uint64_t hash) const
 EntityID Entity::getCacheID() const
 {
     return m_id;
+}
+
+// protected
+void Entity::Init()
+{
+    for (auto& hash : GetHashes())
+    {
+        auto behavior = BehaviorStorage::GetComponent(hash, GetID(hash));
+        behavior->Init();
+    }
 }
 
 

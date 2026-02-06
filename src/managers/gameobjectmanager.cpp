@@ -109,11 +109,11 @@ GameObjectID GameObjectManager::instantiate(GameObjectID other)
     auto gameObject = get(handle);
     gameObject->Copy(other);
 
+    gameObject->Init();
+
     auto scene = SceneManager::GetCurrent();
     if (scene != nullptr)
-    {
         scene->insert(handle);
-    }
 
     return handle;
 }
