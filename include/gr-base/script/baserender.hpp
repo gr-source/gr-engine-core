@@ -28,7 +28,7 @@ private:
     friend class MeshRender;
 };
 
-REGISTER_COMPONENT(BaseRender)
+REGISTER_COMPONENT(BaseRender, (uint64_t)-1)
 
 
 

@@ -46,7 +46,7 @@ void GameObject::Destroy(GameObjectID gameObjectID)
 }
 
 // public
-GameObject::GameObject(GameObjectID id) : Entity(id), m_name("noname"), m_scene(nullptr), m_isStatic(true)
+GameObject::GameObject(GameObjectID id) : Entity(id), m_name("noname"), m_scene(nullptr), m_isStatic(false)
 {
     addComponent<Transform>();
 }
@@ -82,6 +82,8 @@ void GameObject::Copy(GameObjectID otherID)
     auto otherGO = GameObject::Get(otherID);
     if (!otherGO)
         return;
+
+    m_isStatic = otherGO->m_isStatic;
 
     for (auto& hash : otherGO->GetHashes())
     {

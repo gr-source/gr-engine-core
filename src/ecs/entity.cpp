@@ -1,8 +1,10 @@
 #include "gr-base/ecs/entity.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/scene.hpp"
 #include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/behaviorRegistry.hpp"
 #include "gr-base/ecs/behaviorStorage.hpp"
 
 #include <algorithm>
@@ -35,7 +37,10 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
 {
     size_t tableID = hash % COMPONENT_TABLE_SIZE;
     if (m_signature.test(tableID))
-        return BehaviorStorage::GetComponent(hash, m_lookupTable[tableID]);
+    {
+        auto& lookup = m_lookupTable[tableID];
+        return BehaviorStorage::GetComponent(lookup.hash, lookup.handle);
+    }
 
     ComponentHandle handle = BehaviorStorage::Allocate(hash, source);
     if (handle == INVALID_COMPONENT_HANDLE)
@@ -43,12 +48,25 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
 
     m_signature.set(tableID, true);
 
-    m_lookupTable[tableID] = handle;
+    m_lookupTable[tableID] = {hash, handle};
 
     m_activeHashes.push_back(hash);
 
+    ComponentInfo* info = BehaviorRegistry::Get(hash);
+    while (info->parent != (ComponentHash)-1)
+    {
+        info = BehaviorRegistry::Get(info->parent);
+
+        tableID = info->hash % COMPONENT_TABLE_SIZE;
+
+        m_signature.set(tableID, true);
+
+        m_lookupTable[tableID] = {hash, handle};
+    }
+
     auto behavior = BehaviorStorage::GetComponent(hash, handle);
     behavior->entityID = m_id;
+
 
     auto scene = Scene::GetCurrent();
     if (scene != nullptr && scene->bRunning)
@@ -61,7 +79,10 @@ Behavior* Entity::getComponent(uint64_t hash) const
 {
     size_t tableID = hash % COMPONENT_TABLE_SIZE;
     if (m_signature.test(tableID))
-        return BehaviorStorage::GetComponent(hash, m_lookupTable[tableID]);
+    {
+        auto& lookup = m_lookupTable[tableID];
+        return BehaviorStorage::GetComponent(lookup.hash, lookup.handle);
+    }
     return nullptr;
 }
 
@@ -73,7 +94,7 @@ void Entity::destroy(uint64_t hash)
 
     m_signature.set(tableID, false);
 
-    ComponentID id = m_lookupTable[tableID];
+    ComponentID id = m_lookupTable[tableID].handle;
 
     m_activeHashes.erase(std::remove(m_activeHashes.begin(), m_activeHashes.end(), hash), m_activeHashes.end());
 
@@ -96,13 +117,15 @@ ComponentHandle Entity::GetID(uint64_t hash) const
     if (!m_signature.test(tableID))
         return INVALID_COMPONENT_ID;
 
-    return m_lookupTable[tableID];
+    return m_lookupTable[tableID].handle;
 }
 
 EntityID Entity::getCacheID() const
 {
     return m_id;
 }
+
+#include "gr-base/script/transform.hpp"
 
 // protected
 void Entity::Init()
@@ -111,6 +134,15 @@ void Entity::Init()
     {
         auto behavior = BehaviorStorage::GetComponent(hash, GetID(hash));
         behavior->Init();
+    }
+
+    auto transform = getComponent<Transform>();
+
+    for (auto& childID : transform->getChildren())
+    {
+        auto gameObject = GameObject::Get(childID);
+
+        gameObject->Init();
     }
 }
 

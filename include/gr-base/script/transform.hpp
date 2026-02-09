@@ -79,7 +79,7 @@ private:
     void updateGlobalMatrix();
 };
 
-REGISTER_COMPONENT(Transform)
+REGISTER_COMPONENT(Transform, (uint64_t)-1)
 
 
 

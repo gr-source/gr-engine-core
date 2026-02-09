@@ -8,6 +8,12 @@
 #include <gr-render/gCommon.h>
 #include <unordered_map>
 
+typedef struct NodeInfo
+{
+    NodeID id;
+    uint8_t type;
+} NodeInfo;
+
 class RenderManager
 {
 public:
@@ -19,7 +25,7 @@ public:
 
     static void Remove(GameObjectID id);
 
-    static void MarkDirt(GameObjectID id, const Vector3& position);
+    static void SwitchTo(GameObjectID handle, bool isStatic);
 
     static void PreRender(const Camera *camera);
 
@@ -30,7 +36,7 @@ public:
 private:
     static RenderManager* s_RenderManager;
 
-    std::unordered_map<GameObjectID, Vector3> m_objectInOctree;
+    std::unordered_map<GameObjectID, NodeInfo> m_objectInOctree;
 
     void insert(GameObjectID id);
 
@@ -38,7 +44,7 @@ private:
 
     void remove(GameObjectID id);
 
-    void markDirt(GameObjectID id, const Vector3& position);
+    void switchTo(GameObjectID handle, bool isStatic);
 
     void preRender(const Camera *camera);
 

@@ -35,7 +35,7 @@ private:
     void setup(Transform *transform);
 };
 
-REGISTER_COMPONENT(MeshCollider)
+REGISTER_COMPONENT(MeshCollider, (uint64_t)-1)
 
 
 

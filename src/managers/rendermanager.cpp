@@ -56,9 +56,9 @@ void RenderManager::Remove(GameObjectID id)
     s_RenderManager->remove(id);
 }
 
-void RenderManager::MarkDirt(GameObjectID id, const Vector3& position)
+void RenderManager::SwitchTo(GameObjectID handle, bool isStatic)
 {
-    s_RenderManager->markDirt(id, position);
+    s_RenderManager->switchTo(handle, isStatic);
 }
 
 void RenderManager::PreRender(const Camera *camera)
@@ -124,9 +124,9 @@ void RenderManager::insert(GameObjectID gameObjectID)
 
         Vector3 point = transform->getPosition();
 
-        OctreeManager::InsertGlobal({gameObjectID, nullptr, point, batchPerLOD});
+        NodeID nodeID = OctreeManager::InsertGlobal({gameObjectID, nullptr, point, batchPerLOD});
 
-        m_objectInOctree.emplace(gameObjectID, point);
+        m_objectInOctree.emplace(gameObjectID, NodeInfo{nodeID, 0});
     } else
     {
         size_t length = meshes.size();
@@ -139,9 +139,9 @@ void RenderManager::insert(GameObjectID gameObjectID)
 
         Vector3 point = transform->getPosition();
 
-        OctreeManager::InsertGlobal({gameObjectID, batchIDS, point, nullptr});
+        NodeID nodeID = OctreeManager::InsertGlobal({gameObjectID, batchIDS, point, nullptr});
 
-        m_objectInOctree.emplace(gameObjectID, point);
+        m_objectInOctree.emplace(gameObjectID, NodeInfo{nodeID, 0});
     }
 }
 
@@ -163,32 +163,16 @@ void RenderManager::remove(GameObjectID id)
     if (it == m_objectInOctree.end())
         return;
 
-    NodeID nodeID = OctreeManager::Get(id, it->second);
-    if (nodeID == InvalidNode)
+    if (!OctreeManager::Remove(it->second.id, id))
         return;
 
-    if (!OctreeManager::Remove(nodeID, id))
-        return;
+    std::cout << "Remove Octree: " << GameObject::Get(id)->getName() << std::endl;
 
     m_objectInOctree.erase(it);
 }
 
-void RenderManager::markDirt(GameObjectID id, const Vector3& position)
+void RenderManager::switchTo(GameObjectID handle, bool isStatic)
 {
-    auto it = m_objectInOctree.find(id);
-    if (it == m_objectInOctree.end())
-        return;
-
-    NodeID nodeID = OctreeManager::Get(id, position);
-    if (nodeID == InvalidNode)
-        return;
-
-    if (!OctreeManager::Remove(nodeID, id))
-        return;
-
-    // std::cout << "Remove: " << id << " from: " << nodeID << std::endl;
-
-    m_objectInOctree.erase(it);
 }
 
 size_t SelectLOD(float distance, const std::vector<LODMesh>& lods)

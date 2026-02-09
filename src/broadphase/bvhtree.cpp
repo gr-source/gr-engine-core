@@ -303,45 +303,45 @@ namespace bvh
     }
 
 
-        void Tree::removeLeaf(NodeID id)
+    void Tree::removeLeaf(NodeID id)
+    {
+        if (m_root == id)
         {
-            if (m_root == id)
-            {
-                m_root = Null;
-                return;
-            }
-
-            // Setup parent, grandParent and sibling
-            NodeID parent = m_nodes[id].parent;
-            NodeID grandParent = m_nodes[parent].parent;
-            NodeID sibling;
-
-            if (m_nodes[parent].left == id)
-                sibling = m_nodes[parent].right;
-
-            else
-                sibling = m_nodes[parent].left;
-
-            // Remove parent and replace with sibling
-            if ( grandParent != Null)
-            {
-                // Connect grandParent to sibling
-                if (m_nodes[grandParent].left == parent)
-                    m_nodes[grandParent].left = sibling;
-                else
-                    m_nodes[grandParent].right = sibling;
-
-                // Connect sibling to grandParent
-                m_nodes[sibling].parent = grandParent;
-            } else
-            {
-                m_root = sibling;
-                m_nodes[sibling].parent = Null;
-            }
-
-            deallocate(parent);
-            syncHeirarchy(grandParent);
+            m_root = Null;
+            return;
         }
+
+        // Setup parent, grandParent and sibling
+        NodeID parent = m_nodes[id].parent;
+        NodeID grandParent = m_nodes[parent].parent;
+        NodeID sibling;
+
+        if (m_nodes[parent].left == id)
+            sibling = m_nodes[parent].right;
+
+        else
+            sibling = m_nodes[parent].left;
+
+        // Remove parent and replace with sibling
+        if ( grandParent != Null)
+        {
+            // Connect grandParent to sibling
+            if (m_nodes[grandParent].left == parent)
+                m_nodes[grandParent].left = sibling;
+            else
+                m_nodes[grandParent].right = sibling;
+
+            // Connect sibling to grandParent
+            m_nodes[sibling].parent = grandParent;
+        } else
+        {
+            m_root = sibling;
+            m_nodes[sibling].parent = Null;
+        }
+
+        deallocate(parent);
+        syncHeirarchy(grandParent);
+    }
 
     void Tree::syncHeirarchy(NodeID id)
     {

@@ -76,4 +76,5 @@ private:
     float m_angleOuterCone;
 };
 
-REGISTER_COMPONENT(Light)
+REGISTER_COMPONENT(Light, (uint64_t)-1)
+

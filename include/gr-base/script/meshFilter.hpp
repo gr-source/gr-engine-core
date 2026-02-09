@@ -22,4 +22,5 @@ private:
     std::vector<MeshID> m_meshes;
 };
 
-REGISTER_COMPONENT(MeshFilter)
+REGISTER_COMPONENT(MeshFilter, (uint64_t)-1)
+

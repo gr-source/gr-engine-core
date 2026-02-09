@@ -94,6 +94,6 @@ private:
     float fSweptSphereRadius;
 };
 
-REGISTER_COMPONENT(Rigidbody)
+REGISTER_COMPONENT(Rigidbody, (uint64_t)-1)
 
 

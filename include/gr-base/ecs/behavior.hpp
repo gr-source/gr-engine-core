@@ -67,10 +67,12 @@ public:
 
 #include "gr-base/ecs/behaviorRegistry.hpp"
 
+#define CLASS_TO_HASH(k) k##Hash
+
 // static_assert(std::is_base_of<BehaviorImpl<k>, k>::value, "Esta classe precisa ser herdade de BehaviorImpl<T>");
-#define REGISTER_COMPONENT(k) \
+#define REGISTER_COMPONENT(k, p) \
     inline static uint64_t k##Hash = GetHashByType<k>(#k); \
-    inline static ComponentInfo k##Info = BehaviorRegistry::Registry<k>(#k, k##Hash);
+    inline static ComponentInfo k##Info = BehaviorRegistry::Registry<k>(#k, k##Hash, p);
 
 
 

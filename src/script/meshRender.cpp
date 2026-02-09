@@ -25,7 +25,7 @@ MeshRender::~MeshRender()
 
 void MeshRender::Init()
 {
-    MainThreadDispatcher::Add(Priority::LOW, &RenderManager::Insert, entityID);
+    RenderManager::Insert(entityID);
 }
 
 bool MeshRender::Serialize(Stream* stream) const

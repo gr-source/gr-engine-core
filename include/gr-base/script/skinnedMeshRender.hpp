@@ -8,5 +8,5 @@ class SkinnedMeshRender : public BaseRender
 {
 };
 
-REGISTER_COMPONENT(SkinnedMeshRender)
+REGISTER_COMPONENT(SkinnedMeshRender, (uint64_t)-1)
 

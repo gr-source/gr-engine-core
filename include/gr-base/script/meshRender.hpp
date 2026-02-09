@@ -18,7 +18,7 @@ public:
     bool Deserialize(Stream *stream) override;
 };
 
-REGISTER_COMPONENT(MeshRender)
+REGISTER_COMPONENT(MeshRender, (uint64_t)-1)
 
 
 

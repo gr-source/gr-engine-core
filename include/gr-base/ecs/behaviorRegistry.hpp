@@ -11,13 +11,13 @@ class BehaviorRegistry
 {
 public:
     template <typename T>
-    static ComponentInfo Registry(const char* name, uint64_t hash);
+    static ComponentInfo Registry(const char* name, ComponentHash hash, ComponentHash parent);
 
-    static void Unregistry(uint64_t hash);
+    static void Unregistry(ComponentHash hash);
 
-    static ComponentInfo* Get(uint64_t hash);
+    static ComponentInfo* Get(ComponentHash hash);
 
-    static std::vector<uint64_t> GetActiveBehaviorActive();
+    static std::vector<ComponentHash> GetActiveBehaviorActive();
 
     static array* GetBehaviorInfos();
 
@@ -26,7 +26,7 @@ private:
 
     std::bitset<COMPONENT_TABLE_SIZE> m_bitmask;
 
-    std::vector<uint64_t> m_behaviorActives;
+    std::vector<ComponentHash> m_behaviorActives;
 
     array* m_infos;
 
@@ -35,9 +35,9 @@ private:
 
     void registry(ComponentInfo* info);
 
-    void unregistry(uint64_t hash);
+    void unregistry(ComponentHash hash);
 
-    ComponentInfo* get(uint64_t hash);
+    ComponentInfo* get(ComponentHash hash);
 
     bool replace(ComponentInfo* dest, const ComponentInfo* src);
 
@@ -57,12 +57,13 @@ private:
 };
 
 template <typename T>
-inline ComponentInfo BehaviorRegistry::Registry(const char* name, uint64_t hash)
+inline ComponentInfo BehaviorRegistry::Registry(const char* name, ComponentHash hash, ComponentHash parent)
 {
     ComponentInfo info;
     info.size = sizeof(struct ComponentWrapper<T>);
     info.name = name;
     info.hash = hash;
+    info.parent = parent;
     info.offset = (size_t)((uint8_t*)&((ComponentWrapper<T>*)0)->component);
 
     info.getwrappernext = (MethodPointer)BehaviorRegistry::GetWrapperNext<T>;

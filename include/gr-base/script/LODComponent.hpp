@@ -20,6 +20,6 @@ public:
     bool Deserialize(Stream* stream) override;
 };
 
-REGISTER_COMPONENT(LODComponent);
+REGISTER_COMPONENT(LODComponent, (uint64_t)-1);
 
 

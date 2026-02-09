@@ -77,7 +77,7 @@ BatchID BatchingManager::create(size_t key, MeshID meshID, MaterialID materialID
     new (batch) Batching();
     batch->build(meshID, materialID);
 
-    std::cout << "[GPU] Batch criado com Mesh: " << key << " | " << meshID << " | " << materialID << std::endl;
+    std::cout << "[GPU] Batch criado com Mesh key: " << key << " | meshID: " << meshID << " | materialID:  " << materialID << std::endl;
 
     m_count++;
 

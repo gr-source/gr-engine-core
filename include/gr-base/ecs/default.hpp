@@ -16,4 +16,5 @@ typedef uint64_t EntityID;
 class Behavior;
 class Entity;
 
+typedef uint64_t ComponentHash;
 

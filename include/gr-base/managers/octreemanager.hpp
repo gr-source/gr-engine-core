@@ -52,10 +52,6 @@ typedef struct OctreeNode
 class OctreeManager
 {
 public:
-    // static void Initialize();
-
-    // static void Shutdown();
-
     static void SetInstance(OctreeManager* octreeManager);
 
     static NodeID InsertGlobal(NodeData data);

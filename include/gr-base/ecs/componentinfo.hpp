@@ -16,7 +16,8 @@ typedef struct ComponentInfo
 {
     const char* name;
     size_t size;
-    uint64_t hash;
+    ComponentHash hash;
+    ComponentHash parent;
     size_t offset;
 
     MethodPointer getwrappernext;

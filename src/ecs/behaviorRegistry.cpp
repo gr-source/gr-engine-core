@@ -8,17 +8,17 @@
 #include <string.h>
 
 // public
-void BehaviorRegistry::Unregistry(uint64_t hash)
+void BehaviorRegistry::Unregistry(ComponentHash hash)
 {
     GetInstance().unregistry(hash);
 }
 
-ComponentInfo* BehaviorRegistry::Get(uint64_t hash)
+ComponentInfo* BehaviorRegistry::Get(ComponentHash hash)
 {
     return GetInstance().get(hash);
 }
 
-std::vector<uint64_t> BehaviorRegistry::GetActiveBehaviorActive()
+std::vector<ComponentHash> BehaviorRegistry::GetActiveBehaviorActive()
 {
     return GetInstance().m_behaviorActives;
 }
@@ -65,7 +65,7 @@ void BehaviorRegistry::registry(ComponentInfo* info)
     memcpy((void *)&dest, (void *)info, sizeof(ComponentInfo));
 }
 
-void BehaviorRegistry::unregistry(uint64_t hash)
+void BehaviorRegistry::unregistry(ComponentHash hash)
 {
     size_t poolID = hash % COMPONENT_TABLE_SIZE;
 
@@ -78,7 +78,7 @@ void BehaviorRegistry::unregistry(uint64_t hash)
     m_behaviorActives.erase(std::remove(m_behaviorActives.begin(), m_behaviorActives.end(), poolID), m_behaviorActives.end());
 }
 
-ComponentInfo* BehaviorRegistry::get(uint64_t hash)
+ComponentInfo* BehaviorRegistry::get(ComponentHash hash)
 {
     size_t poolID = hash % COMPONENT_TABLE_SIZE;
     if (m_bitmask.test(poolID))
@@ -90,6 +90,7 @@ ComponentInfo* BehaviorRegistry::get(uint64_t hash)
 bool BehaviorRegistry::replace(ComponentInfo* dest, const ComponentInfo* src)
 {
     dest->name = src->name;
+    dest->parent = src->parent;
 
     dest->getwrapperbehavior = src->getwrapperbehavior;
     dest->getwrappernext = src->getwrappernext;

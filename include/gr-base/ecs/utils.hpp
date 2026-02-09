@@ -2,14 +2,14 @@
 
 #include "default.hpp"
 
-inline constexpr uint64_t GetHash(const char* str) noexcept
+inline constexpr ComponentHash GetHash(const char* str) noexcept
 {
-    uint64_t hash = 14695981039346656037UL;
+    ComponentHash hash = 14695981039346656037UL;
 
     char c = '\0';
     while ((c = *str++))
     {
-        hash ^= (uint64_t)(unsigned char)(c);
+        hash ^= (ComponentHash)(unsigned char)(c);
         hash *= 1099511628211UL;
     }
     return hash;
@@ -17,9 +17,9 @@ inline constexpr uint64_t GetHash(const char* str) noexcept
 
 
 template <typename T>
-inline uint64_t GetHashByType(const char* key) noexcept
+inline ComponentHash GetHashByType(const char* key) noexcept
 {
-    static uint64_t hash = GetHash(key);
+    static ComponentHash hash = GetHash(key);
     return hash;
 }
 

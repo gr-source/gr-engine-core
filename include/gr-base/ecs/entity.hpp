@@ -41,7 +41,13 @@ public:
     void Init();
     
 private:
-    ComponentHandle m_lookupTable[COMPONENT_TABLE_SIZE];
+    typedef struct ComponentLookup
+    {
+        ComponentHash hash;
+        ComponentHandle handle;
+    } ComponentLookup;
+
+    ComponentLookup m_lookupTable[COMPONENT_TABLE_SIZE];
 
     std::bitset<COMPONENT_TABLE_SIZE> m_signature;
 
