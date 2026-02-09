@@ -36,6 +36,13 @@ void PhysicsScene::ContactTest(btCollisionObject *colObj, btCollisionWorld::Cont
     return GetInstance().dynamicsWorld->contactTest(colObj, resultCallback);
 }
 
+btDiscreteDynamicsWorld* PhysicsScene::GetWorld()
+{
+    return GetInstance().dynamicsWorld.get();
+}
+
+
+
 // private
 PhysicsScene &PhysicsScene::GetInstance()
 {
@@ -43,10 +50,16 @@ PhysicsScene &PhysicsScene::GetInstance()
     return instance;
 }
 
+#include <BulletCollision/CollisionDispatch/btGhostObject.h>
 PhysicsScene::PhysicsScene() : broadphase(std::make_unique<btDbvtBroadphase>()), collisionConfiguration(std::make_unique<btDefaultCollisionConfiguration>()), dispatcher(std::make_unique<btCollisionDispatcher>(&(*collisionConfiguration))), solver(std::make_unique<btSequentialImpulseConstraintSolver>())
 {
     dynamicsWorld = std::make_unique<btDiscreteDynamicsWorld>(&(*dispatcher), &(*broadphase), &(*solver), &(*collisionConfiguration));
     dynamicsWorld->setGravity(VEC3_TO_BTVEC3(gravity));
+
+    btGhostPairCallback* ghostCallback = new btGhostPairCallback();
+    broadphase->getOverlappingPairCache()->setInternalGhostPairCallback(
+        ghostCallback
+    );
 }
 
 PhysicsScene::~PhysicsScene()

@@ -25,16 +25,13 @@ Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr
 
 Rigidbody::~Rigidbody()
 {
-    if (!m_body) {
+    if (!m_body)
         return;
-    }
 
     PhysicsScene::RemoveRigidbody(&(*m_body));
-
-    m_body = nullptr;
 }
 
-void Rigidbody::Init()
+void Rigidbody::Start()
 {
     m_transform = GetEntity()->getComponent<Transform>();
 

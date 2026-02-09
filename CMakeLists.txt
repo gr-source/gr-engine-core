@@ -51,6 +51,7 @@ set(binary
 )
 
 set(script
+    src/script/characterController.cpp
     src/script/skinnedMeshRender.cpp
     src/script/LODComponent.cpp
     src/script/meshCollider.cpp

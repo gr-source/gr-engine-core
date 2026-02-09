@@ -4,6 +4,7 @@
 #include <mutex>
 
 #include <bullet/btBulletDynamicsCommon.h>
+#include <BulletDynamics/Character/btKinematicCharacterController.h>
 
 #include <gr-math/gmath.hpp>
 
@@ -35,6 +36,8 @@ public:
     static bool Raycast(const Vector3 &rayStart, const Vector3 &rayEnd, Hit &hit);
 
     static void ContactTest(btCollisionObject *colObj, btCollisionWorld::ContactResultCallback &resultCallback);
+
+    static btDiscreteDynamicsWorld* GetWorld();
 
     static Vector3 gravity;
 
