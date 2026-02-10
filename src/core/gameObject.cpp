@@ -150,6 +150,24 @@ bool GameObject::GetIsStatic() const
     return m_isStatic;
 }
 
+
+GameObjectID GameObject::FindChildByName(const std::string& name)
+{
+    if (m_name == name)
+        return getCacheID();
+
+    for (auto &transformID : getTransform()->getChildren())
+    {
+        auto transform = BehaviorStorage::GetComponent<Transform>(transformID);
+
+        GameObjectID found = transform->GetGameObject()->FindChildByName(name);
+        if (found != GID_INVALID)
+            return found;
+    }
+
+    return GID_INVALID;
+}
+
 // private
 void GameObject::Serialize(GameObjectID id, Stream* stream)
 {

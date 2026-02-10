@@ -4,8 +4,10 @@
 #include "gr-base/core/culling/frustum.hpp"
 
 #include "gr-base/core/debugdraw.hpp"
+#include "gr-base/core/geometry/boundbox.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/ecs/behaviorStorage.hpp"
+#include "gr-base/managers/bvhtreemanager.hpp"
 #include "gr-base/managers/octreemanager.hpp"
 
 #include "gr-base/core/gameObject.hpp"
@@ -21,6 +23,8 @@
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 #include "gr-base/script/light.hpp"
+#include <cfloat>
+#include <cstddef>
 #include <gr-math/gmath.hpp>
 
 RenderManager* RenderManager::s_RenderManager = nullptr;
@@ -101,12 +105,25 @@ void RenderManager::insert(GameObjectID gameObjectID)
 
     auto transform = gameObject->getTransform();
 
+    Vector3 point = transform->getPosition();
+
+    bool isStatic = gameObject->GetIsStatic();
+
+    std::cout << gameObject->getName() << " " << "TypeTree: " << (isStatic ? "Octree" : "Bvhtree") << " pos: " << point.x << " " << point.y << " " << point.z << std::endl;
+
+    array* batchPerLOD = NULL;
+    array* batchIDS = NULL;
+
+    Boundbox boundbox;
+    boundbox.min = { FLT_MAX, FLT_MAX, FLT_MAX };
+    boundbox.max = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
     if (lodComponent != nullptr)
     {
         size_t length = meshes.size();
         auto lodMeshes = lodComponent->meshesLOD;
 
-        array* batchPerLOD = array_create(length, sizeof(array*));
+        batchPerLOD = array_create(length, sizeof(array*));
         array** vector = reinterpret_cast<array**>(batchPerLOD->vector);
 
         for (size_t lod = 0; lod < lodMeshes.size(); lod++)
@@ -119,33 +136,33 @@ void RenderManager::insert(GameObjectID gameObjectID)
             BatchID* vectorn = reinterpret_cast<BatchID*>(vector[lod]->vector);
 
             for (size_t m = 0; m < meshCount; m++)
-                vectorn[m] = GetBatchID(meshes[m], materials[m]);
+                vectorn[m] = GetBatchID(boundbox, meshes[m], materials[m]);
         }
-
-        Vector3 point = transform->getPosition();
-
-        NodeID nodeID = OctreeManager::InsertGlobal({gameObjectID, nullptr, point, batchPerLOD});
-
-        m_objectInOctree.emplace(gameObjectID, NodeInfo{nodeID, 0});
     } else
     {
         size_t length = meshes.size();
 
-        array* batchIDS = array_create(length, sizeof(BatchID));
+        batchIDS = array_create(length, sizeof(BatchID));
         BatchID* vector = reinterpret_cast<BatchID*>(batchIDS->vector);
 
         for (size_t i=0;i<length;i++)
-            vector[i] = GetBatchID(meshes[i], materials[i]);
-
-        Vector3 point = transform->getPosition();
-
-        NodeID nodeID = OctreeManager::InsertGlobal({gameObjectID, batchIDS, point, nullptr});
-
-        m_objectInOctree.emplace(gameObjectID, NodeInfo{nodeID, 0});
+            vector[i] = GetBatchID(boundbox, meshes[i], materials[i]);
     }
+
+    NodeData data{gameObjectID, batchIDS, point, batchPerLOD};
+
+    NodeID nodeID = InvalidID;
+    if (isStatic)
+        nodeID = OctreeManager::InsertGlobal(data);
+    else
+    {
+        nodeID = Tree::Insert(boundbox, new NodeData(data));
+    }
+
+    m_objectInOctree.emplace(gameObjectID, NodeInfo{nodeID, 0});
 }
 
-BatchID RenderManager::GetBatchID(MeshID meshID, MaterialID materialID) const
+BatchID RenderManager::GetBatchID(Boundbox& boundbox, MeshID meshID, MaterialID materialID) const
 {
     size_t key = 0;
     key ^= std::hash<size_t>{}(meshID) + 0x9e3779b9 + (key << 6) + (key >> 2);
@@ -154,6 +171,19 @@ BatchID RenderManager::GetBatchID(MeshID meshID, MaterialID materialID) const
     BatchID batchID = BatchingManager::Find(key);
     if (batchID == InvalidBatch)
         batchID = BatchingManager::Create(key, meshID, materialID);
+
+    auto mesh = AssetsManager::GetMesh(meshID);
+
+    Boundbox meshBox = mesh->getBoundbox(); 
+    
+    if (meshBox.min.x < boundbox.min.x) boundbox.min.x = meshBox.min.x;
+    if (meshBox.min.y < boundbox.min.y) boundbox.min.y = meshBox.min.y;
+    if (meshBox.min.z < boundbox.min.z) boundbox.min.z = meshBox.min.z;
+    
+    if (meshBox.max.x > boundbox.max.x) boundbox.max.x = meshBox.max.x;
+    if (meshBox.max.y > boundbox.max.y) boundbox.max.y = meshBox.max.y;
+    if (meshBox.max.z > boundbox.max.z) boundbox.max.z = meshBox.max.z;
+
     return batchID;
 }
 
@@ -266,6 +296,85 @@ void RenderManager::preRender(const Camera *camera)
         }
         return false;
     });
+
+    Tree::For_each([camera = std::forward<const Camera*>(camera)](NodeID id, BVHNode* node)
+            {
+                if (node->isLeaf())
+                {
+                    NodeData data = *static_cast<NodeData*>(node->data);
+
+                    auto gameObject = GameObject::Get(data.gameObjectID);
+
+                    auto transform = gameObject->getTransform();
+
+                    if (transform->isDirty)
+                    {
+                        auto matrix = transform->getGlobalMatrix();
+
+                        auto boundary = node->localBoundary;
+
+                        Vector4 min = matrix * Vector4{boundary.min.x, boundary.min.y, boundary.min.z, 1.0f};
+                        Vector4 max = matrix * Vector4{boundary.max.x, boundary.max.y, boundary.max.z, 1.0f};
+
+                        node->boundary = Boundbox{Vector3{min.x, min.y, min.z}, Vector3{max.x, max.y, max.z}};
+
+                        Tree::SyncHeirarchy(node->parent);
+
+                        transform->isDirty = false;
+
+                        std::cout << gameObject->getName() << " dirst" << std::endl;
+
+                        return true;
+                    }
+
+                    auto boundary = node->boundary;
+
+                    if (!Frustum::IsCubeInFrustumAABB(boundary.min, boundary.max))
+                        return true;
+
+                    auto cameraTransform = camera->GetGameObject()->getTransform();
+
+                    auto cameraPosition = cameraTransform->getPosition();
+
+                    {
+                        auto lodComponent = gameObject->getComponent<LODComponent>();
+                        auto transform = gameObject->getTransform();
+
+                        auto objectPosition = transform->getPosition();
+
+                        auto model = transform->getGlobalMatrix();
+
+                        if (data.batchIDs != nullptr)
+                        {
+                            array* arr = data.batchIDs;
+
+                            BatchID* vector = reinterpret_cast<BatchID*>(arr->vector);
+                            for (BatchID id=0;id<arr->length;id++)
+                            {
+                                auto& batching = BatchingManager::Get(vector[id]);
+                                batching.insert(model);
+                            }
+                        } else
+                        {
+                            float distance = Math::distance(cameraPosition, objectPosition);
+
+                            size_t lodID = SelectLOD(distance, lodComponent->meshesLOD);
+
+                            array* batchArray = data.batchPerLOD;
+                            array** vector = reinterpret_cast<array**>(batchArray->vector);
+
+                            BatchID* nvector = reinterpret_cast<BatchID*>(vector[lodID]->vector);
+
+                            for (size_t m = 0; m < batchArray->length; m++)
+                            {
+                                auto& batching = BatchingManager::Get(nvector[m]);
+                                batching.insert(model);
+                            }
+                        }
+                    }
+                }
+                return false;
+            });
 }
 
 void RenderManager::render()

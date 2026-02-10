@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "gr-base/core/culling/octree.hpp"
@@ -8,16 +7,14 @@
 
 #include "gr-base/script/default.hpp"
 
+#include "default.hpp"
+
 #include <functional>
 
 extern "C"
 {
 #include "gr-base/externals/array.h"
 }
-
-using NodeID = std::size_t;
-
-constexpr NodeID InvalidNode = static_cast<NodeID>(-1);
 
 #define MAX_OBJECT_IN_NODE 8
 

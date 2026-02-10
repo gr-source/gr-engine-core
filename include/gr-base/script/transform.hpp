@@ -9,6 +9,8 @@
 class Transform : public BehaviorImpl<Transform>
 {
 public:
+    bool isDirty;
+
     Transform();
 
     void setLocalScale(const Vector3 &value);
@@ -22,8 +24,6 @@ public:
     Quaternion getRotation() const;
 
     void setLocalPosition(const Vector3 &value);
-
-    void addLocalPosition(const Vector3 &value);
 
     Vector3 getPosition() const;
 

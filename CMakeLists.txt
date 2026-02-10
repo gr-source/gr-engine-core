@@ -100,13 +100,10 @@ set(task
     src/core/task/texturemanager.cpp
 )
 
-set(broadphase_src
-    src/broadphase/bvhtree.cpp
-)
-
 set(managers_src
     src/managers/gameobjectmanager.cpp
     src/managers/batchingmanager.cpp
+    src/managers/bvhtreemanager.cpp
     src/managers/rendermanager.cpp
     src/managers/octreemanager.cpp
     src/managers/assetsManager.cpp
@@ -132,7 +129,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${broadphase_src} ${managers_src} ${EXTERNALS} ${ECS_SRC})
+add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNALS} ${ECS_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

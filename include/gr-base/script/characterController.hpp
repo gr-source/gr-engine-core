@@ -18,6 +18,10 @@ public:
 
     void SetWalkingDirection(const Vector3& direction);
 
+    bool CanJump();
+
+    void Jump();
+
 private:
     btConvexShape* m_capsule;
 

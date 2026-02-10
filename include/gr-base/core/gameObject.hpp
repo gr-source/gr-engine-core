@@ -52,6 +52,8 @@ public:
 
     bool GetIsStatic() const;
 
+    GameObjectID FindChildByName(const std::string& name);
+
 private:
     std::string m_name;
 

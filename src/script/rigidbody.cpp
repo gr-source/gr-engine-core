@@ -83,25 +83,18 @@ void Rigidbody::Start()
 
 void Rigidbody::Update()
 {
-    m_transform = GetEntity()->getComponent<Transform>();
-
-    if (!GetGameObject()->GetIsStatic())
-    {
-        if (m_body->getLinearVelocity().length() < 0.01 && m_body->getAngularVelocity().length() < 0.01) {
-            m_body->setActivationState(DISABLE_DEACTIVATION);
-        } else {
-            m_body->forceActivationState(ACTIVE_TAG);
-        }
-	}
-
 	if (m_body->isActive())
     {
+        m_transform = GetEntity()->getComponent<Transform>();
+
 		btTransform trans;
 		m_body->getMotionState()->getWorldTransform(trans);
 
-		m_transform->setLocalPosition({trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ()});
+        btVector3 origin = trans.getOrigin();
+        m_transform->setLocalPosition({ (float)origin.getX(), (float)origin.getY(), (float)origin.getZ() });
 
-		m_transform->setLocalRotation({trans.getRotation().getW(), trans.getRotation().getX(), trans.getRotation().getY(), trans.getRotation().getZ()});
+        btQuaternion rot = trans.getRotation();
+        m_transform->setLocalRotation({ (float)rot.getW(), (float)rot.getX(), (float)rot.getY(), (float)rot.getZ() });
 	}
 }
 

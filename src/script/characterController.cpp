@@ -7,6 +7,7 @@
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
 
 #include <gr-base/core/gameObject.hpp>
+#include <gr-math/gmath.hpp>
 
 CharacterController::CharacterController() : m_capsule(nullptr), m_ghost(nullptr), m_character(nullptr)
 {}
@@ -86,14 +87,27 @@ void CharacterController::Update()
     // btQuaternion rot = trans.getRotation();
 
     auto transform = GetEntity()->getComponent<Transform>();
-    transform->setLocalPosition(*reinterpret_cast<const Vector3*>(&pos));
 
-    // transform->setLocalRotation(*reinterpret_cast<const Quaternion*>(&rot));
+    Vector3 lastpos = transform->getLocalPosition();
+    Vector3 newpos = *reinterpret_cast<const Vector3*>(&pos);
+
+    if (Math::magnitude(newpos - lastpos) > 1e-6f)
+        transform->setLocalPosition(*reinterpret_cast<const Vector3*>(&pos));
 }
 
 void CharacterController::SetWalkingDirection(const Vector3& direction)
 {
     m_character->setWalkDirection(*reinterpret_cast<const btVector3*>(&direction));
+}
+
+bool CharacterController::CanJump()
+{
+    return m_character->canJump();
+}
+
+void CharacterController::Jump()
+{
+    m_character->jump();
 }
 
 

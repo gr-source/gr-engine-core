@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(INVALID_COMPONENT_HANDLE), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix)
+Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(INVALID_COMPONENT_HANDLE), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix), isDirty(false)
 {}
 
 void Transform::setLocalScale(const Vector3 &value)
@@ -54,13 +54,6 @@ void Transform::setLocalPosition(const Vector3 &value)
 const Vector3 &Transform::getLocalPosition() const
 {
     return m_position;
-}
-
-void Transform::addLocalPosition(const Vector3 &value)
-{
-    m_position += value;
-
-    updateLocalMatrix();
 }
 
 Vector3 Transform::getPosition() const
@@ -154,6 +147,7 @@ bool Transform::hasChildren() const
 
 void Transform::updateLocalMatrix()
 {
+    // std::cout << GetGameObject()->getName() << " up" << std::endl;
     m_localMatrix = Math::CreateTRS(m_position, m_rotation, m_scale);
 
     updateGlobalMatrix();
@@ -173,8 +167,10 @@ void Transform::updateGlobalMatrix()
     for (auto &handle : m_children)
     {
         auto transform = BehaviorStorage::GetComponent<Transform>(handle);
-        transform->updateLocalMatrix();
+        transform->updateGlobalMatrix();
     }
+
+    isDirty = true;
 }
 
 bool Transform::Serialize(Stream *stream) const
