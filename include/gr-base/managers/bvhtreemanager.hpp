@@ -25,10 +25,10 @@ typedef struct BVHNode
     }
 } BVHNode;
 
-class Tree
+class BVHTreeManager
 {
 public:
-    static void SetInstance(Tree* instance);
+    static void SetInstance(BVHTreeManager* instance);
 
     static NodeID Insert(const Boundbox &bounds, void *data);
 
@@ -40,11 +40,11 @@ public:
 
     static void Render();
 
-    Tree();
-    ~Tree();
+    BVHTreeManager();
+    ~BVHTreeManager();
 
 private:
-    static Tree *s_Tree;
+    static BVHTreeManager *s_BVHTreeManager;
 
     NodeID m_freeID;
 

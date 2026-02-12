@@ -137,7 +137,7 @@ void RenderManager::insert(GameObjectID gameObjectID)
         nodeID = OctreeManager::InsertGlobal(data);
     else
     {
-        nodeID = Tree::Insert(boundbox, new NodeData(data));
+        nodeID = BVHTreeManager::Insert(boundbox, new NodeData(data));
     }
 
     NodeInfo info{};
@@ -180,7 +180,7 @@ void RenderManager::remove(GameObjectID handle)
             return;
     } else
     {
-        Tree::Remove(it->second.id);
+        BVHTreeManager::Remove(it->second.id);
     }
 
     m_objectInOctree.erase(it);
@@ -286,7 +286,7 @@ void RenderManager::preRender(const Camera *camera)
 
 
     // std::cout << "=====" << std::endl;
-    Tree::For_each([camera = std::forward<const Camera*>(camera)](NodeID id, BVHNode* node)
+    BVHTreeManager::For_each([camera = std::forward<const Camera*>(camera)](NodeID id, BVHNode* node)
             {
                 if (node->isLeaf())
                 {
@@ -307,7 +307,7 @@ void RenderManager::preRender(const Camera *camera)
 
                         node->boundary = Boundbox{Vector3{min.x, min.y, min.z}, Vector3{max.x, max.y, max.z}};
 
-                        Tree::SyncHeirarchy(node->parent);
+                        BVHTreeManager::SyncHeirarchy(node->parent);
 
                         transform->isDirty = false;
 

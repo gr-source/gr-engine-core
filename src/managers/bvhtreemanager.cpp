@@ -3,43 +3,43 @@
 #include "gr-base/core/debugdraw.hpp"
 #include <gr-math/gmath.hpp>
 
-Tree* Tree::s_Tree = nullptr;
+BVHTreeManager* BVHTreeManager::s_BVHTreeManager = nullptr;
 
-void Tree::SetInstance(Tree *instance)
+void BVHTreeManager::SetInstance(BVHTreeManager *instance)
 {
-    s_Tree = instance;
+    s_BVHTreeManager = instance;
 }
 
-NodeID Tree::Insert(const Boundbox &bounds, void *data)
+NodeID BVHTreeManager::Insert(const Boundbox &bounds, void *data)
 {
-    return s_Tree->insert(bounds, data);
+    return s_BVHTreeManager->insert(bounds, data);
 }
 
-void Tree::Remove(NodeID id)
+void BVHTreeManager::Remove(NodeID id)
 {
-    return s_Tree->remove(id);
+    return s_BVHTreeManager->remove(id);
 }
 
-void Tree::For_each(std::function<bool (NodeID, BVHNode*)> func)
+void BVHTreeManager::For_each(std::function<bool (NodeID, BVHNode*)> func)
 {
-    return s_Tree->for_each(s_Tree->m_root, func);
+    return s_BVHTreeManager->for_each(s_BVHTreeManager->m_root, func);
 }
 
-void Tree::SyncHeirarchy(NodeID id)
+void BVHTreeManager::SyncHeirarchy(NodeID id)
 {
-    s_Tree->syncHeirarchy(id);
+    s_BVHTreeManager->syncHeirarchy(id);
 }
 
-void Tree::Render()
+void BVHTreeManager::Render()
 {
-    return s_Tree->render();
+    return s_BVHTreeManager->render();
 }
 
 // private
-Tree::Tree() : m_freeID(InvalidNode), m_root(InvalidNode), m_nodes(nullptr), m_size(0), m_count(0)
+BVHTreeManager::BVHTreeManager() : m_freeID(InvalidNode), m_root(InvalidNode), m_nodes(nullptr), m_size(0), m_count(0)
 {}
 
-Tree::~Tree()
+BVHTreeManager::~BVHTreeManager()
 {
     if (m_nodes == nullptr)
         return;
@@ -47,7 +47,7 @@ Tree::~Tree()
     free(m_nodes);
 }
 
-NodeID Tree::insert(const Boundbox &bounds, void *data)
+NodeID BVHTreeManager::insert(const Boundbox &bounds, void *data)
 {
     NodeID id = allocate();
 
@@ -63,7 +63,7 @@ NodeID Tree::insert(const Boundbox &bounds, void *data)
     return id;
 }
 
-void Tree::remove(NodeID id)
+void BVHTreeManager::remove(NodeID id)
 {
     BVHNode &node = m_nodes[id];
     if (!node.isLeaf())
@@ -74,7 +74,7 @@ void Tree::remove(NodeID id)
     deallocate(id);
 }
 
-void Tree::for_each(NodeID id, std::function<bool (NodeID, BVHNode *)> func)
+void BVHTreeManager::for_each(NodeID id, std::function<bool (NodeID, BVHNode *)> func)
 {
     if (id == InvalidNode)
         return;
@@ -87,13 +87,13 @@ void Tree::for_each(NodeID id, std::function<bool (NodeID, BVHNode *)> func)
     for_each(node->left, func);
 }
 
-void Tree::render()
+void BVHTreeManager::render()
 {
     if (m_root != InvalidNode)
         render_node(m_root);
 }
 
-void Tree::render_node(NodeID id)
+void BVHTreeManager::render_node(NodeID id)
 {
     BVHNode &node = m_nodes[id];
 
@@ -135,7 +135,7 @@ void Tree::render_node(NodeID id)
     }
 }
 
-NodeID Tree::allocate()
+NodeID BVHTreeManager::allocate()
 {
     if (m_freeID == InvalidNode)
         resize(1024);
@@ -154,7 +154,7 @@ NodeID Tree::allocate()
     return id;
 }
 
-void Tree::deallocate(NodeID id)
+void BVHTreeManager::deallocate(NodeID id)
 {
     BVHNode &node = m_nodes[id];
 
@@ -165,7 +165,7 @@ void Tree::deallocate(NodeID id)
 }
 
 #include <string.h>
-void Tree::resize(const std::size_t &size)
+void BVHTreeManager::resize(const std::size_t &size)
 {
     auto oldsize = m_size;
     auto newsize = oldsize + size;
@@ -183,7 +183,7 @@ void Tree::resize(const std::size_t &size)
     addfreeid(oldsize);
 }
 
-void Tree::addfreeid(NodeID id)
+void BVHTreeManager::addfreeid(NodeID id)
 {
     for (NodeID i=id;i<m_size - 1;i++)
     {
@@ -194,14 +194,14 @@ void Tree::addfreeid(NodeID id)
     m_freeID = id;
 }
 
-void Tree::fatten(Boundbox &bounds)
+void BVHTreeManager::fatten(Boundbox &bounds)
 {
     float value = 0.5f;
     bounds.min -= value;
     bounds.max += value;
 }
 
-void Tree::insertLeaf(NodeID id)
+void BVHTreeManager::insertLeaf(NodeID id)
 {
     if (m_root == InvalidNode)
     {
@@ -294,7 +294,7 @@ void Tree::insertLeaf(NodeID id)
 }
 
 
-void Tree::removeLeaf(NodeID id)
+void BVHTreeManager::removeLeaf(NodeID id)
 {
     if (m_root == id)
     {
@@ -329,7 +329,7 @@ void Tree::removeLeaf(NodeID id)
     syncHeirarchy(grandParent);
 }
 
-void Tree::syncHeirarchy(NodeID id)
+void BVHTreeManager::syncHeirarchy(NodeID id)
 {
     while (id != InvalidNode)
     {
@@ -346,7 +346,7 @@ void Tree::syncHeirarchy(NodeID id)
 }
 
 
-NodeID Tree::balance(NodeID iA)
+NodeID BVHTreeManager::balance(NodeID iA)
 {
     BVHNode &A = m_nodes[iA];
 
@@ -460,12 +460,12 @@ NodeID Tree::balance(NodeID iA)
     return iA;
 }
 
-int Tree::getHeight(NodeID id) const
+int BVHTreeManager::getHeight(NodeID id) const
 {
     return id != InvalidNode ? m_nodes[id].height : 0;
 }
 
-int Tree::getBalance(NodeID id) const
+int BVHTreeManager::getBalance(NodeID id) const
 {
     return getHeight(m_nodes[id].left) - getHeight(m_nodes[id].right);
 }
