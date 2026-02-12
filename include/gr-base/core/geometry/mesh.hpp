@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "boneWeight.hpp"
-#include "gr-base/core/geometry/boundbox.hpp"
 #include "vertex3D.hpp"
 
 #include "gr-base/core/file/default.hpp"

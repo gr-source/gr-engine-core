@@ -30,21 +30,6 @@ typedef struct GameObjectSlot
 
 GameObjectManager* GameObjectManager::s_GameObjectManager = nullptr;
 
-/*
-void GameObjectManager::Initialize()
-{
-    if (s_GameObjectManager == nullptr)
-        s_GameObjectManager = new GameObjectManager();
-}
-
-void GameObjectManager::Shutdown()
-{
-    if (s_GameObjectManager != nullptr)
-        delete s_GameObjectManager;
-    s_GameObjectManager = nullptr;
-}
-*/
-
 void GameObjectManager::SetInstance(GameObjectManager* gameobjectmanager)
 {
     s_GameObjectManager = gameobjectmanager;
@@ -113,7 +98,12 @@ GameObjectID GameObjectManager::instantiate(GameObjectID other)
 
     auto scene = SceneManager::GetCurrent();
     if (scene != nullptr)
+    {
         scene->insert(handle);
+
+        if (scene->bRunning)
+            gameObject->Start();
+    }
 
     return handle;
 }

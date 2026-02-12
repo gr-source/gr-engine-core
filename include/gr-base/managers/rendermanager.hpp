@@ -1,8 +1,9 @@
 #pragma once
 
 #include "gr-base/core/default.hpp"
-#include "gr-base/core/geometry/boundbox.hpp"
+
 #include "gr-base/core/geometry/default.hpp"
+#include "gr-base/managers/bvhtreemanager.hpp"
 #include "gr-base/managers/octreemanager.hpp"
 #include "gr-base/script/default.hpp"
 
@@ -18,9 +19,7 @@ typedef struct NodeInfo
 class RenderManager
 {
 public:
-    static void Initialize();
-
-    static void Shutdown();
+    static void SetInstance(RenderManager* renderManager);
 
     static void Insert(GameObjectID id);
 
@@ -43,11 +42,13 @@ private:
 
     BatchID GetBatchID(Boundbox& boundbox, MeshID meshID, MaterialID materialID) const;
 
-    void remove(GameObjectID id);
+    void remove(GameObjectID handle);
 
     void switchTo(GameObjectID handle, bool isStatic);
 
     void preRender(const Camera *camera);
+
+    void foreach_bhv(BVHNode* node);
 
     void render();
 

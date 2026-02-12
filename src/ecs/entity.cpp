@@ -23,7 +23,7 @@ Behavior* Entity::getComponent(const char* name) const
 {
     return getComponent(GetHash(name));
 }
-
+/*
 static void OnStart(uint64_t hash, ComponentHandle handle)
 {
     auto behavior = BehaviorStorage::GetComponent(hash, handle);
@@ -32,6 +32,7 @@ static void OnStart(uint64_t hash, ComponentHandle handle)
 
     behavior->Start();
 }
+*/
 
 Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
 {
@@ -67,10 +68,11 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
     auto behavior = BehaviorStorage::GetComponent(hash, handle);
     behavior->entityID = m_id;
 
-
+    /*
     auto scene = Scene::GetCurrent();
     if (scene != nullptr && scene->bRunning)
         MainThreadDispatcher::Add(Priority::LOW, &OnStart, hash, handle);
+    */
 
     return behavior;
 }
@@ -143,6 +145,24 @@ void Entity::Init()
         auto gameObject = GameObject::Get(childID);
 
         gameObject->Init();
+    }
+}
+
+void Entity::Start()
+{
+    for (auto& hash : GetHashes())
+    {
+        auto behavior = BehaviorStorage::GetComponent(hash, GetID(hash));
+        behavior->Start();
+    }
+
+    auto transform = getComponent<Transform>();
+
+    for (auto& childID : transform->getChildren())
+    {
+        auto gameObject = GameObject::Get(childID);
+
+        gameObject->Start();
     }
 }
 

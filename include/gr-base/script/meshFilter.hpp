@@ -1,6 +1,5 @@
 #pragma once
 
-#include "gr-base/core/geometry/boundbox.hpp"
 #include "gr-base/core/geometry/default.hpp"
 
 #include "gr-base/ecs/behavior.hpp"

@@ -4,7 +4,6 @@
 #include "gr-base/core/culling/frustum.hpp"
 
 #include "gr-base/core/debugdraw.hpp"
-#include "gr-base/core/geometry/boundbox.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/managers/bvhtreemanager.hpp"
@@ -29,25 +28,9 @@
 
 RenderManager* RenderManager::s_RenderManager = nullptr;
 
-void RenderManager::Initialize()
+void RenderManager::SetInstance(RenderManager* rendermanager)
 {
-    if (s_RenderManager == nullptr)
-        s_RenderManager = new RenderManager();
-
-    BatchingManager::Initialize();
-    // OctreeManager::Initialize();
-    DebugDraw::Initialize();
-}
-
-void RenderManager::Shutdown()
-{
-    if (s_RenderManager != nullptr)
-        delete s_RenderManager;
-    s_RenderManager = nullptr;
-
-    BatchingManager::Shutdown();
-    // OctreeManager::Shutdown();
-    DebugDraw::Shutdown();
+    s_RenderManager = rendermanager;
 }
 
 void RenderManager::Insert(GameObjectID id)
@@ -109,8 +92,6 @@ void RenderManager::insert(GameObjectID gameObjectID)
 
     bool isStatic = gameObject->GetIsStatic();
 
-    std::cout << gameObject->getName() << " " << "TypeTree: " << (isStatic ? "Octree" : "Bvhtree") << " pos: " << point.x << " " << point.y << " " << point.z << std::endl;
-
     array* batchPerLOD = NULL;
     array* batchIDS = NULL;
 
@@ -159,7 +140,13 @@ void RenderManager::insert(GameObjectID gameObjectID)
         nodeID = Tree::Insert(boundbox, new NodeData(data));
     }
 
-    m_objectInOctree.emplace(gameObjectID, NodeInfo{nodeID, 0});
+    NodeInfo info{};
+    info.id = nodeID;
+    info.type = isStatic ? 0 : 1;
+
+    transform->isDirty = true;
+
+    m_objectInOctree.emplace(gameObjectID, info);
 }
 
 BatchID RenderManager::GetBatchID(Boundbox& boundbox, MeshID meshID, MaterialID materialID) const
@@ -175,34 +162,34 @@ BatchID RenderManager::GetBatchID(Boundbox& boundbox, MeshID meshID, MaterialID 
     auto mesh = AssetsManager::GetMesh(meshID);
 
     Boundbox meshBox = mesh->getBoundbox(); 
-    
-    if (meshBox.min.x < boundbox.min.x) boundbox.min.x = meshBox.min.x;
-    if (meshBox.min.y < boundbox.min.y) boundbox.min.y = meshBox.min.y;
-    if (meshBox.min.z < boundbox.min.z) boundbox.min.z = meshBox.min.z;
-    
-    if (meshBox.max.x > boundbox.max.x) boundbox.max.x = meshBox.max.x;
-    if (meshBox.max.y > boundbox.max.y) boundbox.max.y = meshBox.max.y;
-    if (meshBox.max.z > boundbox.max.z) boundbox.max.z = meshBox.max.z;
+
+    boundbox = Math::Encapsulate(boundbox, meshBox);
 
     return batchID;
 }
 
-void RenderManager::remove(GameObjectID id)
+void RenderManager::remove(GameObjectID handle)
 {
-    auto it = m_objectInOctree.find(id);
+    auto it = m_objectInOctree.find(handle);
     if (it == m_objectInOctree.end())
         return;
 
-    if (!OctreeManager::Remove(it->second.id, id))
-        return;
-
-    std::cout << "Remove Octree: " << GameObject::Get(id)->getName() << std::endl;
+    if (it->second.type == 0)
+    {
+        if (!OctreeManager::Remove(it->second.id, handle))
+            return;
+    } else
+    {
+        Tree::Remove(it->second.id);
+    }
 
     m_objectInOctree.erase(it);
 }
 
 void RenderManager::switchTo(GameObjectID handle, bool isStatic)
 {
+    RenderManager::Remove(handle);
+    RenderManager::Insert(handle);
 }
 
 size_t SelectLOD(float distance, const std::vector<LODMesh>& lods)
@@ -297,6 +284,8 @@ void RenderManager::preRender(const Camera *camera)
         return false;
     });
 
+
+    // std::cout << "=====" << std::endl;
     Tree::For_each([camera = std::forward<const Camera*>(camera)](NodeID id, BVHNode* node)
             {
                 if (node->isLeaf())
@@ -322,8 +311,7 @@ void RenderManager::preRender(const Camera *camera)
 
                         transform->isDirty = false;
 
-                        std::cout << gameObject->getName() << " dirst" << std::endl;
-
+                        // std::cout << gameObject->getName() << ": dirst" << std::endl;
                         return true;
                     }
 
@@ -331,6 +319,8 @@ void RenderManager::preRender(const Camera *camera)
 
                     if (!Frustum::IsCubeInFrustumAABB(boundary.min, boundary.max))
                         return true;
+
+                    // std::cout << gameObject->getName() << ": render" << std::endl;
 
                     auto cameraTransform = camera->GetGameObject()->getTransform();
 

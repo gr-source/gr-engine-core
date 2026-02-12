@@ -1,6 +1,7 @@
 #include "gr-base/managers/bvhtreemanager.hpp"
 
 #include "gr-base/core/debugdraw.hpp"
+#include <gr-math/gmath.hpp>
 
 Tree* Tree::s_Tree = nullptr;
 
@@ -66,9 +67,7 @@ void Tree::remove(NodeID id)
 {
     BVHNode &node = m_nodes[id];
     if (!node.isLeaf())
-    {
         return;
-    }
 
     removeLeaf(id);
 
@@ -214,11 +213,11 @@ void Tree::insertLeaf(NodeID id)
     auto leafrect = m_nodes[id].boundary;
     while (!m_nodes[current].isLeaf())
     {
-        auto boundary = leafrect.Encapsulate(m_nodes[current].boundary);
-        float UniondArea = boundary.area();
+        auto boundary = Math::Encapsulate(leafrect, m_nodes[current].boundary);
+        float UniondArea = Math::Area(boundary);
         float branchCost = 2.0f * UniondArea;
 
-        float inheritedCost = 2.0f * (UniondArea - m_nodes[current].boundary.area());
+        float inheritedCost = 2.0f * (UniondArea - Math::Area(m_nodes[current].boundary));
 
         NodeID left = m_nodes[current].left;
         NodeID right = m_nodes[current].right;
@@ -226,22 +225,22 @@ void Tree::insertLeaf(NodeID id)
         float leftDescentCost;
         if (m_nodes[left].isLeaf())
         {
-            leftDescentCost = leafrect.Encapsulate(m_nodes[left].boundary).area() + inheritedCost;
+            leftDescentCost = Math::Area(Math::Encapsulate(leafrect, m_nodes[left].boundary)) + inheritedCost;
         } else
         {
-            float inflated = leafrect.Encapsulate(m_nodes[left].boundary).area();
-            float branchArea = m_nodes[left].boundary.area();
+            float inflated = Math::Area(Math::Encapsulate(leafrect, m_nodes[left].boundary));
+            float branchArea = Math::Area(m_nodes[left].boundary);
             leftDescentCost = inflated - branchArea + inheritedCost;
         }
 
         float rightDescentCost;
         if (m_nodes[right].isLeaf())
         {
-            rightDescentCost = leafrect.Encapsulate(m_nodes[right].boundary).area() + inheritedCost;
+            rightDescentCost = Math::Area(Math::Encapsulate(leafrect, m_nodes[right].boundary)) + inheritedCost;
         } else
         {
-            float inflated = leafrect.Encapsulate(m_nodes[right].boundary).area();
-            float branchArea = m_nodes[right].boundary.area();
+            float inflated = Math::Area(Math::Encapsulate(leafrect, m_nodes[right].boundary));
+            float branchArea = Math::Area(m_nodes[right].boundary);
             rightDescentCost = inflated - branchArea + inheritedCost;
         }
 
@@ -259,7 +258,7 @@ void Tree::insertLeaf(NodeID id)
     NodeID oldParent = m_nodes[sibling].parent;
     NodeID newParent = allocate();
 
-    m_nodes[newParent].boundary = leafrect.Encapsulate(m_nodes[sibling].boundary);
+    m_nodes[newParent].boundary = Math::Encapsulate(leafrect, m_nodes[sibling].boundary);
     m_nodes[newParent].parent = oldParent;
     m_nodes[newParent].height = m_nodes[sibling].height + 1;
 
@@ -303,27 +302,22 @@ void Tree::removeLeaf(NodeID id)
         return;
     }
 
-    // Setup parent, grandParent and sibling
     NodeID parent = m_nodes[id].parent;
     NodeID grandParent = m_nodes[parent].parent;
     NodeID sibling;
 
     if (m_nodes[parent].left == id)
         sibling = m_nodes[parent].right;
-
     else
         sibling = m_nodes[parent].left;
 
-    // Remove parent and replace with sibling
-    if ( grandParent != InvalidNode)
+    if (grandParent != InvalidNode)
     {
-        // Connect grandParent to sibling
         if (m_nodes[grandParent].left == parent)
             m_nodes[grandParent].left = sibling;
         else
             m_nodes[grandParent].right = sibling;
 
-        // Connect sibling to grandParent
         m_nodes[sibling].parent = grandParent;
     } else
     {
@@ -345,7 +339,7 @@ void Tree::syncHeirarchy(NodeID id)
         NodeID right = m_nodes[id].right;
 
         m_nodes[id].height = 1 + std::max(m_nodes[left].height, m_nodes[right].height);
-        m_nodes[id].boundary = m_nodes[left].boundary.Encapsulate(m_nodes[right].boundary);
+        m_nodes[id].boundary = Math::Encapsulate(m_nodes[left].boundary, m_nodes[right].boundary);
 
         id = m_nodes[id].parent;
     }
@@ -397,8 +391,8 @@ NodeID Tree::balance(NodeID iA)
             C.right = iF;
             A.right = iG;
             G.parent = iA;
-            A.boundary = B.boundary.Encapsulate(G.boundary);
-            C.boundary = A.boundary.Encapsulate(F.boundary);
+            A.boundary = Math::Encapsulate(B.boundary, G.boundary);
+            C.boundary = Math::Encapsulate(A.boundary, F.boundary);
 
             A.height = 1 + std::max(B.height, G.height);
             C.height = 1 + std::max(A.height, F.height);
@@ -407,8 +401,8 @@ NodeID Tree::balance(NodeID iA)
             C.right = iG;
             A.right = iF;
             F.parent = iA;
-            A.boundary = B.boundary.Encapsulate(F.boundary);
-            C.boundary = A.boundary.Encapsulate(G.boundary);
+            A.boundary = Math::Encapsulate(B.boundary, F.boundary);
+            C.boundary = Math::Encapsulate(A.boundary, G.boundary);
 
             A.height = 1 + std::max(B.height, F.height);
             C.height = 1 + std::max(A.height, G.height);
@@ -443,8 +437,8 @@ NodeID Tree::balance(NodeID iA)
             B.left = iD;
             A.left = iE;
             E.parent = iA;
-            A.boundary = C.boundary.Encapsulate(E.boundary);
-            B.boundary = A.boundary.Encapsulate(D.boundary);
+            A.boundary = Math::Encapsulate(C.boundary, E.boundary);
+            B.boundary = Math::Encapsulate(A.boundary, D.boundary);
 
             A.height = 1 + std::max(C.height, E.height);
             B.height = 1 + std::max(A.height, D.height);
@@ -453,8 +447,8 @@ NodeID Tree::balance(NodeID iA)
             B.left = iE;
             A.left = iD;
             D.parent = iA;
-            A.boundary = C.boundary.Encapsulate(D.boundary);
-            B.boundary = A.boundary.Encapsulate(E.boundary);
+            A.boundary = Math::Encapsulate(C.boundary, D.boundary);
+            B.boundary = Math::Encapsulate(A.boundary, E.boundary);
 
             A.height = 1 + std::max(C.height, D.height);
             B.height = 1 + std::max(A.height, E.height);

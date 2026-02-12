@@ -39,6 +39,8 @@ public:
     EntityID getCacheID() const;
 
     void Init();
+
+    void Start();
     
 private:
     typedef struct ComponentLookup
