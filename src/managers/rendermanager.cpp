@@ -86,7 +86,7 @@ void RenderManager::insert(GameObjectID gameObjectID)
     if (materials.size() != meshes.size())
         return Console::LogError("[ MeshRender ] Num meshes/materials incompative.");
 
-    auto transform = gameObject->getTransform();
+    auto transform = gameObject->GetTransform();
 
     Vector3 point = transform->getPosition();
 
@@ -236,7 +236,7 @@ void RenderManager::preRender(const Camera *camera)
         if (!Frustum::IsCubeInFrustumAABB(min, max))
             return true;
 
-        auto cameraTransform = camera->GetGameObject()->getTransform();
+        auto cameraTransform = camera->GetGameObject()->GetTransform();
 
         auto cameraPosition = cameraTransform->getPosition();
 
@@ -247,7 +247,7 @@ void RenderManager::preRender(const Camera *camera)
             auto gameObject = GameObject::Get(data.gameObjectID);
 
             auto lodComponent = gameObject->getComponent<LODComponent>();
-            auto transform = gameObject->getTransform();
+            auto transform = gameObject->GetTransform();
 
             auto objectPosition = transform->getPosition();
 
@@ -294,7 +294,7 @@ void RenderManager::preRender(const Camera *camera)
 
                     auto gameObject = GameObject::Get(data.gameObjectID);
 
-                    auto transform = gameObject->getTransform();
+                    auto transform = gameObject->GetTransform();
 
                     if (transform->isDirty)
                     {
@@ -322,13 +322,13 @@ void RenderManager::preRender(const Camera *camera)
 
                     // std::cout << gameObject->getName() << ": render" << std::endl;
 
-                    auto cameraTransform = camera->GetGameObject()->getTransform();
+                    auto cameraTransform = camera->GetGameObject()->GetTransform();
 
                     auto cameraPosition = cameraTransform->getPosition();
 
                     {
                         auto lodComponent = gameObject->getComponent<LODComponent>();
-                        auto transform = gameObject->getTransform();
+                        auto transform = gameObject->GetTransform();
 
                         auto objectPosition = transform->getPosition();
 

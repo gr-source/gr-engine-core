@@ -20,7 +20,7 @@ Camera *Camera::Current()
     return Scene::GetCurrent()->getCamera();
 }
 
-Camera::Camera() : m_fov(45.0f), m_aspect(1.0f), m_farPlane(500.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(512, 512), background(Color::black)
+Camera::Camera() : m_fov(45.0f), m_aspect(1.0f), m_farPlane(500.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix), m_rect({0.0f, 0.0f, 1.0f, 1.0f}), rendertarget(nullptr), background(Color::black)
 {}
 
 Camera::~Camera()
@@ -29,8 +29,11 @@ Camera::~Camera()
     if (scene != nullptr)
         scene->RemoveCamera(GetGameObject()->GetID<Camera>());
 
-    if (Threadpool::IsMainThread())
-        rendertarget.shutdown();
+    std::cout << GetGameObject()->getCacheID() << " -> Camera::~Camera: " << this << " RT: " << rendertarget << std::endl;
+
+    // if (rendertarget != nullptr)
+    //     delete rendertarget;
+    // rendertarget = nullptr;
 }
 
 void Camera::Init()
@@ -41,8 +44,11 @@ void Camera::Init()
 
     if (!Threadpool::IsMainThread())
         return;
-    
-    rendertarget.init();
+
+    rendertarget = new RenderTarget(512, 512);
+    rendertarget->init();
+
+    std::cout << GetGameObject()->getCacheID() << " -> Camera::Init: " << this << " RT: " << rendertarget << std::endl;
 
     auto scene = Scene::GetCurrent();
     if (scene != nullptr)
@@ -124,20 +130,20 @@ Matrix4x4 Camera::getPerspesctive() const
 
 Matrix4x4 Camera::getViewmatrix() const
 {
-    auto transform = GetEntity()->getComponent<Transform>();
+    auto transform = GetGameObject()->GetTransform();
 
     return Math::lookAt(transform->getPosition(), transform->getPosition() + transform->getForward(), transform->getUp());
 }
 
 Vector3 Camera::getPosition() const
 {
-    auto transform = GetEntity()->getComponent<Transform>();
+    auto transform = GetGameObject()->GetTransform();
     return transform->getPosition();
 }
 
 void Camera::lookIt(const Vector3 &direction)
 {
-    auto transform = GetEntity()->getComponent<Transform>();
+    auto transform = GetGameObject()->GetTransform();
     transform->setLocalRotation(Math::normalize(Math::lookRotation(direction, Vector3::up)));
 }
 
@@ -148,7 +154,7 @@ void Camera::setRect(const Rect &rect)
         return;
 
     if (Threadpool::IsMainThread())
-        rendertarget.resize(rect.w, rect.h);
+        rendertarget->resize(rect.w, rect.h);
 
     m_aspect = aspect;
     m_rect = rect;
@@ -162,7 +168,7 @@ Rect Camera::getRect() const {
 
 RenderTarget* Camera::getRenderTarget()
 {
-    return &rendertarget;
+    return rendertarget != nullptr ? rendertarget : nullptr;
 }
 
 void Camera::updateProjection()

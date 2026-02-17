@@ -34,7 +34,7 @@ public:
 
     void setName(const std::string& name);
 
-    Transform* getTransform() const;
+    Transform* GetTransform() const;
 
     void SetState(bool enable);
 

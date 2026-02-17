@@ -22,7 +22,7 @@ public:
 
     static void SetInstance(GameObjectManager* gameObjectManager);
 
-    static GameObjectID Instantiate(const GameObject* other);
+    static GameObjectID Instantiate(GameObjectID handle);
 
     static GameObjectID Create(const std::string& name);
 

@@ -98,7 +98,7 @@ bool Transform::hasParent() const {
 
 void Transform::setParent(Transform* newParent, bool)
 {
-    ComponentHandle handle = newParent != nullptr ? newParent->GetEntity()->GetID<Transform>() : INVALID_COMPONENT_HANDLE;
+    ComponentHandle handle = newParent != nullptr ? newParent->GetGameObject()->GetID<Transform>() : INVALID_COMPONENT_HANDLE;
     if (m_parent == handle)
         return;
 
@@ -107,7 +107,7 @@ void Transform::setParent(Transform* newParent, bool)
         auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
 
         auto& children = parent->m_children;
-        children.erase(std::remove(children.begin(), children.end(), GetEntity()->GetID<Transform>()), children.end());
+        children.erase(std::remove(children.begin(), children.end(), GetGameObject()->GetID<Transform>()), children.end());
     }
 
     m_parent = handle;
@@ -117,7 +117,7 @@ void Transform::setParent(Transform* newParent, bool)
         auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
 
         auto& children = parent->m_children;
-        children.push_back(GetEntity()->GetID<Transform>());
+        children.push_back(GetGameObject()->GetID<Transform>());
     }
 
     updateLocalMatrix(); 
@@ -130,9 +130,9 @@ Transform *Transform::getParent() const
 
 void Transform::addChildren(Transform *child)
 {
-    child->m_parent = child->GetEntity()->GetID<Transform>();
+    child->m_parent = child->GetGameObject()->GetID<Transform>();
 
-    m_children.push_back(child->GetEntity()->GetID<Transform>());
+    m_children.push_back(child->GetGameObject()->GetID<Transform>());
 }
 
 std::vector<ComponentHandle> Transform::getChildren() const

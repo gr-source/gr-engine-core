@@ -161,7 +161,7 @@ GameObjectID SceneLoadTask::CreateFromCache(GameObjectCache* cache)
         Console::LogWarning("[ GameObjectLoadTask ] Adding Script falied: %s", cache->name.c_str());
     }
 
-    auto transform = gameObject->getTransform();
+    auto transform = gameObject->GetTransform();
 
     for (auto &child : cache->chindren)
     {
@@ -169,7 +169,7 @@ GameObjectID SceneLoadTask::CreateFromCache(GameObjectCache* cache)
 
         auto goChild = GameObject::Get(childID);
 
-        transform->addChildren(goChild->getTransform());
+        transform->addChildren(goChild->GetTransform());
     }
 
     return gameObjectID;

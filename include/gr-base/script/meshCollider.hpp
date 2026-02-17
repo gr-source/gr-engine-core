@@ -9,11 +9,13 @@
 #include "gr-base/physics/default.hpp"
 
 #include "gr-base/ecs/entity.hpp"
+#include "gr-base/script/collider.hpp"
 
 #include <memory>
 
-class MeshCollider : public BehaviorImpl<MeshCollider>
+class MeshCollider : public Collider
 {
+    CLASS_FUNCTIONS
 public:
     MeshCollider();
 
@@ -21,12 +23,8 @@ public:
 
     void buildMesh(Mesh *meshList);
 
-    btCollisionShape *getShape();
-
 private:
     std::shared_ptr<btTriangleMesh> m_triangleMesh;
-
-    std::shared_ptr<btCollisionShape> m_shape;
 
     void buildWithIndice(const std::vector<int> &indices, const std::vector<Vertex3D> &vertices);
 
@@ -35,7 +33,7 @@ private:
     void setup(Transform *transform);
 };
 
-REGISTER_COMPONENT(MeshCollider, (uint64_t)-1)
+REGISTER_COMPONENT(MeshCollider, CLASS_TO_HASH(Collider))
 
 
 

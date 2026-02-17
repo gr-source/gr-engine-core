@@ -2,8 +2,6 @@
 
 #include "gr-base/ecs/utils.hpp"
 
-#include <stdint.h>
-
 class GameObject;
 class Entity;
 class Stream;
@@ -13,12 +11,15 @@ class Behavior
 public:
     EntityID entityID;
 
-    inline Behavior() {}
+    bool bCanEnableUpdate;
+
+    Behavior() = default;
     virtual ~Behavior() {}
 
     GameObject* GetGameObject() const;
 
-    Entity* GetEntity() const;
+    template <typename T>
+    T* GetObject() const;
 
     virtual void Init() {}
 
@@ -40,6 +41,12 @@ public:
 };
 
 template <typename T>
+inline T* Behavior::GetObject() const
+{
+    return static_cast<T*>(GetGameObject());
+}
+
+template <typename T>
 class BehaviorImpl : public Behavior
 {
 public:
@@ -53,17 +60,12 @@ public:
 #define CLASS_FUNCTIONS \
     template <typename T> \
     inline T *AddComponent() { \
-        return entity->addComponent<T>(); \
+        return GetObject<Entity>()->addComponent<T>(); \
     } \
     template <typename T> \
     inline T *GetComponent() { \
-        return entity->getComponent<T>(); \
-    } \
-    template <typename T> \
-    inline bool HasComponent() const { \
-        return entity->hasComponent<T>(); \
+        return GetObject<Entity>()->getComponent<T>(); \
     }
-
 
 #include "gr-base/ecs/behaviorRegistry.hpp"
 

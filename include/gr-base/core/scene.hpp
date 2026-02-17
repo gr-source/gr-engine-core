@@ -89,10 +89,6 @@ private:
     ComponentHandle m_cameraID;
 
     static GameObjectID CreateEngineCamera();
-
-    void for_each(std::function<void (GameObject *)> func);
-
-    void for_each(Transform *transform, std::function<void (GameObject *)> func);
 };
 
 

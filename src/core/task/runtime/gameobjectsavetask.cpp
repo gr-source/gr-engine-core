@@ -290,7 +290,7 @@ int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
     if (!stream->write(go->GetIsStatic()))
         return 2;
 
-    auto transform = go->getTransform();
+    auto transform = go->GetTransform();
 
     auto children = transform->getChildren();
 
@@ -407,7 +407,7 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
         }
     }
 
-    auto transform = gameObject->getTransform();
+    auto transform = gameObject->GetTransform();
     for (auto &child : transform->getChildren())
         read_gameobject(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
 }

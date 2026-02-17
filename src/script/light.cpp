@@ -53,11 +53,11 @@ bool Light::Deserialize(Stream *stream)
 }
 
 Vector3 Light::getPosition() const {
-    return GetGameObject()->getTransform()->getPosition();
+    return GetGameObject()->GetTransform()->getPosition();
 }
 
 Vector3 Light::getForward() const {
-    return GetGameObject()->getTransform()->getForward();
+    return GetGameObject()->GetTransform()->getForward();
 }
 
 Color Light::getColor() const {
@@ -118,7 +118,7 @@ void Light::setOutercone(float value) {
 
 Matrix4x4 Light::getProjetion() const
 {
-    auto transform = GetGameObject()->getTransform();
+    auto transform = GetGameObject()->GetTransform();
 
     return mProjection * Math::lookAt(transform->getPosition(), transform->getPosition() + transform->getForward(), transform->getUp());
 }

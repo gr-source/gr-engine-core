@@ -12,9 +12,12 @@
 
 class Rigidbody : public BehaviorImpl<Rigidbody>
 {
+    CLASS_FUNCTIONS
 public:
     Rigidbody();
     ~Rigidbody() override;
+
+    void Init() override;
 
     void Start() override;
 
@@ -81,8 +84,6 @@ private:
 
     std::shared_ptr<btRigidBody> m_body;
     
-    btCollisionShape *m_collisionShape;
-
     Transform *m_transform;
 
     float m_mass;

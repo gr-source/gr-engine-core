@@ -47,7 +47,7 @@ void CharacterController::Start()
     m_ghost->setCollisionFlags(btCollisionObject::CF_CHARACTER_OBJECT);
 
 
-    auto transform = GetEntity()->getComponent<Transform>();
+    auto transform = GetGameObject()->GetTransform();
 
     btTransform start(
 			QUAT_TO_BTQUAT(transform->getRotation()),
@@ -76,6 +76,8 @@ void CharacterController::Start()
     );
 
     dynamicsWorld->addAction(m_character);
+
+    bCanEnableUpdate = true;
 }
 
 void CharacterController::Update()
@@ -86,7 +88,7 @@ void CharacterController::Update()
     btVector3 pos = worldTrans.getOrigin();
     // btQuaternion rot = trans.getRotation();
 
-    auto transform = GetEntity()->getComponent<Transform>();
+    auto transform = GetGameObject()->GetTransform();
 
     Vector3 lastpos = transform->getLocalPosition();
     Vector3 newpos = *reinterpret_cast<const Vector3*>(&pos);

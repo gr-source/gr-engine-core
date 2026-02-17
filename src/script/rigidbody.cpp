@@ -20,7 +20,7 @@
 
 #define BTQUAT_TO_QUAT(q) Quaternion{q.w(), q.x(), q.y(), q.z()}
 
-Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f)
+Rigidbody::Rigidbody() : m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f)
 {}
 
 Rigidbody::~Rigidbody()
@@ -28,25 +28,20 @@ Rigidbody::~Rigidbody()
     if (!m_body)
         return;
 
-    PhysicsScene::RemoveRigidbody(&(*m_body));
+    PhysicsScene::RemoveRigidbody(m_body.get());
 }
 
-void Rigidbody::Start()
+void Rigidbody::Init()
 {
-    m_transform = GetEntity()->getComponent<Transform>();
+    m_transform = GetComponent<Transform>();
 
-    auto meshCollider = GetEntity()->getComponent<MeshCollider>();
-    if (meshCollider != NULL)
-    {
-        m_collisionShape = meshCollider->getShape();
-    } else if (GetEntity()->getComponent<BoxCollider>() != nullptr)
-    {
-        m_collisionShape = GetEntity()->getComponent<BoxCollider>()->getShape();
-    }
+    auto collider = GetComponent<Collider>();
+    if (collider == nullptr)
+        return Console::LogError("[ Rigidbody ] Collider not found: %s", GetGameObject()->getName().c_str());
 
-    if (!m_collisionShape) {
+    auto shape = collider->shape;
+    if (shape == nullptr)
         return Console::LogError("[ Rigidbody ] Shape not found: %s", GetGameObject()->getName().c_str());
-    }
 
     m_DefaultMotionState = std::make_shared<btDefaultMotionState>(
 		btTransform(
@@ -56,9 +51,9 @@ void Rigidbody::Start()
 	);
 
     btVector3 fallInertia(0.0f, 0.0f, 0.0f);
-    m_collisionShape->calculateLocalInertia(m_mass, fallInertia);
+    shape->calculateLocalInertia(m_mass, fallInertia);
 
-    btRigidBody::btRigidBodyConstructionInfo pRigidBodyConstructionInfo(m_mass, &(*m_DefaultMotionState), m_collisionShape, fallInertia);
+    btRigidBody::btRigidBodyConstructionInfo pRigidBodyConstructionInfo(m_mass, &(*m_DefaultMotionState), shape.get(), fallInertia);
     pRigidBodyConstructionInfo.m_friction = 0.6f;
     pRigidBodyConstructionInfo.m_restitution = 0.0f;
     pRigidBodyConstructionInfo.m_rollingFriction = 0.0f;
@@ -77,25 +72,38 @@ void Rigidbody::Start()
 
     if (fSweptSphereRadius >= 0.0f)
         m_body->setCcdSweptSphereRadius(fSweptSphereRadius);
+}
 
-    PhysicsScene::AddRigidbody(&(*m_body));
+void Rigidbody::Start()
+{
+    if (m_body == nullptr)
+        return;
+
+    PhysicsScene::AddRigidbody(m_body.get());
+
+    Console::LogInfo("[ Rigidbody ] %s Start %p", GetGameObject()->getName().c_str(), m_body.get());
+
+    bCanEnableUpdate = true;
 }
 
 void Rigidbody::Update()
 {
-	if (m_body->isActive())
-    {
-        m_transform = GetEntity()->getComponent<Transform>();
+    bool isActive = m_body->isActive();
 
-		btTransform trans;
-		m_body->getMotionState()->getWorldTransform(trans);
+    // Console::LogInfo("[ Rigidbody ] %s IsActive=%s", GetGameObject()->getName().c_str(), (isActive ? "true" : "false"));
+	if (!m_body->isActive())
+        return;
 
-        btVector3 origin = trans.getOrigin();
-        m_transform->setLocalPosition({ (float)origin.getX(), (float)origin.getY(), (float)origin.getZ() });
+    m_transform = GetComponent<Transform>();
 
-        btQuaternion rot = trans.getRotation();
-        m_transform->setLocalRotation({ (float)rot.getW(), (float)rot.getX(), (float)rot.getY(), (float)rot.getZ() });
-	}
+    btTransform trans;
+    m_body->getMotionState()->getWorldTransform(trans);
+
+    btVector3 origin = trans.getOrigin();
+    m_transform->setLocalPosition({ (float)origin.getX(), (float)origin.getY(), (float)origin.getZ() });
+
+    btQuaternion rot = trans.getRotation();
+    m_transform->setLocalRotation({ (float)rot.getW(), (float)rot.getX(), (float)rot.getY(), (float)rot.getZ() });
 }
 
 bool Rigidbody::Serialize(Stream *stream) const
@@ -193,6 +201,7 @@ void Rigidbody::applyDamping(float timeStep)
 
 void Rigidbody::applyForce(const Vector3 &force, const Vector3 &pos)
 {
+    m_body->activate(true);
     m_body->applyForce(VEC3_TO_BTVEC3(force), VEC3_TO_BTVEC3(pos));
 }
 

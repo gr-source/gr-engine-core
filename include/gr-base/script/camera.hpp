@@ -5,6 +5,7 @@
 #include "gr-base/core/rendertarget.hpp"
 
 #include <gr-render/gRender.h>
+#include <memory>
 
 #include "gr-base/ecs/behavior.hpp"
 
@@ -39,7 +40,7 @@ public:
     Color background;
 
 private:
-    RenderTarget rendertarget;
+    RenderTarget* rendertarget;
 
     Matrix4x4 m_projection;
 

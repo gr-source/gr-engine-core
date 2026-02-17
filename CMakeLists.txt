@@ -61,6 +61,7 @@ set(script
     src/script/meshRender.cpp
     src/script/transform.cpp
     src/script/rigidbody.cpp
+    src/script/collider.cpp
     src/script/camera.cpp
     src/script/light.cpp
 )

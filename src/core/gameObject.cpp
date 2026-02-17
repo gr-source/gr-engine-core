@@ -12,7 +12,7 @@
 
 GameObjectID GameObject::Instantiate(GameObject *other)
 {
-    return GameObjectManager::Instantiate(other);
+    return GameObjectManager::Instantiate(other->getCacheID());
 }
 
 GameObjectID GameObject::Create(const std::string &name)
@@ -69,7 +69,7 @@ void GameObject::setName(const std::string& name)
     m_name = name;
 }
 
-Transform* GameObject::getTransform() const
+Transform* GameObject::GetTransform() const
 {
     return getComponent<Transform>();
 }
@@ -98,9 +98,9 @@ void GameObject::Copy(GameObjectID otherID)
         myComp->entityID = this->getCacheID();
     }
 
-    auto otherTrans = otherGO->getTransform();
+    auto otherTrans = otherGO->GetTransform();
 
-    auto myTrans = this->getTransform();
+    auto myTrans = this->GetTransform();
     myTrans->setLocalPosition(otherTrans->getLocalPosition());
     myTrans->setLocalRotation(otherTrans->getLocalRotation());
     myTrans->setLocalScale(otherTrans->getLocalScale());
@@ -116,7 +116,7 @@ void GameObject::Copy(GameObjectID otherID)
         
         newChildGO->Copy(childGO->getCacheID());
 
-        newChildGO->getTransform()->setParent(this->getTransform());
+        newChildGO->GetTransform()->setParent(this->GetTransform());
     }
 }
 
@@ -156,7 +156,7 @@ GameObjectID GameObject::FindChildByName(const std::string& name)
     if (m_name == name)
         return getCacheID();
 
-    for (auto &transformID : getTransform()->getChildren())
+    for (auto &transformID : GetTransform()->getChildren())
     {
         auto transform = BehaviorStorage::GetComponent<Transform>(transformID);
 

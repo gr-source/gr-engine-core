@@ -7,10 +7,12 @@
 
 #include "default.hpp"
 
+#include "gr-base/script/collider.hpp"
+
 #include <gr-math/gmath.hpp>
 #include <memory>
 
-class BoxCollider : public BehaviorImpl<BoxCollider>
+class BoxCollider : public Collider
 {
 public:
     BoxCollider();
@@ -23,16 +25,14 @@ public:
 
     void build(const Vector3 &size);
 
-    btCollisionShape *getShape();
-
     const Vector3 &getBoxSize() const;
 
     void setBoxSize(const Vector3 &value);
     
 private:
-    std::shared_ptr<btCollisionShape> m_CollisionShape;
-
     Vector3 boxSize;
 };
 
-REGISTER_COMPONENT(BoxCollider, (uint64_t)-1)
+REGISTER_COMPONENT(BoxCollider, CLASS_TO_HASH(Collider))
+
+

@@ -35,9 +35,9 @@ void GameObjectManager::SetInstance(GameObjectManager* gameobjectmanager)
     s_GameObjectManager = gameobjectmanager;
 }
 
-GameObjectID GameObjectManager::Instantiate(const GameObject *other)
+GameObjectID GameObjectManager::Instantiate(GameObjectID handle)
 {
-    return s_GameObjectManager->instantiate(other->getCacheID());
+    return s_GameObjectManager->instantiate(handle);
 }
 
 GameObjectID GameObjectManager::Create(const std::string &name)
@@ -94,7 +94,7 @@ GameObjectID GameObjectManager::instantiate(GameObjectID other)
     auto gameObject = get(handle);
     gameObject->Copy(other);
 
-    gameObject->Init();
+    // gameObject->Init();
 
     auto scene = SceneManager::GetCurrent();
     if (scene != nullptr)
@@ -167,7 +167,7 @@ void GameObjectManager::destroyImediate(GameObjectID id)
         scene->remove(id);
 
     {
-        auto transform = gameObject.getTransform();
+        auto transform = gameObject.GetTransform();
         for (auto child : transform->getChildren())
             destroyImediate(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject()->getCacheID());
     }

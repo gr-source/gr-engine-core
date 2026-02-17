@@ -4,14 +4,16 @@
 
 #include "gr-base/core/file/stream.hpp"
 
+#include "gr-base/core/gameObject.hpp"
+
 #include "gr-base/script/transform.hpp"
 
-BoxCollider::BoxCollider() : m_CollisionShape(nullptr), boxSize(Vector3::one)
+BoxCollider::BoxCollider() : boxSize(Vector3::one)
 {}
 
 void BoxCollider::Init()
 {
-    auto transform = GetEntity()->getComponent<Transform>();
+    auto transform = GetGameObject()->GetTransform();
 
     build(transform->getLocalScale());
 }
@@ -29,15 +31,11 @@ bool BoxCollider::Deserialize(Stream *stream)
 }
 
 
-void BoxCollider::build(const Vector3 &size) {
-    if (!m_CollisionShape)
-        m_CollisionShape = std::make_shared<btBoxShape>(btVector3(1.0f, 1.0f, 1.0f));
+void BoxCollider::build(const Vector3 &size)
+{
+    shape = std::make_shared<btBoxShape>(btVector3(1.0f, 1.0f, 1.0f));
         
-    m_CollisionShape->setLocalScaling(btVector3(size.x, size.y, size.z));
-}
-
-btCollisionShape *BoxCollider::getShape() {
-    return &(*m_CollisionShape);
+    shape->setLocalScaling(btVector3(size.x, size.y, size.z));
 }
 
 const Vector3 &BoxCollider::getBoxSize() const {

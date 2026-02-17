@@ -58,5 +58,11 @@ private:
 
     PhysicsScene();
     ~PhysicsScene();
+
+    void addRigidbody(btRigidBody* body);
+
+    void removeRigidbody(btRigidBody* body);
+
+    void update(float dt);
 };
 

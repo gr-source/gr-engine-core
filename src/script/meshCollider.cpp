@@ -11,11 +11,11 @@
 
 #include "gr-base/core/console.hpp"
 
-MeshCollider::MeshCollider() : m_triangleMesh(nullptr), m_shape(nullptr) {}
+MeshCollider::MeshCollider() : m_triangleMesh(nullptr) {}
 
 void MeshCollider::Init()
 {
-    auto meshFilter = GetEntity()->getComponent<MeshFilter>();
+    auto meshFilter = GetComponent<MeshFilter>();
 
     if (meshFilter == nullptr)
         return Console::LogError("[ MeshFilter ] This %s don't has meshFilter!", GetGameObject()->getName().c_str());
@@ -63,10 +63,6 @@ void MeshCollider::buildMesh(Mesh *mesh)
     buildWithVertice(vertices);
 }
 
-btCollisionShape *MeshCollider::getShape() {
-    return &(*m_shape);
-}
-
 void MeshCollider::buildWithIndice(const std::vector<int> &indices, const std::vector<Vertex3D> &vertices) {
     for (uint32_t i = 0; i < indices.size(); i += 3) {
         if (i + 2 >= indices.size()) {
@@ -88,7 +84,7 @@ void MeshCollider::buildWithIndice(const std::vector<int> &indices, const std::v
         );
     }
 
-    return setup(GetEntity()->getComponent<Transform>());
+    return setup(GetComponent<Transform>());
 }
 
 void MeshCollider::buildWithVertice(const std::vector<Vertex3D> &vertices)
@@ -113,10 +109,10 @@ void MeshCollider::buildWithVertice(const std::vector<Vertex3D> &vertices)
         );
     }
 
-    return setup(GetEntity()->getComponent<Transform>());
+    return setup(GetComponent<Transform>());
 }
 
 void MeshCollider::setup(Transform *transform) {
-    m_shape = std::make_shared<btBvhTriangleMeshShape>(m_triangleMesh.get(), true);
-    m_shape->setLocalScaling(btVector3(transform->getLocalScale().x, transform->getLocalScale().y, transform->getLocalScale().z));
+    shape = std::make_shared<btBvhTriangleMeshShape>(m_triangleMesh.get(), true);
+    shape->setLocalScaling(btVector3(transform->getLocalScale().x, transform->getLocalScale().y, transform->getLocalScale().z));
 }

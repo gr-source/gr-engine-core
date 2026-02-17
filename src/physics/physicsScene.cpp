@@ -2,17 +2,19 @@
 
 Vector3 PhysicsScene::gravity = {0.0f, -9.8f, 0.0f};
 
-void PhysicsScene::AddRigidbody(btRigidBody* body) {
-    GetInstance().dynamicsWorld->addRigidBody(body);
+void PhysicsScene::AddRigidbody(btRigidBody* body)
+{
+    GetInstance().addRigidbody(body);
 }
 
-void PhysicsScene::RemoveRigidbody(btRigidBody* body) {
-    GetInstance().dynamicsWorld->removeRigidBody(body);
+void PhysicsScene::RemoveRigidbody(btRigidBody* body)
+{
+    GetInstance().removeRigidbody(body);
 }
 
 void PhysicsScene::Update(float dt)
 {
-    GetInstance().dynamicsWorld->stepSimulation(dt);
+    GetInstance().update(dt);
 }
 
 bool PhysicsScene::Raycast(const Vector3 &rayStart, const Vector3 &rayEnd, Hit &hit)
@@ -64,4 +66,23 @@ PhysicsScene::PhysicsScene() : broadphase(std::make_unique<btDbvtBroadphase>()),
 
 PhysicsScene::~PhysicsScene()
 {}
+
+void PhysicsScene::addRigidbody(btRigidBody *body)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    dynamicsWorld->addRigidBody(body);
+}
+
+void PhysicsScene::removeRigidbody(btRigidBody *body)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    dynamicsWorld->removeRigidBody(body);
+}
+
+void PhysicsScene::update(float dt)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    dynamicsWorld->stepSimulation(dt);
+}
+
 

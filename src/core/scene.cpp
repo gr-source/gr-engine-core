@@ -239,23 +239,4 @@ GameObjectID Scene::CreateEngineCamera()
     return gameObjectID;
 }
 
-void Scene::for_each(std::function<void(GameObject *)> func)
-{
-    for (auto& gameObjectID : m_objects)
-    {
-        auto gameObject = GameObject::Get(gameObjectID);
-
-        for_each(gameObject->getTransform(), func);
-    }
-}
-
-void Scene::for_each(Transform *transform, std::function<void(GameObject *)> func)
-{
-    func(transform->GetGameObject());
-
-    for (auto child : transform->getChildren())
-    {
-        // for_each(child, func);
-    }
-}
 

@@ -312,7 +312,7 @@ bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
     }
     */
 
-    auto transform = go->getTransform();
+    auto transform = go->GetTransform();
 
     auto children = transform->getChildren();
 
@@ -383,7 +383,7 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
         }
     }
 
-    auto transform = gameObject->getTransform();
+    auto transform = gameObject->GetTransform();
     for (auto &child : transform->getChildren())
         read_data(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
 }
