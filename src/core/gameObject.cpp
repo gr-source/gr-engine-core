@@ -10,17 +10,17 @@
 
 #include "gr-base/script/transform.hpp"
 
-GameObjectID GameObject::Instantiate(GameObject *other)
+GameObjectHandle GameObject::Instantiate(GameObject *other)
 {
     return GameObjectManager::Instantiate(other->getCacheID());
 }
 
-GameObjectID GameObject::Create(const std::string &name)
+GameObjectHandle GameObject::Create(const std::string &name)
 {
     return GameObjectManager::Create(name);
 }
 
-GameObject* GameObject::Get(GameObjectID handle)
+GameObject* GameObject::Get(GameObjectHandle handle)
 {
     return GameObjectManager::Get(handle);
 }
@@ -30,7 +30,7 @@ void GameObject::DestroyImediate(GameObject* gameObject)
     GameObjectManager::DestroyImediate(gameObject->getCacheID());
 }
 
-void GameObject::DestroyImediate(GameObjectID gameObjectID)
+void GameObject::DestroyImediate(GameObjectHandle gameObjectID)
 {
     GameObjectManager::DestroyImediate(gameObjectID);
 }
@@ -40,13 +40,13 @@ void GameObject::Destroy(GameObject* gameObject)
     GameObjectManager::Destroy(gameObject->getCacheID());
 }
 
-void GameObject::Destroy(GameObjectID gameObjectID)
+void GameObject::Destroy(GameObjectHandle gameObjectID)
 {
     GameObjectManager::Destroy(gameObjectID);
 }
 
 // public
-GameObject::GameObject(GameObjectID id) : Entity(id), m_name("noname"), m_scene(nullptr), m_isStatic(false)
+GameObject::GameObject(GameObjectHandle id) : Entity(id), m_name("noname"), m_scene(nullptr), m_isStatic(false)
 {
     addComponent<Transform>();
 }
@@ -77,7 +77,7 @@ Transform* GameObject::GetTransform() const
 void GameObject::SetState(bool enable)
 {}
 
-void GameObject::Copy(GameObjectID otherID)
+void GameObject::Copy(GameObjectHandle otherID)
 {
     auto otherGO = GameObject::Get(otherID);
     if (!otherGO)
@@ -111,7 +111,7 @@ void GameObject::Copy(GameObjectID otherID)
 
         auto childGO = c->GetGameObject();
         
-        GameObjectID newChildID = GameObject::Create(childGO->getName());
+        GameObjectHandle newChildID = GameObject::Create(childGO->getName());
         auto newChildGO = GameObject::Get(newChildID);
         
         newChildGO->Copy(childGO->getCacheID());
@@ -151,7 +151,7 @@ bool GameObject::GetIsStatic() const
 }
 
 
-GameObjectID GameObject::FindChildByName(const std::string& name)
+GameObjectHandle GameObject::FindChildByName(const std::string& name)
 {
     if (m_name == name)
         return getCacheID();
@@ -160,7 +160,7 @@ GameObjectID GameObject::FindChildByName(const std::string& name)
     {
         auto transform = BehaviorStorage::GetComponent<Transform>(transformID);
 
-        GameObjectID found = transform->GetGameObject()->FindChildByName(name);
+        GameObjectHandle found = transform->GetGameObject()->FindChildByName(name);
         if (found != GID_INVALID)
             return found;
     }
@@ -169,7 +169,7 @@ GameObjectID GameObject::FindChildByName(const std::string& name)
 }
 
 // private
-void GameObject::Serialize(GameObjectID id, Stream* stream)
+void GameObject::Serialize(GameObjectHandle id, Stream* stream)
 {
     /*
     auto gameObject = GameObject::Get(id);
@@ -216,7 +216,7 @@ void GameObject::Serialize(GameObjectID id, Stream* stream)
     */
 }
 
-void GameObject::Deserialize(Stream* stream, GameObjectID id, ComponentID parent)
+void GameObject::Deserialize(Stream* stream, GameObjectHandle id, ComponentID parent)
 {
     /*
     auto gameObject = GameObject::Get(id);

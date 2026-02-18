@@ -148,7 +148,7 @@ void SceneLoadTask::onPostExecute(int result)
     AssetsManager::RemoveTask(m_path);
 }
 
-GameObjectID SceneLoadTask::CreateFromCache(GameObjectCache* cache)
+GameObjectHandle SceneLoadTask::CreateFromCache(GameObjectCache* cache)
 {
     auto gameObjectID = GameObject::Create(cache->name);
 

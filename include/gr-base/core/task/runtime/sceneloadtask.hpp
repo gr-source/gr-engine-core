@@ -52,7 +52,7 @@ private:
 
     void onPostExecute(int result) override;
 
-    GameObjectID CreateFromCache(GameObjectCache* cache);
+    GameObjectHandle CreateFromCache(GameObjectCache* cache);
 
     int read_metadata(Stream *stream);
 

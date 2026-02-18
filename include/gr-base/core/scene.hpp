@@ -23,11 +23,11 @@ public:
     Scene();
     ~Scene();
 
-    std::vector<GameObjectID> getObjectList() const;
+    std::vector<GameObjectHandle> getObjectList() const;
 
-    void insert(GameObjectID gameObjectID);
+    void insert(GameObjectHandle gameObjectID);
 
-    void remove(GameObjectID gameObjectID);
+    void remove(GameObjectHandle gameObjectID);
 
     void Clear();
 
@@ -35,19 +35,19 @@ public:
 
     Camera *getCamera() const;
 
-    void select(GameObjectID id);
+    void select(GameObjectHandle id);
 
-    void deselect(GameObjectID id);
+    void deselect(GameObjectHandle id);
 
     void deselect_all();
 
     bool has_object_selected() const;
 
-    bool object_has_been_selected(GameObjectID id) const;
+    bool object_has_been_selected(GameObjectHandle id) const;
 
-    std::vector<GameObjectID> get_object_selected() const;
+    std::vector<GameObjectHandle> get_object_selected() const;
 
-    bool destroy(GameObjectID gameObjectID);
+    bool destroy(GameObjectHandle gameObjectID);
 
     void AddLight(ComponentHandle id);
 
@@ -76,11 +76,11 @@ private:
 
     std::vector<ComponentHandle> m_lights;
 
-    std::vector<GameObjectID> m_objects;
+    std::vector<GameObjectHandle> m_objects;
 
-    std::unordered_set<GameObjectID> u_object_has_been_selected;
+    std::unordered_set<GameObjectHandle> u_object_has_been_selected;
 
-    std::vector<GameObjectID> v_object_selected_list;
+    std::vector<GameObjectHandle> v_object_selected_list;
 
     std::vector<MeshID> m_meshes;
 
@@ -88,7 +88,7 @@ private:
 
     ComponentHandle m_cameraID;
 
-    static GameObjectID CreateEngineCamera();
+    static GameObjectHandle CreateEngineCamera();
 };
 
 

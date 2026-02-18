@@ -21,11 +21,11 @@ class RenderManager
 public:
     static void SetInstance(RenderManager* renderManager);
 
-    static void Insert(GameObjectID id);
+    static void Insert(GameObjectHandle id);
 
-    static void Remove(GameObjectID id);
+    static void Remove(GameObjectHandle id);
 
-    static void SwitchTo(GameObjectID handle, bool isStatic);
+    static void SwitchTo(GameObjectHandle handle, bool isStatic);
 
     static void PreRender(const Camera *camera);
 
@@ -36,15 +36,15 @@ public:
 private:
     static RenderManager* s_RenderManager;
 
-    std::unordered_map<GameObjectID, NodeInfo> m_objectInOctree;
+    std::unordered_map<GameObjectHandle, NodeInfo> m_objectInOctree;
 
-    void insert(GameObjectID id);
+    void insert(GameObjectHandle id);
 
     BatchID GetBatchID(Boundbox& boundbox, MeshID meshID, MaterialID materialID) const;
 
-    void remove(GameObjectID handle);
+    void remove(GameObjectHandle handle);
 
-    void switchTo(GameObjectID handle, bool isStatic);
+    void switchTo(GameObjectHandle handle, bool isStatic);
 
     void preRender(const Camera *camera);
 

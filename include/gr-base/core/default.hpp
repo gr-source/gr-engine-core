@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#define GID_INVALID  (GameObjectID)-1
+#define GID_INVALID  (GameObjectHandle)-1
 
 #define GID_INDEX_MASK      0x00000000FFFFFFFF
 #define GID_VERSION_MASK    0xFFFFFFFF00000000
@@ -17,7 +17,7 @@
 #define GetHandleVersion(i) \
     static_cast<uint32_t>(i >> GID_VERSION_SHIFT)
 
-typedef uint64_t GameObjectID;
+typedef uint64_t GameObjectHandle;
 
 class GameObject;
 class Scene;

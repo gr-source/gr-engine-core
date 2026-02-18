@@ -21,7 +21,7 @@
 
 #include <gr-render/gShader.h>
 
-GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObjectID)> func) : m_path(path), m_func(func), m_gameObject(GID_INVALID), m_root(nullptr)
+GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObjectHandle)> func) : m_path(path), m_func(func), m_gameObject(GID_INVALID), m_root(nullptr)
 {}
 
 // ***** private ***** //
@@ -63,7 +63,7 @@ void GameObjectLoadTask::onPostExecute(int result)
         m_func(gameObjectID);
 }
 
-GameObjectID GameObjectLoadTask::CreateFromCache(GameObjectCache* cache)
+GameObjectHandle GameObjectLoadTask::CreateFromCache(GameObjectCache* cache)
 {
     auto gameObjectID = GameObject::Create(cache->name);
 

@@ -20,7 +20,7 @@ extern "C"
 
 typedef struct NodeData
 {
-    GameObjectID gameObjectID;
+    GameObjectHandle gameObjectID;
     array* batchIDs;
     Vector3 position;
 
@@ -55,9 +55,9 @@ public:
 
     static bool Insert(NodeID id, NodeData data);
 
-    static bool Remove(NodeID id, GameObjectID handle);
+    static bool Remove(NodeID id, GameObjectHandle handle);
 
-    static NodeID Get(GameObjectID handle, const Vector3& position);
+    static NodeID Get(GameObjectHandle handle, const Vector3& position);
 
     static void Foreach(std::function<bool (OctreeNode *)> func);
 
@@ -85,11 +85,11 @@ private:
 
     NodeID insert(NodeID id, NodeData data);
 
-    bool remove(NodeID id, GameObjectID handle);
+    bool remove(NodeID id, GameObjectHandle handle);
 
     bool tryCollapse(NodeID id);
 
-    NodeID get(NodeID id, GameObjectID handle, const Vector3& position);
+    NodeID get(NodeID id, GameObjectHandle handle, const Vector3& position);
 
     void for_each(NodeID id, std::function<bool (OctreeNode *)> &func);
 

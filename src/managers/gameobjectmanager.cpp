@@ -35,29 +35,34 @@ void GameObjectManager::SetInstance(GameObjectManager* gameobjectmanager)
     s_GameObjectManager = gameobjectmanager;
 }
 
-GameObjectID GameObjectManager::Instantiate(GameObjectID handle)
+GameObjectHandle GameObjectManager::Instantiate(GameObjectHandle handle)
 {
     return s_GameObjectManager->instantiate(handle);
 }
 
-GameObjectID GameObjectManager::Create(const std::string &name)
+GameObjectHandle GameObjectManager::Create(const std::string &name)
 {
     return s_GameObjectManager->create(name);
 }
 
-GameObject* GameObjectManager::Get(GameObjectID id)
+GameObject* GameObjectManager::Get(GameObjectHandle id)
 {
     return s_GameObjectManager->get(id);
 }
 
-void GameObjectManager::DestroyImediate(GameObjectID handle)
+void GameObjectManager::DestroyImediate(GameObjectHandle handle)
 {
     s_GameObjectManager->destroyImediate(handle);
 }
 
-void GameObjectManager::Destroy(GameObjectID handle)
+void GameObjectManager::Destroy(GameObjectHandle handle)
 {
     s_GameObjectManager->destroy(handle);
+}
+
+void GameObjectManager::Cleanup()
+{
+    s_GameObjectManager->cleanup();
 }
 
 size_t GameObjectManager::GetCount()
@@ -85,7 +90,7 @@ GameObjectManager::~GameObjectManager()
 }
 
 // private
-GameObjectID GameObjectManager::instantiate(GameObjectID other)
+GameObjectHandle GameObjectManager::instantiate(GameObjectHandle other)
 {
     auto handle = create(GameObject::Get(other)->getName());
     if (handle == GID_INVALID)
@@ -93,8 +98,6 @@ GameObjectID GameObjectManager::instantiate(GameObjectID other)
 
     auto gameObject = get(handle);
     gameObject->Copy(other);
-
-    // gameObject->Init();
 
     auto otherGO = GameObject::Get(other);
 
@@ -111,7 +114,7 @@ GameObjectID GameObjectManager::instantiate(GameObjectID other)
     return handle;
 }
 
-GameObjectID GameObjectManager::create(const std::string &name)
+GameObjectHandle GameObjectManager::create(const std::string &name)
 {
     if (m_freeIDs == n32nill)
         requestResize();
@@ -122,7 +125,7 @@ GameObjectID GameObjectManager::create(const std::string &name)
     GameObjectSlot& slot = ((GameObjectSlot*)m_slot->vector)[slotID];
     slot.denseIndex = m_count++;
 
-    GameObjectID cacheID = CreateHandle(slotID, slot.version);
+    GameObjectHandle cacheID = CreateHandle(slotID, slot.version);
 
     GameObjectWrapper& wrapper = ((GameObjectWrapper*)m_gameObjectPool->vector)[slot.denseIndex];
     wrapper.slotID = slotID;
@@ -134,7 +137,7 @@ GameObjectID GameObjectManager::create(const std::string &name)
     return cacheID;
 }
 
-GameObject* GameObjectManager::get(GameObjectID id)
+GameObject* GameObjectManager::get(GameObjectHandle id)
 {
     uint32_t slotID = GetHandleID(id);
     uint32_t version = GetHandleVersion(id);
@@ -148,7 +151,7 @@ GameObject* GameObjectManager::get(GameObjectID id)
     return &wrapper[slot.denseIndex].gameObject;
 }
 
-void GameObjectManager::destroyImediate(GameObjectID handle)
+void GameObjectManager::destroyImediate(GameObjectHandle handle)
 {
     uint32_t slotID = GetHandleID(handle);
     uint32_t version = GetHandleVersion(handle);
@@ -197,9 +200,9 @@ void GameObjectManager::destroyImediate(GameObjectID handle)
     slot.version++;
 }
 
-void GameObjectManager::destroy(GameObjectID id)
+void GameObjectManager::destroy(GameObjectHandle handle)
 {
-    MainThreadDispatcher::Add(Priority::HIGHT, &GameObjectManager::destroyImediate, this, id);
+    m_markForDestruction.push_back(handle);
 }
 
 void GameObjectManager::requestResize()
@@ -250,4 +253,14 @@ void GameObjectManager::addFreeID(uint32_t start)
     m_freeIDs = start;
 }
 
+void GameObjectManager::cleanup()
+{
+    for (auto handle : m_markForDestruction)
+    {
+        if (get(handle) != nullptr)
+            destroyImediate(handle);
+    }
+
+    m_markForDestruction.clear();
+}
 

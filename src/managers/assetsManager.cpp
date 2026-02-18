@@ -120,7 +120,7 @@ ShaderProperty *AssetsManager::GetShaderProperty(grr::gShader *shader)
     return &(*it->second);
 }
 
-void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObjectID)> func)
+void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObjectHandle)> func)
 {
     TaskManager::Add<int, GameObjectLoadTask>(path, func);
 }

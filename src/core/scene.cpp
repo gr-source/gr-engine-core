@@ -31,12 +31,12 @@ Scene::~Scene()
         GameObject::DestroyImediate(gameObject);
 }
 
-std::vector<GameObjectID> Scene::getObjectList() const
+std::vector<GameObjectHandle> Scene::getObjectList() const
 {
     return m_objects;
 }
 
-void Scene::insert(GameObjectID gameObjectID)
+void Scene::insert(GameObjectHandle gameObjectID)
 {
     auto it = std::find(m_objects.begin(), m_objects.end(), gameObjectID);
     if (it != m_objects.end())
@@ -47,7 +47,7 @@ void Scene::insert(GameObjectID gameObjectID)
     m_objects.push_back(gameObjectID);
 }
 
-void Scene::remove(GameObjectID gameObjectID)
+void Scene::remove(GameObjectHandle gameObjectID)
 {
     m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObjectID), m_objects.end());
 }
@@ -68,14 +68,14 @@ Camera *Scene::getCamera() const
 }
 
 // ********** public ********** //
-void Scene::select(GameObjectID id)
+void Scene::select(GameObjectHandle id)
 {
     v_object_selected_list.push_back(id);
 
     u_object_has_been_selected.emplace(id);
 }
 
-void Scene::deselect(GameObjectID id)
+void Scene::deselect(GameObjectHandle id)
 {
     v_object_selected_list.erase(std::remove(v_object_selected_list.begin(), v_object_selected_list.end(), id), v_object_selected_list.end());
 
@@ -93,17 +93,17 @@ bool Scene::has_object_selected() const
     return !v_object_selected_list.empty();
 }
 
-bool Scene::object_has_been_selected(GameObjectID id) const
+bool Scene::object_has_been_selected(GameObjectHandle id) const
 {
     return u_object_has_been_selected.find(id) != u_object_has_been_selected.end();
 }
 
-std::vector<GameObjectID> Scene::get_object_selected() const
+std::vector<GameObjectHandle> Scene::get_object_selected() const
 {
     return v_object_selected_list;
 }
 
-bool Scene::destroy(GameObjectID gameObjectID)
+bool Scene::destroy(GameObjectHandle gameObjectID)
 {
     remove(gameObjectID);
 
@@ -177,7 +177,7 @@ void Scene::Serialize(Stream* stream) const
     if (!stream->write(objectCount))
         return;
 
-    for (GameObjectID gameObjectID : objects)
+    for (GameObjectHandle gameObjectID : objects)
     {
         GameObject* gameObject = GameObject::Get(gameObjectID);
         gameObject->Serialize(stream);
@@ -206,7 +206,7 @@ void Scene::Deserialize(Stream* stream)
 
     for (uint64_t i=0;i<objectCount;i++)
     {
-        GameObjectID id = GameObject::Create("unknow");
+        GameObjectHandle id = GameObject::Create("unknow");
 
         GameObject* gameObject = GameObject::Get(id);
         gameObject->Deserialize(stream);
@@ -230,7 +230,7 @@ void Scene::AddMesh(MeshID meshID)
     m_meshes.push_back(meshID);
 }
 
-GameObjectID Scene::CreateEngineCamera()
+GameObjectHandle Scene::CreateEngineCamera()
 {
     auto gameObjectID = GameObject::Create("MainEngineCamera");
     if (gameObjectID == GID_INVALID)

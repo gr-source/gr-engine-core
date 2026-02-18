@@ -29,12 +29,12 @@ bool OctreeManager::Insert(NodeID id, NodeData data)
     return s_OctreeManager->insert(id, data);
 }
 
-bool OctreeManager::Remove(NodeID id, GameObjectID handle)
+bool OctreeManager::Remove(NodeID id, GameObjectHandle handle)
 {
     return s_OctreeManager->remove(id, handle);
 }
 
-NodeID OctreeManager::Get(GameObjectID handle, const Vector3& position)
+NodeID OctreeManager::Get(GameObjectHandle handle, const Vector3& position)
 {
     return s_OctreeManager->get(s_OctreeManager->m_root, handle, position);
 }
@@ -182,7 +182,7 @@ NodeID OctreeManager::insert(NodeID id, NodeData data)
     return InvalidNode;
 }
 
-bool OctreeManager::remove(NodeID id, GameObjectID handle)
+bool OctreeManager::remove(NodeID id, GameObjectHandle handle)
 {
     OctreeNode* nodes = (OctreeNode*)m_nodes->vector;
     OctreeNode& node = nodes[id];
@@ -258,7 +258,7 @@ bool OctreeManager::tryCollapse(NodeID id)
     return true;
 }
 
-NodeID OctreeManager::get(NodeID id, GameObjectID handle, const Vector3& position)
+NodeID OctreeManager::get(NodeID id, GameObjectHandle handle, const Vector3& position)
 {
     if (!contains(id, position))
         return InvalidNode;

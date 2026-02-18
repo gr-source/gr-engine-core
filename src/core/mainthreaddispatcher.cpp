@@ -6,9 +6,9 @@
 #include <vector>
 
 // public
-void MainThreadDispatcher::Update()
+void MainThreadDispatcher::Process()
 {
-    return GetInstance().update();
+    return GetInstance().process();
 }
 
 // private
@@ -18,7 +18,7 @@ MainThreadDispatcher &MainThreadDispatcher::GetInstance()
     return instance;
 }
 
-void MainThreadDispatcher::update()
+void MainThreadDispatcher::process()
 {
     if (!m_hasEvent.load(std::memory_order_acquire))
         return;

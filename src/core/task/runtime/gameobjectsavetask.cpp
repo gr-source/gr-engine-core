@@ -22,7 +22,7 @@
 #include "gr-base/script/transform.hpp"
 #include <functional>
 
-GameObjectSaveTask::GameObjectSaveTask(const std::string &file, GameObjectID gameObjectID, std::function<void (GameObjectID)> func) : m_file(file), m_gameObjectID(gameObjectID), m_func(func)
+GameObjectSaveTask::GameObjectSaveTask(const std::string &file, GameObjectHandle gameObjectID, std::function<void (GameObjectHandle)> func) : m_file(file), m_gameObjectID(gameObjectID), m_func(func)
 {}
 
 // private

@@ -33,17 +33,17 @@ void RenderManager::SetInstance(RenderManager* rendermanager)
     s_RenderManager = rendermanager;
 }
 
-void RenderManager::Insert(GameObjectID id)
+void RenderManager::Insert(GameObjectHandle id)
 {
     s_RenderManager->insert(id);
 }
 
-void RenderManager::Remove(GameObjectID id)
+void RenderManager::Remove(GameObjectHandle id)
 {
     s_RenderManager->remove(id);
 }
 
-void RenderManager::SwitchTo(GameObjectID handle, bool isStatic)
+void RenderManager::SwitchTo(GameObjectHandle handle, bool isStatic)
 {
     s_RenderManager->switchTo(handle, isStatic);
 }
@@ -64,7 +64,7 @@ void RenderManager::PosRender()
 }
 
 // private
-void RenderManager::insert(GameObjectID gameObjectID)
+void RenderManager::insert(GameObjectHandle gameObjectID)
 {
     if (m_objectInOctree.find(gameObjectID) != m_objectInOctree.end())
         return;
@@ -168,7 +168,7 @@ BatchID RenderManager::GetBatchID(Boundbox& boundbox, MeshID meshID, MaterialID 
     return batchID;
 }
 
-void RenderManager::remove(GameObjectID handle)
+void RenderManager::remove(GameObjectHandle handle)
 {
     auto it = m_objectInOctree.find(handle);
     if (it == m_objectInOctree.end())
@@ -186,7 +186,7 @@ void RenderManager::remove(GameObjectID handle)
     m_objectInOctree.erase(it);
 }
 
-void RenderManager::switchTo(GameObjectID handle, bool isStatic)
+void RenderManager::switchTo(GameObjectHandle handle, bool isStatic)
 {
     RenderManager::Remove(handle);
     RenderManager::Insert(handle);

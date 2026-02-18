@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gr-base/core/default.hpp"
+#include <vector>
 
 extern "C"
 {
@@ -16,21 +17,19 @@ extern "C"
 class GameObjectManager
 {
 public:
-    // static void Initialize();
-
-    // static void Shutdown();
-
     static void SetInstance(GameObjectManager* gameObjectManager);
 
-    static GameObjectID Instantiate(GameObjectID handle);
+    static GameObjectHandle Instantiate(GameObjectHandle handle);
 
-    static GameObjectID Create(const std::string& name);
+    static GameObjectHandle Create(const std::string& name);
 
-    static GameObject* Get(GameObjectID id);
+    static GameObject* Get(GameObjectHandle id);
 
-    static void DestroyImediate(GameObjectID handle);
+    static void DestroyImediate(GameObjectHandle handle);
 
-    static void Destroy(GameObjectID handle);
+    static void Destroy(GameObjectHandle handle);
+
+    static void Cleanup();
 
     static size_t GetCount();
 
@@ -39,6 +38,8 @@ public:
 
 protected:
     static GameObjectManager* s_GameObjectManager;
+
+    std::vector<GameObjectHandle> m_markForDestruction;
 
     std::mutex m_mutex;
 
@@ -49,19 +50,21 @@ protected:
 
     std::atomic<size_t> m_count;
 
-    GameObjectID instantiate(GameObjectID other);
+    GameObjectHandle instantiate(GameObjectHandle other);
 
-    GameObjectID create(const std::string& name);
+    GameObjectHandle create(const std::string& name);
 
-    GameObject* get(GameObjectID id);
+    GameObject* get(GameObjectHandle id);
 
-    void destroyImediate(GameObjectID handle);
+    void destroyImediate(GameObjectHandle handle);
 
-    void destroy(GameObjectID id);
+    void destroy(GameObjectHandle handle);
 
     void requestResize();
 
     void addFreeID(uint32_t start);
+
+    void cleanup();
 };
 
 

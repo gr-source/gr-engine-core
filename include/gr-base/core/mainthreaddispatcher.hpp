@@ -22,7 +22,7 @@ public:
     template <typename ...Args>
     static void Add(Priority priority, Args &&...args);
 
-    static void Update();
+    static void Process();
 
 private:
     static MainThreadDispatcher &GetInstance();
@@ -40,7 +40,7 @@ private:
     MainThreadDispatcher() = default;
     ~MainThreadDispatcher() = default;
 
-    void update();
+    void process();
 
     void addDelayed(float seconds, std::function<void()> func);
 

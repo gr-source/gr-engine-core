@@ -20,14 +20,14 @@ class GameObjectSaveTask : public IAsyncTask<int>
 {
 public:
     GameObjectSaveTask() = delete;
-    GameObjectSaveTask(const std::string &file, GameObjectID gameObject, std::function<void (GameObjectID)> func);
+    GameObjectSaveTask(const std::string &file, GameObjectHandle gameObject, std::function<void (GameObjectHandle)> func);
 
 private:
     const std::string m_file;
 
-    GameObjectID m_gameObjectID;
+    GameObjectHandle m_gameObjectID;
 
-    std::function<void (GameObjectID)> m_func;
+    std::function<void (GameObjectHandle)> m_func;
 
     std::vector<std::tuple<std::string, std::string, std::string>> m_textureMap;
 

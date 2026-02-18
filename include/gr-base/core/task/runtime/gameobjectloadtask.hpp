@@ -17,7 +17,7 @@
 class GameObjectLoadTask : public IAsyncTask<int>
 {
 public:
-    GameObjectLoadTask(const std::string &path, std::function<void (GameObjectID )> func);
+    GameObjectLoadTask(const std::string &path, std::function<void (GameObjectHandle )> func);
 
 private:
     struct GameObjectCache
@@ -33,11 +33,11 @@ private:
 
     const std::string m_path;
 
-    std::function<void (GameObjectID)> m_func;
+    std::function<void (GameObjectHandle)> m_func;
 
     std::unique_ptr<GameObjectCache> m_root;
 
-    GameObjectID m_gameObject;
+    GameObjectHandle m_gameObject;
 
     std::unordered_map<std::string, GameObjectCache*> m_gameobjectmap;
 
@@ -47,7 +47,7 @@ private:
 
     void onPostExecute(int result) override;
 
-    GameObjectID CreateFromCache(GameObjectCache* cache);
+    GameObjectHandle CreateFromCache(GameObjectCache* cache);
 
     int read_metadata(Stream *stream);
 

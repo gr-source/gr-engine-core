@@ -11,23 +11,23 @@
 class GameObject : public Entity
 {
 public:
-    static GameObjectID Instantiate(GameObject* other);
+    static GameObjectHandle Instantiate(GameObject* other);
 
-    static GameObjectID Create(const std::string& name);
+    static GameObjectHandle Create(const std::string& name);
 
-    static GameObject* Get(GameObjectID handle);
+    static GameObject* Get(GameObjectHandle handle);
 
     static void DestroyImediate(GameObject* gameObject);
 
-    static void DestroyImediate(GameObjectID gameObjectID);
+    static void DestroyImediate(GameObjectHandle gameObjectID);
 
     static void Destroy(GameObject* gameObject);
 
-    static void Destroy(GameObjectID gameObjectID);
+    static void Destroy(GameObjectHandle gameObjectID);
 
     GameObject() = delete;
 
-    GameObject(GameObjectID id);
+    GameObject(GameObjectHandle id);
     ~GameObject();
 
     std::string getName() const;
@@ -38,7 +38,7 @@ public:
 
     void SetState(bool enable);
 
-    void Copy(GameObjectID other);
+    void Copy(GameObjectHandle other);
 
     void Serialize(Stream* stream) const;
 
@@ -52,7 +52,7 @@ public:
 
     bool GetIsStatic() const;
 
-    GameObjectID FindChildByName(const std::string& name);
+    GameObjectHandle FindChildByName(const std::string& name);
 
 private:
     std::string m_name;
@@ -61,9 +61,9 @@ private:
 
     bool m_isStatic;
 
-    static void Serialize(GameObjectID id, Stream* stream);
+    static void Serialize(GameObjectHandle id, Stream* stream);
 
-    static void Deserialize(Stream* stream, GameObjectID id, ComponentID parent);
+    static void Deserialize(Stream* stream, GameObjectHandle id, ComponentID parent);
 };
 
 
