@@ -233,7 +233,7 @@ int GameObjectSaveTask::write_material(Stream *stream)
 
     for (auto &&[name, materialID] : m_materialmap)
     {
-        auto &material = AssetsManager::GetMaterial(materialID);
+        auto material = AssetsManager::GetMaterial(materialID);
 
         if (!stream->write(name))
             return 2;
@@ -242,7 +242,7 @@ int GameObjectSaveTask::write_material(Stream *stream)
         std::size_t bufferSize = 0;
         {
             MemoryStream temp;
-            material.serialize(&temp);
+            material->serialize(&temp);
             bufferSize = temp.tellg();
 
             temp.close();
@@ -251,7 +251,7 @@ int GameObjectSaveTask::write_material(Stream *stream)
         if (!stream->write(bufferSize))
             return 4;
 
-        material.serialize(stream);
+        material->serialize(stream);
     }
     return 0;
 }
@@ -397,7 +397,7 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
         for (auto materialID : baseRender->getMaterialIDs())
         {
             auto material_name = AssetsManager::GetMaterialName(materialID);
-            auto &material = AssetsManager::GetMaterial(materialID);
+            auto material = AssetsManager::GetMaterial(materialID);
 
             {
                 auto it = m_materialmap.find(material_name);

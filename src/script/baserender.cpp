@@ -39,7 +39,7 @@ bool BaseRender::Deserialize(Stream *stream)
         }
 
         auto materialID = AssetsManager::FindMaterial(name);
-        if (materialID == nill)
+        if (materialID == ID_INVALID)
             continue;
 
         addMaterial(materialID);

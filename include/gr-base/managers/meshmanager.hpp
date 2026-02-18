@@ -17,11 +17,15 @@ class MeshManager
 public:
     MeshManager();
 
-    MeshID allocate(const std::string &name);
-
-    void deallocate(MeshID id);
+    MeshID create(const std::string& name, const Mesh* src);
 
     Mesh *get(MeshID id);
+
+    void destroy(MeshID id);
+
+    MeshID allocate();
+
+    void deallocate(MeshID id);
 
     MeshID find(const std::string &name);
 
@@ -38,7 +42,7 @@ private:
 
     MeshID m_freeID;
 
-    std::atomic<MeshID> m_count;
+    MeshID m_count;
 
     std::mutex m_mutex;
 

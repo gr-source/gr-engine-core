@@ -2,48 +2,56 @@
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/material.hpp"
+#include <stdexcept>
+
+typedef struct MaterialWrapper
+{
+    MaterialID next;
+
+    Material material;
+} MaterialWrapper;
 
 // public
-MaterialManager::MaterialManager()
+MaterialManager::MaterialManager() : m_pool(nullptr), m_count(0), m_freeID(ID_INVALID)
 {
-    resize(1024);
 }
 
-MaterialID MaterialManager::create(const std::string &name)
+MaterialID MaterialManager::create(const std::string &name, const Material* src)
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_freeIDs.empty())
+    auto id = allocate();
+
+    MaterialWrapper* wrapper = (MaterialWrapper*)m_pool->vector;
+
+    Material *material = &wrapper[id].material;
+
+    if (src != nullptr)
     {
-        lock.unlock();
-
-        resize(1024);
-
-        lock.lock();
+        new (material) Material(*src);
+    } else
+    {
+        new (material) Material();
     }
-
-    auto id = m_freeIDs.top();
-    m_freeIDs.pop();
-
-    Material *material = &m_materials[id];
-    new (material) Material();
 
     m_materialnamemap[name] = id;
     m_materialmap[id] = name;
+
+    m_count++;
     
     return id;
 }
 
-Material &MaterialManager::get(MaterialID id)
+Material *MaterialManager::get(MaterialID id)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return m_materials[id];
+    MaterialWrapper* wrapper = (MaterialWrapper*)m_pool->vector;
+
+    return &wrapper[id].material;
 }
 
 MaterialID MaterialManager::find(const std::string &name)
 {
     auto it = m_materialnamemap.find(name);
     if (it == m_materialnamemap.end())
-        return nill;
+        return ID_INVALID;
     return it->second;
 }
 
@@ -55,43 +63,52 @@ const char *MaterialManager::getname(MaterialID id)
     return it->second.c_str();
 }
 
-void MaterialManager::remove(MaterialID id)
+void MaterialManager::destroy(MaterialID id)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-
-    m_materials[id].~Material();
-
-    auto it = m_materialmap.find(id);
-    if (it != m_materialmap.end())
-    {
-        m_materialnamemap.erase(it->second);
-
-        m_materialmap.erase(it);
-    }
+    throw std::runtime_error("void MaterialManager::remove(MaterialID id)");
 }
 
-void MaterialManager::resize(std::size_t size)
+MaterialID MaterialManager::GetCount() const
 {
-    auto newsize = m_materials.size() + size;
-    auto oldsize = m_materials.size();
-
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_materials.resize(newsize);
-    }
-
-    addfreelist(oldsize);
+    return m_count;
 }
 
-void MaterialManager::addfreelist(MaterialID id)
+MaterialID MaterialManager::allocate()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_freeID == ID_INVALID)
+        realloc(64);
 
-    auto size = m_materials.size() - 1;
-    while (id < (size--))
-    {
-        m_freeIDs.push(size );
-    }
+    MaterialWrapper* wrapper = (MaterialWrapper*)m_pool->vector;
+
+    MaterialID id = m_freeID;
+    m_freeID = wrapper[id].next;
+
+    return id;
+}
+
+void MaterialManager::realloc(MaterialID size)
+{
+    size_t lastsize = m_pool != nullptr ? m_pool->length : 0;
+    size_t newsize = lastsize + size;
+
+    if (m_pool == nullptr)
+        m_pool = array_create(newsize, sizeof(MaterialWrapper));
+    else
+        m_pool = array_resize(m_pool, newsize, sizeof(MaterialWrapper));
+
+    addFreeID(lastsize);
+}
+
+void MaterialManager::addFreeID(MeshID start)
+{
+    MaterialWrapper* wrapper = (MaterialWrapper*)m_pool->vector;
+
+    MeshID lastID = m_pool->length - 1;
+    for (MeshID id=start;id<lastID;id++)
+        wrapper[id].next = id + 1;
+
+    wrapper[lastID].next = m_freeID;
+    m_freeID = start;
 }
 
 

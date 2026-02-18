@@ -70,7 +70,7 @@ public:
     static grr::gTexture *CreateTexture(const std::string &name);
 
     // ********** Mesh ********** //
-    static MeshID CreateMesh(const std::string &name);
+    static MeshID CreateMesh(const std::string &name, const Mesh* src = nullptr);
 
     static Mesh *GetMesh(MeshID id);
 
@@ -89,13 +89,15 @@ public:
 
     static size_t GetMeshCount();
 
+    static MaterialID GetMaterialCount();
+
     static void SetGameObjectList(const std::string &path, std::function<void(GameObjectHandle)> func);
 
     static std::vector<grr::gShader *> GetShaderList(ShaderType type);
 
-    static MaterialID CreateMaterial(const std::string &name);
+    static MaterialID CreateMaterial(const std::string &name, const Material* src = nullptr);
 
-    static Material &GetMaterial(MaterialID id);
+    static Material *GetMaterial(MaterialID id);
 
     static MaterialID FindMaterial(const std::string &name);
 

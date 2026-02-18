@@ -130,6 +130,10 @@ void SceneLoadTask::onPostExecute(int result)
 
         SceneManager::SetActive(scene);
 
+        CreateMaterialFromCache();
+
+        CreateMeshFromCache();
+
         for (auto &root : m_rootList)
         {
             auto gameObjectID = CreateFromCache(root.get());
@@ -146,6 +150,34 @@ void SceneLoadTask::onPostExecute(int result)
     }
 
     AssetsManager::RemoveTask(m_path);
+}
+
+void SceneLoadTask::CreateMaterialFromCache()
+{
+    Console::LogInfo("[ GameObjectLoadTask ] Creating %d materials...", m_materialCacheList.size());
+
+    for (auto &cache : m_materialCacheList)
+    {
+        MaterialID materialID = AssetsManager::FindMaterial(cache.name);
+        if (materialID == ID_INVALID)
+        {
+            materialID = AssetsManager::CreateMaterial(cache.name, &cache.material);
+        }
+    }
+}
+
+void SceneLoadTask::CreateMeshFromCache()
+{
+    Console::LogInfo("[ GameObjectLoadTask ] Creating %d meshes...", m_meshCacheList.size());
+
+    for (auto &cache : m_meshCacheList)
+    {
+        auto meshID = AssetsManager::FindMesh(cache.name);
+        if (meshID == ID_INVALID)
+        {
+            meshID = AssetsManager::CreateMesh(cache.name, &cache.mesh);
+        }
+    }
 }
 
 GameObjectHandle SceneLoadTask::CreateFromCache(GameObjectCache* cache)
@@ -222,42 +254,39 @@ int SceneLoadTask::read_material(Stream *stream)
 {
     std::size_t length = {};
     if (!stream->read(length))
-    {
         return 1;
-    }
 
     for (std::size_t i=0;i<length;i++)
     {
         std::string name, shadername;
         if (!stream->read(name))
-        {
             return 2;
-        }
 
         if (!stream->read(shadername))
-        {
             return 3;
-        }
 
         // deserialize material
         std::size_t bufferSize = {};
         if (!stream->read(bufferSize))
-        {
             return 4;
-        }
 
+        auto& cache = m_materialCacheList.emplace_back();
+        cache.name = name;
+        cache.material.deserialize(stream);
+
+        /*
         auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
 
         auto it = m_materialmap.find(name);
         if (it == m_materialmap.end() && m_shadermap.find(shadername) != m_shadermap.end())
         {
             MaterialID materialID = AssetsManager::FindMaterial(name);
-            if (materialID == nill)
+            if (materialID == ID_INVALID)
                 materialID = AssetsManager::CreateMaterial(name);
             
             {
-                auto &material = AssetsManager::GetMaterial(materialID);
-                material.deserialize(stream);
+                auto material = AssetsManager::GetMaterial(materialID);
+                material->deserialize(stream);
             }
 
             m_materialmap.emplace(name, materialID);
@@ -265,6 +294,7 @@ int SceneLoadTask::read_material(Stream *stream)
 
         if (stream->tellg() != next)
             stream->seekg(next);
+        */
     }
     return 0;
 }
@@ -285,6 +315,11 @@ int SceneLoadTask::read_mesh(Stream *stream)
         if (!stream->read(buffsize))
             return 3;
 
+        auto& cache = m_meshCacheList.emplace_back();
+        cache.name = name;
+        cache.mesh.deserialize(stream);
+
+        /*
         auto next = stream->tellg() + static_cast<std::streampos>(buffsize);
 
         auto meshID = AssetsManager::FindMesh(name);
@@ -298,6 +333,7 @@ int SceneLoadTask::read_mesh(Stream *stream)
         {
             stream->seekg(next);
         }
+        */
     }
     return 0;
 }

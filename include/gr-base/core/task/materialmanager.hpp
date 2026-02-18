@@ -6,37 +6,44 @@
 
 #include "gr-base/core/geometry/default.hpp"
 
-#include <stack>
+extern "C"
+{
+#include "gr-base/externals/array.h"
+}
 
 class MaterialManager
 {
 public:
     MaterialManager();
 
-    MaterialID create(const std::string &name);
+    MaterialID create(const std::string &name, const Material* src);
 
-    Material &get(MaterialID id);
+    Material *get(MaterialID id);
 
     MaterialID find(const std::string &name);
 
     const char *getname(MaterialID id);
 
-    void remove(MaterialID id);
+    void destroy(MaterialID id);
+
+    MaterialID GetCount() const;
 
 private:
     std::unordered_map<std::string, MaterialID> m_materialnamemap;
 
     std::unordered_map<MaterialID, std::string> m_materialmap;
 
-    std::vector<Material> m_materials;
+    array* m_pool;
 
-    std::stack<MaterialID> m_freeIDs;
+    MaterialID m_count;
 
-    std::mutex m_mutex;
+    MaterialID m_freeID;
 
-    void resize(std::size_t size);
+    MaterialID allocate();
 
-    void addfreelist(MaterialID id);
+    void realloc(MaterialID size);
+
+    void addFreeID(MaterialID start);
 };
 
 

@@ -55,12 +55,44 @@ void GameObjectLoadTask::onPostExecute(int result)
     if (result != 0)
         return Console::LogError("[ GameObjectLoadTask ] fail to load: %s", m_path.c_str());
 
+    CreateMaterialFromCache();
+
+    CreateMeshFromCache();
+
     auto gameObjectID = CreateFromCache(m_root.get());
 
     Console::LogInfo("[ GameObjectLoadTask ] Loaded: %s", m_path.c_str());
 
     if (m_func)
         m_func(gameObjectID);
+}
+
+void GameObjectLoadTask::CreateMaterialFromCache()
+{
+    Console::LogInfo("[ GameObjectLoadTask ] Creating %d materials...", m_materialCacheList.size());
+
+    for (auto &cache : m_materialCacheList)
+    {
+        MaterialID materialID = AssetsManager::FindMaterial(cache.name);
+        if (materialID == ID_INVALID)
+        {
+            materialID = AssetsManager::CreateMaterial(cache.name, &cache.material);
+        }
+    }
+}
+
+void GameObjectLoadTask::CreateMeshFromCache()
+{
+    Console::LogInfo("[ GameObjectLoadTask ] Creating %d meshes...", m_meshCacheList.size());
+
+    for (auto &cache : m_meshCacheList)
+    {
+        auto meshID = AssetsManager::FindMesh(cache.name);
+        if (meshID == ID_INVALID)
+        {
+            meshID = AssetsManager::CreateMesh(cache.name, &cache.mesh);
+        }
+    }
 }
 
 GameObjectHandle GameObjectLoadTask::CreateFromCache(GameObjectCache* cache)
@@ -261,8 +293,13 @@ int GameObjectLoadTask::read_material(Stream *stream)
         if (!stream->read(bufferSize))
             return 4;
 
-        auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
+        auto& cache = m_materialCacheList.emplace_back();
+        cache.name = name;
+        cache.material.deserialize(stream);
 
+        // auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
+
+        /*
         auto materialID = AssetsManager::FindMaterial(name);
         if (materialID == nill)
         {
@@ -282,6 +319,7 @@ int GameObjectLoadTask::read_material(Stream *stream)
 
         if (stream->tellg() != next)
             stream->seekg(next);
+        */
     }
     return 0;
 }
@@ -302,6 +340,11 @@ int GameObjectLoadTask::read_mesh(Stream *stream)
         if (!stream->read(buffsize))
             return 3;
 
+        auto& cache = m_meshCacheList.emplace_back();
+        cache.name = name;
+        cache.mesh.deserialize(stream);
+
+        /*
         auto next = stream->tellg() + static_cast<std::streampos>(buffsize);
 
         auto meshID = AssetsManager::FindMesh(name);
@@ -315,6 +358,7 @@ int GameObjectLoadTask::read_mesh(Stream *stream)
         {
             stream->seekg(next);
         }
+        */
     }
     return 0;
 }

@@ -159,14 +159,14 @@ int SceneSaveTask::write_material(Stream *stream)
 
     for (auto &&[name, materialID] : m_materialmap)
     {
-        auto &material = AssetsManager::GetMaterial(materialID);
+        auto material = AssetsManager::GetMaterial(materialID);
 
         if (!stream->write(name))
         {
             return 2;
         }
 
-        auto shadername = AssetsManager::GetShaderName(material.GetShader(false));
+        auto shadername = AssetsManager::GetShaderName(material->GetShader(false));
         if (!stream->write(shadername))
         {
             return 3;
@@ -176,7 +176,7 @@ int SceneSaveTask::write_material(Stream *stream)
         std::size_t bufferSize = 0;
         {
             MemoryStream temp;
-            material.serialize(&temp);
+            material->serialize(&temp);
             bufferSize = temp.tellg();
 
             temp.close();
@@ -187,7 +187,7 @@ int SceneSaveTask::write_material(Stream *stream)
             return 4;
         }
 
-        material.serialize(stream);
+        material->serialize(stream);
     }
     return 0;
 }
@@ -365,9 +365,9 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
         for (auto materialID : baseRender->getMaterialIDs())
         {
             auto material_name = AssetsManager::GetMaterialName(materialID);
-            auto &material = AssetsManager::GetMaterial(materialID);
+            auto material = AssetsManager::GetMaterial(materialID);
 
-            auto shader_name = AssetsManager::GetShaderName(material.GetShader(false));
+            auto shader_name = AssetsManager::GetShaderName(material->GetShader(false));
 
             {
                 auto it = m_shadermap.find(shader_name);

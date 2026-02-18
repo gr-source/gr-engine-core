@@ -15,12 +15,10 @@ class Material;
 class Batching;
 class Mesh;
 
-using MaterialID = std::size_t;
-
 typedef uint32_t BatchID;
+
+typedef uint32_t MaterialID;
 typedef uint32_t MeshID;
 
 constexpr BatchID InvalidBatch = std::numeric_limits<BatchID>::max();
-
-constexpr std::size_t nill = std::numeric_limits<std::size_t>::max();
 

@@ -73,9 +73,9 @@ grr::gTexture *AssetsManager::CreateTexture(const std::string &name)
 }
 
 // ********** Mesh ********** //
-MeshID AssetsManager::CreateMesh(const std::string &name)
+MeshID AssetsManager::CreateMesh(const std::string &name, const Mesh* src)
 {
-    return s_AssetsManager->mMeshManager.allocate(name);
+    return s_AssetsManager->mMeshManager.create(name, src);
 }
 
 Mesh *AssetsManager::GetMesh(MeshID id)
@@ -98,7 +98,7 @@ std::string AssetsManager::GetMeshName(MeshID id)
 
 void AssetsManager::RemoveMesh(MeshID id)
 {
-    s_AssetsManager->mMeshManager.deallocate(id);
+    s_AssetsManager->mMeshManager.destroy(id);
 }
 
 ShaderProperty *AssetsManager::CreateShaderProperty(grr::gShader *shader)
@@ -190,12 +190,12 @@ std::vector<grr::gShader *> AssetsManager::GetShaderList(ShaderType type)
     return s_AssetsManager->mShaderManager.get_shader(type);
 }
 
-MaterialID AssetsManager::CreateMaterial(const std::string &name)
+MaterialID AssetsManager::CreateMaterial(const std::string &name, const Material* src)
 {
-    return s_AssetsManager->mMaterialManager.create(name);
+    return s_AssetsManager->mMaterialManager.create(name, src);
 }
 
-Material &AssetsManager::GetMaterial(MaterialID id)
+Material *AssetsManager::GetMaterial(MaterialID id)
 {
     return s_AssetsManager->mMaterialManager.get(id);
 }
@@ -208,6 +208,11 @@ usize AssetsManager::GetTextureCount()
 size_t AssetsManager::GetMeshCount()
 {
     return s_AssetsManager->mMeshManager.getCount();
+}
+
+MaterialID AssetsManager::GetMaterialCount()
+{
+    return s_AssetsManager->mMaterialManager.GetCount();
 }
 
 MaterialID AssetsManager::FindMaterial(const std::string &name)

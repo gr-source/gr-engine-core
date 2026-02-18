@@ -14,61 +14,71 @@ typedef struct MeshWrapper
 MeshManager::MeshManager() : m_pool(nullptr), m_count(0), m_freeID(ID_INVALID)
 {}
 
-MeshID MeshManager::allocate(const std::string &name)
+MeshID MeshManager::create(const std::string &name, const Mesh* src)
 {
-    MeshID id = ID_INVALID;
+    MeshID id = allocate();
+
+    MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
+
+    if (src != nullptr)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        if (m_freeID == ID_INVALID)
-            realloc(256);
-
-        MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
-
-        id = m_freeID;
-        m_freeID = wrapper[id].next;
-
+        new (&wrapper[id].mesh) Mesh(*src);
+    } else
+    {
         new (&wrapper[id].mesh) Mesh();
-
-        m_meshnamemap[id] = name;
-        m_meshidmap[name] = id;
     }
 
-    m_count++;
+    m_meshnamemap[id] = name;
+    m_meshidmap[name] = id;
 
-    auto scene = Scene::GetCurrent();
-    if (scene != nullptr)
-        scene->AddMesh(id);
+    return id;
+}
+
+Mesh *MeshManager::get(MeshID id)
+{
+    MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
+
+    return &wrapper[id].mesh;
+}
+
+void MeshManager::destroy(MeshID id)
+{
+    Mesh* mesh = get(id);
+    if (mesh == nullptr)
+        return;
+
+    mesh->~Mesh();
+
+    m_meshidmap.erase(m_meshnamemap[id]);
+    m_meshnamemap.erase(id);
+}
+
+MeshID MeshManager::allocate()
+{
+    if (m_freeID == ID_INVALID)
+        realloc(64);
+
+    MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
+
+    MeshID id = m_freeID;
+    m_freeID = wrapper[id].next;
+
+    m_count++;
 
     return id;
 }
 
 void MeshManager::deallocate(MeshID id)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
     MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
-    wrapper[id].mesh.~Mesh();
-
     wrapper[id].next = m_freeID;
     m_freeID = id;
-
-    m_meshidmap.erase(m_meshnamemap[id]);
-    m_meshnamemap.erase(id);
 
     m_count--;
 }
 
-Mesh *MeshManager::get(MeshID id)
-{
-    std::lock_guard<std::mutex> lock(m_mutex);
-    MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
-
-    return &wrapper[id].mesh;
-}
-
 MeshID MeshManager::find(const std::string &name)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-
     auto it = m_meshidmap.find(name);
     if (it == m_meshidmap.end())
         return ID_INVALID;
@@ -104,16 +114,16 @@ void MeshManager::realloc(size_t count)
     addFreeID(lastsize);
 }
 
-void MeshManager::addFreeID(MeshID first)
+void MeshManager::addFreeID(MeshID start)
 {
     MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
 
     MeshID lastID = m_pool->length - 1;
-    for (MeshID id=first;id<lastID;id++)
+    for (MeshID id=start;id<lastID;id++)
         wrapper[id].next = id + 1;
 
     wrapper[lastID].next = m_freeID;
-    m_freeID = first;
+    m_freeID = start;
 }
 
 

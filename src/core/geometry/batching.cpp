@@ -67,8 +67,8 @@ void Batching::render()
 {
     bool isInstancing = instances.size() > 1;
 
-    auto &material = AssetsManager::GetMaterial(materialID);
-    auto shader = material.GetShader(isInstancing);
+    auto material = AssetsManager::GetMaterial(materialID);
+    auto shader = material->GetShader(isInstancing);
 
     glBindVertexArray(vao);
 
@@ -76,7 +76,7 @@ void Batching::render()
     int textureID[10] = {0};
 
     shader->bind();
-    material.flush(shader);
+    material->flush(shader);
 
     shader->setUniform("u_texture", textureID);
     shader->setUniform("u_enable", enable);

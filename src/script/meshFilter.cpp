@@ -49,7 +49,7 @@ bool MeshFilter::Deserialize(Stream *stream)
             return false;
 
         auto meshID = AssetsManager::FindMesh(name);
-        if (meshID != nill)
+        if (meshID != ID_INVALID)
         {
             addMesh(meshID);
         } else
