@@ -380,10 +380,8 @@ void BehaviorStorage::update()
         for (ComponentID i=0;i<set.count;i++)
         {
             Behavior* behavior = (Behavior*)ptr;
-            if (!behavior->bCanEnableUpdate)
-                continue;
-            // ((void(*)(Behavior*))(info->update))(behavior);
-            behavior->Update();
+            if (behavior->bCanEnableUpdate)
+                behavior->Update();
 
             ptr += stride;
         }

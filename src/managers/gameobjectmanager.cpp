@@ -50,14 +50,14 @@ GameObject* GameObjectManager::Get(GameObjectID id)
     return s_GameObjectManager->get(id);
 }
 
-void GameObjectManager::DestroyImediate(GameObjectID id)
+void GameObjectManager::DestroyImediate(GameObjectID handle)
 {
-    s_GameObjectManager->destroyImediate(id);
+    s_GameObjectManager->destroyImediate(handle);
 }
 
-void GameObjectManager::Destroy(GameObjectID id)
+void GameObjectManager::Destroy(GameObjectID handle)
 {
-    s_GameObjectManager->destroy(id);
+    s_GameObjectManager->destroy(handle);
 }
 
 size_t GameObjectManager::GetCount()
@@ -96,10 +96,13 @@ GameObjectID GameObjectManager::instantiate(GameObjectID other)
 
     // gameObject->Init();
 
-    auto scene = SceneManager::GetCurrent();
+    auto otherGO = GameObject::Get(other);
+
+    auto scene = otherGO->GetScene() != nullptr ? otherGO->GetScene() : SceneManager::GetCurrent();
     if (scene != nullptr)
     {
         scene->insert(handle);
+        gameObject->SetScene(scene);
 
         if (scene->bRunning)
             gameObject->Start();
@@ -145,10 +148,10 @@ GameObject* GameObjectManager::get(GameObjectID id)
     return &wrapper[slot.denseIndex].gameObject;
 }
 
-void GameObjectManager::destroyImediate(GameObjectID id)
+void GameObjectManager::destroyImediate(GameObjectID handle)
 {
-    uint32_t slotID = GetHandleID(id);
-    uint32_t version = GetHandleVersion(id);
+    uint32_t slotID = GetHandleID(handle);
+    uint32_t version = GetHandleVersion(handle);
 
     GameObjectSlot* slots = (GameObjectSlot*)m_slot->vector;
     
@@ -164,7 +167,7 @@ void GameObjectManager::destroyImediate(GameObjectID id)
 
     auto scene = gameObject.GetScene();
     if (scene != nullptr)
-        scene->remove(id);
+        scene->remove(handle);
 
     {
         auto transform = gameObject.GetTransform();

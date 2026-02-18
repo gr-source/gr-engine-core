@@ -28,9 +28,9 @@ public:
 
     static GameObject* Get(GameObjectID id);
 
-    static void DestroyImediate(GameObjectID id);
+    static void DestroyImediate(GameObjectID handle);
 
-    static void Destroy(GameObjectID id);
+    static void Destroy(GameObjectID handle);
 
     static size_t GetCount();
 
@@ -55,7 +55,7 @@ protected:
 
     GameObject* get(GameObjectID id);
 
-    void destroyImediate(GameObjectID id);
+    void destroyImediate(GameObjectID handle);
 
     void destroy(GameObjectID id);
 

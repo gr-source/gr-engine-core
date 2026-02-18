@@ -81,8 +81,6 @@ void Rigidbody::Start()
 
     PhysicsScene::AddRigidbody(m_body.get());
 
-    Console::LogInfo("[ Rigidbody ] %s Start %p", GetGameObject()->getName().c_str(), m_body.get());
-
     bCanEnableUpdate = true;
 }
 
@@ -90,7 +88,6 @@ void Rigidbody::Update()
 {
     bool isActive = m_body->isActive();
 
-    // Console::LogInfo("[ Rigidbody ] %s IsActive=%s", GetGameObject()->getName().c_str(), (isActive ? "true" : "false"));
 	if (!m_body->isActive())
         return;
 
@@ -132,11 +129,11 @@ void Rigidbody::setMass(float value) {
     m_mass = value;
 }
 
-void Rigidbody::setFreezerRotation(const Vector3 &value) {
+void Rigidbody::setFreezerRotation(const Vector3 &value)
+{
     m_lookRotation = value;
 
-    if (m_body)
-        m_body->setAngularFactor(VEC3_TO_BTVEC3(value));
+    m_body->setAngularFactor(VEC3_TO_BTVEC3(value));
 }
 
 Vector3 Rigidbody::getFreezerRotation() const {
@@ -161,7 +158,8 @@ void Rigidbody::setSweptSphereRadius(float value) {
 
 void Rigidbody::applyImpulse(const Vector3 &impulse, const Vector3 &pos)
 {
-    m_body->applyImpulse(VEC3_TO_BTVEC3(impulse), VEC3_TO_BTVEC3(pos));
+    m_body->activate(true);
+    m_body->applyImpulse(*reinterpret_cast<const btVector3*>(&impulse), *reinterpret_cast<const btVector3*>(&pos));
 }
 
 void Rigidbody::applyCentralImpulse(const Vector3 &impulse)
@@ -202,7 +200,7 @@ void Rigidbody::applyDamping(float timeStep)
 void Rigidbody::applyForce(const Vector3 &force, const Vector3 &pos)
 {
     m_body->activate(true);
-    m_body->applyForce(VEC3_TO_BTVEC3(force), VEC3_TO_BTVEC3(pos));
+    m_body->applyForce(*reinterpret_cast<const btVector3*>(&force), *reinterpret_cast<const btVector3*>(&pos));
 }
 
 void Rigidbody::applyTorque(const Vector3 &torque)

@@ -142,7 +142,12 @@ void Scene::AddCamera(ComponentHandle id)
 void Scene::RemoveCamera(ComponentHandle id)
 {
     if (Threadpool::IsMainThread())
+    {
         m_cameras.erase(std::remove(m_cameras.begin(), m_cameras.end(), id), m_cameras.end());
+
+        if (m_cameraID == id)
+            m_cameraID = m_cameras.empty() ? INVALID_COMPONENT_ID : m_cameras[m_cameras.size() - 1];
+    }
 }
 
 std::vector<ComponentHandle> Scene::GetCameras() const

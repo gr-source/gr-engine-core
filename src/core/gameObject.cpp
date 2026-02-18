@@ -85,6 +85,13 @@ void GameObject::Copy(GameObjectID otherID)
 
     m_isStatic = otherGO->m_isStatic;
 
+    auto otherTrans = otherGO->GetTransform();
+
+    auto myTrans = this->GetTransform();
+    myTrans->setLocalPosition(otherTrans->getLocalPosition());
+    myTrans->setLocalRotation(otherTrans->getLocalRotation());
+    myTrans->setLocalScale(otherTrans->getLocalScale());
+
     for (auto& hash : otherGO->GetHashes())
     {
         if (hash == GetHashByType<Transform>(nullptr))
@@ -94,16 +101,9 @@ void GameObject::Copy(GameObjectID otherID)
         if (myComp == nullptr)
             myComp = addComponent(hash, otherGO->GetID(hash));
 
-        BehaviorStorage::Reinstance(hash, myComp, otherGO->getComponent(hash));
-        myComp->entityID = this->getCacheID();
+        // BehaviorStorage::Reinstance(hash, myComp, otherGO->getComponent(hash));
+        // myComp->entityID = this->getCacheID();
     }
-
-    auto otherTrans = otherGO->GetTransform();
-
-    auto myTrans = this->GetTransform();
-    myTrans->setLocalPosition(otherTrans->getLocalPosition());
-    myTrans->setLocalRotation(otherTrans->getLocalRotation());
-    myTrans->setLocalScale(otherTrans->getLocalScale());
 
     for (const auto& childTrans : otherTrans->getChildren())
     {

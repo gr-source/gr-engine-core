@@ -29,10 +29,10 @@ Camera::~Camera()
     if (scene != nullptr)
         scene->RemoveCamera(GetGameObject()->GetID<Camera>());
 
-    std::cout << GetGameObject()->getCacheID() << " -> Camera::~Camera: " << this << " RT: " << rendertarget << std::endl;
+    // std::cout << GetGameObject()->getCacheID() << " -> Camera::~Camera: " << this << " RT: " << rendertarget << std::endl;
 
-    // if (rendertarget != nullptr)
-    //     delete rendertarget;
+    if (rendertarget != nullptr)
+        delete rendertarget;
     // rendertarget = nullptr;
 }
 
@@ -48,7 +48,7 @@ void Camera::Init()
     rendertarget = new RenderTarget(512, 512);
     rendertarget->init();
 
-    std::cout << GetGameObject()->getCacheID() << " -> Camera::Init: " << this << " RT: " << rendertarget << std::endl;
+    // std::cout << GetGameObject()->getCacheID() << " -> Camera::Init: " << this << " RT: " << rendertarget << std::endl;
 
     auto scene = Scene::GetCurrent();
     if (scene != nullptr)
@@ -162,7 +162,8 @@ void Camera::setRect(const Rect &rect)
     updateProjection();
 }
 
-Rect Camera::getRect() const {
+Rect Camera::getRect() const
+{
     return m_rect;
 }
 

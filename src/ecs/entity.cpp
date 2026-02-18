@@ -68,8 +68,6 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
 
     auto behavior = BehaviorStorage::GetComponent(hash, handle);
     behavior->entityID = m_id;
-
-    // std::cout << "addComponent: " << m_id << " " << info->name << " " << handle << std::endl;
     behavior->Init();
 
     /*

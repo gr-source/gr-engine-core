@@ -112,7 +112,8 @@ void MeshCollider::buildWithVertice(const std::vector<Vertex3D> &vertices)
     return setup(GetComponent<Transform>());
 }
 
-void MeshCollider::setup(Transform *transform) {
+void MeshCollider::setup(Transform *transform)
+{
     shape = std::make_shared<btBvhTriangleMeshShape>(m_triangleMesh.get(), true);
     shape->setLocalScaling(btVector3(transform->getLocalScale().x, transform->getLocalScale().y, transform->getLocalScale().z));
 }
