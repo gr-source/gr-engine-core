@@ -311,9 +311,46 @@ void RenderManager::preRender(const Camera *camera)
 
                         transform->isDirty = false;
 
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+
+
+
+
+    BVHTreeManager::For_each([camera = std::forward<const Camera*>(camera)](NodeID id, BVHNode* node)
+            {
+                if (node->isLeaf())
+                {
+                    NodeData data = *static_cast<NodeData*>(node->data);
+
+                    auto gameObject = GameObject::Get(data.gameObjectID);
+
+                    auto transform = gameObject->GetTransform();
+
+                    /*
+                    if (transform->isDirty)
+                    {
+                        auto matrix = transform->getGlobalMatrix();
+
+                        auto boundary = node->localBoundary;
+
+                        Vector4 min = matrix * Vector4{boundary.min.x, boundary.min.y, boundary.min.z, 1.0f};
+                        Vector4 max = matrix * Vector4{boundary.max.x, boundary.max.y, boundary.max.z, 1.0f};
+
+                        node->boundary = Boundbox{Vector3{min.x, min.y, min.z}, Vector3{max.x, max.y, max.z}};
+
+                        BVHTreeManager::SyncHeirarchy(node->parent);
+
+                        transform->isDirty = false;
+
                         // std::cout << gameObject->getName() << ": dirst" << std::endl;
                         return true;
                     }
+                    */
 
                     auto boundary = node->boundary;
 
