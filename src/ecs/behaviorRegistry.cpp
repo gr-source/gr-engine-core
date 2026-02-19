@@ -1,6 +1,5 @@
 #include "gr-base/ecs/behaviorRegistry.hpp"
 
-#include "gr-base/ecs/behavior.hpp"
 #include "gr-base/ecs/behaviorStorage.hpp"
 
 #include <algorithm>
@@ -86,7 +85,6 @@ ComponentInfo* BehaviorRegistry::get(ComponentHash hash)
     return nullptr;
 }
 
-#include <iostream>
 bool BehaviorRegistry::replace(ComponentInfo* dest, const ComponentInfo* src)
 {
     dest->name = src->name;

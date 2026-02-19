@@ -1,4 +1,4 @@
-#include "gr-base/core/task/materialmanager.hpp"
+#include "gr-base/managers/materialmanager.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/material.hpp"

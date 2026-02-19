@@ -45,7 +45,7 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
     }
 
     ComponentHandle handle = BehaviorStorage::Allocate(hash, source);
-    if (handle == INVALID_COMPONENT_HANDLE)
+    if (handle == HANDLE_INVALID)
         return nullptr;
 
     m_signature.set(tableID, true);

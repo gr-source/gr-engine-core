@@ -130,7 +130,7 @@ ComponentHandle BehaviorStorage::allocate(uint64_t hash, ComponentHandle source)
 {
     ComponentInfo* info = BehaviorRegistry::Get(hash);
     if (info == nullptr)
-        return INVALID_COMPONENT_HANDLE;
+        return HANDLE_INVALID;
 
     size_t storageID = hash % COMPONENT_TABLE_SIZE;
 
@@ -151,9 +151,9 @@ ComponentHandle BehaviorStorage::allocate(uint64_t hash, ComponentHandle source)
     *(ComponentID*)(wraper + (slot.denseIndex * info->size)) = slotID;
 
     Behavior* behavior = (Behavior*)(wraper + (slot.denseIndex * info->size + info->offset));
-    ((void(*)(Behavior*, const Behavior*))(info->constructor))(behavior, source != INVALID_COMPONENT_HANDLE ? GetComponent(hash, source) : nullptr);
+    ((void(*)(Behavior*, const Behavior*))(info->constructor))(behavior, source != HANDLE_INVALID ? GetComponent(hash, source) : nullptr);
 
-    return CreateHandle(slotID, slot.version);
+    return handle_create(slotID, slot.version);
 }
 
 #include <string.h>
@@ -166,8 +166,8 @@ void BehaviorStorage::deallocate(uint64_t hash, ComponentHandle handle)
     size_t storageID = hash % COMPONENT_TABLE_SIZE;
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
 
-    ComponentID slotID = GetHandleID(handle);
-    ComponentID version = GetHandleVersion(handle);
+    ComponentID slotID = handle_get_id(handle);
+    ComponentID version = handle_get_version(handle);
 
     ComponentSlot* slots = (ComponentSlot*)set.slot->vector;
     if (slots == nullptr)
@@ -217,8 +217,8 @@ Behavior* BehaviorStorage::getComponent(uint64_t hash, ComponentHandle handle)
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
 
-    ComponentID slotID = GetHandleID(handle);
-    ComponentID version = GetHandleVersion(handle);
+    ComponentID slotID = handle_get_id(handle);
+    ComponentID version = handle_get_version(handle);
 
     ComponentSlot& slot = ((ComponentSlot*)set.slot->vector)[slotID];
     if (slot.version != version)

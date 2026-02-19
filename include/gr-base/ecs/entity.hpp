@@ -21,7 +21,7 @@ public:
 
     Behavior* getComponent(const char* name) const;
 
-    Behavior* addComponent(uint64_t hash, ComponentHandle source = INVALID_COMPONENT_HANDLE);
+    Behavior* addComponent(uint64_t hash, ComponentHandle source = HANDLE_INVALID);
 
     Behavior* getComponent(uint64_t hash) const;
 

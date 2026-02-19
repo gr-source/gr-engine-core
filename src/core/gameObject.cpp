@@ -161,11 +161,11 @@ GameObjectHandle GameObject::FindChildByName(const std::string& name)
         auto transform = BehaviorStorage::GetComponent<Transform>(transformID);
 
         GameObjectHandle found = transform->GetGameObject()->FindChildByName(name);
-        if (found != GID_INVALID)
+        if (found != HANDLE_INVALID)
             return found;
     }
 
-    return GID_INVALID;
+    return HANDLE_INVALID;
 }
 
 // private

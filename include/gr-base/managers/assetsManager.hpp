@@ -9,7 +9,6 @@
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
-#include "gr-base/core/task/materialmanager.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/task/texturemanager.hpp"
 
@@ -17,6 +16,7 @@
 
 #include "gr-base/core/task/animationmanager.hpp"
 
+#include "gr-base/managers/materialmanager.hpp"
 #include "gr-base/managers/shadermanager.hpp"
 #include "gr-base/managers/meshmanager.hpp"
 

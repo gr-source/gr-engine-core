@@ -93,8 +93,8 @@ GameObjectManager::~GameObjectManager()
 GameObjectHandle GameObjectManager::instantiate(GameObjectHandle other)
 {
     auto handle = create(GameObject::Get(other)->getName());
-    if (handle == GID_INVALID)
-        return GID_INVALID;
+    if (handle == HANDLE_INVALID)
+        return HANDLE_INVALID;
 
     auto gameObject = get(handle);
     gameObject->Copy(other);
@@ -125,7 +125,7 @@ GameObjectHandle GameObjectManager::create(const std::string &name)
     GameObjectSlot& slot = ((GameObjectSlot*)m_slot->vector)[slotID];
     slot.denseIndex = m_count++;
 
-    GameObjectHandle cacheID = CreateHandle(slotID, slot.version);
+    GameObjectHandle cacheID = handle_create(slotID, slot.version);
 
     GameObjectWrapper& wrapper = ((GameObjectWrapper*)m_gameObjectPool->vector)[slot.denseIndex];
     wrapper.slotID = slotID;
@@ -139,8 +139,8 @@ GameObjectHandle GameObjectManager::create(const std::string &name)
 
 GameObject* GameObjectManager::get(GameObjectHandle id)
 {
-    uint32_t slotID = GetHandleID(id);
-    uint32_t version = GetHandleVersion(id);
+    uint32_t slotID = handle_get_id(id);
+    uint32_t version = handle_get_version(id);
 
     GameObjectSlot& slot = ((GameObjectSlot*)m_slot->vector)[slotID];
     if (slot.version != version)
@@ -153,8 +153,8 @@ GameObject* GameObjectManager::get(GameObjectHandle id)
 
 void GameObjectManager::destroyImediate(GameObjectHandle handle)
 {
-    uint32_t slotID = GetHandleID(handle);
-    uint32_t version = GetHandleVersion(handle);
+    uint32_t slotID = handle_get_id(handle);
+    uint32_t version = handle_get_version(handle);
 
     GameObjectSlot* slots = (GameObjectSlot*)m_slot->vector;
     

@@ -21,7 +21,7 @@
 
 #include <gr-render/gShader.h>
 
-GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObjectHandle)> func) : m_path(path), m_func(func), m_gameObject(GID_INVALID), m_root(nullptr)
+GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObjectHandle)> func) : m_path(path), m_func(func), m_gameObject(HANDLE_INVALID), m_root(nullptr)
 {}
 
 // ***** private ***** //

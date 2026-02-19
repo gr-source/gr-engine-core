@@ -97,13 +97,13 @@ set(task
     src/core/task/runtime/meshSaveTask.cpp
 
     src/core/task/scenetaskmanager.cpp
-    src/core/task/materialmanager.cpp
     src/core/task/texturemanager.cpp
 )
 
 set(managers_src
     src/managers/gameobjectmanager.cpp
     src/managers/batchingmanager.cpp
+    src/managers/materialmanager.cpp
     src/managers/bvhtreemanager.cpp
     src/managers/rendermanager.cpp
     src/managers/octreemanager.cpp

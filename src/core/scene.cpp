@@ -233,13 +233,13 @@ void Scene::AddMesh(MeshID meshID)
 GameObjectHandle Scene::CreateEngineCamera()
 {
     auto gameObjectID = GameObject::Create("MainEngineCamera");
-    if (gameObjectID == GID_INVALID)
-        return GID_INVALID;
+    if (gameObjectID == HANDLE_INVALID)
+        return HANDLE_INVALID;
 
     auto gameObject = GameObject::Get(gameObjectID);
     auto camera = gameObject->addComponent<Camera>();
     if (!camera)
-        return GID_INVALID;
+        return HANDLE_INVALID;
 
     return gameObjectID;
 }
