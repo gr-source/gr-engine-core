@@ -43,7 +43,7 @@ protected:
 
     std::mutex m_mutex;
 
-    array* m_gameObjectPool;
+    array* m_pool;
     array* m_slot;
 
     uint32_t m_freeIDs;
@@ -60,7 +60,7 @@ protected:
 
     void destroy(GameObjectHandle handle);
 
-    void requestResize();
+    void realloc(uint32_t size);
 
     void addFreeID(uint32_t start);
 

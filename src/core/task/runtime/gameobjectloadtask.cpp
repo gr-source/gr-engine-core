@@ -104,11 +104,7 @@ GameObjectHandle GameObjectLoadTask::CreateFromCache(GameObjectCache* cache)
 
     MemoryStream stream(cache->buffer.data(), cache->buffer.size());
     if (read_script_from_cache(gameObject, &stream) != 0)
-    {
         Console::LogWarning("[ GameObjectLoadTask ] Adding Script falied: %s", cache->name.c_str());
-    }
-
-    auto transform = gameObject->GetTransform();
 
     for (auto &child : cache->chindren)
     {
@@ -116,6 +112,9 @@ GameObjectHandle GameObjectLoadTask::CreateFromCache(GameObjectCache* cache)
 
         auto goChild = GameObject::Get(childID);
 
+        gameObject = GameObject::Get(gameObjectID);
+
+        auto transform = gameObject->GetTransform();
         transform->addChildren(goChild->GetTransform());
     }
 

@@ -147,7 +147,6 @@ bool Transform::hasChildren() const
 
 void Transform::updateLocalMatrix()
 {
-    // std::cout << GetGameObject()->getName() << " up" << std::endl;
     m_localMatrix = Math::CreateTRS(m_position, m_rotation, m_scale);
 
     updateGlobalMatrix();

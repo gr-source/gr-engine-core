@@ -22,7 +22,7 @@ typedef struct NodeData
 {
     GameObjectHandle gameObjectID;
     array* batchIDs;
-    Vector3 position;
+    Boundbox bounds;
 
     array* batchPerLOD;
 } NodeData;
@@ -79,7 +79,7 @@ private:
 
     NodeID insertGlobal(NodeData data);
 
-    void expandRoot(const Vector3& point);
+    void expandRoot(const Boundbox& bounds);
 
     NodeID insert(NodeID id, NodeData data);
 
@@ -109,7 +109,9 @@ private:
 
     void addFreeListID(NodeID first);
 
-    bool contains(NodeID id, const Vector3 &p);
+    bool contains(NodeID id, const Vector3& p);
+
+    bool contains(NodeID id, const Boundbox& b);
 };
 
 

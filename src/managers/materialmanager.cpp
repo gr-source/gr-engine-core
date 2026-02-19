@@ -2,6 +2,7 @@
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/material.hpp"
+#include "gr-base/externals/array.h"
 #include <stdexcept>
 
 typedef struct MaterialWrapper
@@ -92,9 +93,28 @@ void MaterialManager::realloc(MaterialID size)
     size_t newsize = lastsize + size;
 
     if (m_pool == nullptr)
+    {
         m_pool = array_create(newsize, sizeof(MaterialWrapper));
-    else
-        m_pool = array_resize(m_pool, newsize, sizeof(MaterialWrapper));
+    } else
+    {
+        array* newPool = array_create(newsize, sizeof(MaterialWrapper));
+
+        MaterialWrapper* lastWrapperPool = (MaterialWrapper*)m_pool->vector;
+        MaterialWrapper* newWrapperPool = (MaterialWrapper*)newPool->vector;
+
+        for (size_t i=0;i<lastsize;i++)
+        {
+            MaterialWrapper& lastWrapper = lastWrapperPool[i];
+            MaterialWrapper& newWrapper = newWrapperPool[i];
+
+            newWrapper.next = lastWrapper.next;
+
+            new (&newWrapper.material) Material(lastWrapper.material);
+        }
+
+        array_free(m_pool);
+        m_pool = newPool;
+    }
 
     addFreeID(lastsize);
 }

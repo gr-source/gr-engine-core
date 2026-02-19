@@ -36,9 +36,11 @@ void GameObject::Destroy(GameObjectHandle gameObjectID)
 }
 
 // public
-GameObject::GameObject(GameObjectHandle id) : Entity(id), m_name("noname"), m_scene(nullptr), m_isStatic(false)
+GameObject::GameObject(GameObjectHandle id) : Entity(id), m_name("noname"), m_scene(nullptr), m_isStatic(false), m_transform(HANDLE_INVALID)
 {
     addComponent<Transform>();
+
+    m_transform = GetID<Transform>();
 }
 
 GameObject::~GameObject()
@@ -59,7 +61,7 @@ void GameObject::setName(const std::string& name)
 
 Transform* GameObject::GetTransform() const
 {
-    return getComponent<Transform>();
+    return BehaviorStorage::GetComponent<Transform>(m_transform);
 }
 
 void GameObject::SetState(bool enable)
@@ -75,11 +77,29 @@ void GameObject::Copy(GameObjectHandle otherID)
 
     auto otherTrans = otherGO->GetTransform();
 
-    auto myTrans = this->GetTransform();
+    ComponentHandle myTransformID = m_transform;
+
+    auto myTrans = GetTransform();
     myTrans->setLocalPosition(otherTrans->getLocalPosition());
     myTrans->setLocalRotation(otherTrans->getLocalRotation());
     myTrans->setLocalScale(otherTrans->getLocalScale());
 
+    for (ComponentHandle& transformID : otherTrans->getChildren())
+    {
+        auto childTransform = BehaviorStorage::GetComponent<Transform>(transformID);
+
+        auto childGO = childTransform->GetGameObject();
+        GameObjectHandle childID = childGO->getCacheID();
+        
+        GameObjectHandle newChildID = GameObject::Create(childGO->getName());
+
+        auto newChildGO = GameObject::Get(newChildID);
+        newChildGO->GetTransform()->setParent(BehaviorStorage::GetComponent<Transform>(myTransformID));
+        
+        newChildGO->Copy(childID);
+    }
+
+    otherGO = GameObject::Get(otherID);
     for (auto& hash : otherGO->GetHashes())
     {
         if (hash == GetHashByType<Transform>(nullptr))
@@ -88,23 +108,6 @@ void GameObject::Copy(GameObjectHandle otherID)
         Behavior* myComp = getComponent(hash);
         if (myComp == nullptr)
             myComp = addComponent(hash, otherGO->GetID(hash));
-
-        // BehaviorStorage::Reinstance(hash, myComp, otherGO->getComponent(hash));
-        // myComp->entityID = this->getCacheID();
-    }
-
-    for (const auto& childTrans : otherTrans->getChildren())
-    {
-        auto c = BehaviorStorage::GetComponent<Transform>(childTrans);
-
-        auto childGO = c->GetGameObject();
-        
-        GameObjectHandle newChildID = GameObject::Create(childGO->getName());
-        auto newChildGO = GameObject::Get(newChildID);
-        
-        newChildGO->Copy(childGO->getCacheID());
-
-        newChildGO->GetTransform()->setParent(this->GetTransform());
     }
 }
 

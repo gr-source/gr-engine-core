@@ -59,7 +59,7 @@ OctreeManager::OctreeManager() : m_nodes(nullptr), m_count(0), m_root(InvalidNod
 {
     resizeNodes(1024);
 
-    m_root = allocate(Boundbox{Vector3{-64.0f, -64.0f, -64.0f}, Vector3{ 64.0f,  64.0f,  64.0f}});
+    // m_root = allocate(Boundbox{Vector3{-64.0f, -64.0f, -64.0f}, Vector3{ 64.0f,  64.0f,  64.0f}});
 }
 
 OctreeManager::~OctreeManager()
@@ -70,19 +70,31 @@ OctreeManager::~OctreeManager()
 
 NodeID OctreeManager::insertGlobal(NodeData data)
 {
-    while (!contains(m_root, data.position))
-        expandRoot(data.position);
+    if (m_root == InvalidNode)
+    {
+        Vector3 center = Math::Center(data.bounds);
+        Vector3 halfSize = Math::Size(data.bounds) * 0.5f;
+
+        float maxHalf = std::max(halfSize.x, std::max(halfSize.y, halfSize.z));
+        maxHalf += 0.001f;
+
+        m_root = allocate(Boundbox{center - maxHalf, center + maxHalf});
+    }
+
+    while (!contains(m_root, Math::Center(data.bounds)))
+        expandRoot(data.bounds);
 
     return insert(m_root, data);
 }
 
-void OctreeManager::expandRoot(const Vector3& point)
+void OctreeManager::expandRoot(const Boundbox& bounds)
 {
     NodeID oldRoot = m_root;
 
     OctreeNode* oldNode = (OctreeNode*)m_nodes->vector + oldRoot;
 
     Vector3 center = Math::Center(oldNode->boundary);
+    Vector3 point = Math::Center(bounds);
 
     int x = point.x >= center.x ? 1 : 0;
     int y = point.y >= center.y ? 1 : 0;
@@ -90,7 +102,11 @@ void OctreeManager::expandRoot(const Vector3& point)
 
     int childIndex = (x << 2) | (y << 1) | z;
 
-    float oldR = (oldNode->boundary.max.x - oldNode->boundary.min.x) * 0.5f;
+    Vector3 boundsize = Math::Size(oldNode->boundary) * 0.5f;
+
+    float oldR = std::max(boundsize.x, std::max(boundsize.y, boundsize.z));
+    oldR += 0.001f;
+
     float halfSize = oldR * 2.0f;
 
     Vector3 newCenter = center;
@@ -141,7 +157,7 @@ void OctreeManager::expandRoot(const Vector3& point)
 
 NodeID OctreeManager::insert(NodeID id, NodeData data)
 {
-    if (!contains(id, data.position))
+    if (!contains(id, Math::Center(data.bounds)))
         return InvalidNode;
 
     OctreeNode *node = ((OctreeNode*)m_nodes->vector) + id;
@@ -295,6 +311,9 @@ NodeID OctreeManager::get(NodeID id, GameObjectHandle handle, const Vector3& pos
 
 void OctreeManager::for_each(NodeID id, std::function<bool (OctreeNode *)> &func)
 {
+    if (id == InvalidNode)
+        return;
+
     OctreeNode& node = ((OctreeNode*)m_nodes->vector)[id];
     if (func(&node))
         return;
@@ -318,7 +337,8 @@ void OctreeManager::deallocate(NodeID id)
 
 void OctreeManager::render()
 {
-    render_node(m_root);
+    if (m_root != InvalidNode)
+        render_node(m_root);
 }
 
 void OctreeManager::render_node(NodeID id)
@@ -478,6 +498,18 @@ bool OctreeManager::contains(NodeID id, const Vector3 &p)
     return p.x >= min.x && p.x < max.x &&
            p.y >= min.y && p.y < max.y &&
            p.z >= min.z && p.z < max.z;
+}
+
+bool OctreeManager::contains(NodeID id, const Boundbox& b)
+{
+    OctreeNode &n = ((OctreeNode*)m_nodes->vector)[id];
+
+    const Vector3& min = n.boundary.min;
+    const Vector3& max = n.boundary.max;
+
+    return b.min.x >= min.x && b.max.x < max.x &&
+           b.min.y >= min.y && b.max.y < max.y &&
+           b.min.z >= min.z && b.max.z < max.z;
 }
 
 

@@ -46,7 +46,7 @@ private:
 
     std::mutex m_mutex;
 
-    void realloc(size_t count);
+    void realloc(MeshID count);
 
     void addFreeID(MeshID first);
 };

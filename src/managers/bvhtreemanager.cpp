@@ -83,6 +83,9 @@ void BVHTreeManager::for_each(NodeID id, std::function<bool (NodeID, BVHNode *)>
     if (func(id, node))
         return;
 
+    if (node->isLeaf())
+        return;
+
     for_each(node->right, func);
     for_each(node->left, func);
 }
@@ -183,15 +186,14 @@ void BVHTreeManager::resize(const std::size_t &size)
     addfreeid(oldsize);
 }
 
-void BVHTreeManager::addfreeid(NodeID id)
+void BVHTreeManager::addfreeid(NodeID startID)
 {
-    for (NodeID i=id;i<m_size - 1;i++)
-    {
+    NodeID lastID = m_size - 1;
+    for (NodeID i=startID;i<lastID;i++)
         m_nodes[i].next = i + 1;
-    }
 
-    m_nodes[m_size - 1].next = m_freeID;
-    m_freeID = id;
+    m_nodes[lastID].next = m_freeID;
+    m_freeID = startID;
 }
 
 void BVHTreeManager::fatten(Boundbox &bounds)

@@ -37,7 +37,7 @@ private:
 
     std::unordered_map<size_t, BatchID> m_batchCache;
 
-    array* m_poolBatches;
+    array* m_pool;
 
     BatchID m_freeID;
 
@@ -50,11 +50,15 @@ private:
 
     BatchID find(size_t key);
 
+    BatchID allocate();
+
     Batching &get(BatchID id);
 
     void destroy(BatchID id);
 
     void render();
+
+    void realloc(BatchID size);
 
     void addFreeID(BatchID first);
 };

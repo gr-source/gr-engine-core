@@ -46,30 +46,22 @@ void BatchingManager::Render()
 }
 
 // private
-BatchingManager::BatchingManager() : m_poolBatches(nullptr), m_freeID(BATCHID_INVALID), m_count(0)
-{
-    m_poolBatches = array_create(512, sizeof(BatchWrapper));
-
-    addFreeID(0);
-}
+BatchingManager::BatchingManager() : m_pool(nullptr), m_freeID(BATCHID_INVALID), m_count(0)
+{}
 
 BatchingManager::~BatchingManager()
 {
-    array_free(m_poolBatches);
+    if (m_pool != nullptr)
+        array_free(m_pool);
 }
 
 BatchID BatchingManager::create(size_t key, MeshID meshID, MaterialID materialID)
 {
-    BatchID id = m_freeID;
-    if (id == BATCHID_INVALID)
-    {
-        std::cerr << "Need resize " << std::endl;
-        return BATCHID_INVALID;
-    }
+    BatchID id = allocate();
 
     m_batchCache[key] = id;
 
-    BatchWrapper* wrapper = (BatchWrapper*)m_poolBatches->vector;
+    BatchWrapper* wrapper = (BatchWrapper*)m_pool->vector;
     m_freeID = wrapper[id].next;
 
     Batching* batch = &wrapper[id].batch;
@@ -77,7 +69,7 @@ BatchID BatchingManager::create(size_t key, MeshID meshID, MaterialID materialID
     new (batch) Batching();
     batch->build(meshID, materialID);
 
-    std::cout << "[GPU] Batch criado com Mesh key: " << key << " | meshID: " << meshID << " | materialID:  " << materialID << std::endl;
+    // std::cout << "[GPU] Batch criado com Mesh key: " << key << " | meshID: " << meshID << " | materialID:  " << materialID << std::endl;
 
     m_count++;
 
@@ -89,16 +81,29 @@ BatchID BatchingManager::find(size_t key)
     return m_batchCache.find(key) != m_batchCache.end() ? m_batchCache[key] : BATCHID_INVALID;
 }
 
+BatchID BatchingManager::allocate()
+{
+    if (m_freeID == InvalidBatch)
+        realloc(512);
+
+    BatchWrapper* wrapper = (BatchWrapper*)m_pool->vector;
+
+    BatchID id = m_freeID;
+    m_freeID = wrapper[id].next;
+
+    return id;
+}
+
 Batching &BatchingManager::get(BatchID id)
 {
-    BatchWrapper* wrapper = (BatchWrapper*)m_poolBatches->vector;
+    BatchWrapper* wrapper = (BatchWrapper*)m_pool->vector;
 
     return wrapper[id].batch;
 }
 
 void BatchingManager::destroy(BatchID id)
 {
-    BatchWrapper* wrapper = (BatchWrapper*)m_poolBatches->vector;
+    BatchWrapper* wrapper = (BatchWrapper*)m_pool->vector;
     Batching* batch = &wrapper[id].batch;
     batch->~Batching();
 
@@ -110,21 +115,51 @@ void BatchingManager::destroy(BatchID id)
 
 void BatchingManager::render()
 {
-    BatchWrapper* wrapper = (BatchWrapper*)m_poolBatches->vector;
+    BatchWrapper* wrapper = (BatchWrapper*)m_pool->vector;
 
     for (BatchID i=0;i<m_count;i++)
         wrapper[i].batch.render();
 }
 
+void BatchingManager::realloc(BatchID size)
+{
+    BatchID lastsize = m_pool != nullptr ? m_pool->length : 0;
+    BatchID newsize = lastsize + size;
+
+    if (m_pool == nullptr)
+    {
+        m_pool = array_create(newsize, sizeof(BatchWrapper));
+    } else
+    {
+        array* newPool = array_create(newsize, sizeof(BatchWrapper));
+
+        BatchWrapper* lastWrapperPool = (BatchWrapper*)m_pool->vector;
+        BatchWrapper* newWrapperPool = (BatchWrapper*)newPool->vector;
+
+        for (BatchID i=0;i<lastsize;i++)
+        {
+            BatchWrapper& lastWrapper = lastWrapperPool[i];
+            BatchWrapper& newWrapper = newWrapperPool[i];
+
+            new (&newWrapper.batch) Batching(lastWrapper.batch);
+        }
+
+        array_free(m_pool);
+        m_pool = newPool;
+    }
+
+    addFreeID(lastsize);
+}
+
 void BatchingManager::addFreeID(BatchID first)
 {
-    BatchWrapper* wrapper = (BatchWrapper*)m_poolBatches->vector;
+    BatchWrapper* wrapper = (BatchWrapper*)m_pool->vector;
 
-    BatchID lastBatch = m_poolBatches->length - 1;
-    for (BatchID id=first;id<lastBatch;id++)
+    BatchID lastID = m_pool->length - 1;
+    for (BatchID id=first;id<lastID;id++)
         wrapper[id].next = id + 1;
 
-    wrapper[lastBatch].next = m_freeID;
+    wrapper[lastID].next = m_freeID;
     m_freeID = first;
 }
 

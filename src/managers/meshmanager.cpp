@@ -56,7 +56,7 @@ void MeshManager::destroy(MeshID id)
 MeshID MeshManager::allocate()
 {
     if (m_freeID == ID_INVALID)
-        realloc(64);
+        realloc(512);
 
     MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
 
@@ -101,15 +101,34 @@ size_t MeshManager::getCount() const
 }
 
 // private
-void MeshManager::realloc(size_t count)
+void MeshManager::realloc(MeshID size)
 {
     size_t lastsize = m_pool != nullptr ? m_pool->length : 0;
-    size_t newsize = lastsize + count;
+    size_t newsize = lastsize + size;
 
     if (m_pool == nullptr)
+    {
         m_pool = array_create(newsize, sizeof(MeshWrapper));
-    else
-        m_pool = array_resize(m_pool, newsize, sizeof(MeshWrapper));
+    } else
+    {
+        array* newPool = array_create(newsize, sizeof(MeshWrapper));
+
+        MeshWrapper* lastWrapperPool = (MeshWrapper*)m_pool->vector;
+        MeshWrapper* newWrapperPool = (MeshWrapper*)newPool->vector;
+
+        for (size_t i=0;i<lastsize;i++)
+        {
+            MeshWrapper& lastWrapper = lastWrapperPool[i];
+            MeshWrapper& newWrapper = newWrapperPool[i];
+
+            newWrapper.next = lastWrapper.next;
+
+            new (&newWrapper.mesh) Mesh(lastWrapper.mesh);
+        }
+
+        array_free(m_pool);
+        m_pool = newPool;
+    }
 
     addFreeID(lastsize);
 }

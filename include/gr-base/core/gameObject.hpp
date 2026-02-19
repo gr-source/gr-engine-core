@@ -51,6 +51,8 @@ public:
     GameObjectHandle FindChildByName(const std::string& name);
 
 private:
+    ComponentHandle m_transform;
+
     std::string m_name;
 
     Scene* m_scene;

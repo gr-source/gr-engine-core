@@ -72,7 +72,7 @@ private:
 
     void resize(const std::size_t &size);
 
-    void addfreeid(NodeID id);
+    void addfreeid(NodeID startID);
 
     void fatten(Boundbox &bounds);
 

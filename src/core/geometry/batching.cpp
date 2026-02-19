@@ -71,8 +71,6 @@ void Batching::render()
     auto material = AssetsManager::GetMaterial(materialID);
     auto shader = material->GetShader(isInstancing);
 
-    glBindVertexArray(vao);
-
     bool enable[10] = {false};
     int textureID[10] = {0};
 
@@ -81,6 +79,8 @@ void Batching::render()
 
     shader->setUniform("u_texture", textureID);
     shader->setUniform("u_enable", enable);
+
+    glBindVertexArray(vao);
 
     if (isInstancing)
     {
@@ -97,11 +97,11 @@ void Batching::render()
 
         glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
     }
+    
+    glBindVertexArray(0);
 
     Status::BatchDrawCallCount++;
     Status::BatchRenderCount += instances.size();
-    
-    glBindVertexArray(0);
 
     instances.clear();
 }

@@ -25,6 +25,7 @@
 #include "gr-base/script/light.hpp"
 #include <cfloat>
 #include <cstddef>
+#include <gr-math/boundbox.hpp>
 #include <gr-math/gmath.hpp>
 
 RenderManager* RenderManager::s_RenderManager = nullptr;
@@ -136,13 +137,13 @@ void RenderManager::insert(GameObjectHandle gameObjectID)
     Vector4 min = matrix * Vector4{boundbox.min.x, boundbox.min.y, boundbox.min.z, 1.0f};
     Vector4 max = matrix * Vector4{boundbox.max.x, boundbox.max.y, boundbox.max.z, 1.0f};
 
-    boundbox = Boundbox{Vector3{min.x, min.y, min.z}, Vector3{max.x, max.y, max.z}};
+    Boundbox globalBounds = Boundbox{Vector3{min.x, min.y, min.z}, Vector3{max.x, max.y, max.z}};
 
-    Vector3 scale = transform->getLocalScale();
+    // Vector3 scale = transform->getLocalScale();
 
-    // std::cout << gameObject->getName() << ": " << scale.x << " " << scale.y << " " << scale.z << std::endl;
+    // std::cout << gameObject->getName() << ": " << point.x << " " << point.y << " " << point.z << std::endl;
 
-    NodeData data{gameObjectID, batchIDS, point, batchPerLOD};
+    NodeData data{gameObjectID, batchIDS, globalBounds, batchPerLOD};
 
     NodeID nodeID = InvalidID;
     if (isStatic)
