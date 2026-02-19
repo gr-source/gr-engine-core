@@ -256,11 +256,8 @@ void GameObjectManager::addFreeID(uint32_t start)
 
 void GameObjectManager::cleanup()
 {
-    for (auto handle : m_markForDestruction)
-    {
-        if (get(handle) != nullptr)
-            destroyImediate(handle);
-    }
+    for (auto &handle : m_markForDestruction)
+        destroyImediate(handle);
 
     m_markForDestruction.clear();
 }

@@ -59,7 +59,7 @@ OctreeManager::OctreeManager() : m_nodes(nullptr), m_count(0), m_root(InvalidNod
 {
     resizeNodes(1024);
 
-    m_root = allocate(Vector3::zero, 64.0f);
+    m_root = allocate(Boundbox{Vector3{-64.0f, -64.0f, -64.0f}, Vector3{ 64.0f,  64.0f,  64.0f}});
 }
 
 OctreeManager::~OctreeManager()
@@ -82,21 +82,27 @@ void OctreeManager::expandRoot(const Vector3& point)
 
     OctreeNode* oldNode = (OctreeNode*)m_nodes->vector + oldRoot;
 
-    int x = point.x >= oldNode->position.x ? 1 : 0;
-    int y = point.y >= oldNode->position.y ? 1 : 0;
-    int z = point.z >= oldNode->position.z ? 1 : 0;
+    Vector3 center = Math::Center(oldNode->boundary);
+
+    int x = point.x >= center.x ? 1 : 0;
+    int y = point.y >= center.y ? 1 : 0;
+    int z = point.z >= center.z ? 1 : 0;
 
     int childIndex = (x << 2) | (y << 1) | z;
 
-    float oldR = oldNode->radius;
-    float newR = oldR * 2.0f;
+    float oldR = (oldNode->boundary.max.x - oldNode->boundary.min.x) * 0.5f;
+    float halfSize = oldR * 2.0f;
 
-    Vector3 newCenter = oldNode->position;
+    Vector3 newCenter = center;
     newCenter.x += (x ? 1 : -1) * oldR;
     newCenter.y += (y ? 1 : -1) * oldR;
     newCenter.z += (z ? 1 : -1) * oldR;
 
-    NodeID newRoot = allocate(newCenter, newR);
+    Boundbox rootBounds;
+    rootBounds.min = newCenter - Vector3{halfSize, halfSize, halfSize};
+    rootBounds.max = newCenter + Vector3{halfSize, halfSize, halfSize};
+
+    NodeID newRoot = allocate(rootBounds);
     OctreeNode* root = (OctreeNode*)m_nodes->vector + newRoot;
 
     root->divided = true;
@@ -140,7 +146,7 @@ NodeID OctreeManager::insert(NodeID id, NodeData data)
 
     OctreeNode *node = ((OctreeNode*)m_nodes->vector) + id;
 
-    float radius = node->radius;
+    float radius = Math::Area(node->boundary);
 
     if (!node->divided && node->count < MAX_OBJECT_IN_NODE)
     {
@@ -321,16 +327,10 @@ void OctreeManager::render_node(NodeID id)
 
     OctreeNode &node = nodes[id];
 
-    Vector3 position = node.position;
-    float radius = node.radius;
-
-    Vector3 min = position - Vector3{radius, radius, radius};
-    Vector3 max = position + Vector3{radius, radius, radius};
-
-    if (!Frustum::IsCubeInFrustumAABB(min, max))
+    if (!Frustum::IsCubeInFrustumAABB(node.boundary.min, node.boundary.max))
         return;
 
-    drawWireCube(node.position, node.radius);
+    drawWireCube(node.boundary);
 
     if (node.divided)
     {
@@ -339,40 +339,40 @@ void OctreeManager::render_node(NodeID id)
     }
 }
 
-void OctreeManager::drawWireCube(const Vector3 &center, float size)
+void OctreeManager::drawWireCube(const Boundbox& b)
 {
-    float half = size;
+    Vector3 min = b.min;
+    Vector3 max = b.max;
 
-    // 8 vértices do cubo
-    Vector3 v[8] = {
-        center + Vector3{-half, -half, -half},
-        center + Vector3{ half, -half, -half},
-        center + Vector3{ half,  half, -half},
-        center + Vector3{-half,  half, -half},
-        center + Vector3{-half, -half,  half},
-        center + Vector3{ half, -half,  half},
-        center + Vector3{ half,  half,  half},
-        center + Vector3{-half,  half,  half}
+    Vector3 points[8] {
+        {min.x, min.y, min.z},
+        {max.x, min.y, min.z},
+        {max.x, max.y, min.z},
+        {min.x, max.y, min.z},
+ 
+        {min.x, min.y, max.z},
+        {max.x, min.y, max.z},
+        {max.x, max.y, max.z},
+        {min.x, max.y, max.z}
     };
 
-    // Linhas do cubo (12 arestas)
-    DebugDraw::DrawLine(v[0], v[1]);
-    DebugDraw::DrawLine(v[1], v[2]);
-    DebugDraw::DrawLine(v[2], v[3]);
-    DebugDraw::DrawLine(v[3], v[0]);
+    DebugDraw::DrawLine(points[0], points[1]);
+    DebugDraw::DrawLine(points[1], points[2]);
+    DebugDraw::DrawLine(points[2], points[3]);
+    DebugDraw::DrawLine(points[3], points[0]);
 
-    DebugDraw::DrawLine(v[4], v[5]);
-    DebugDraw::DrawLine(v[5], v[6]);
-    DebugDraw::DrawLine(v[6], v[7]);
-    DebugDraw::DrawLine(v[7], v[4]);
+    DebugDraw::DrawLine(points[4], points[5]);
+    DebugDraw::DrawLine(points[5], points[6]);
+    DebugDraw::DrawLine(points[6], points[7]);
+    DebugDraw::DrawLine(points[7], points[4]);
 
-    DebugDraw::DrawLine(v[0], v[4]);
-    DebugDraw::DrawLine(v[1], v[5]);
-    DebugDraw::DrawLine(v[2], v[6]);
-    DebugDraw::DrawLine(v[3], v[7]);
+    DebugDraw::DrawLine(points[0], points[4]);
+    DebugDraw::DrawLine(points[1], points[5]);
+    DebugDraw::DrawLine(points[2], points[6]);
+    DebugDraw::DrawLine(points[3], points[7]);
 }
 
-NodeID OctreeManager::allocate(const Vector3 &position, float radius, NodeID parent)
+NodeID OctreeManager::allocate(const Boundbox& boundary, NodeID parent)
 {
     if (m_freeID == InvalidNode)
         resizeNodes(1024);
@@ -386,8 +386,7 @@ NodeID OctreeManager::allocate(const Vector3 &position, float radius, NodeID par
     node.next = InvalidNode;
     node.divided = false;
     node.count = 0;
-    node.position = position;
-    node.radius = radius;
+    node.boundary = boundary;
 
     m_count++;
 
@@ -399,23 +398,22 @@ void OctreeManager::subdivide(NodeID id)
     OctreeNode& node = ((OctreeNode*)m_nodes->vector)[id];
     node.divided = true;
 
-    Vector3 c = node.position;
-    float r = node.radius * 0.5f;
-
-    Vector3 centers[8] = {
-        {c.x - r, c.y - r, c.z - r},
-        {c.x + r, c.y - r, c.z - r},
-        {c.x - r, c.y + r, c.z - r},
-        {c.x + r, c.y + r, c.z - r},
-        {c.x - r, c.y - r, c.z + r},
-        {c.x + r, c.y - r, c.z + r},
-        {c.x - r, c.y + r, c.z + r},
-        {c.x + r, c.y + r, c.z + r},
-    };
+    Vector3 min = node.boundary.min;
+    Vector3 max = node.boundary.max;
 
     for (int i = 0; i < 8; ++i)
     {
-        NodeID child = allocate(centers[i], r, id);
+        Boundbox childBounds;
+        childBounds.min.x = (i & 4) ? (min.x + (max.x - min.x) * 0.5f) : min.x;
+        childBounds.max.x = (i & 4) ? max.x : (min.x + (max.x - min.x) * 0.5f);
+
+        childBounds.min.y = (i & 2) ? (min.y + (max.y - min.y) * 0.5f) : min.y;
+        childBounds.max.y = (i & 2) ? max.y : (min.y + (max.y - min.y) * 0.5f);
+
+        childBounds.min.z = (i & 1) ? (min.z + (max.z - min.z) * 0.5f) : min.z;
+        childBounds.max.z = (i & 1) ? max.z : (min.z + (max.z - min.z) * 0.5f);
+
+        NodeID child = allocate(childBounds, id);
         emplace(id, child);
     }
 }
@@ -474,8 +472,8 @@ bool OctreeManager::contains(NodeID id, const Vector3 &p)
 {
     OctreeNode &n = ((OctreeNode*)m_nodes->vector)[id];
 
-    Vector3 min = n.position - Vector3{n.radius, n.radius, n.radius};
-    Vector3 max = n.position + Vector3{n.radius, n.radius, n.radius};
+    Vector3 min = n.boundary.min;
+    Vector3 max = n.boundary.max;
 
     return p.x >= min.x && p.x < max.x &&
            p.y >= min.y && p.y < max.y &&

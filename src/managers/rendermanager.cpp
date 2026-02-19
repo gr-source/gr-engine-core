@@ -5,6 +5,7 @@
 
 #include "gr-base/core/debugdraw.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
+#include "gr-base/core/status.hpp"
 #include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/managers/bvhtreemanager.hpp"
 #include "gr-base/managers/octreemanager.hpp"
@@ -130,6 +131,17 @@ void RenderManager::insert(GameObjectHandle gameObjectID)
             vector[i] = GetBatchID(boundbox, meshes[i], materials[i]);
     }
 
+    auto matrix = transform->getGlobalMatrix();
+
+    Vector4 min = matrix * Vector4{boundbox.min.x, boundbox.min.y, boundbox.min.z, 1.0f};
+    Vector4 max = matrix * Vector4{boundbox.max.x, boundbox.max.y, boundbox.max.z, 1.0f};
+
+    boundbox = Boundbox{Vector3{min.x, min.y, min.z}, Vector3{max.x, max.y, max.z}};
+
+    Vector3 scale = transform->getLocalScale();
+
+    // std::cout << gameObject->getName() << ": " << scale.x << " " << scale.y << " " << scale.z << std::endl;
+
     NodeData data{gameObjectID, batchIDS, point, batchPerLOD};
 
     NodeID nodeID = InvalidID;
@@ -227,13 +239,7 @@ void RenderManager::preRender(const Camera *camera)
 
     OctreeManager::Foreach([camera = std::forward<const Camera*>(camera)](OctreeNode* node)
     {
-        Vector3 position = node->position;
-        float radius = node->radius;
-
-        Vector3 min = position - Vector3{radius, radius, radius};
-        Vector3 max = position + Vector3{radius, radius, radius};
-
-        if (!Frustum::IsCubeInFrustumAABB(min, max))
+        if (!Frustum::IsCubeInFrustumAABB(node->boundary.min, node->boundary.max))
             return true;
 
         auto cameraTransform = camera->GetGameObject()->GetTransform();
@@ -284,6 +290,7 @@ void RenderManager::preRender(const Camera *camera)
         return false;
     });
 
+    AsyncBVHTree(camera);
 
     // std::cout << "=====" << std::endl;
     BVHTreeManager::For_each([camera = std::forward<const Camera*>(camera)](NodeID id, BVHNode* node)
@@ -296,68 +303,10 @@ void RenderManager::preRender(const Camera *camera)
 
                     auto transform = gameObject->GetTransform();
 
-                    if (transform->isDirty)
-                    {
-                        auto matrix = transform->getGlobalMatrix();
-
-                        auto boundary = node->localBoundary;
-
-                        Vector4 min = matrix * Vector4{boundary.min.x, boundary.min.y, boundary.min.z, 1.0f};
-                        Vector4 max = matrix * Vector4{boundary.max.x, boundary.max.y, boundary.max.z, 1.0f};
-
-                        node->boundary = Boundbox{Vector3{min.x, min.y, min.z}, Vector3{max.x, max.y, max.z}};
-
-                        BVHTreeManager::SyncHeirarchy(node->parent);
-
-                        transform->isDirty = false;
-
-                        return true;
-                    }
-                }
-                return false;
-            });
-
-
-
-
-
-    BVHTreeManager::For_each([camera = std::forward<const Camera*>(camera)](NodeID id, BVHNode* node)
-            {
-                if (node->isLeaf())
-                {
-                    NodeData data = *static_cast<NodeData*>(node->data);
-
-                    auto gameObject = GameObject::Get(data.gameObjectID);
-
-                    auto transform = gameObject->GetTransform();
-
-                    /*
-                    if (transform->isDirty)
-                    {
-                        auto matrix = transform->getGlobalMatrix();
-
-                        auto boundary = node->localBoundary;
-
-                        Vector4 min = matrix * Vector4{boundary.min.x, boundary.min.y, boundary.min.z, 1.0f};
-                        Vector4 max = matrix * Vector4{boundary.max.x, boundary.max.y, boundary.max.z, 1.0f};
-
-                        node->boundary = Boundbox{Vector3{min.x, min.y, min.z}, Vector3{max.x, max.y, max.z}};
-
-                        BVHTreeManager::SyncHeirarchy(node->parent);
-
-                        transform->isDirty = false;
-
-                        // std::cout << gameObject->getName() << ": dirst" << std::endl;
-                        return true;
-                    }
-                    */
-
                     auto boundary = node->boundary;
 
                     if (!Frustum::IsCubeInFrustumAABB(boundary.min, boundary.max))
                         return true;
-
-                    // std::cout << gameObject->getName() << ": render" << std::endl;
 
                     auto cameraTransform = camera->GetGameObject()->GetTransform();
 
@@ -404,8 +353,54 @@ void RenderManager::preRender(const Camera *camera)
             });
 }
 
+void RenderManager::AsyncBVHTree(const Camera* camera)
+{
+    std::vector<NodeID> nodes;
+    BVHTreeManager::For_each([&](NodeID id, BVHNode* node)
+    {
+        if (node->isLeaf())
+        {
+            NodeData data = *static_cast<NodeData*>(node->data);
+
+            auto gameObject = GameObject::Get(data.gameObjectID);
+
+            auto transform = gameObject->GetTransform();
+
+            if (transform->isDirty)
+            {
+                auto matrix = transform->getGlobalMatrix();
+
+                auto boundary = node->localBoundary;
+
+                Vector4 min = matrix * Vector4{boundary.min.x, boundary.min.y, boundary.min.z, 1.0f};
+                Vector4 max = matrix * Vector4{boundary.max.x, boundary.max.y, boundary.max.z, 1.0f};
+
+                node->boundary = Boundbox{Vector3{min.x, min.y, min.z}, Vector3{max.x, max.y, max.z}};
+
+                nodes.push_back(node->parent);
+
+                transform->isDirty = false;
+                return true;
+            }
+        }
+        return false;
+    });
+
+    for (auto node : nodes)
+        BVHTreeManager::SyncHeirarchy(node);
+
+
+    if (!nodes.empty())
+        AsyncBVHTree(camera);
+
+    // nodes.clear();
+}
+
 void RenderManager::render()
 {
+    Status::BatchDrawCallCount = 0;
+    Status::BatchRenderCount = 0;
+
     BatchingManager::Render();
 }
 

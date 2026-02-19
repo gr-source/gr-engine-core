@@ -41,9 +41,7 @@ typedef struct OctreeNode
 
     uint8_t count;
 
-    Vector3 position;
-
-    float radius;
+    Boundbox boundary;
 } OctreeNode;
 
 class OctreeManager
@@ -99,9 +97,9 @@ private:
 
     void render_node(NodeID id);
 
-    void drawWireCube(const Vector3 &center, float size);
+    void drawWireCube(const Boundbox& boundary);
 
-    NodeID allocate(const Vector3 &position, float radius, NodeID parent = InvalidNode);
+    NodeID allocate(const Boundbox& boundary, NodeID parent = InvalidNode);
 
     void subdivide(NodeID id);
 

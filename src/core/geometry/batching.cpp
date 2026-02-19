@@ -1,5 +1,6 @@
 #include "gr-base/core/geometry/batching.hpp"
 
+#include "gr-base/core/status.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
 #include <gr-render/gl.h>
@@ -96,6 +97,9 @@ void Batching::render()
 
         glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
     }
+
+    Status::BatchDrawCallCount++;
+    Status::BatchRenderCount += instances.size();
     
     glBindVertexArray(0);
 

@@ -48,6 +48,8 @@ private:
 
     void preRender(const Camera *camera);
 
+    void AsyncBVHTree(const Camera* camera);
+
     void foreach_bhv(BVHNode* node);
 
     void render();
