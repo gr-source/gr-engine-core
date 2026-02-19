@@ -17,11 +17,7 @@ public:
 
     static GameObject* Get(GameObjectHandle handle);
 
-    static void DestroyImediate(GameObject* gameObject);
-
     static void DestroyImediate(GameObjectHandle gameObjectID);
-
-    static void Destroy(GameObject* gameObject);
 
     static void Destroy(GameObjectHandle gameObjectID);
 

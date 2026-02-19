@@ -131,26 +131,7 @@ EntityID Entity::getCacheID() const
 
 #include "gr-base/script/transform.hpp"
 
-// protected
-void Entity::Init()
-{
-    for (auto& hash : GetHashes())
-    {
-        auto behavior = BehaviorStorage::GetComponent(hash, GetID(hash));
-        behavior->Init();
-    }
-
-    auto transform = getComponent<Transform>();
-
-    for (auto& childID : transform->getChildren())
-    {
-        auto gameObject = GameObject::Get(childID);
-
-        gameObject->Init();
-    }
-}
-
-void Entity::Start()
+void Entity::CallStart()
 {
     for (auto& hash : GetHashes())
     {
@@ -164,7 +145,26 @@ void Entity::Start()
     {
         auto gameObject = GameObject::Get(childID);
 
-        gameObject->Start();
+        gameObject->CallStart();
+    }
+}
+
+// protected
+void Entity::CallDestroy()
+{
+    for (auto& hash : GetHashes())
+    {
+        auto behavior = BehaviorStorage::GetComponent(hash, GetID(hash));
+        behavior->Destroy();
+    }
+
+    auto transform = getComponent<Transform>();
+
+    for (auto& childID : transform->getChildren())
+    {
+        auto gameObject = GameObject::Get(childID);
+
+        gameObject->CallDestroy();
     }
 }
 

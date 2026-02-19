@@ -23,14 +23,6 @@
 Rigidbody::Rigidbody() : m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f)
 {}
 
-Rigidbody::~Rigidbody()
-{
-    if (!m_body)
-        return;
-
-    PhysicsScene::RemoveRigidbody(m_body.get());
-}
-
 void Rigidbody::Init()
 {
     m_transform = GetComponent<Transform>();
@@ -82,6 +74,16 @@ void Rigidbody::Start()
     PhysicsScene::AddRigidbody(m_body.get());
 
     bCanEnableUpdate = true;
+}
+
+void Rigidbody::Destroy()
+{
+    if (m_body == nullptr)
+        return;
+
+    auto collider = GetComponent<Collider>();
+    if (collider != nullptr)
+        PhysicsScene::RemoveRigidbody({m_body, collider->shape});
 }
 
 void Rigidbody::Update()

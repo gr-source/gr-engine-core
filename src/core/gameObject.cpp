@@ -25,19 +25,9 @@ GameObject* GameObject::Get(GameObjectHandle handle)
     return GameObjectManager::Get(handle);
 }
 
-void GameObject::DestroyImediate(GameObject* gameObject)
-{
-    GameObjectManager::DestroyImediate(gameObject->getCacheID());
-}
-
 void GameObject::DestroyImediate(GameObjectHandle gameObjectID)
 {
     GameObjectManager::DestroyImediate(gameObjectID);
-}
-
-void GameObject::Destroy(GameObject* gameObject)
-{
-    GameObjectManager::Destroy(gameObject->getCacheID());
 }
 
 void GameObject::Destroy(GameObjectHandle gameObjectID)
@@ -54,9 +44,7 @@ GameObject::GameObject(GameObjectHandle id) : Entity(id), m_name("noname"), m_sc
 GameObject::~GameObject()
 {
     for (auto &hash : GetHashes())
-    {
         BehaviorStorage::Deallocate(hash, GetID(hash));
-    }
 }
 
 std::string GameObject::getName() const

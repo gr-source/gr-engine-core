@@ -108,7 +108,7 @@ GameObjectHandle GameObjectManager::instantiate(GameObjectHandle other)
         gameObject->SetScene(scene);
 
         if (scene->bRunning)
-            gameObject->Start();
+            gameObject->CallStart();
     }
 
     return handle;
@@ -167,6 +167,7 @@ void GameObjectManager::destroyImediate(GameObjectHandle handle)
     uint32_t removeIndex = slot.denseIndex;
 
     auto& gameObject = wrapper[removeIndex].gameObject;
+    gameObject.CallDestroy();
 
     auto scene = gameObject.GetScene();
     if (scene != nullptr)

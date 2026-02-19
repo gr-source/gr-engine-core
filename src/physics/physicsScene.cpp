@@ -7,7 +7,7 @@ void PhysicsScene::AddRigidbody(btRigidBody* body)
     GetInstance().addRigidbody(body);
 }
 
-void PhysicsScene::RemoveRigidbody(btRigidBody* body)
+void PhysicsScene::RemoveRigidbody(PendingRemoval body)
 {
     GetInstance().removeRigidbody(body);
 }
@@ -73,15 +73,19 @@ void PhysicsScene::addRigidbody(btRigidBody *body)
     dynamicsWorld->addRigidBody(body);
 }
 
-void PhysicsScene::removeRigidbody(btRigidBody *body)
+void PhysicsScene::removeRigidbody(PendingRemoval body)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
-    dynamicsWorld->removeRigidBody(body);
+    m_bodyToRemove.push_back(body);
 }
 
 void PhysicsScene::update(float dt)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
+    for (auto& body : m_bodyToRemove)
+        dynamicsWorld->removeRigidBody(body.body.get());
+    m_bodyToRemove.clear();
+
     dynamicsWorld->stepSimulation(dt);
 }
 

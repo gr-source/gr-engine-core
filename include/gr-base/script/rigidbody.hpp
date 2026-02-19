@@ -15,11 +15,12 @@ class Rigidbody : public BehaviorImpl<Rigidbody>
     CLASS_FUNCTIONS
 public:
     Rigidbody();
-    ~Rigidbody() override;
 
     void Init() override;
 
     void Start() override;
+
+    void Destroy() override;
 
     void Update() override;
 
