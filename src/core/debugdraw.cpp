@@ -29,6 +29,11 @@ void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end, const Color &
     return s_DebugDraw->drawLine(start, end, startColor, endColor);
 }
 
+void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end, const Color &color)
+{
+    return s_DebugDraw->drawLine(start, end, color, color);
+}
+
 void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end)
 {
     return s_DebugDraw->drawLine(start, end, Color::white, Color::blue);

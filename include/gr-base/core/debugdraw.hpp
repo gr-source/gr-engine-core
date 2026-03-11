@@ -17,6 +17,8 @@ public:
 
     static void DrawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor);
 
+    static void DrawLine(const Vector3 &start, const Vector3 &end, const Color& color);
+
     static void DrawLine(const Vector3 &start, const Vector3 &end);
 
     static void Render(const Camera *camera);

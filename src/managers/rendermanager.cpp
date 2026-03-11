@@ -402,7 +402,7 @@ void RenderManager::render()
     Status::BatchDrawCallCount = 0;
     Status::BatchRenderCount = 0;
 
-    // BatchingManager::Render();
+    BatchingManager::Render();
 }
 
 void RenderManager::posRender()
