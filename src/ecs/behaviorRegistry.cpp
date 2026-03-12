@@ -45,15 +45,21 @@ BehaviorRegistry::~BehaviorRegistry()
         array_free(m_infos);
 }
 
+#include <iostream>
+
 void BehaviorRegistry::registry(ComponentInfo* info)
 {
     size_t poolID = info->hash % COMPONENT_TABLE_SIZE;
     if (m_bitmask.test(poolID))
     {
-        ComponentInfo& dest = ((ComponentInfo*)m_infos->vector)[poolID];
+        ComponentInfo *dest = ((ComponentInfo*)m_infos->vector) + poolID;
 
-        if (replace(&dest, info))
-            return;
+        if (reconfigure(dest, info))
+        {
+            dest->name = info->name;
+
+            BehaviorStorage::NotifyUpdate(info->hash, info);
+        }
         return;
     }
     m_bitmask.set(poolID, true);
@@ -85,26 +91,37 @@ ComponentInfo* BehaviorRegistry::get(ComponentHash hash)
     return nullptr;
 }
 
-bool BehaviorRegistry::replace(ComponentInfo* dest, const ComponentInfo* src)
+bool BehaviorRegistry::reconfigure(ComponentInfo* dest, const ComponentInfo* src)
 {
     dest->name = src->name;
     dest->parent = src->parent;
 
-    dest->getwrapperbehavior = src->getwrapperbehavior;
-    dest->getwrappernext = src->getwrappernext;
+    // dest->getwrapperbehavior = src->getwrapperbehavior;
+    // dest->getwrappernext = src->getwrappernext;
+    //
+    // dest->constructor = src->constructor;
+    // dest->destructor = src->destructor;
 
-    dest->constructor = src->constructor;
-    dest->destructor = src->destructor;
-
-    dest->start = src->start;
-    dest->update = src->update;
-    dest->destroy = src->destroy;
-
-    if (dest->size != src->size)
+    if (
+            dest->starthash != src->starthash ||
+            dest->updatehash != src->updatehash ||
+            dest->destroyhash != src->destroyhash
+        )
     {
-        BehaviorStorage::RequestResize(dest->hash, src->size);
+        return true;
+        // std::cout << "Request: " << src->name << " reinstance" << std::endl;
+    }
 
-        dest->size = src->size;
+    // dest->start = src->start;
+    // dest->update = src->update;
+    // dest->destroy = src->destroy;
+
+    if (dest->stride != src->stride)
+    {
+        // std::cout << "Request: " << dest->name << " chunk resize" << std::endl;
+        // BehaviorStorage::RequestResize(dest->hash, src->size);
+
+        // dest->size = src->size;
         return true;
     }
 

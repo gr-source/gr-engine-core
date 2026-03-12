@@ -41,7 +41,7 @@ public:
 
     static Behavior* GetComponent(uint64_t hash, ComponentHandle id);
 
-    static void RequestResize(uint64_t hash, size_t stride);
+    static void NotifyUpdate(ComponentHash hash, ComponentInfo* src);
 
     static void Start();
 
@@ -55,7 +55,11 @@ private:
 
     array* m_storage;
 
-    void requestResize(uint64_t hash, size_t stride);
+    void notifyUpdate(ComponentHash hash, ComponentInfo* src);
+
+    void reallocComponentChunk(ComponentInfo* info, size_t newStride);
+
+    void restoreVTable(ComponentInfo* info);
 
     ComponentHandle allocate(uint64_t hash, ComponentHandle source);
 
@@ -70,8 +74,6 @@ private:
     void start();
 
     void update();
-
-    void destroy();
 };
 
 template <typename T>

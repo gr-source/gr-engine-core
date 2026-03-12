@@ -39,7 +39,7 @@ private:
 
     ComponentInfo* get(ComponentHash hash);
 
-    bool replace(ComponentInfo* dest, const ComponentInfo* src);
+    bool reconfigure(ComponentInfo* dest, const ComponentInfo* src);
 
     void resizeComponentInfo();
 
@@ -60,7 +60,7 @@ template <typename T>
 inline ComponentInfo BehaviorRegistry::Registry(const char* name, ComponentHash hash, ComponentHash parent)
 {
     ComponentInfo info;
-    info.size = sizeof(struct ComponentWrapper<T>);
+    info.stride = sizeof(struct ComponentWrapper<T>);
     info.name = name;
     info.hash = hash;
     info.parent = parent;

@@ -12,28 +12,29 @@
 #include <algorithm>
 #include <iostream>
 
+RenderSystem* RenderSystem::s_RenderSystem = nullptr;
+
+void RenderSystem::SetInstance(RenderSystem *renderSystem)
+{
+    s_RenderSystem = renderSystem;
+}
+
 void RenderSystem::Insert(GameObjectHandle handle)
 {
-    GetInstance().insert(handle);
+    s_RenderSystem->insert(handle);
 }
 
 void RenderSystem::Remove(GameObjectHandle handle)
 {
-    GetInstance().remove(handle);
+    s_RenderSystem->remove(handle);
 }
 
 void RenderSystem::Update()
 {
-    GetInstance().update();
+    s_RenderSystem->update();
 }
 
 // private
-RenderSystem& RenderSystem::GetInstance()
-{
-    static RenderSystem s_RenderSystem;
-    return s_RenderSystem;
-}
-
 void RenderSystem::insert(GameObjectHandle handle)
 {
     m_markToRender.push_back(handle);

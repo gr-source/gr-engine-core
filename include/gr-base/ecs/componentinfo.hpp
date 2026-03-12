@@ -15,7 +15,7 @@ typedef void (*MethodPointer)();
 typedef struct ComponentInfo
 {
     const char* name;
-    size_t size;
+    size_t stride;
     ComponentHash hash;
     ComponentHash parent;
     size_t offset;

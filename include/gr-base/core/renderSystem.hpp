@@ -9,6 +9,8 @@
 class RenderSystem
 {
 public:
+    static void SetInstance(RenderSystem* renderSystem);
+
     static void Insert(GameObjectHandle handle);
 
     static void Remove(GameObjectHandle handle);
@@ -16,7 +18,7 @@ public:
     static void Update();
 
 private:
-    static RenderSystem& GetInstance();
+    static RenderSystem* s_RenderSystem;
 
     std::vector<GameObjectHandle> m_markToRender;
 
