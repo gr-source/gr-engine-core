@@ -5,7 +5,7 @@
 class RenderTarget
 {
 public:
-    RenderTarget(std::uint32_t width, std::uint32_t height);
+    RenderTarget(int width, int height);
     ~RenderTarget();
 
     void init();
@@ -18,22 +18,22 @@ public:
 
     void unbind();
 
-    void resize(std::uint32_t width, std::uint32_t height);
+    void resize(int width, int height);
 
-    std::uint32_t getTextureID() const;
+    uint32_t GetTextureID() const;
 
 private:
-    std::uint32_t textureColor;
+    uint32_t textureColor;
 
-    std::uint32_t textureDepth;
+    uint32_t textureDepth;
 
-    std::uint32_t framebuffer;
+    uint32_t framebuffer;
 
-    std::uint32_t renderbufferDepth;
+    uint32_t renderbufferDepth;
 
-    std::uint32_t width;
+    int m_width;
 
-    std::uint32_t height;
+    int m_height;
 
     bool bvalid;
 };

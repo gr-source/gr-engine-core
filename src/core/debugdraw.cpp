@@ -44,9 +44,9 @@ void DebugDraw::Render(const Camera *camera)
     return s_DebugDraw->render(camera);
 }
 
-void DebugDraw::PosRender()
+void DebugDraw::Clear()
 {
-    return s_DebugDraw->posRender();
+    return s_DebugDraw->clear();
 }
 
 // private
@@ -58,22 +58,25 @@ DebugDraw::~DebugDraw()
 
 void DebugDraw::drawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor)
 {
-    m_lines.push_back(Line3D{start, startColor});
-    m_lines.push_back(Line3D{end, endColor});
+    m_lines.push_back({start, startColor});
+    m_lines.push_back({end, endColor});
 }
 
 void DebugDraw::render(const Camera *camera)
 {
-    m_linerender.render(camera, m_lines.data(), m_lines.size());
+    if (m_linerender.m_shader != nullptr)
+        m_linerender.render(camera, m_lines.data(), m_lines.size());
 }
 
-void DebugDraw::posRender()
+void DebugDraw::clear()
 {
     m_lines.clear();
 }
 
+#include <gr-render/vertex_array.hpp>
+
 // LineRender
-DebugDraw::LineRender::LineRender() : m_vbo(grr::gVertexArray::CreateBuffer(BufferType::VBO)), m_vertexarray(std::make_shared<grr::gVertexArray>()), m_shader(nullptr)
+DebugDraw::LineRender::LineRender() : m_shader(nullptr)
 {
     ShaderParams params;
     params.base = gfile::get_data_directory("/assets/shader/line.glsl");
@@ -81,34 +84,35 @@ DebugDraw::LineRender::LineRender() : m_vbo(grr::gVertexArray::CreateBuffer(Buff
     params.type = ShaderType::LINE;
     params.name = "debug_line";
 
-    AssetsManager::LoadShaderAsync(params, [&](grr::gShader *shader){
+    AssetsManager::LoadShaderAsync(params, [&](grr::gShader *shader)
+            {
                 m_shader = shader;
             });
 
-    m_vertexarray->bind();
+    gr::buffer_layout layout = {
+        {gr::shader_data_type::Float3, "in_pos"},
+        {gr::shader_data_type::Float4, "in_color"}
+    };
 
-    grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::SetAttrib(0, 3, sizeof(Line3D), reinterpret_cast<const void *>(offsetof(Line3D, position)));
-    grr::gVertexArray::SetAttrib(1, 4, sizeof(Line3D), reinterpret_cast<const void *>(offsetof(Line3D, color)));
+    m_buffer = gr::vertex_buffer::create(nullptr, 256 * sizeof(Line3D), gr::buffer_usage::dynamic_draw);
+    m_buffer->SetLayout(layout);
+
+    m_vertex_array = gr::vertex_array::create();
+    m_vertex_array->AddVertexBuffer(m_buffer);
 }
 
 void DebugDraw::LineRender::render(const Camera *camera, const Line3D *data, std::size_t size)
 {
-    if (m_shader == nullptr || !m_shader->isValid())
-        return;
-
     m_shader->bind();
     m_shader->set_uniform("u_projection", camera->getPerspesctive());
     m_shader->set_uniform("u_view", camera->getViewmatrix());
-    // m_shader->set_uniform("u_model", Matrix4x4::identityMatrix);
 
-    m_vertexarray->bind();
-
-    grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::UpdateResizeBuffer(size * sizeof(Line3D), BufferUsage::DYNAMIC);
-    grr::gVertexArray::SetBufferUpdate(0, size * sizeof(Line3D), (const void *)data);
+    m_buffer->Bind();
+    m_buffer->SetData(data, size * sizeof(Line3D));
 
     m_shader->flush();
+
+    m_vertex_array->Bind();
 
     grr::gVertexArray::DrawArrays(PrimitiveType::LINES, size);
 }

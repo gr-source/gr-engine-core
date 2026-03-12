@@ -3,17 +3,20 @@
 #include "gr-base/core/status.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
+#include <cassert>
 #include <gr-render/gl.h>
 #include <gr-render/gVertexArray.h>
+#include <gr-render/index_buffer.hpp>
 
-Batching::Batching() : vao(0) {}
+Batching::Batching() : m_vertexarray(nullptr)
+{}
 
 Batching::~Batching()
 {
-    glDeleteVertexArrays(1, &vao);
-    glDeleteBuffers(1, &vbo);
-    glDeleteBuffers(1, &ebo);
-    glDeleteBuffers(1, &pbo);
+    // glDeleteVertexArrays(1, &vao);
+    // glDeleteBuffers(1, &vbo);
+    // glDeleteBuffers(1, &ebo);
+    // glDeleteBuffers(1, &pbo);
 }
 
 void Batching::insert(const Matrix4x4& matrix)
@@ -23,52 +26,47 @@ void Batching::insert(const Matrix4x4& matrix)
 
 void Batching::build(MeshID meshID, MaterialID materialID)
 {
-    this->materialID = materialID;
+    Mesh* mesh = AssetsManager::GetMesh(meshID);
 
-    Mesh* data = AssetsManager::GetMesh(meshID);
-    this->vertexCount = data->getIndices().size();
+    auto vertices = mesh->getVertices();
+    auto indices = mesh->getIndices();
 
-    if (vao == 0)
-    {
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &ebo);
-        glGenBuffers(1, &pbo);
-    }
+    gr::buffer_layout layout = {
+        {gr::shader_data_type::Float3, "in_position"},
+        {gr::shader_data_type::Float3, "in_normal"},
+        {gr::shader_data_type::Float2, "in_texCoord"},
+    };
 
-    glBindVertexArray(vao);
+    auto vbo = gr::vertex_buffer::create(vertices.data(), vertices.size() * sizeof(Vertex3D), gr::buffer_usage::static_draw);
+    vbo->SetLayout(layout);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, data->getVertices().size() * sizeof(Vertex3D), data->getVertices().data(), GL_STATIC_DRAW);
+    gr::buffer_layout instanceLayout = {
+        { gr::shader_data_type::Float4, "a_InstanceMatrixRow0", true },
+        { gr::shader_data_type::Float4, "a_InstanceMatrixRow1", true },
+        { gr::shader_data_type::Float4, "a_InstanceMatrixRow2", true },
+        { gr::shader_data_type::Float4, "a_InstanceMatrixRow3", true }
+    };
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, data->getIndices().size() * sizeof(uint32_t), data->getIndices().data(), GL_STATIC_DRAW);
+    m_pbo = gr::vertex_buffer::create(nullptr, 1024 * sizeof(Matrix4x4), gr::buffer_usage::dynamic_draw);
+    m_pbo->SetLayout(instanceLayout);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), (void*)offsetof(Vertex3D, position));
-    
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), (void*)offsetof(Vertex3D, normal));
+    auto ibo = gr::index_buffer::create(indices.data(), indices.size() * sizeof(uint32_t));
 
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), (void*)offsetof(Vertex3D, texCoords));
+    m_vertexarray = gr::vertex_array::create();
+    m_vertexarray->AddVertexBuffer(vbo);
+    m_vertexarray->AddVertexBuffer(m_pbo);
+    m_vertexarray->SetIndexBuffer(ibo);
 
-    glBindBuffer(GL_ARRAY_BUFFER, pbo);
-    for (int j=0;j<4;j++)
-    {
-        glEnableVertexAttribArray(6 + j);
-        glVertexAttribPointer(6 + j, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4x4), (void*)(uintptr_t)(j * sizeof(Vector4)));
-        glVertexAttribDivisor(6 + j, 1);
-    }
+    m_indexCount = indices.size();
 
-    glBindVertexArray(0);    
+    m_materialID = materialID;
 }
 
 void Batching::render()
 {
     bool isInstancing = instances.size() > 1;
 
-    auto material = AssetsManager::GetMaterial(materialID);
+    auto material = AssetsManager::GetMaterial(m_materialID);
     auto shader = material->GetShader(isInstancing);
 
     bool enable[10] = {false};
@@ -80,25 +78,24 @@ void Batching::render()
     shader->setUniform("u_texture", textureID);
     shader->setUniform("u_enable", enable);
 
-    glBindVertexArray(vao);
-
+    m_vertexarray->Bind();
     if (isInstancing)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, pbo);
-        glBufferData(GL_ARRAY_BUFFER, instances.size() * sizeof(Matrix4x4), instances.data(), GL_STATIC_DRAW);
-        
-        shader->flush();
-        glDrawElementsInstanced(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr, instances.size());
+        m_pbo->Bind();
+        m_pbo->SetData(instances.data(), instances.size() * sizeof(Matrix4x4));
+        m_pbo->Unbind();
 
+        shader->flush();
+        glDrawElementsInstanced(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr, instances.size());
     } else if (!instances.empty())
     {
         shader->setUniform("u_model", &instances[0]);
         shader->flush();
 
-        glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr);
     }
-    
-    glBindVertexArray(0);
+    shader->unbind();
+    m_vertexarray->Unbind();
 
     Status::BatchDrawCallCount++;
     Status::BatchRenderCount += instances.size();

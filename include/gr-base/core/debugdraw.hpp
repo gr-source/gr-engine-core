@@ -8,6 +8,8 @@
 #include <memory>
 #include <vector>
 
+#include <gr-render/vertex_array.hpp>
+
 class DebugDraw
 {
 public:
@@ -23,7 +25,7 @@ public:
 
     static void Render(const Camera *camera);
 
-    static void PosRender();
+    static void Clear();
 
 private:
     static DebugDraw *s_DebugDraw;
@@ -38,9 +40,9 @@ private:
     class LineRender
     {
     public:
-        std::shared_ptr<grr::gVertexArray> m_vertexarray;
+        std::shared_ptr<gr::vertex_array> m_vertex_array;
 
-        u32 m_vbo;
+        std::shared_ptr<gr::vertex_buffer> m_buffer;
 
         grr::gShader *m_shader;
 
@@ -60,7 +62,7 @@ private:
 
     void render(const Camera *camera);
 
-    void posRender();
+    void clear();
 };
 
 

@@ -13,6 +13,8 @@ public:
 
     void Init() override;
 
+    void Destroy() override;
+
     bool Serialize(Stream *stream) const override;
 
     bool Deserialize(Stream *stream) override;

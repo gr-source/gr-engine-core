@@ -261,34 +261,33 @@ static void AddFreeID(ComponentInfo* info, ComponentSparseSet* set, ComponentID 
 void BehaviorStorage::resize(ComponentInfo* info, ComponentSparseSet* set, size_t count)
 {
     size_t lastsize = set->dense != nullptr ? set->dense->length : 0;
-    size_t newsize = lastsize + count;
+    // size_t newsize = lastsize + count;
 
     if (lastsize > 0)
     {
-        auto newPool = array_create(newsize, info->size);
+        set->capacity *= 2;
+
+        auto newPool = array_create(set->capacity, info->size);
 
         uint8_t* lastComponentWrapper = (uint8_t*)set->dense->vector;
         uint8_t* newComponentWrapper = (uint8_t*)newPool->vector;
 
+        uint8_t *lastFreeList = lastComponentWrapper;
+        uint8_t *newFreeList = newComponentWrapper;
         for (size_t i=0;i<lastsize;i++)
         {
-            {
-                *(ComponentID*)(newComponentWrapper + (i * info->size)) = *(ComponentID*)(lastComponentWrapper + (i * info->size));
-            }
-            // Behavior* lastbehavior = (Behavior *)((lastComponentWrapper + (i * info->size)) + info->offset);
-            // Behavior* newbehavior = (Behavior *)((newComponentWrapper + (i * info->size)) + info->offset);
+            *(ComponentID*)(newFreeList) = *(ComponentID*)(lastFreeList);
 
-            // memcpy((void*)newbehavior, (void*)lastbehavior, info->size - info->offset);
-
-            // ((void(*)(Behavior*, const Behavior*))(info->constructor))(newbehavior, lastbehavior);
+            newFreeList += info->size;
+            lastFreeList += info->size;
         }
+        // for (size_t i=0;i<lastsize;i++)
+            // *(ComponentID*)(newComponentWrapper + (i * info->size)) = *(ComponentID*)(lastComponentWrapper + (i * info->size));
 
         for (size_t i=0;i<set->count;i++)
         {
             Behavior* lastbehavior = (Behavior *)((lastComponentWrapper + (i * info->size)) + info->offset);
             Behavior* newbehavior = (Behavior *)((newComponentWrapper + (i * info->size)) + info->offset);
-
-            // memcpy((void*)newbehavior, (void*)lastbehavior, info->size - info->offset);
 
             ((void(*)(Behavior*, const Behavior*))(info->constructor))(newbehavior, lastbehavior);
         }
@@ -296,22 +295,24 @@ void BehaviorStorage::resize(ComponentInfo* info, ComponentSparseSet* set, size_
         array_free(set->dense);
         set->dense = newPool;
 
-        auto slot = array_create(newsize, sizeof(ComponentSlot));
+        auto slot = array_create(set->capacity, sizeof(ComponentSlot));
         memcpy((void*)slot->vector, (void*)set->slot->vector, lastsize * sizeof(ComponentSlot));
 
         auto slots = (ComponentSlot*)slot->vector;
-        for (ComponentID i=lastsize;i<newsize;i++)
+        for (ComponentID i=lastsize;i<set->capacity;i++)
             slots[i] = {INVALID_COMPONENT_ID, 1, INVALID_COMPONENT_ID};
 
         array_free(set->slot);
         set->slot = slot;
     } else
     {
-        set->slot = array_create(newsize, sizeof(ComponentSlot));
-        set->dense = array_create(newsize, info->size);
+        set->capacity = 2;
+
+        set->slot = array_create(set->capacity, sizeof(ComponentSlot));
+        set->dense = array_create(set->capacity, info->size);
 
         ComponentSlot* slots = (ComponentSlot*)set->slot->vector;
-        for (ComponentID i=lastsize;i<newsize;i++)
+        for (ComponentID i=lastsize;i<set->capacity;i++)
             slots[i] = {INVALID_COMPONENT_ID, 1, INVALID_COMPONENT_ID};
     }
 

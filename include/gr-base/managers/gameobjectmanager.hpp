@@ -43,6 +43,8 @@ protected:
 
     std::mutex m_mutex;
 
+    size_t m_capacity;
+
     array* m_pool;
     array* m_slot;
 

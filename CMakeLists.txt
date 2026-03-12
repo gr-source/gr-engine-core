@@ -31,7 +31,9 @@ set(thread
 
 set(core
     src/core/mainthreaddispatcher.cpp
+    src/core/renderSystem.cpp
     src/core/rendertarget.cpp
+    src/core/renderer.cpp
     src/core/nameManager.cpp
     src/core/gameObject.cpp
     src/core/debugdraw.cpp

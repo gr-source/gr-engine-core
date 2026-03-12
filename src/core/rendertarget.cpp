@@ -2,7 +2,7 @@
 
 #include <gr-render/gl.h>
 
-RenderTarget::RenderTarget(std::uint32_t width, std::uint32_t height) : textureColor(0), textureDepth(0), framebuffer(0), width(width), height(height), renderbufferDepth(0), bvalid(false)
+RenderTarget::RenderTarget(int width, int height) : textureColor(0), textureDepth(0), framebuffer(0), m_width(width), m_height(height), renderbufferDepth(0), bvalid(false)
 {}
 
 void RenderTarget::init()
@@ -12,13 +12,13 @@ void RenderTarget::init()
 
     glGenTextures(1, &textureColor);
     glBindTexture(GL_TEXTURE_2D, textureColor);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glGenTextures(1, &textureDepth);
     glBindTexture(GL_TEXTURE_2D, textureDepth);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -83,7 +83,7 @@ RenderTarget::~RenderTarget()
 
 void RenderTarget::bind()
 {
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, m_width, m_height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 }
 
@@ -92,12 +92,12 @@ void RenderTarget::unbind()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void RenderTarget::resize(std::uint32_t w, std::uint32_t h)
+void RenderTarget::resize(int width, int height)
 {
-    if (width == w && height == h)
+    if (m_width == width && m_height == height)
         return;
-    width = w;
-    height = h;
+    m_width = width;
+    m_height = height;
 
     glBindTexture(GL_TEXTURE_2D, textureColor);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
@@ -106,7 +106,7 @@ void RenderTarget::resize(std::uint32_t w, std::uint32_t h)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 }
 
-std::uint32_t RenderTarget::getTextureID() const
+uint32_t RenderTarget::GetTextureID() const
 {
     return textureColor;
 }

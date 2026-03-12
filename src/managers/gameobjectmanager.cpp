@@ -72,18 +72,7 @@ size_t GameObjectManager::GetCount()
 
 // public
 GameObjectManager::GameObjectManager() : m_pool(nullptr), m_slot(nullptr), m_freeIDs(n32nill), m_count(0)
-{
-    /*
-    m_pool = array_create(1024, sizeof(GameObjectWrapper));
-    m_slot = array_create(1024, sizeof(GameObjectSlot));
-
-    GameObjectSlot* slots = (GameObjectSlot*)m_slot->vector;
-    for (int i=0;i<m_slot->length;i++)
-        slots[i] = {INVALID_COMPONENT_ID, 1, INVALID_COMPONENT_ID};
-
-    addFreeID(0);
-    */
-}
+{}
 
 GameObjectManager::~GameObjectManager()
 {
@@ -219,18 +208,21 @@ void GameObjectManager::destroy(GameObjectHandle handle)
 void GameObjectManager::realloc(uint32_t size)
 {
     uint32_t lastsize = m_pool != nullptr ? m_pool->length : 0;
-    uint32_t newsize = lastsize + size;
 
     if (m_pool == nullptr)
     {
-        m_pool = array_create(newsize, sizeof(GameObjectWrapper));
+        m_capacity = 1;
 
-        m_slot = array_create(newsize, sizeof(GameObjectSlot));
+        m_pool = array_create(m_capacity, sizeof(GameObjectWrapper));
+
+        m_slot = array_create(m_capacity, sizeof(GameObjectSlot));
     } else
     {
-        m_slot = array_resize(m_slot, newsize, sizeof(GameObjectSlot));
+        m_capacity *= 2;
 
-        array* newPool = array_create(newsize, sizeof(GameObjectWrapper));
+        m_slot = array_resize(m_slot, m_capacity, sizeof(GameObjectSlot));
+
+        array* newPool = array_create(m_capacity, sizeof(GameObjectWrapper));
 
         GameObjectWrapper* lastWrapperPool = (GameObjectWrapper*)m_pool->vector;
         GameObjectWrapper* newWrapperPool = (GameObjectWrapper*)newPool->vector;
@@ -254,41 +246,6 @@ void GameObjectManager::realloc(uint32_t size)
         slots[i] = {INVALID_COMPONENT_ID, 1, INVALID_COMPONENT_ID};
     
     addFreeID(lastsize);
-
-    /*
-    size_t lastsize = m_pool->length;
-    size_t newsize = lastsize + 1024;
-
-    // m_pool = array_resize(m_pool, newsize, sizeof(GameObjectWrapper));
-
-    auto newPool = array_create(newsize, sizeof(GameObjectWrapper));
-
-    GameObjectWrapper* oldWrapperPool = (GameObjectWrapper*)m_pool->vector;
-    GameObjectWrapper* newWrapperPool = (GameObjectWrapper*)newPool->vector;
-    for (size_t i=0;i<lastsize;i++)
-    {
-        GameObjectWrapper& oldwrapper = oldWrapperPool[i];
-        GameObjectWrapper& newwrapper = newWrapperPool[i];
-
-        // memcpy((void*)&newwrapper, (void*)&oldwrapper, sizeof(GameObjectWrapper));
-
-        newwrapper.slotID = oldwrapper.slotID;
-
-        new (&newwrapper.gameObject) GameObject(oldwrapper.gameObject);
-    }
-
-    array_free(m_pool);
-    m_pool = newPool;
-
-
-    m_slot = array_resize(m_slot, newsize, sizeof(GameObjectSlot));
-
-    GameObjectSlot* slots = (GameObjectSlot*)m_slot->vector;
-    for (int i=lastsize;i<m_slot->length;i++)
-        slots[i] = {INVALID_COMPONENT_ID, 1, INVALID_COMPONENT_ID};
-
-    addFreeID(lastsize);
-    */
 }
 
 void GameObjectManager::addFreeID(uint32_t start)
