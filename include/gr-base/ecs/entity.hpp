@@ -41,7 +41,17 @@ public:
     void CallStart();
 
     void CallDestroy();
-    
+
+    inline void SetIsPrefab(bool value)
+    {
+        m_bPrefab = value;
+    }
+
+    inline bool GetIsPrefab() const
+    {
+        return m_bPrefab;
+    }
+
 private:
     typedef struct ComponentLookup
     {
@@ -56,6 +66,8 @@ private:
     std::vector<uint64_t> m_activeHashes;
 
     EntityID m_id;
+
+    bool m_bPrefab;
 };
 
 template <typename T, typename... Args>

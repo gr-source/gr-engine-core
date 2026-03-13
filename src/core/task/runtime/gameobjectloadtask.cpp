@@ -101,6 +101,7 @@ GameObjectHandle GameObjectLoadTask::CreateFromCache(GameObjectCache* cache)
 
     auto gameObject = GameObject::Get(gameObjectID);
     gameObject->SetIsStatic(cache->IsStatic);
+    gameObject->SetIsPrefab(true);
 
     MemoryStream stream(cache->buffer.data(), cache->buffer.size());
     if (read_script_from_cache(gameObject, &stream) != 0)

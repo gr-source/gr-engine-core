@@ -11,7 +11,7 @@
 
 #include <cstdint>
 
-Entity::Entity(EntityID id) : m_id(id)
+Entity::Entity(EntityID id) : m_id(id), m_bPrefab(false)
 {}
 
 Behavior* Entity::addComponent(const char* name)
@@ -68,13 +68,8 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
 
     auto behavior = BehaviorStorage::GetComponent(hash, handle);
     behavior->entityID = m_id;
-    behavior->Init();
-
-    /*
-    auto scene = Scene::GetCurrent();
-    if (scene != nullptr && scene->bRunning)
-        MainThreadDispatcher::Add(Priority::LOW, &OnStart, hash, handle);
-    */
+    if (!m_bPrefab)
+        behavior->Init();
 
     return behavior;
 }
@@ -130,7 +125,6 @@ EntityID Entity::getCacheID() const
 }
 
 #include "gr-base/script/transform.hpp"
-
 void Entity::CallStart()
 {
     for (auto& hash : GetHashes())

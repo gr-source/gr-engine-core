@@ -165,7 +165,7 @@ void ChunkManager::unloadChunk(ChunkID id)
 
     free(chunk->name);
 
-    m_pool.deallocte(id);
+    m_pool.deallocate(id);
 }
 
 void ChunkManager::render(StreamChunk* chunk)

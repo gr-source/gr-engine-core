@@ -17,16 +17,10 @@
 
 typedef struct GameObjectWrapper
 {
-    uint32_t slotID;
+    uint32_t next;
+    uint32_t version;
     GameObject gameObject;
 } GameObjectWrapper;
-
-typedef struct GameObjectSlot
-{
-    uint32_t denseIndex;
-    uint32_t version;
-    uint32_t next;
-} GameObjectSlot;
 
 GameObjectManager* GameObjectManager::s_GameObjectManager = nullptr;
 
@@ -71,16 +65,13 @@ size_t GameObjectManager::GetCount()
 }
 
 // public
-GameObjectManager::GameObjectManager() : m_pool(nullptr), m_slot(nullptr), m_freeIDs(n32nill), m_count(0)
+GameObjectManager::GameObjectManager() : m_pool(nullptr), m_freeIDs(n32nill), m_count(0), m_capacity(0)
 {}
 
 GameObjectManager::~GameObjectManager()
 {
     if (m_pool != nullptr)
         array_free(m_pool);
-
-    if (m_slot != nullptr)
-        array_free(m_slot);
 }
 
 // private
@@ -99,11 +90,12 @@ GameObjectHandle GameObjectManager::instantiate(GameObjectHandle other)
         gameObject->Copy(other);
     }
 
+    auto gameObject = get(newGameObjectID);
+
     if (scene != nullptr)
     {
         scene->insert(newGameObjectID);
 
-        auto gameObject = get(newGameObjectID);
         gameObject->SetScene(scene);
 
         if (scene->bRunning)
@@ -116,22 +108,20 @@ GameObjectHandle GameObjectManager::instantiate(GameObjectHandle other)
 GameObjectHandle GameObjectManager::create(const std::string &name)
 {
     if (m_freeIDs == n32nill)
-        realloc(1024);
+        realloc();
 
-    uint32_t slotID = m_freeIDs;
-    m_freeIDs = ((GameObjectSlot*)m_slot->vector)[slotID].next;
+    uint32_t id = m_freeIDs;
 
-    GameObjectSlot& slot = ((GameObjectSlot*)m_slot->vector)[slotID];
-    slot.denseIndex = m_count++;
+    GameObjectWrapper* wrapper = (GameObjectWrapper*)m_pool->vector + id;
+    m_freeIDs = wrapper->next;
 
-    GameObjectHandle cacheID = handle_create(slotID, slot.version);
+    GameObjectHandle cacheID = handle_create(id, wrapper->version);
 
-    GameObjectWrapper& wrapper = ((GameObjectWrapper*)m_pool->vector)[slot.denseIndex];
-    wrapper.slotID = slotID;
-
-    GameObject* gameObject = &wrapper.gameObject;
+    GameObject* gameObject = &wrapper->gameObject;
     new (gameObject) GameObject(cacheID);
     gameObject->setName(name);
+
+    m_count++;
 
     return cacheID;
 }
@@ -141,13 +131,11 @@ GameObject* GameObjectManager::get(GameObjectHandle id)
     uint32_t slotID = handle_get_id(id);
     uint32_t version = handle_get_version(id);
 
-    GameObjectSlot& slot = ((GameObjectSlot*)m_slot->vector)[slotID];
-    if (slot.version != version)
+    GameObjectWrapper& wrapper = ((GameObjectWrapper*)m_pool->vector)[slotID];
+    if (wrapper.version != version)
         return nullptr;
 
-    GameObjectWrapper* wrapper = (GameObjectWrapper*)m_pool->vector;
-
-    return &wrapper[slot.denseIndex].gameObject;
+    return &wrapper.gameObject;
 }
 
 void GameObjectManager::destroyImediate(GameObjectHandle handle)
@@ -155,17 +143,11 @@ void GameObjectManager::destroyImediate(GameObjectHandle handle)
     uint32_t slotID = handle_get_id(handle);
     uint32_t version = handle_get_version(handle);
 
-    GameObjectSlot* slots = (GameObjectSlot*)m_slot->vector;
-    
-    GameObjectSlot& slot = slots[slotID];
-    if (slot.version != version)
+    GameObjectWrapper& wrapper = ((GameObjectWrapper*)m_pool->vector)[slotID];
+    if (wrapper.version != version)
         return;
 
-    GameObjectWrapper* wrapper = (GameObjectWrapper*)m_pool->vector;
-
-    uint32_t removeIndex = slot.denseIndex;
-
-    auto& gameObject = wrapper[removeIndex].gameObject;
+    auto& gameObject = wrapper.gameObject;
     gameObject.CallDestroy();
 
     auto scene = gameObject.GetScene();
@@ -180,24 +162,12 @@ void GameObjectManager::destroyImediate(GameObjectHandle handle)
 
     gameObject.~GameObject();
 
-    uint32_t lastIndex = --m_count;
-    if (removeIndex != lastIndex)
-    {
-        auto& lastWrapper = wrapper[lastIndex];
-
-        new (&gameObject) GameObject(lastWrapper.gameObject);
-
-        wrapper[removeIndex].slotID = wrapper[lastIndex].slotID;
-
-        slots[wrapper[removeIndex].slotID].denseIndex = removeIndex;
-    }
-
-    slot.denseIndex = INVALID_COMPONENT_ID;
-
-    slot.next = m_freeIDs;
+    wrapper.next = m_freeIDs;
     m_freeIDs = slotID;
 
-    slot.version++;
+    wrapper.version++;
+
+    m_count--;
 }
 
 void GameObjectManager::destroy(GameObjectHandle handle)
@@ -205,58 +175,59 @@ void GameObjectManager::destroy(GameObjectHandle handle)
     m_markForDestruction.push_back(handle);
 }
 
-void GameObjectManager::realloc(uint32_t size)
+void GameObjectManager::realloc()
 {
-    uint32_t lastsize = m_pool != nullptr ? m_pool->length : 0;
+    size_t lastCapacity = m_capacity;
 
-    if (m_pool == nullptr)
-    {
-        m_capacity = 1;
-
-        m_pool = array_create(m_capacity, sizeof(GameObjectWrapper));
-
-        m_slot = array_create(m_capacity, sizeof(GameObjectSlot));
-    } else
+    if (lastCapacity)
     {
         m_capacity *= 2;
-
-        m_slot = array_resize(m_slot, m_capacity, sizeof(GameObjectSlot));
 
         array* newPool = array_create(m_capacity, sizeof(GameObjectWrapper));
 
         GameObjectWrapper* lastWrapperPool = (GameObjectWrapper*)m_pool->vector;
         GameObjectWrapper* newWrapperPool = (GameObjectWrapper*)newPool->vector;
 
-        for (BatchID i=0;i<lastsize;i++)
+        for (size_t i=0;i<lastCapacity;i++)
         {
             GameObjectWrapper& lastWrapper = lastWrapperPool[i];
             GameObjectWrapper& newWrapper = newWrapperPool[i];
 
-            newWrapper.slotID = lastWrapper.slotID;
+            newWrapper.version = lastWrapper.version;
+            newWrapper.next = lastWrapper.next;
 
             new (&newWrapper.gameObject) GameObject(lastWrapper.gameObject);
         }
 
+        for (size_t i=lastCapacity;i<m_capacity;i++)
+            newWrapperPool[i].version = 1;
+
         array_free(m_pool);
         m_pool = newPool;
+    } else
+    {
+        m_capacity = 1;
+
+        m_pool = array_create(m_capacity, sizeof(GameObjectWrapper));
+
+        GameObjectWrapper* wrapper = (GameObjectWrapper*)m_pool->vector;
+
+        for (size_t i=0;i<m_capacity;i++)
+            wrapper[i].version = 1;
     }
 
-    GameObjectSlot* slots = (GameObjectSlot*)m_slot->vector;
-    for (int i=lastsize;i<m_slot->length;i++)
-        slots[i] = {INVALID_COMPONENT_ID, 1, INVALID_COMPONENT_ID};
-    
-    addFreeID(lastsize);
+    addFreeID(lastCapacity);
 }
 
 void GameObjectManager::addFreeID(uint32_t start)
 {
-    GameObjectSlot* slots = (GameObjectSlot*)m_slot->vector;
+    GameObjectWrapper* wrapper = (GameObjectWrapper*)m_pool->vector;
 
-    size_t lastID = m_slot->length - 1;
+    size_t lastID = m_pool->length - 1;
     for (size_t i=start;i<lastID;i++)
-        slots[i].next = i + 1;
+        wrapper[i].next = i + 1;
 
-    slots[lastID].next = m_freeIDs;
+    wrapper[lastID].next = m_freeIDs;
     m_freeIDs = start;
 }
 

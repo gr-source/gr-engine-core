@@ -46,11 +46,10 @@ protected:
     size_t m_capacity;
 
     array* m_pool;
-    array* m_slot;
 
     uint32_t m_freeIDs;
 
-    std::atomic<size_t> m_count;
+    size_t m_count;
 
     GameObjectHandle instantiate(GameObjectHandle other);
 
@@ -62,7 +61,7 @@ protected:
 
     void destroy(GameObjectHandle handle);
 
-    void realloc(uint32_t size);
+    void realloc();
 
     void addFreeID(uint32_t start);
 

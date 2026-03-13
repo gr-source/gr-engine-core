@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstring>
 #include <stdint.h>
 
 extern "C"
@@ -27,7 +28,7 @@ public:
 
     PoolID allocate();
 
-    void deallocte(PoolID id);
+    void deallocate(PoolID id);
 
     T* get(PoolID id);
 
@@ -44,7 +45,7 @@ private:
 };
 
 template <typename T>
-inline ObjectPool<T>::ObjectPool() : m_freeID(INVALID_POOL), m_capacity(0)
+inline ObjectPool<T>::ObjectPool() : m_freeID(INVALID_POOL), m_capacity(0), m_pool(nullptr)
 {}
 
 template <typename T>
@@ -69,7 +70,7 @@ inline PoolID ObjectPool<T>::allocate()
 }
 
 template <typename T>
-inline void ObjectPool<T>::deallocte(PoolID id)
+inline void ObjectPool<T>::deallocate(PoolID id)
 {
     PoolSlot<T>* wrapper = (PoolSlot<T>*)m_pool->vector;
     wrapper[id].next = m_freeID;
@@ -94,11 +95,20 @@ void ObjectPool<T>::realloc()
         m_capacity *= 2;
 
         m_pool = array_resize(m_pool, m_capacity, sizeof(PoolSlot<T>));
+
+
+        PoolSlot<T>* wrapper = (PoolSlot<T>*)m_pool->vector;
+
+        memset(&wrapper[lastID], 0,
+               (m_capacity - lastID) * sizeof(PoolSlot<T>));
+
     } else
     {
         m_capacity = 1;
 
         m_pool = array_create(m_capacity, sizeof(PoolSlot<T>));
+
+        memset(m_pool->vector, 0, m_capacity * sizeof(PoolSlot<T>));
     }
 
     addFreeID(lastID);
