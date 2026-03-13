@@ -11,10 +11,6 @@
 class SceneManager
 {
 public:
-    // static void Initialize();
-
-    // static void Shutdown();
-
     static void SetInstance(SceneManager* sceneManager);
 
     static Scene *Create(const std::string &name);
@@ -40,8 +36,6 @@ private:
     std::unordered_map<const Scene *, const std::string> m_scenenamemap;
 
     std::vector<Scene *> m_sceneList;
-
-    std::mutex m_mutex;
 
     Scene *m_current;
 

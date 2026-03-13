@@ -17,6 +17,7 @@
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include <functional>
+#include <unordered_set>
 
 class ChunkLoadTask : public IAsyncTask<int>
 {
@@ -61,13 +62,15 @@ private:
 
     std::unordered_map<std::string, GameObjectCache*> m_gameobjectmap;
 
-    std::unordered_map<std::string, grr::gShader *> m_shadermap;
+    std::unordered_set<std::string> m_shaderMapCache;
 
     std::string m_name;
 
     int doInBackground() override;
 
     void onPostExecute(int result) override;
+
+    void CreateShaderFromCache();
 
     void CreateMaterialFromCache();
 

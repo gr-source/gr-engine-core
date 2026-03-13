@@ -7,22 +7,6 @@
 SceneManager* SceneManager::s_SceneManager = nullptr;
 
 // ***** public ***** //
-/*
-void SceneManager::Initialize()
-{
-    if (s_SceneManager == nullptr)
-        s_SceneManager = new SceneManager();
-}
-
-void SceneManager::Shutdown()
-{
-    if (s_SceneManager != nullptr)
-        delete s_SceneManager;
-
-    s_SceneManager = nullptr;
-}
-*/
-
 void SceneManager::SetInstance(SceneManager *sceneManager)
 {
     s_SceneManager = sceneManager;
@@ -72,8 +56,6 @@ SceneManager::~SceneManager()
 
 Scene *SceneManager::create(const std::string &name)
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
-
     auto &&[it, added] = m_scenemap.emplace(name, std::make_unique<Scene>());
     if (added)
     {
@@ -81,11 +63,7 @@ Scene *SceneManager::create(const std::string &name)
 
         m_scenenamemap.emplace(it->second.get(), name);
 
-        lock.unlock();
-
         set_active(it->second.get());
-
-        lock.lock();
     }
 
     return it->second.get();
@@ -93,7 +71,6 @@ Scene *SceneManager::create(const std::string &name)
 
 Scene *SceneManager::find(const std::string &name)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
     auto it = m_scenemap.find(name);
     if (it == m_scenemap.end())
     {
@@ -104,7 +81,6 @@ Scene *SceneManager::find(const std::string &name)
 
 const char *SceneManager::get_scene_name(const Scene *scene)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
     auto it = m_scenenamemap.find(scene);
     if (it == m_scenenamemap.end())
     {
@@ -115,13 +91,11 @@ const char *SceneManager::get_scene_name(const Scene *scene)
 
 std::vector<Scene *> SceneManager::get_scenes()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
     return m_sceneList;
 }
 
 void SceneManager::remove(Scene *scene)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
     auto it = m_scenenamemap.find(scene);
     if (it == m_scenenamemap.end())
     {

@@ -3,6 +3,7 @@
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/memoryStream.hpp"
 #include "gr-base/core/geometry/default.hpp"
+#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/chunkmanager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
@@ -100,21 +101,35 @@ void ChunkLoadTask::onPostExecute(int result)
         if (current == nullptr)
             return;
 
+        CreateShaderFromCache();
+
         CreateMaterialFromCache();
 
         CreateMeshFromCache();
 
-        StreamChunk* chunk = ChunkManager::Get(m_chunkID);
+        // StreamChunk* chunk = ChunkManager::Get(m_chunkID);
 
         for (auto &root : m_rootList)
         {
-            auto gameObjectID = CreateFromCache(root.get());
-            current->insert(gameObjectID);
+            auto prefabID = CreateFromCache(root.get());
 
-            vector_push(chunk->objects, gameObjectID);
+            auto gameObjectID = GameObject::Instantiate(GameObject::Get(prefabID));
+            GameObject::DestroyImediate(prefabID);
+
+            // vector_push(chunk->objects, gameObjectID);
         }
 
         Console::LogInfo("[ ChunkLoadTask ] chunk '%s' loaded sucessfuly", m_file.c_str());
+    }
+}
+
+void ChunkLoadTask::CreateShaderFromCache()
+{
+    Console::LogInfo("[ ChunkLoadTask ] Creating %d loading shaders...", m_shaderMapCache.size());
+
+    for (const std::string& name : m_shaderMapCache)
+    {
+        AssetsManager::LoadShaderAsync(GetShaderParamsFromName(name));
     }
 }
 
@@ -148,6 +163,7 @@ GameObjectHandle ChunkLoadTask::CreateFromCache(GameObjectCache* cache)
 
     auto gameObject = GameObject::Get(gameObjectID);
     gameObject->SetIsStatic(cache->IsStatic);
+    gameObject->SetIsPrefab(true);
 
     MemoryStream stream(cache->buffer.data(), cache->buffer.size());
     if (read_script_from_cache(gameObject, &stream) != 0)
@@ -173,25 +189,15 @@ int ChunkLoadTask::read_shader(Stream *stream)
 {
     std::size_t length = {};
     if (!stream->read(length))
-    {
         return 1;
-    }
 
     for (std::size_t i={};i<length;i++)
     {
         std::string shadername;
         if (!stream->read(shadername))
-        {
             return 2;
-        }
-        auto shader = AssetsManager::FindShader(shadername);
-        if (shader == nullptr)
-        {
-            auto info = AssetsManager::LoadShaderAsync(GetShaderParamsFromName(shadername));
-            shader = info->get();
-        }
-        if (shader != nullptr)
-            m_shadermap.emplace(shadername, shader);
+
+        m_shaderMapCache.emplace(shadername);
     }
     return 0;
 }
@@ -224,28 +230,6 @@ int ChunkLoadTask::read_material(Stream *stream)
         auto& cache = m_materialCacheList.emplace_back();
         cache.name = name;
         cache.material.deserialize(stream);
-
-        /*
-        auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
-
-        auto it = m_materialmap.find(name);
-        if (it == m_materialmap.end() && m_shadermap.find(shadername) != m_shadermap.end())
-        {
-            MaterialID materialID = AssetsManager::FindMaterial(name);
-            if (materialID == ID_INVALID)
-                materialID = AssetsManager::CreateMaterial(name);
-            
-            {
-                auto material = AssetsManager::GetMaterial(materialID);
-                material->deserialize(stream);
-            }
-
-            m_materialmap.emplace(name, materialID);
-        }
-
-        if (stream->tellg() != next)
-            stream->seekg(next);
-        */
     }
     return 0;
 }
