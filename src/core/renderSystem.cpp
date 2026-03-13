@@ -12,6 +12,20 @@
 #include <algorithm>
 #include <iostream>
 
+typedef struct Renderable
+{
+    MaterialID materialID;
+    MeshID meshID;
+} Renderable;
+
+inline uint64_t CreateSortKey(const Renderable& r)
+{
+    uint64_t key = 0;
+    key |= (uint64_t)r.materialID << 32;
+    key |= (uint64_t)r.meshID;
+    return key;
+}
+
 RenderSystem* RenderSystem::s_RenderSystem = nullptr;
 
 void RenderSystem::SetInstance(RenderSystem *renderSystem)
@@ -101,11 +115,15 @@ void RenderSystem::setup(std::vector<GameObjectHandle> objects)
             continue;
         }
 
+        std::vector<Renderable> objects;
+
         size_t count = meshIDs.size();
         for (size_t i=0;i<count;i++)
         {
             MaterialID materialID = materialIDs[i];
             MeshID meshID = meshIDs[i];
+
+            objects.push_back({materialID, meshID});
 
             size_t key = 0;
             key ^= std::hash<size_t>{}(meshID) + 0x9e3779b9 + (key << 6) + (key >> 2);
@@ -116,6 +134,15 @@ void RenderSystem::setup(std::vector<GameObjectHandle> objects)
                 batchID = BatchingManager::Create(key, meshID, materialID);
 
             m_instances.emplace_back(transformID, batchID);
+        }
+
+        std::sort(objects.begin(), objects.end(), [](const Renderable& a, const Renderable& b) {
+            return CreateSortKey(a) < CreateSortKey(b);
+        });
+
+        for (auto& r : objects)
+        {
+            std::cout << "MaterialID: " << r.materialID << " - " << r.meshID << std::endl;
         }
     }
 }
