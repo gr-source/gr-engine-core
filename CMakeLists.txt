@@ -31,6 +31,7 @@ set(thread
 
 set(core
     src/core/mainthreaddispatcher.cpp
+    src/core/assetReference.cpp
     src/core/renderSystem.cpp
     src/core/rendertarget.cpp
     src/core/renderer.cpp
@@ -46,6 +47,7 @@ set(core
     src/core/clock.cpp
     src/core/scene.cpp
     src/core/input.cpp
+    src/core/chunk.cpp
 )
 
 set(binary
@@ -79,6 +81,9 @@ set(culling
 )
 
 set(task
+    src/core/task/runtime/chunkSaveTask.cpp
+    src/core/task/runtime/chunkLoadTask.cpp
+
     src/core/task/runtime/materialSaveTask.cpp
 
     src/core/task/runtime/gameobjectsavetask.cpp
@@ -112,6 +117,7 @@ set(managers_src
     src/managers/assetsManager.cpp
     src/managers/shadermanager.cpp
     src/managers/sceneManager.cpp
+    src/managers/chunkmanager.cpp
     src/managers/meshmanager.cpp
 )
 

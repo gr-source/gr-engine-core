@@ -299,18 +299,6 @@ bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
 
     if (!stream->write(go->GetIsStatic()))
         return false;
-    
-    /*
-    if (!stream->write(go->getActive()))
-    {
-        return false;
-    }
-
-    if (!stream->write(go->getStatic()))
-    {
-        return false;
-    }
-    */
 
     auto transform = go->GetTransform();
 

@@ -36,6 +36,16 @@ void AssetsManager::Shutdown()
     s_AssetsManager = nullptr;
 }
 
+void AssetsManager::SetAssetDir(const std::string& dir)
+{
+    s_AssetsManager->mAssetDir = dir;
+}
+
+const std::string& AssetsManager::GetAssetDir()
+{
+    return s_AssetsManager->mAssetDir;
+}
+
 std::string AssetsManager::GetRefTextureName(grr::gTexture *texture)
 {
     auto name = s_AssetsManager->mTextureManager.getname(texture);

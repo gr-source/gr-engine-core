@@ -63,27 +63,6 @@ void GameObjectSaveTask::onPostExecute(int result)
 
     auto gameObject = GameObject::Get(m_gameObjectID);
 
-    /*
-
-    auto filename = gameObject->getName() + ".gmdx";
-    if (gfile::exists(m_file))
-        gfile::remove(m_file);
-
-    auto file = gfile::get_cache_directory() + "/" + filename;
-
-    if (!gfile::exists(file))
-        return;
-    
-
-    try
-    {
-        gfile::move(file.c_str(), m_file.c_str());
-    } catch (const std::exception &e)
-    {
-        return Console::LogError("[ GameObjectSaveTask ] %s", e.what());
-    }
-    */
-
     Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", gameObject->getName().c_str());
 
     if (m_func != nullptr)

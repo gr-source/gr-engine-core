@@ -27,6 +27,10 @@ public:
 
     static void Shutdown();
 
+    static void SetAssetDir(const std::string& dir);
+
+    static const std::string& GetAssetDir();
+
     template <typename ...Args>
     static void LoadTexture(const std::string &path, Args &&...args);
 
@@ -123,6 +127,8 @@ private:
     ShaderManager mShaderManager;
 
     MeshManager mMeshManager;
+
+    std::string mAssetDir;
 
     AssetsManager() = default;
     ~AssetsManager() = default;

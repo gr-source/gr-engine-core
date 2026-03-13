@@ -2,18 +2,7 @@
 
 #include "default.hpp"
 
-inline constexpr ComponentHash GetHash(const char* str) noexcept
-{
-    ComponentHash hash = 14695981039346656037UL;
-
-    char c = '\0';
-    while ((c = *str++))
-    {
-        hash ^= (ComponentHash)(unsigned char)(c);
-        hash *= 1099511628211UL;
-    }
-    return hash;
-}
+#include "gr-base/externals/utils.h"
 
 
 template <typename T>

@@ -71,7 +71,11 @@ public:
 
     void AddMesh(MeshID meshID);
 
+    void Update();
+
 private:
+    std::unordered_set<std::string> m_chunksLoaded;
+
     std::vector<ComponentHandle> m_cameras;
 
     std::vector<ComponentHandle> m_lights;
@@ -87,6 +91,8 @@ private:
     std::string m_name;
 
     ComponentHandle m_cameraID;
+
+    void loadChunk(std::string name);
 
     static GameObjectHandle CreateEngineCamera();
 };
