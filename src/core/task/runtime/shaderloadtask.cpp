@@ -14,24 +14,24 @@
 #include <stack>
 
 #define PRINT_ERROR(func, property, type) \
-    if (func == InvalidID) { \
+    if (func == GR_INVALID_ID) { \
         Console::LogWarning("[ ShaderLoadTask ] Shader.Regiter uniform: %s", grr::error()); \
     } else if (userfield.find(name) != userfield.end()) { \
         property->addProperty(variablename, name, type); \
     }
 
-std::unordered_map<std::string, UniformVariable_> ShaderLoadTask::mVariableNameToID =
+std::unordered_map<std::string, UniformType> ShaderLoadTask::mVariableNameToID =
 {
-    {"float",       UniformVariable::FLOAT},
-    {"int",         UniformVariable::INT},
-    {"bool",        UniformVariable::BOOL},
-    {"samplerCube", UniformVariable::SAMPLERCUBE},
-    {"sampler2D",   UniformVariable::SAMPLER2D},
-    {"mat3",        UniformVariable::MAT3},
-    {"mat4",        UniformVariable::MAT4},
-    {"vec2",        UniformVariable::VEC2},
-    {"vec3",        UniformVariable::VEC3},
-    {"vec4",        UniformVariable::VEC4},
+    {"float",       UniformType::FLOAT},
+    {"int",         UniformType::INT},
+    {"bool",        UniformType::BOOL},
+    {"samplerCube", UniformType::SAMPLERCUBE},
+    {"sampler2D",   UniformType::SAMPLER2D},
+    {"mat3",        UniformType::MAT3},
+    {"mat4",        UniformType::MAT4},
+    {"vec2",        UniformType::VEC2},
+    {"vec3",        UniformType::VEC3},
+    {"vec4",        UniformType::VEC4},
 };
 
 // public
@@ -454,7 +454,7 @@ void ShaderLoadTask::bind_shader(const std::string &path)
 
     // Create User property
     {
-        UniformVariable_ variable = UniformVariable::NONE;
+        UniformType variable = UniformType::BOOL;
 
         // fragment
         {
@@ -573,8 +573,6 @@ bool ShaderLoadTask::buildShader(const std::string &name, grr::gShader *shader)
 {
     auto fragment_source = m_shaderSource[ShaderStage::FRAGMENT].c_str();
     auto vertex_source = m_shaderSource[ShaderStage::VERTEX].c_str();
-
-    shader->cleanUniform();
 
     shader->build(&fragment_source, 1, &vertex_source, 1);
     if (!shader->isValid())

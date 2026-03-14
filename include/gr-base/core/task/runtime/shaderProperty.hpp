@@ -23,7 +23,7 @@ constexpr std::uint8_t IShaderStage = static_cast<std::uint8_t>(ShaderStage::COU
 struct Uniform {
     std::string name;
     std::string variablename;
-    UniformVariable variable;
+    UniformType ype;
     u8 count;
 };
 
@@ -44,14 +44,14 @@ class ShaderProperty
 public:
     ShaderProperty();
 
-    void addProperty(const std::string &object, const std::string &name, UniformVariable_ variable);
+    void addProperty(const std::string &object, const std::string &name, UniformType variable);
 
-    const std::vector<std::tuple<std::string, std::string, UniformVariable_>> &getProperty() const;
+    const std::vector<std::tuple<std::string, std::string, UniformType>> &getProperty() const;
 
     void clear();
 
 private:
-    std::vector<std::tuple<std::string, std::string, UniformVariable_>> mUniformList;
+    std::vector<std::tuple<std::string, std::string, UniformType>> mUniformList;
     
     std::unordered_set<std::string> m_tabHash;
 };

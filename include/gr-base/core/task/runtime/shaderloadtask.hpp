@@ -48,7 +48,7 @@ protected:
 
     static ShaderType get_shader_asset_type(const std::string &path);
 
-    static std::unordered_map<std::string, UniformVariable_> mVariableNameToID;
+    static std::unordered_map<std::string, UniformType> mVariableNameToID;
 
     static std::array<std::string, IShaderStage> LoadShaderBase(ShaderType type);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gr-render/vertex_array.hpp>
 #include <vector>
 
 #include "boneWeight.hpp"
@@ -46,6 +47,18 @@ public:
 
     std::string GetName() const;
 
+    inline gr::vertex_array* GetGpuMesh() const
+    {
+        return m_vertexarray != nullptr ? m_vertexarray.get() : nullptr;
+    }
+
+    inline gr::vertex_buffer* GetIntancingBuffer() const
+    {
+        return m_pbo != nullptr ? m_pbo.get() : nullptr;
+    }
+
+    void Build();
+
 private:
     std::vector<BoneWeight> m_boneWeight;
 
@@ -54,6 +67,10 @@ private:
     std::vector<int> m_indices;
 
     Boundbox m_boundbox;
+
+    std::shared_ptr<gr::vertex_array> m_vertexarray;
+
+    std::shared_ptr<gr::vertex_buffer> m_pbo;
 
     std::string m_name;
 };

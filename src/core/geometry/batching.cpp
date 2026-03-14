@@ -85,12 +85,10 @@ void Batching::render()
         m_pbo->SetData(instances.data(), instances.size() * sizeof(Matrix4x4));
         m_pbo->Unbind();
 
-        shader->flush();
         glDrawElementsInstanced(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr, instances.size());
     } else if (!instances.empty())
     {
         shader->setUniform("u_model", &instances[0]);
-        shader->flush();
 
         glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr);
     }

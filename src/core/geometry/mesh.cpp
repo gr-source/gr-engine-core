@@ -2,7 +2,7 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-Mesh::Mesh() : m_boundbox{Vector3::zero, Vector3::zero}
+Mesh::Mesh() : m_boundbox{Vector3::zero, Vector3::zero}, m_vertexarray(nullptr), m_pbo(nullptr)
 {}
 
 std::vector<Vertex3D> Mesh::getVertices() const
@@ -131,6 +131,35 @@ void Mesh::SetName(const std::string& name)
 std::string Mesh::GetName() const
 {
     return m_name;
+}
+
+void Mesh::Build()
+{
+    gr::buffer_layout layout = {
+        {gr::shader_data_type::Float3, "in_position"},
+        {gr::shader_data_type::Float3, "in_normal"},
+        {gr::shader_data_type::Float2, "in_texCoord"},
+    };
+
+    auto vbo = gr::vertex_buffer::create(m_vertices.data(), m_vertices.size() * sizeof(Vertex3D), gr::buffer_usage::static_draw);
+    vbo->SetLayout(layout);
+
+    gr::buffer_layout instanceLayout = {
+        { gr::shader_data_type::Float4, "a_InstanceMatrixRow0", true },
+        { gr::shader_data_type::Float4, "a_InstanceMatrixRow1", true },
+        { gr::shader_data_type::Float4, "a_InstanceMatrixRow2", true },
+        { gr::shader_data_type::Float4, "a_InstanceMatrixRow3", true }
+    };
+
+    m_pbo = gr::vertex_buffer::create(nullptr, 1024 * sizeof(Matrix4x4), gr::buffer_usage::dynamic_draw);
+    m_pbo->SetLayout(instanceLayout);
+
+    auto ibo = gr::index_buffer::create(m_indices.data(), m_indices.size() * sizeof(uint32_t));
+
+    m_vertexarray = gr::vertex_array::create();
+    m_vertexarray->AddVertexBuffer(vbo);
+    m_vertexarray->AddVertexBuffer(m_pbo);
+    m_vertexarray->SetIndexBuffer(ibo);
 }
 
 

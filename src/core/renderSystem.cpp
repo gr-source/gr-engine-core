@@ -4,21 +4,17 @@
 
 #include "gr-base/ecs/behaviorStorage.hpp"
 
+#include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/batchingmanager.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 
+#include <GL/glew.h>
 #include <algorithm>
 #include <iostream>
 
-typedef struct Renderable
-{
-    MaterialID materialID;
-    MeshID meshID;
-} Renderable;
-
-inline uint64_t CreateSortKey(const Renderable& r)
+inline uint64_t CreateSortKey(const RenderCommand& r)
 {
     uint64_t key = 0;
     key |= (uint64_t)r.materialID << 32;
@@ -46,6 +42,11 @@ void RenderSystem::Remove(GameObjectHandle handle)
 void RenderSystem::Update()
 {
     s_RenderSystem->update();
+}
+
+void RenderSystem::Renderer()
+{
+    s_RenderSystem->renderer();
 }
 
 // private
@@ -78,16 +79,150 @@ void RenderSystem::update()
     if (!m_markToRender.empty())
         setup(std::move(m_markToRender));
 
-    for (auto &&[transformID, batchID] : m_instances)
+    for (auto&& [key, renderable] : m_renderable)
     {
-        Transform* transform = BehaviorStorage::GetComponent<Transform>(transformID);
-        auto& modelMatrix = transform->getGlobalMatrix();
+        if (renderable.size() > 1)
+        {
+            std::vector<Matrix4x4> models;
 
-        auto &batch = BatchingManager::Get(batchID);
-        batch.insert(modelMatrix);
+            MaterialID m_materialID;
+            MeshID m_meshID;
+
+            for (auto&& [materialID, meshID, transformID] : renderable)
+            {
+                m_materialID = materialID;
+                m_meshID = meshID;
+
+                Transform* transform = BehaviorStorage::GetComponent<Transform>(transformID);
+
+                auto &globalMatrix = transform->getGlobalMatrix();
+
+                models.push_back(globalMatrix);
+            }
+
+            m_queueInstancingCmd[m_materialID][m_meshID] = models;
+        } else
+        {
+            for (auto&& [materialID, meshID, transformID] : renderable)
+                m_queueFirstCmd[materialID][meshID].push_back(transformID);
+        }
     }
 }
 
+void RenderSystem::renderer()
+{
+    const gr::vertex_array* lastVertexArray = nullptr;
+    grr::gShader* lastShader = nullptr;
+    Material* lastMaterial = nullptr;
+
+    size_t drawCallCount = 0;
+
+    for (auto&& [materialID, sortByMesh] : m_queueFirstCmd)
+    {
+        Material* material = AssetsManager::GetMaterial(materialID);
+
+        auto shader = material->GetShader(false);
+
+        if (shader != lastShader)
+        {
+            lastShader = shader;
+
+            bool enable[10] = {false};
+            int textureID[10] = {0};
+
+            shader->bind();
+            shader->setUniform("u_texture", textureID);
+            shader->setUniform("u_enable", enable);
+        }
+
+        if (lastMaterial != material)
+        {
+            lastMaterial = material;
+
+            material->flush(shader);
+        }
+
+        ShaderID u_model = shader->findUniform("u_model");
+
+        for (auto&& [meshID, transforms] : sortByMesh)
+        {
+            Mesh* mesh = AssetsManager::GetMesh(meshID);
+
+            auto vertexarray = mesh->GetGpuMesh();
+            if (lastVertexArray != vertexarray)
+            {
+                lastVertexArray = vertexarray;
+                vertexarray->Bind();
+            }
+
+            for (auto& transformID : transforms)
+            {
+                Transform* transform = BehaviorStorage::GetComponent<Transform>(transformID);
+
+                auto &globalMatrix = transform->getGlobalMatrix();
+
+                shader->SetUniform(u_model, &globalMatrix);
+
+                glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+            }
+
+            drawCallCount += transforms.size();
+        }
+    }
+
+    for (auto&& [materialID, sortByMesh] : m_queueInstancingCmd)
+    {
+        Material* material = AssetsManager::GetMaterial(materialID);
+
+        auto shader = material->GetShader(true);
+
+        if (shader != lastShader)
+        {
+            lastShader = shader;
+
+            bool enable[10] = {false};
+            int textureID[10] = {0};
+
+            shader->bind();
+            shader->setUniform("u_texture", textureID);
+            shader->setUniform("u_enable", enable);
+        }
+
+        if (lastMaterial != material)
+        {
+            lastMaterial = material;
+
+            material->flush(shader);
+        }
+
+        for (auto&& [meshID, instances] : sortByMesh)
+        {
+            Mesh* mesh = AssetsManager::GetMesh(meshID);
+
+            auto vertexarray = mesh->GetGpuMesh();
+            if (lastVertexArray != vertexarray)
+            {
+                lastVertexArray = vertexarray;
+                vertexarray->Bind();
+            }
+
+            auto pbo = mesh->GetIntancingBuffer();
+
+            pbo->Bind();
+            pbo->SetData(instances.data(), instances.size() * sizeof(Matrix4x4));
+            pbo->Unbind();
+
+            glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr, instances.size());
+
+            drawCallCount++;
+        }
+    }
+
+    // std::cout << "drawCallCount: " << drawCallCount << std::endl;
+
+    m_queueInstancingCmd.clear();
+    m_queueFirstCmd.clear();
+}
 
 void RenderSystem::setup(std::vector<GameObjectHandle> objects)
 {
@@ -115,34 +250,22 @@ void RenderSystem::setup(std::vector<GameObjectHandle> objects)
             continue;
         }
 
-        std::vector<Renderable> objects;
-
         size_t count = meshIDs.size();
         for (size_t i=0;i<count;i++)
         {
             MaterialID materialID = materialIDs[i];
             MeshID meshID = meshIDs[i];
 
-            objects.push_back({materialID, meshID});
+            Mesh* mesh = AssetsManager::GetMesh(meshID);
 
-            size_t key = 0;
-            key ^= std::hash<size_t>{}(meshID) + 0x9e3779b9 + (key << 6) + (key >> 2);
-            key ^= std::hash<size_t>{}(materialID) + 0x9e3779b9 + (key << 6) + (key >> 2);
+            auto vertexarray = mesh->GetGpuMesh();
 
-            BatchID batchID = BatchingManager::Find(key);
-            if (batchID == InvalidBatch)
-                batchID = BatchingManager::Create(key, meshID, materialID);
+            if (vertexarray == nullptr)
+                mesh->Build();
 
-            m_instances.emplace_back(transformID, batchID);
-        }
+            uint64_t sortKey = CreateSortKey({materialID, meshID});
 
-        std::sort(objects.begin(), objects.end(), [](const Renderable& a, const Renderable& b) {
-            return CreateSortKey(a) < CreateSortKey(b);
-        });
-
-        for (auto& r : objects)
-        {
-            std::cout << "MaterialID: " << r.materialID << " - " << r.meshID << std::endl;
+            m_renderable[sortKey].push_back({materialID, meshID, transformID});
         }
     }
 }

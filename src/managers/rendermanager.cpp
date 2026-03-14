@@ -68,6 +68,7 @@ void RenderManager::PosRender()
 // private
 void RenderManager::insert(GameObjectHandle gameObjectID)
 {
+    /*
     if (m_objectInOctree.find(gameObjectID) != m_objectInOctree.end())
         return;
 
@@ -160,6 +161,7 @@ void RenderManager::insert(GameObjectHandle gameObjectID)
     transform->isDirty = true;
 
     m_objectInOctree.emplace(gameObjectID, info);
+    */
 }
 
 BatchID RenderManager::GetBatchID(Boundbox& boundbox, MeshID meshID, MaterialID materialID) const
@@ -229,11 +231,13 @@ void RenderManager::preRender(const Camera *camera)
         if (!shader || !shader->isValid())
             continue;
 
+        shader->bind();
         shader->setUniform("u_projection", &projection);
         shader->setUniform("u_view",       &view);
         shader->setUniform("u_eye",        &position);
 
         setuplight(scene, shader);
+        shader->unbind();
     }
 
     Frustum::CalculateFrustum(projection * view);
@@ -415,8 +419,7 @@ void RenderManager::setuplight(const Scene* scene, grr::gShader *shader)
 
     int numLight = static_cast<int>(lights.size());
 
-    if (!shader->setUniform("numLights", &numLight))
-        return;
+    shader->set_uniform("numLights", numLight);
 
     if (lights.empty())
         return;

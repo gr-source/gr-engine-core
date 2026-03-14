@@ -103,8 +103,6 @@ void Skybox::render(const Camera *camera) const
 
     m_skyshader->bind();
 
-    m_skyshader->flush();
-    
     m_vertexarray->bind();
     
     grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_count, nullptr);
@@ -156,8 +154,6 @@ void Skybox::upload_cubemap_texture(grr::gTexture *texture, grr::gShader *shader
 
         grr::gRender::SetBackgroundColor(Color::blue);
         grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER | grr::GR_DEPTH_BUFFER);
-        
-        shader->flush();
         
         m_vertexarray->bind();
         

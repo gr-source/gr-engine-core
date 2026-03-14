@@ -103,18 +103,20 @@ DebugDraw::LineRender::LineRender() : m_shader(nullptr)
 
 void DebugDraw::LineRender::render(const Camera *camera, const Line3D *data, std::size_t size)
 {
+    m_buffer->Bind();
+    m_buffer->SetData(data, size * sizeof(Line3D));
+    m_buffer->Unbind();
+
     m_shader->bind();
     m_shader->set_uniform("u_projection", camera->getPerspesctive());
     m_shader->set_uniform("u_view", camera->getViewmatrix());
 
-    m_buffer->Bind();
-    m_buffer->SetData(data, size * sizeof(Line3D));
-
-    m_shader->flush();
-
     m_vertex_array->Bind();
 
     grr::gVertexArray::DrawArrays(PrimitiveType::LINES, size);
+
+    m_shader->unbind();
+    m_vertex_array->Unbind();
 }
 
 
