@@ -123,11 +123,6 @@ bool Camera::Deserialize(Stream *stream)
     return false;
 }
 
-Matrix4x4 Camera::getPerspesctive() const
-{
-    return m_projection;
-}
-
 Matrix4x4 Camera::getViewmatrix() const
 {
     auto transform = GetGameObject()->GetTransform();

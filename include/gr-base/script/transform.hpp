@@ -9,8 +9,6 @@
 class Transform : public BehaviorImpl<Transform>
 {
 public:
-    bool isDirty;
-
     Transform();
 
     void setLocalScale(const Vector3 &value);
@@ -25,7 +23,7 @@ public:
 
     void setLocalPosition(const Vector3 &value);
 
-    Vector3 getPosition() const;
+    Vector3 getPosition();
 
     const Vector3 &getLocalPosition() const;
 
@@ -39,7 +37,7 @@ public:
 
     void setGlobalMatrix(const Matrix4x4 &matrix);
 
-    const Matrix4x4 &getGlobalMatrix() const;
+    Matrix4x4 &getGlobalMatrix();
 
     const Matrix4x4 &getLocalMatrix() const;
 
@@ -73,6 +71,8 @@ private:
     Matrix4x4 m_localMatrix;
 
     Matrix4x4 m_globalMatrix;
+
+    bool isDirty;
 
     void updateLocalMatrix();
 

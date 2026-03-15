@@ -23,7 +23,10 @@ public:
 
     bool Deserialize(Stream *stream) override;
 
-    Matrix4x4 getPerspesctive() const;
+    inline const Matrix4x4& getPerspesctive() const
+    {
+        return m_projection;
+    }
 
     Matrix4x4 getViewmatrix() const;
 

@@ -13,7 +13,7 @@ void Transform::setLocalScale(const Vector3 &value)
 {
     m_scale = value;
 
-    updateLocalMatrix();
+    isDirty = true;
 }
 
 const Vector3 &Transform::getLocalScale() const
@@ -25,7 +25,7 @@ void Transform::setLocalRotation(const Quaternion &value)
 {
     m_rotation = value;
 
-    updateLocalMatrix();
+    isDirty = true;
 }
 
 const Quaternion &Transform::getLocalRotation() const
@@ -48,7 +48,7 @@ void Transform::setLocalPosition(const Vector3 &value)
 {
     m_position = value;
 
-    updateLocalMatrix();
+    isDirty = true;
 }
 
 const Vector3 &Transform::getLocalPosition() const
@@ -56,8 +56,15 @@ const Vector3 &Transform::getLocalPosition() const
     return m_position;
 }
 
-Vector3 Transform::getPosition() const
+Vector3 Transform::getPosition()
 {
+    if (isDirty)
+    {
+        isDirty = false;
+
+        updateLocalMatrix();
+    }
+
     return {
         m_globalMatrix[3][0],
         m_globalMatrix[3][1],
@@ -83,8 +90,15 @@ Vector3 Transform::getUp() const {
     return getRotation() * Vector3::up;
 }
 
-const Matrix4x4 &Transform::getGlobalMatrix() const
+Matrix4x4 &Transform::getGlobalMatrix()
 {
+    if (isDirty)
+    {
+        isDirty = false;
+
+        updateLocalMatrix();
+    }
+
     return m_globalMatrix;
 }
 
@@ -168,8 +182,6 @@ void Transform::updateGlobalMatrix()
         auto transform = BehaviorStorage::GetComponent<Transform>(handle);
         transform->updateGlobalMatrix();
     }
-
-    isDirty = true;
 }
 
 bool Transform::Serialize(Stream *stream) const

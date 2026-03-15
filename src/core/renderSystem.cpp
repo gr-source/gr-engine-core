@@ -95,17 +95,17 @@ void RenderSystem::update()
 
         size_t count = transforms.size();
 
-        std::vector<Matrix4x4> models(count);
+        auto& vec = m_queueFirstCmd[materialID][meshID];
+        vec.resize(count);
+
         for (size_t i=0;i<count;i++)
         {
             Transform* transform = BehaviorStorage::GetComponent<Transform>(transforms[i]);
 
             auto &globalMatrix = transform->getGlobalMatrix();
 
-            models[i] = globalMatrix;
+            vec[i] = globalMatrix;
         }
-
-        m_queueFirstCmd[materialID][meshID] = models;
     }
 }
 
@@ -180,7 +180,7 @@ void RenderSystem::renderer()
         }
     }
 
-    std::cout << "drawCallCount: " << drawCallCount << std::endl;
+    // std::cout << "drawCallCount: " << drawCallCount << std::endl;
 
     m_queueFirstCmd.clear();
 }

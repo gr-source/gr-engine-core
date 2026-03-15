@@ -360,6 +360,7 @@ void RenderManager::preRender(const Camera *camera)
 
 void RenderManager::AsyncBVHTree(const Camera* camera)
 {
+    /*
     std::vector<NodeID> nodes;
     BVHTreeManager::For_each([&](NodeID id, BVHNode* node)
     {
@@ -399,6 +400,7 @@ void RenderManager::AsyncBVHTree(const Camera* camera)
         AsyncBVHTree(camera);
 
     // nodes.clear();
+    */
 }
 
 void RenderManager::render()
