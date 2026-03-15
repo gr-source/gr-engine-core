@@ -33,8 +33,6 @@ private:
 
     std::vector<GameObjectHandle> m_markToRender;
 
-    std::vector<std::tuple<ComponentHandle, BatchID>> m_instances;
-
     std::map<MaterialID, std::map<MeshID, std::vector<ComponentHandle>>> m_queueFirstCmd;
 
     std::map<MaterialID, std::map<MeshID, std::vector<Matrix4x4>>> m_queueInstancingCmd;

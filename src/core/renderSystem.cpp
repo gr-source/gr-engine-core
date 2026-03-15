@@ -58,20 +58,6 @@ void RenderSystem::insert(GameObjectHandle handle)
 void RenderSystem::remove(GameObjectHandle handle)
 {
     m_markToRender.erase(std::remove(m_markToRender.begin(), m_markToRender.end(), handle), m_markToRender.end());
-
-    auto gameobject = GameObject::Get(handle);
-    if (!gameobject)
-        return;
-
-    auto transformID = gameobject->GetID<Transform>();
-
-    m_instances.erase(
-        std::remove_if(m_instances.begin(), m_instances.end(),
-            [transformID](const auto& instance) {
-                return std::get<0>(instance) == transformID;
-            }),
-        m_instances.end()
-    );
 }
 
 void RenderSystem::update()
