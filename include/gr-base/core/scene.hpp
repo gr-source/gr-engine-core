@@ -61,10 +61,6 @@ public:
 
     std::vector<ComponentHandle> GetCameras() const;
 
-    void Serialize(Stream* stream) const;
-
-    void Deserialize(Stream* stream);
-
     void SetName(const std::string& name);
 
     std::string GetName() const;

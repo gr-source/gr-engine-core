@@ -11,6 +11,20 @@
 Entity::Entity(GameObjectHandle cacheID) : m_cacheID(cacheID), m_bPrefab(false)
 {}
 
+Entity::Entity(Entity&& other) noexcept
+{
+    for (size_t i=0;i<COMPONENT_TABLE_SIZE;i++)
+        m_lookupTable[i] = other.m_lookupTable[i];
+
+    m_signature = std::move(other.m_signature);
+
+    m_activeHashes = std::move(other.m_activeHashes);
+
+    m_cacheID = other.m_cacheID;
+
+    m_bPrefab = other.m_bPrefab;
+}
+
 Behavior* Entity::addComponent(const char* name)
 {
     return addComponent(GetHash(name));

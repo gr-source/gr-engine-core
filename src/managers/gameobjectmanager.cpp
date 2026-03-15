@@ -119,7 +119,7 @@ GameObjectHandle GameObjectManager::create(const std::string &name)
 
     GameObject* gameObject = &wrapper->gameObject;
     new (gameObject) GameObject(cacheID);
-    gameObject->setName(name);
+    gameObject->SetName(name);
 
     m_count++;
 
@@ -196,7 +196,9 @@ void GameObjectManager::realloc()
             newWrapper.version = lastWrapper.version;
             newWrapper.next = lastWrapper.next;
 
-            new (&newWrapper.gameObject) GameObject(lastWrapper.gameObject);
+            new (&newWrapper.gameObject) GameObject(std::move(lastWrapper.gameObject));
+
+            lastWrapper.gameObject.~GameObject();
         }
 
         for (size_t i=lastCapacity;i<m_capacity;i++)

@@ -9,6 +9,7 @@ class Entity
 {
 public:
     Entity(GameObjectHandle cacheID);
+    Entity(Entity&& other) noexcept;
     virtual ~Entity() {}
 
     template <typename T, typename... Args>

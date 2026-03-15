@@ -20,6 +20,8 @@ class Material
 public:
     Material();
     ~Material();
+
+    bool bEnableInstancing;
     
     void setTexture(int idx, grr::gTexture *texture);
 

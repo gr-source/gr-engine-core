@@ -43,6 +43,16 @@ GameObject::GameObject(GameObjectHandle id) : Entity(id), m_name("noname"), m_sc
     m_transform = GetID<Transform>();
 }
 
+GameObject::GameObject(GameObject&& other) noexcept : Entity(std::move(other))
+{
+    // GameObject
+    m_name = other.m_name;
+    m_scene = other.m_scene;
+    m_isStatic = other.m_isStatic;
+
+    m_transform = other.m_transform;
+}
+
 GameObject::~GameObject()
 {
     for (auto &hash : GetHashes())
@@ -57,7 +67,7 @@ Transform* GameObject::GetTransform() const
 void GameObject::Copy(GameObjectHandle otherID)
 {
     auto otherGO = GameObject::Get(otherID);
-    if (!otherGO)
+    if (otherGO == nullptr)
         return;
 
     m_isStatic = otherGO->m_isStatic;
@@ -71,18 +81,18 @@ void GameObject::Copy(GameObjectHandle otherID)
     myTrans->setLocalRotation(otherTrans->getLocalRotation());
     myTrans->setLocalScale(otherTrans->getLocalScale());
 
-    for (ComponentHandle& transformID : otherTrans->getChildren())
+    for (auto& transformID : otherTrans->getChildren())
     {
         auto childTransform = BehaviorStorage::GetComponent<Transform>(transformID);
 
         auto childGO = childTransform->GetGameObject();
         GameObjectHandle childID = childGO->GetCacheID();
-        
+
         GameObjectHandle newChildID = GameObject::Create(childGO->GetName());
 
         auto newChildGO = GameObject::Get(newChildID);
         newChildGO->GetTransform()->setParent(BehaviorStorage::GetComponent<Transform>(myTransformID));
-        
+
         newChildGO->Copy(childID);
     }
 
@@ -96,16 +106,6 @@ void GameObject::Copy(GameObjectHandle otherID)
         if (myComp == nullptr)
             myComp = addComponent(hash, otherGO->GetID(hash));
     }
-}
-
-void GameObject::Serialize(Stream* stream) const
-{
-    Serialize(GetCacheID(), stream);
-}
-
-void GameObject::Deserialize(Stream* stream)
-{
-    Deserialize(stream, GetCacheID(), INVALID_COMPONENT_ID);
 }
 
 GameObjectHandle GameObject::FindChildByName(const std::string& name)
@@ -125,102 +125,6 @@ GameObjectHandle GameObject::FindChildByName(const std::string& name)
     return HANDLE_INVALID;
 }
 
-// private
-void GameObject::Serialize(GameObjectHandle id, Stream* stream)
-{
-    /*
-    auto gameObject = GameObject::Get(id);
-    if (!stream->write(gameObject->m_name))
-        return;
 
-    auto hashes = gameObject->GetHashes();
-
-    uint64_t hashcount = static_cast<uint64_t>(hashes.size());
-    if (!stream->write(hashcount))
-        return;
-
-    for (auto& hash : hashes)
-    {
-        if (!stream->write(hash))
-            return;
-
-        auto behavior = gameObject->getComponent(hash);
-
-        uint64_t bufferlength = 0;
-        {
-            Stream temp;
-            behavior->Serialize(&temp);
-            bufferlength = temp.getDataSize();
-            temp.close();
-        }
-
-        if (!stream->write(bufferlength))
-            return;
-
-        behavior->Serialize(stream);
-    }
-
-    auto transform = gameObject->getTransform();
-
-    auto children = transform->getChildren();
-
-    uint64_t childCount = static_cast<uint64_t>(children.size());
-    if (!stream->write(childCount))
-        return;
-
-    for (auto child : children)
-        Serialize(child->entityID, stream);
-    */
-}
-
-void GameObject::Deserialize(Stream* stream, GameObjectHandle id, ComponentID parent)
-{
-    /*
-    auto gameObject = GameObject::Get(id);
-    if (!stream->read(gameObject->m_name))
-        return;
-
-    auto transform = gameObject->getTransform();
-
-    if (parent != INVALID_COMPONENT_ID)
-        transform->setParent(BehaviorStorage::GetComponent<Transform>(parent));
-
-    uint64_t hashcount = 0;
-    if (!stream->read(hashcount))
-        return;
-
-    for (uint64_t i=0;i<hashcount;i++)
-    {
-        uint64_t hash = INVALID_COMPONENT_ID;
-        if (!stream->read(hash) || hash == INVALID_COMPONENT_ID)
-            return;
-
-        uint64_t bufferlength = 0;
-        if (!stream->read(bufferlength))
-            return;
-
-        auto next = stream->tellg() + static_cast<std::streampos>(bufferlength);
-
-        Behavior* behavior = gameObject->getComponent(hash);
-        if (behavior == nullptr)
-            behavior = gameObject->addComponent(hash);
-
-        if (behavior == nullptr)
-        {
-            stream->seekg(next, std::ios_base::beg);
-            continue;
-        }
-
-        behavior->Deserialize(stream);
-    }
-
-    uint64_t childCount = 0;
-    if (!stream->read(childCount))
-        return;
-
-    for (uint64_t i=0;i<childCount;i++)
-        Deserialize(stream, GameObject::Create("unknow"), gameObject->GetID<Transform>());
-    */
-}
 
 

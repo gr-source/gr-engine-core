@@ -6,6 +6,8 @@
 
 #include <gr-math/types.hpp>
 #include <map>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 struct RenderCommand
@@ -31,23 +33,25 @@ public:
 private:
     static RenderSystem* s_RenderSystem;
 
-    std::vector<GameObjectHandle> m_markToRender;
+    std::unordered_set<GameObjectHandle> m_markToRender;
 
-    std::map<MaterialID, std::map<MeshID, std::vector<ComponentHandle>>> m_queueFirstCmd;
+    std::unordered_map<MaterialID, std::unordered_map<MeshID, std::vector<Matrix4x4>>> m_queueFirstCmd;
 
-    std::map<MaterialID, std::map<MeshID, std::vector<Matrix4x4>>> m_queueInstancingCmd;
+    // std::unordered_map<GameObjectHandle, std::vector<RenderCommand>> m_renderable;
 
-    std::map<uint64_t, std::vector<RenderCommand>> m_renderable;
+    std::unordered_map<uint64_t, std::vector<ComponentHandle>> m_renderable;
+
+    std::unordered_map<GameObjectHandle, uint64_t> m_objectsToRenderKey;
 
     void insert(GameObjectHandle handle);
 
-    void remove(GameObjectHandle handle);
+    void remove(GameObjectHandle gameObjectID);
 
     void update();
 
     void renderer();
 
-    void setup(std::vector<GameObjectHandle> objects);
+    void setup(std::unordered_set<GameObjectHandle> objects);
 };
 
 

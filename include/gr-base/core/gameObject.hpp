@@ -24,22 +24,19 @@ public:
     GameObject() = delete;
 
     GameObject(GameObjectHandle id);
+    GameObject(GameObject&& other) noexcept;
     ~GameObject();
 
     Transform* GetTransform() const;
 
     void Copy(GameObjectHandle other);
 
-    void Serialize(Stream* stream) const;
-
-    void Deserialize(Stream* stream);
-
-    inline const std::string &GetName() const
+    inline std::string GetName() const
     {
         return m_name;
     }
 
-    inline void setName(const std::string& name)
+    inline void SetName(const std::string& name)
     {
         m_name = name;
     }
@@ -74,10 +71,6 @@ private:
     Scene* m_scene;
 
     bool m_isStatic;
-
-    static void Serialize(GameObjectHandle id, Stream* stream);
-
-    static void Deserialize(Stream* stream, GameObjectHandle id, ComponentID parent);
 };
 
 

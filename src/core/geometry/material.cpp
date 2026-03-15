@@ -11,7 +11,7 @@
 
 #include <string.h>
 
-Material::Material() : m_shader(nullptr), m_shaderInstancing(nullptr), m_scalling{1.0f, 1.0f}, m_offset{0.0f, 0.0f}
+Material::Material() : m_shader(nullptr), m_shaderInstancing(nullptr), m_scalling{1.0f, 1.0f}, m_offset{0.0f, 0.0f}, bEnableInstancing(false)
 {
     m_textures.fill(nullptr);
 }

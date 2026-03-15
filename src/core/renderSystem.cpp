@@ -4,6 +4,7 @@
 
 #include "gr-base/ecs/behaviorStorage.hpp"
 
+#include "gr-base/externals/handle.h"
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/batchingmanager.hpp"
 #include "gr-base/script/meshFilter.hpp"
@@ -12,7 +13,6 @@
 
 #include <GL/glew.h>
 #include <algorithm>
-#include <iostream>
 
 inline uint64_t CreateSortKey(const RenderCommand& r)
 {
@@ -52,46 +52,60 @@ void RenderSystem::Renderer()
 // private
 void RenderSystem::insert(GameObjectHandle handle)
 {
-    m_markToRender.push_back(handle);
+    m_markToRender.emplace(handle);
 }
 
-void RenderSystem::remove(GameObjectHandle handle)
+void RenderSystem::remove(GameObjectHandle gameObjectID)
 {
-    m_markToRender.erase(std::remove(m_markToRender.begin(), m_markToRender.end(), handle), m_markToRender.end());
+    m_markToRender.erase(gameObjectID);
+
+    auto it = m_objectsToRenderKey.find(gameObjectID);
+    if (it != m_objectsToRenderKey.end())
+    {
+        auto myTransformID = GameObject::Get(gameObjectID)->GetID<Transform>();
+
+        uint64_t key = it->second;
+
+        auto& vec = m_renderable[key];
+
+        vec.erase(
+            std::remove(vec.begin(), vec.end(), myTransformID),
+            vec.end()
+        );
+
+        if (m_renderable[key].empty())
+            m_renderable.erase(key);
+
+        m_objectsToRenderKey.erase(it);
+    }
 }
 
 void RenderSystem::update()
 {
     if (!m_markToRender.empty())
-        setup(std::move(m_markToRender));
-
-    for (auto&& [key, renderable] : m_renderable)
     {
-        if (renderable.size() > 1)
+        setup(m_markToRender);
+        m_markToRender.clear();
+    }
+
+    for (auto&& [handle, transforms] : m_renderable)
+    {
+        MaterialID materialID = handle_get_id(handle);
+        MeshID meshID = handle_get_version(handle); 
+
+        size_t count = transforms.size();
+
+        std::vector<Matrix4x4> models(count);
+        for (size_t i=0;i<count;i++)
         {
-            std::vector<Matrix4x4> models;
+            Transform* transform = BehaviorStorage::GetComponent<Transform>(transforms[i]);
 
-            MaterialID m_materialID;
-            MeshID m_meshID;
+            auto &globalMatrix = transform->getGlobalMatrix();
 
-            for (auto&& [materialID, meshID, transformID] : renderable)
-            {
-                m_materialID = materialID;
-                m_meshID = meshID;
-
-                Transform* transform = BehaviorStorage::GetComponent<Transform>(transformID);
-
-                auto &globalMatrix = transform->getGlobalMatrix();
-
-                models.push_back(globalMatrix);
-            }
-
-            m_queueInstancingCmd[m_materialID][m_meshID] = models;
-        } else
-        {
-            for (auto&& [materialID, meshID, transformID] : renderable)
-                m_queueFirstCmd[materialID][meshID].push_back(transformID);
+            models[i] = globalMatrix;
         }
+
+        m_queueFirstCmd[materialID][meshID] = models;
     }
 }
 
@@ -107,7 +121,7 @@ void RenderSystem::renderer()
     {
         Material* material = AssetsManager::GetMaterial(materialID);
 
-        auto shader = material->GetShader(false);
+        auto shader = material->GetShader(material->bEnableInstancing);
 
         if (shader != lastShader)
         {
@@ -141,80 +155,41 @@ void RenderSystem::renderer()
                 vertexarray->Bind();
             }
 
-            for (auto& transformID : transforms)
+            if (material->bEnableInstancing)
             {
-                Transform* transform = BehaviorStorage::GetComponent<Transform>(transformID);
+                auto pbo = mesh->GetIntancingBuffer();
 
-                auto &globalMatrix = transform->getGlobalMatrix();
+                pbo->Bind();
+                pbo->SetData(transforms.data(), transforms.size() * sizeof(Matrix4x4));
+                pbo->Unbind();
 
-                shader->SetUniform(u_model, &globalMatrix);
+                glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr, transforms.size());
 
-                glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+                drawCallCount++;
+            } else
+            {
+                for (auto& matrix : transforms)
+                {
+                    shader->SetUniform(u_model, &matrix);
+
+                    glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+                }
+
+                drawCallCount += transforms.size();
             }
-
-            drawCallCount += transforms.size();
         }
     }
 
-    for (auto&& [materialID, sortByMesh] : m_queueInstancingCmd)
-    {
-        Material* material = AssetsManager::GetMaterial(materialID);
+    std::cout << "drawCallCount: " << drawCallCount << std::endl;
 
-        auto shader = material->GetShader(true);
-
-        if (shader != lastShader)
-        {
-            lastShader = shader;
-
-            bool enable[10] = {false};
-            int textureID[10] = {0};
-
-            shader->bind();
-            shader->setUniform("u_texture", textureID);
-            shader->setUniform("u_enable", enable);
-        }
-
-        if (lastMaterial != material)
-        {
-            lastMaterial = material;
-
-            material->flush(shader);
-        }
-
-        for (auto&& [meshID, instances] : sortByMesh)
-        {
-            Mesh* mesh = AssetsManager::GetMesh(meshID);
-
-            auto vertexarray = mesh->GetGpuMesh();
-            if (lastVertexArray != vertexarray)
-            {
-                lastVertexArray = vertexarray;
-                vertexarray->Bind();
-            }
-
-            auto pbo = mesh->GetIntancingBuffer();
-
-            pbo->Bind();
-            pbo->SetData(instances.data(), instances.size() * sizeof(Matrix4x4));
-            pbo->Unbind();
-
-            glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr, instances.size());
-
-            drawCallCount++;
-        }
-    }
-
-    // std::cout << "drawCallCount: " << drawCallCount << std::endl;
-
-    m_queueInstancingCmd.clear();
     m_queueFirstCmd.clear();
 }
 
-void RenderSystem::setup(std::vector<GameObjectHandle> objects)
+void RenderSystem::setup(std::unordered_set<GameObjectHandle> objects)
 {
-    for (auto& handle : objects)
+    for (auto& gameObjectID : objects)
     {
-        auto gameobject = GameObject::Get(handle);
+        auto gameobject = GameObject::Get(gameObjectID);
 
         auto meshFilter = gameobject->getComponent<MeshFilter>();
         auto meshRender = gameobject->getComponent<MeshRender>();
@@ -249,9 +224,11 @@ void RenderSystem::setup(std::vector<GameObjectHandle> objects)
             if (vertexarray == nullptr)
                 mesh->Build();
 
-            uint64_t sortKey = CreateSortKey({materialID, meshID});
+            uint64_t handle = handle_create(materialID, meshID);
 
-            m_renderable[sortKey].push_back({materialID, meshID, transformID});
+            m_renderable[handle].push_back(transformID);
+
+            m_objectsToRenderKey.emplace(gameObjectID, handle);
         }
     }
 }

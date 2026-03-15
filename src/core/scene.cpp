@@ -162,66 +162,6 @@ std::vector<ComponentHandle> Scene::GetCameras() const
     return m_cameras;
 }
 
-void Scene::Serialize(Stream* stream) const
-{
-    {
-        uint64_t meshCount = static_cast<uint64_t>(m_meshes.size());
-        if (!stream->write(meshCount))
-            return;
-
-        for (auto meshID : m_meshes)
-        {
-            auto meshKey = AssetsManager::GetMeshName(meshID);
-
-            if (!stream->write<std::string>(meshKey))
-                return;
-        }
-    }
-
-    auto objects = getObjectList();
-
-    uint64_t objectCount = static_cast<uint64_t>(objects.size());
-    if (!stream->write(objectCount))
-        return;
-
-    for (GameObjectHandle gameObjectID : objects)
-    {
-        GameObject* gameObject = GameObject::Get(gameObjectID);
-        gameObject->Serialize(stream);
-    }
-}
-
-void Scene::Deserialize(Stream* stream)
-{
-    {
-        uint64_t meshCount = 0;
-        if (!stream->read(meshCount))
-            return;
-
-        for (uint64_t i=0;i<meshCount;i++)
-        {
-            std::string meshKey;
-            if (!stream->read<std::string>(meshKey))
-                return;
-
-            std::cout << "Load: " << meshKey << std::endl;
-        }
-    }
-    uint64_t objectCount = 0;
-    if (!stream->read(objectCount))
-        return;
-
-    for (uint64_t i=0;i<objectCount;i++)
-    {
-        GameObjectHandle id = GameObject::Create("unknow");
-
-        GameObject* gameObject = GameObject::Get(id);
-        gameObject->Deserialize(stream);
-
-        insert(id);
-    }
-}
-
 void Scene::SetName(const std::string& name)
 {
     m_name = name;
