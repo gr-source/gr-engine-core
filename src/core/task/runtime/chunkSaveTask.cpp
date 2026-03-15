@@ -304,7 +304,7 @@ void ChunkSaveTask::read_data(const GameObject *gameObject)
     for (uint64_t hash : gameObject->GetHashes())
         behaviorList.emplace_back(hash, gameObject->getComponent(hash));
 
-    m_componentdata.emplace_back(gameObject->getName(), behaviorList);
+    m_componentdata.emplace_back(gameObject->GetName(), behaviorList);
 
     auto meshFilter = gameObject->getComponent<MeshFilter>();
     if (meshFilter != nullptr)
@@ -345,7 +345,7 @@ void ChunkSaveTask::read_data(const GameObject *gameObject)
 
 bool ChunkSaveTask::serialize(Stream *stream, const GameObject *go)
 {
-    if (!stream->write(go->getName()))
+    if (!stream->write(go->GetName()))
         return false;
 
     if (!stream->write(go->GetIsStatic()))

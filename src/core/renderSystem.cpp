@@ -223,7 +223,7 @@ void RenderSystem::setup(std::vector<GameObjectHandle> objects)
 
         if (meshFilter == nullptr || meshRender == nullptr)
         {
-            Console::LogWarning("[RenderSystem] Objeto '%s' ignorado: MeshFilter ou MeshRender ausente.", gameobject->getName().c_str());
+            Console::LogWarning("[RenderSystem] Objeto '%s' ignorado: MeshFilter ou MeshRender ausente.", gameobject->GetName().c_str());
             continue;
         }
 
@@ -232,7 +232,7 @@ void RenderSystem::setup(std::vector<GameObjectHandle> objects)
 
         if (materialIDs.size() != meshIDs.size())
         {
-            Console::LogError("[RenderSystem] Erro de configuracao no objeto '%s': Quantidade de materiais (%ld) nao condiz com a quantidade de sub-meshes (%ld).", gameobject->getName().c_str(), materialIDs.size(), meshIDs.size());
+            Console::LogError("[RenderSystem] Erro de configuracao no objeto '%s': Quantidade de materiais (%ld) nao condiz com a quantidade de sub-meshes (%ld).", gameobject->GetName().c_str(), materialIDs.size(), meshIDs.size());
             continue;
         }
 

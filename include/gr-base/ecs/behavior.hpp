@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/utils.hpp"
 
 class GameObject;
@@ -9,7 +10,7 @@ class Stream;
 class Behavior
 {
 public:
-    EntityID entityID;
+    GameObjectHandle entityID;
 
     bool bCanEnableUpdate;
 

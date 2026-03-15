@@ -10,10 +10,10 @@
 
 #include <gr-render/gCommon.h>
 
-#include "gr-base/core/default.hpp"
-
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
+
+#include "gr-base/ecs/default.hpp"
 
 #include <functional>
 

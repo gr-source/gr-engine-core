@@ -1,17 +1,14 @@
 #include "gr-base/ecs/entity.hpp"
 
 #include "gr-base/core/gameObject.hpp"
-#include "gr-base/core/mainthreaddispatcher.hpp"
-#include "gr-base/core/scene.hpp"
+
 #include "gr-base/ecs/behavior.hpp"
 #include "gr-base/ecs/behaviorRegistry.hpp"
 #include "gr-base/ecs/behaviorStorage.hpp"
 
 #include <algorithm>
 
-#include <cstdint>
-
-Entity::Entity(EntityID id) : m_id(id), m_bPrefab(false)
+Entity::Entity(GameObjectHandle cacheID) : m_cacheID(cacheID), m_bPrefab(false)
 {}
 
 Behavior* Entity::addComponent(const char* name)
@@ -23,16 +20,6 @@ Behavior* Entity::getComponent(const char* name) const
 {
     return getComponent(GetHash(name));
 }
-/*
-static void OnStart(uint64_t hash, ComponentHandle handle)
-{
-    auto behavior = BehaviorStorage::GetComponent(hash, handle);
-    if (behavior == nullptr)
-        return;
-
-    behavior->Start();
-}
-*/
 
 // #include <iostream>
 Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
@@ -67,7 +54,7 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
     }
 
     auto behavior = BehaviorStorage::GetComponent(hash, handle);
-    behavior->entityID = m_id;
+    behavior->entityID = m_cacheID;
     if (!m_bPrefab)
         behavior->Init();
 
@@ -117,11 +104,6 @@ ComponentHandle Entity::GetID(uint64_t hash) const
         return INVALID_COMPONENT_ID;
 
     return m_lookupTable[tableID].handle;
-}
-
-EntityID Entity::getCacheID() const
-{
-    return m_id;
 }
 
 #include "gr-base/script/transform.hpp"

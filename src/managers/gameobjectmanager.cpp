@@ -77,7 +77,7 @@ GameObjectManager::~GameObjectManager()
 // private
 GameObjectHandle GameObjectManager::instantiate(GameObjectHandle other)
 {
-    auto newGameObjectID = create(GameObject::Get(other)->getName());
+    auto newGameObjectID = create(GameObject::Get(other)->GetName());
     if (newGameObjectID == HANDLE_INVALID)
         return HANDLE_INVALID;
 
@@ -157,7 +157,7 @@ void GameObjectManager::destroyImediate(GameObjectHandle handle)
     {
         auto transform = gameObject.GetTransform();
         for (auto child : transform->getChildren())
-            destroyImediate(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject()->getCacheID());
+            destroyImediate(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject()->GetCacheID());
     }
 
     gameObject.~GameObject();

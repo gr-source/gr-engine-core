@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+// https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV-1a_hash
 inline uint64_t GetHash(const char* str)
 {
     uint64_t hash = 14695981039346656037UL;

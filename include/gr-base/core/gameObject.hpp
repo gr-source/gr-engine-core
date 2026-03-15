@@ -11,7 +11,7 @@
 class GameObject : public Entity
 {
 public:
-    static GameObjectHandle Instantiate(GameObject* other);
+    static GameObjectHandle Instantiate(GameObjectHandle other);
 
     static GameObjectHandle Create(const std::string& name);
 
@@ -26,13 +26,7 @@ public:
     GameObject(GameObjectHandle id);
     ~GameObject();
 
-    std::string getName() const;
-
-    void setName(const std::string& name);
-
     Transform* GetTransform() const;
-
-    void SetState(bool enable);
 
     void Copy(GameObjectHandle other);
 
@@ -40,13 +34,35 @@ public:
 
     void Deserialize(Stream* stream);
 
-    void SetScene(Scene* scene);
+    inline const std::string &GetName() const
+    {
+        return m_name;
+    }
 
-    Scene* GetScene() const;
+    inline void setName(const std::string& name)
+    {
+        m_name = name;
+    }
 
-    void SetIsStatic(bool b);
+    inline void SetScene(Scene* scene)
+    {
+        m_scene = scene;
+    }
 
-    bool GetIsStatic() const;
+    inline Scene* GetScene() const
+    {
+        return m_scene;
+    }
+
+    inline void SetIsStatic(bool value)
+    {
+        m_isStatic = value;
+    }
+
+    inline bool GetIsStatic() const
+    {
+        return m_isStatic;
+    }
 
     GameObjectHandle FindChildByName(const std::string& name);
 

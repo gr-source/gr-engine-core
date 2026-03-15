@@ -1,10 +1,12 @@
 #pragma once
 
-#include "gr-base/core/default.hpp"
+#include "gr-base/ecs/default.hpp"
 
 #include "gr-base/pool/poolObject.hpp"
 
 #include <gr-math/gmath.hpp>
+
+#include <vector>
 
 extern "C"
 {
@@ -30,7 +32,6 @@ typedef struct StreamChunk
     GameObjectHandle* objects;
 } StreamChunk;
 
-#include <vector>
 class Chunk
 {
     Vector2 position;

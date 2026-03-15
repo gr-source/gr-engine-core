@@ -29,11 +29,11 @@ void Rigidbody::Init()
 
     auto collider = GetComponent<Collider>();
     if (collider == nullptr)
-        return Console::LogError("[ Rigidbody ] Collider not found: %s", GetGameObject()->getName().c_str());
+        return Console::LogError("[ Rigidbody ] Collider not found: %s", GetGameObject()->GetName().c_str());
 
     auto shape = collider->shape;
     if (shape == nullptr)
-        return Console::LogError("[ Rigidbody ] Shape not found: %s", GetGameObject()->getName().c_str());
+        return Console::LogError("[ Rigidbody ] Shape not found: %s", GetGameObject()->GetName().c_str());
 
     m_DefaultMotionState = std::make_shared<btDefaultMotionState>(
 		btTransform(

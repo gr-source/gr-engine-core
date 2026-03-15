@@ -1,11 +1,6 @@
 #pragma once
 
-#include "gr-base/core/culling/octree.hpp"
-
-#include "gr-base/core/geometry/default.hpp"
-#include "gr-base/core/default.hpp"
-
-#include "gr-base/script/default.hpp"
+#include "gr-base/ecs/default.hpp"
 
 #include "default.hpp"
 

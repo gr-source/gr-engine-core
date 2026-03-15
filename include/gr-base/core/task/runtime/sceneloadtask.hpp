@@ -2,8 +2,6 @@
 
 #include "gr-base/core/thread/asynctask.hpp"
 
-#include "gr-base/core/default.hpp"
-
 #include "gr-base/core/file/default.hpp"
 
 #include "gr-base/script/default.hpp"
@@ -14,6 +12,10 @@
 
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
+
+#include "gr-base/core/default.hpp"
+
+#include "gr-base/ecs/default.hpp"
 
 #include <functional>
 

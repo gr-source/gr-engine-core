@@ -10,9 +10,9 @@
 
 #include "gr-base/script/transform.hpp"
 
-GameObjectHandle GameObject::Instantiate(GameObject *other)
+GameObjectHandle GameObject::Instantiate(GameObjectHandle other)
 {
-    return GameObjectManager::Instantiate(other->getCacheID());
+    return GameObjectManager::Instantiate(other);
 }
 
 GameObjectHandle GameObject::Create(const std::string &name)
@@ -49,23 +49,10 @@ GameObject::~GameObject()
         BehaviorStorage::Deallocate(hash, GetID(hash));
 }
 
-std::string GameObject::getName() const
-{
-    return m_name;
-}
-
-void GameObject::setName(const std::string& name)
-{
-    m_name = name;
-}
-
 Transform* GameObject::GetTransform() const
 {
     return BehaviorStorage::GetComponent<Transform>(m_transform);
 }
-
-void GameObject::SetState(bool enable)
-{}
 
 void GameObject::Copy(GameObjectHandle otherID)
 {
@@ -89,9 +76,9 @@ void GameObject::Copy(GameObjectHandle otherID)
         auto childTransform = BehaviorStorage::GetComponent<Transform>(transformID);
 
         auto childGO = childTransform->GetGameObject();
-        GameObjectHandle childID = childGO->getCacheID();
+        GameObjectHandle childID = childGO->GetCacheID();
         
-        GameObjectHandle newChildID = GameObject::Create(childGO->getName());
+        GameObjectHandle newChildID = GameObject::Create(childGO->GetName());
 
         auto newChildGO = GameObject::Get(newChildID);
         newChildGO->GetTransform()->setParent(BehaviorStorage::GetComponent<Transform>(myTransformID));
@@ -113,39 +100,18 @@ void GameObject::Copy(GameObjectHandle otherID)
 
 void GameObject::Serialize(Stream* stream) const
 {
-    Serialize(getCacheID(), stream);
+    Serialize(GetCacheID(), stream);
 }
 
 void GameObject::Deserialize(Stream* stream)
 {
-    Deserialize(stream, getCacheID(), INVALID_COMPONENT_ID);
+    Deserialize(stream, GetCacheID(), INVALID_COMPONENT_ID);
 }
-
-void GameObject::SetScene(Scene* scene)
-{
-    m_scene = scene;
-}
-
-Scene* GameObject::GetScene() const
-{
-    return m_scene;
-}
-
-void GameObject::SetIsStatic(bool b)
-{
-    m_isStatic = b;
-}
-
-bool GameObject::GetIsStatic() const
-{
-    return m_isStatic;
-}
-
 
 GameObjectHandle GameObject::FindChildByName(const std::string& name)
 {
     if (m_name == name)
-        return getCacheID();
+        return GetCacheID();
 
     for (auto &transformID : GetTransform()->getChildren())
     {

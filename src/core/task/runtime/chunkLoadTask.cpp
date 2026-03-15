@@ -113,7 +113,7 @@ void ChunkLoadTask::onPostExecute(int result)
         {
             auto prefabID = CreateFromCache(root.get());
 
-            auto gameObjectID = GameObject::Instantiate(GameObject::Get(prefabID));
+            auto gameObjectID = GameObject::Instantiate(prefabID);
             GameObject::DestroyImediate(prefabID);
 
             // vector_push(chunk->objects, gameObjectID);

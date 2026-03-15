@@ -18,7 +18,7 @@ void MeshCollider::Init()
     auto meshFilter = GetComponent<MeshFilter>();
 
     if (meshFilter == nullptr)
-        return Console::LogError("[ MeshFilter ] This %s don't has meshFilter!", GetGameObject()->getName().c_str());
+        return Console::LogError("[ MeshFilter ] This %s don't has meshFilter!", GetGameObject()->GetName().c_str());
 
     try {
         Mesh mesh_out;

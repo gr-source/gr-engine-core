@@ -1,16 +1,15 @@
 #pragma once
 
-#include "gr-base/core/default.hpp"
+#include "gr-base/ecs/default.hpp"
+
 #include <vector>
+#include <string>
+#include <mutex>
 
 extern "C"
 {
 #include "gr-base/externals/array.h"
 }
-
-#include <string>
-#include <atomic>
-#include <mutex>
 
 #define n32nill (uint32_t)-1
 

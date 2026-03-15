@@ -9,13 +9,14 @@
 
 #define INVALID_COMPONENT_ID (ComponentID)-1
 
+typedef Handle GameObjectHandle;
+
 typedef Handle ComponentHandle;
 typedef uint32_t ComponentID;
 
-typedef uint64_t EntityID;
+typedef uint64_t ComponentHash;
 
+class GameObject;
 class Behavior;
 class Entity;
-
-typedef uint64_t ComponentHash;
 

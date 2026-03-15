@@ -138,7 +138,7 @@ void SceneLoadTask::onPostExecute(int result)
         {
             auto gameObjectID = CreateFromCache(root.get());
 
-            GameObject::Instantiate(GameObject::Get(gameObjectID));
+            GameObject::Instantiate(gameObjectID);
             
             GameObject::DestroyImediate(gameObjectID);
         }

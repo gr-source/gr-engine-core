@@ -63,7 +63,7 @@ void GameObjectSaveTask::onPostExecute(int result)
 
     auto gameObject = GameObject::Get(m_gameObjectID);
 
-    Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", gameObject->getName().c_str());
+    Console::LogInfo("[ GameObjectSaveTask ] Saved: %s", gameObject->GetName().c_str());
 
     if (m_func != nullptr)
         m_func(m_gameObjectID);
@@ -263,7 +263,7 @@ int GameObjectSaveTask::write_mesh(Stream *stream)
 
 int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
 {
-    if (!stream->write(go->getName()))
+    if (!stream->write(go->GetName()))
         return 1;
 
     if (!stream->write(go->GetIsStatic()))
@@ -349,7 +349,7 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
     for (uint64_t hash : gameObject->GetHashes())
         behaviorList.emplace_back(hash, gameObject->getComponent(hash));
 
-    m_componentdata.emplace_back(gameObject->getName(), behaviorList);
+    m_componentdata.emplace_back(gameObject->GetName(), behaviorList);
 
     auto meshFilter = gameObject->getComponent<MeshFilter>();
     if (meshFilter != nullptr)

@@ -8,7 +8,7 @@
 class Entity
 {
 public:
-    Entity(EntityID id);
+    Entity(GameObjectHandle cacheID);
     virtual ~Entity() {}
 
     template <typename T, typename... Args>
@@ -36,11 +36,14 @@ public:
     template <typename T>
     ComponentHandle GetID() const;
 
-    EntityID getCacheID() const;
-
     void CallStart();
 
     void CallDestroy();
+
+    inline GameObjectHandle GetCacheID() const
+    {
+        return m_cacheID;
+    }
 
     inline void SetIsPrefab(bool value)
     {
@@ -65,7 +68,7 @@ private:
 
     std::vector<uint64_t> m_activeHashes;
 
-    EntityID m_id;
+    GameObjectHandle m_cacheID;
 
     bool m_bPrefab;
 };

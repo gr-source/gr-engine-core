@@ -12,13 +12,13 @@
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/task/texturemanager.hpp"
 
-#include "gr-base/core/default.hpp"
-
 #include "gr-base/core/task/animationmanager.hpp"
 
 #include "gr-base/managers/materialmanager.hpp"
 #include "gr-base/managers/shadermanager.hpp"
 #include "gr-base/managers/meshmanager.hpp"
+
+#include "gr-base/ecs/default.hpp"
 
 class AssetsManager
 {
