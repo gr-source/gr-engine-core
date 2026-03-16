@@ -45,8 +45,6 @@ BehaviorRegistry::~BehaviorRegistry()
         array_free(m_infos);
 }
 
-#include <iostream>
-
 void BehaviorRegistry::registry(ComponentInfo* info)
 {
     size_t poolID = info->hash % COMPONENT_TABLE_SIZE;
@@ -87,7 +85,7 @@ ComponentInfo* BehaviorRegistry::get(ComponentHash hash)
 {
     size_t poolID = hash % COMPONENT_TABLE_SIZE;
     if (m_bitmask.test(poolID))
-        return &((ComponentInfo *)m_infos->vector)[poolID];
+        return (ComponentInfo *)(m_infos->vector) + poolID;
     return nullptr;
 }
 

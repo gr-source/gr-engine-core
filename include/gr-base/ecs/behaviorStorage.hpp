@@ -39,6 +39,9 @@ public:
     template <typename T>
     static T* GetComponent(ComponentHandle id);
 
+    template <typename T>
+    static T* GetDenseArray();
+
     static Behavior* GetComponent(uint64_t hash, ComponentHandle id);
 
     static void NotifyUpdate(ComponentHash hash, ComponentInfo* src);
@@ -81,4 +84,9 @@ inline T* BehaviorStorage::GetComponent(ComponentHandle id)
 {
     return static_cast<T*>(s_BehaviorStorage->getComponent(GetHashByType<T>("nill"), id));
 }
+
+
+template <typename T>
+inline T* BehaviorStorage::GetDenseArray()
+{}
 

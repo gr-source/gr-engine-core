@@ -16,12 +16,9 @@ typedef struct ComponentInfo
 {
     const char* name;
     size_t stride;
+    size_t offset;
     ComponentHash hash;
     ComponentHash parent;
-    size_t offset;
-
-    MethodPointer getwrappernext;
-    MethodPointer getwrapperbehavior;
 
     union
     {

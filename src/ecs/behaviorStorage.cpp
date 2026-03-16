@@ -84,7 +84,6 @@ BehaviorStorage::~BehaviorStorage()
     array_free(m_storage);
 }
 
-#include <iostream>
 // private
 void BehaviorStorage::notifyUpdate(ComponentHash hash, ComponentInfo* src)
 {
@@ -118,7 +117,7 @@ void BehaviorStorage::notifyUpdate(ComponentHash hash, ComponentInfo* src)
 
 void BehaviorStorage::reallocComponentChunk(ComponentInfo* info, size_t newStride)
 {
-    size_t storageID = info->hash % COMPONENT_TABLE_SIZE;
+    size_t storageID = info->hash & (COMPONENT_TABLE_SIZE - 1);
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
     if (set.dense == nullptr)
@@ -150,7 +149,7 @@ void BehaviorStorage::reallocComponentChunk(ComponentInfo* info, size_t newStrid
 
 void BehaviorStorage::restoreVTable(ComponentInfo* info)
 {
-    size_t storageID = info->hash % COMPONENT_TABLE_SIZE;
+    size_t storageID = info->hash & (COMPONENT_TABLE_SIZE - 1);
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
 
@@ -171,7 +170,7 @@ ComponentHandle BehaviorStorage::allocate(uint64_t hash, ComponentHandle source)
     if (info == nullptr)
         return HANDLE_INVALID;
 
-    size_t storageID = hash % COMPONENT_TABLE_SIZE;
+    size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
     if (set.freeID == INVALID_COMPONENT_ID)
@@ -202,7 +201,7 @@ void BehaviorStorage::deallocate(uint64_t hash, ComponentHandle handle)
     if (info == nullptr)
         return;
 
-    size_t storageID = hash % COMPONENT_TABLE_SIZE;
+    size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
 
     ComponentID slotID = handle_get_id(handle);
@@ -252,7 +251,7 @@ Behavior* BehaviorStorage::getComponent(uint64_t hash, ComponentHandle handle)
     if (info == nullptr)
         return nullptr;
 
-    size_t storageID = hash % COMPONENT_TABLE_SIZE;
+    size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
 
@@ -263,7 +262,7 @@ Behavior* BehaviorStorage::getComponent(uint64_t hash, ComponentHandle handle)
     if (slot.version != version)
         return nullptr;
 
-    uint8_t* wrapper = (uint8_t*)set.dense->vector;
+    uint8_t* wrapper = (uint8_t*)(set.dense->vector);
     
     return (Behavior *)(wrapper + (slot.denseIndex * info->stride + info->offset));
 }
@@ -370,9 +369,9 @@ void BehaviorStorage::start()
         if (!info->starthash)
             continue;
 
-        size_t poolID = hash % COMPONENT_TABLE_SIZE;
+        size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
 
-        ComponentSparseSet& set = vector[poolID];
+        ComponentSparseSet& set = vector[storageID];
         if (set.dense == nullptr)
             continue;
 
@@ -408,9 +407,9 @@ void BehaviorStorage::update()
         if (!info->update)
             continue;
 
-        size_t poolID = hash % COMPONENT_TABLE_SIZE;
+        size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
 
-        ComponentSparseSet& set = vector[poolID];
+        ComponentSparseSet& set = vector[storageID];
         if (set.dense == nullptr)
             continue;
 

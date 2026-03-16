@@ -48,26 +48,18 @@ private:
 
     template <typename T>
     static void Destructor(Behavior* behavior);
-
-    template <typename T>
-    static ComponentID* GetWrapperNext(ComponentWrapper<T>* pool, ComponentID id);
-
-    template <typename T>
-    static Behavior* GetWrapperBehavior(ComponentWrapper<T>* pool, ComponentID id);
 };
 
 template <typename T>
 inline ComponentInfo BehaviorRegistry::Registry(const char* name, ComponentHash hash, ComponentHash parent)
 {
     ComponentInfo info;
+    info.stride = sizeof(T);
     info.stride = sizeof(struct ComponentWrapper<T>);
     info.name = name;
     info.hash = hash;
     info.parent = parent;
     info.offset = (size_t)((uint8_t*)&((ComponentWrapper<T>*)0)->component);
-
-    info.getwrappernext = (MethodPointer)BehaviorRegistry::GetWrapperNext<T>;
-    info.getwrapperbehavior = (MethodPointer)BehaviorRegistry::GetWrapperBehavior<T>;
 
     info.constructor = (MethodPointer)BehaviorRegistry::Constructor<T>;
     info.destructor = (MethodPointer)BehaviorRegistry::Destructor<T>;
@@ -97,16 +89,5 @@ inline void BehaviorRegistry::Destructor(Behavior* behavior)
     static_cast<T*>(behavior)->~T();
 }
 
-template <typename T>
-inline ComponentID* BehaviorRegistry::GetWrapperNext(ComponentWrapper<T>* pool, ComponentID id)
-{
-    return &pool[id].next;
-}
-
-template <typename T>
-inline Behavior* BehaviorRegistry::GetWrapperBehavior(ComponentWrapper<T>* pool, ComponentID id)
-{
-    return &pool[id].component;
-}
 
 

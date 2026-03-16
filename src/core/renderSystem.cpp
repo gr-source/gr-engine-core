@@ -102,9 +102,7 @@ void RenderSystem::update()
         {
             Transform* transform = BehaviorStorage::GetComponent<Transform>(transforms[i]);
 
-            auto &globalMatrix = transform->getGlobalMatrix();
-
-            vec[i] = globalMatrix;
+            vec[i] = transform->getGlobalMatrix();
         }
     }
 }
