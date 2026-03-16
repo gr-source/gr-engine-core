@@ -3,6 +3,7 @@
 #include "gr-base/ecs/componentinfo.hpp"
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/utils.hpp"
+#include "gr-base/pool/poolObject.hpp"
 
 extern "C"
 {
@@ -13,8 +14,9 @@ typedef struct ComponentSlot
 {
     ComponentID denseIndex;
     ComponentID version;
-    ComponentID next;
 } ComponentSlot;
+
+typedef uint32_t SlotID;
 
 class BehaviorStorage
 {
@@ -46,6 +48,8 @@ public:
 
 private:
     static BehaviorStorage* s_BehaviorStorage;
+
+    ObjectPool<ComponentSlot> m_slots;
 
     array* m_storage;
 

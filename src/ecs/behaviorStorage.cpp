@@ -1,14 +1,13 @@
 #include "gr-base/ecs/behaviorStorage.hpp"
 
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/default.hpp"
-#include "gr-base/core/gameObject.hpp"
+
 #include "gr-base/ecs/behaviorRegistry.hpp"
-
 #include "gr-base/ecs/behavior.hpp"
-#include "gr-base/externals/array.h"
-#include <cassert>
 
+#include "gr-base/externals/array.h"
+
+#include <iostream>
 
 BehaviorStorage* BehaviorStorage::s_BehaviorStorage = nullptr;
 
@@ -61,10 +60,9 @@ BehaviorStorage::BehaviorStorage() : m_storage(nullptr)
     for (uint32_t i=0;i<m_storage->length;i++)
     {
         ComponentSparseSet& set = vector[i];
-        set.slot = nullptr;
         set.dense = nullptr;
+        set.capacity = 0;
         set.count = 0;
-        set.freeID = INVALID_COMPONENT_ID;
     }
 }
 
@@ -74,9 +72,6 @@ BehaviorStorage::~BehaviorStorage()
     for (uint32_t i=0;i<m_storage->length;i++)
     {
         ComponentSparseSet& set = vector[i];
-        if (set.slot != nullptr)
-            array_free(set.slot);
-
         if (set.dense != nullptr)
             array_free(set.dense);
     }
@@ -147,10 +142,12 @@ void BehaviorStorage::reallocComponentChunk(ComponentInfo* info, size_t newStrid
 }
 
 
-#include <iostream>
 void BehaviorStorage::restoreVTable(ComponentInfo* info)
 {
-    std::cout << "Restore";
+    std::cout << "[BehaviorStorage] Restore VTable of: " << info->name << std::endl;
+
+    void* newVTable = ((void*(*)(void))(info->getvetable))();
+
     size_t storageID = info->hash & (COMPONENT_TABLE_SIZE - 1);
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
@@ -159,8 +156,8 @@ void BehaviorStorage::restoreVTable(ComponentInfo* info)
 
     for (ComponentID id=0;id<set.count;id++)
     {
-        Behavior* behavior = (Behavior*)ptr;
-        ((void (*)(Behavior*, const Behavior*))(info->constructor))(behavior, behavior);
+        void** vtable = (void**)ptr;
+        *vtable = newVTable;
 
         ptr += info->stride;
     }
@@ -175,25 +172,25 @@ ComponentHandle BehaviorStorage::allocate(uint64_t hash, ComponentHandle source)
     size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
-    if (set.freeID == INVALID_COMPONENT_ID)
+    if (set.count >= set.capacity)
         reallocate(info, &set);
 
-    ComponentSlot* slots = (ComponentSlot*)set.slot->vector;
+    SlotID slotID = m_slots.allocate();
 
     uint8_t* wraper = (uint8_t*)set.dense->vector;
 
-    ComponentID slotID = set.freeID;
-    set.freeID = slots[slotID].next;
-    
-    ComponentSlot& slot = slots[slotID];
-    slot.denseIndex = set.count++;
+    ComponentSlot* slot = m_slots.get(slotID);
+    if (!slot->version)
+        slot->version = 1;
 
-    *(ComponentID*)(wraper + (slot.denseIndex * info->stride)) = slotID;
+    slot->denseIndex = set.count++;
 
-    Behavior* behavior = (Behavior*)(wraper + (slot.denseIndex * info->stride + info->offset));
+    *(ComponentID*)(wraper + (slot->denseIndex * info->stride)) = slotID;
+
+    Behavior* behavior = (Behavior*)(wraper + (slot->denseIndex * info->stride + info->offset));
     ((void(*)(Behavior*, const Behavior*))(info->constructor))(behavior, source != HANDLE_INVALID ? GetComponent(hash, source) : nullptr);
 
-    return handle_create(slotID, slot.version);
+    return handle_create(slotID, slot->version);
 }
 
 void BehaviorStorage::deallocate(uint64_t hash, ComponentHandle handle)
@@ -208,11 +205,7 @@ void BehaviorStorage::deallocate(uint64_t hash, ComponentHandle handle)
     ComponentID slotID = handle_get_id(handle);
     ComponentID version = handle_get_version(handle);
 
-    ComponentSlot* slots = (ComponentSlot*)set.slot->vector;
-    if (slots == nullptr)
-        return;
-
-    ComponentSlot* slot = &slots[slotID];
+    ComponentSlot* slot = m_slots.get(slotID);
     if (slot->version != version)
         return;
 
@@ -223,9 +216,6 @@ void BehaviorStorage::deallocate(uint64_t hash, ComponentHandle handle)
 
     Behavior* behavior = (Behavior*)(wrapper + (removeIndex * info->stride + info->offset));
     ((void(*)(Behavior*))(info->destructor))(behavior);
-
-    slot->next = set.freeID;
-    set.freeID = slotID;
 
     if (removeIndex != lastIndex)
     {
@@ -239,8 +229,10 @@ void BehaviorStorage::deallocate(uint64_t hash, ComponentHandle handle)
 
         *(ComponentID*)(wrapper + (removeIndex * info->stride)) = newSlotID;
 
-        slots[newSlotID].denseIndex = removeIndex;
+        m_slots.get(newSlotID)->denseIndex = removeIndex;
     }
+
+    m_slots.deallocate(slotID);
 
     slot->denseIndex = INVALID_COMPONENT_ID;
     slot->version++;
@@ -259,13 +251,13 @@ Behavior* BehaviorStorage::getComponent(uint64_t hash, ComponentHandle handle)
     ComponentID slotID = handle_get_id(handle);
     ComponentID version = handle_get_version(handle);
 
-    ComponentSlot& slot = ((ComponentSlot*)set.slot->vector)[slotID];
-    if (slot.version != version)
+    ComponentSlot* slot = m_slots.get(slotID);
+    if (slot->version != version)
         return nullptr;
 
     uint8_t* wrapper = (uint8_t*)(set.dense->vector);
     
-    return (Behavior *)(wrapper + (slot.denseIndex * info->stride + info->offset));
+    return (Behavior *)(wrapper + (slot->denseIndex * info->stride + info->offset));
 }
 
 bool BehaviorStorage::reinstance(uint64_t hash, Behavior* dest, const Behavior* src)
@@ -274,33 +266,14 @@ bool BehaviorStorage::reinstance(uint64_t hash, Behavior* dest, const Behavior* 
     if (info == nullptr)
         return false;
 
-    // size_t poolID = hash % COMPONENT_TABLE_SIZE;
-
-    // BehaviorPool& pool = ((BehaviorPool*)m_storage->vector)[poolID];
-
     ((void(*)(Behavior*, const Behavior*))(info->constructor))(dest, src);
 
     return true;
 }
 
-static void AddFreeID(ComponentInfo* info, ComponentSparseSet* set, ComponentID first)
-{
-    array* arr = set->slot;
-
-    ComponentSlot* slots = (ComponentSlot*)arr->vector;
-
-    ComponentID last = arr->length - 1;
-    for (size_t i=first;i<last;i++)
-        slots[i].next = i + 1;
-
-    slots[last].next = set->freeID;
-    set->freeID = first;
-}
-
 void BehaviorStorage::reallocate(ComponentInfo* info, ComponentSparseSet* set)
 {
     size_t lastsize = set->dense != nullptr ? set->dense->length : 0;
-    // size_t newsize = lastsize + count;
 
     if (lastsize > 0)
     {
@@ -333,29 +306,12 @@ void BehaviorStorage::reallocate(ComponentInfo* info, ComponentSparseSet* set)
 
         array_free(set->dense);
         set->dense = newPool;
-
-        auto slot = array_create(set->capacity, sizeof(ComponentSlot));
-        memcpy((void*)slot->vector, (void*)set->slot->vector, lastsize * sizeof(ComponentSlot));
-
-        auto slots = (ComponentSlot*)slot->vector;
-        for (ComponentID i=lastsize;i<set->capacity;i++)
-            slots[i] = {INVALID_COMPONENT_ID, 1, INVALID_COMPONENT_ID};
-
-        array_free(set->slot);
-        set->slot = slot;
     } else
     {
         set->capacity = 2;
 
-        set->slot = array_create(set->capacity, sizeof(ComponentSlot));
         set->dense = array_create(set->capacity, info->stride);
-
-        ComponentSlot* slots = (ComponentSlot*)set->slot->vector;
-        for (ComponentID i=lastsize;i<set->capacity;i++)
-            slots[i] = {INVALID_COMPONENT_ID, 1, INVALID_COMPONENT_ID};
     }
-
-    AddFreeID(info, set, lastsize);
 }
 
 void BehaviorStorage::start()

@@ -124,6 +124,7 @@ bool BehaviorRegistry::reconfigure(ComponentInfo* dest, const ComponentInfo* src
 {
     dest->name = src->name;
     dest->parent = src->parent;
+    dest->getvetable = src->getvetable;
 
     if (
             dest->starthash != src->starthash ||

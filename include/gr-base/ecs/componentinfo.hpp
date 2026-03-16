@@ -15,11 +15,8 @@ typedef void (*MethodPointer)();
 
 typedef struct ComponentSparseSet
 {
-    array* slot;
     array* dense;
-    array* denseIDToSlotID;
     ComponentID count;
-    ComponentID freeID;
     ComponentID capacity;
 } ComponentSparseSet;
 
@@ -41,6 +38,12 @@ typedef struct ComponentInfo
     {
         MethodPointer destructor;
         uint64_t destructorhash;
+    };
+
+    union
+    {
+        MethodPointer getvetable;
+        uint64_t getvetablehash;
     };
 
     union

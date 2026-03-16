@@ -65,6 +65,9 @@ private:
 
     template <typename T>
     static void Destructor(Behavior* behavior);
+
+    template <typename T>
+    static void* GetVTablePTR();
 };
 
 template <typename T>
@@ -80,6 +83,8 @@ inline ComponentInfo BehaviorRegistry::Registry(const char* name, ComponentHash 
 
     info.constructor = (MethodPointer)BehaviorRegistry::Constructor<T>;
     info.destructor = (MethodPointer)BehaviorRegistry::Destructor<T>;
+
+    info.getvetable = (MethodPointer)BehaviorRegistry::GetVTablePTR<T>;
 
     info.start = has_start<T>::value ? (MethodPointer)StartWrapper<T> : 0;
     info.update = has_update<T>::value ? (MethodPointer)UpdateWrapper<T> : 0;
@@ -106,5 +111,16 @@ inline void BehaviorRegistry::Destructor(Behavior* behavior)
     static_cast<T*>(behavior)->~T();
 }
 
+template <typename T>
+inline void* BehaviorRegistry::GetVTablePTR()
+{
+    alignas(T) char buffer[sizeof(T)];
+    T* temp = new (buffer) T();
+
+    void* vptrHandle = *(void**)temp;
+
+    temp->~T();
+    return vptrHandle;
+}
 
 
