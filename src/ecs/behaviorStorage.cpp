@@ -359,29 +359,28 @@ void BehaviorStorage::resize(ComponentInfo* info, ComponentSparseSet* set, size_
 
 void BehaviorStorage::start()
 {
-    array* infos = BehaviorRegistry::GetBehaviorInfos();
+    ComponentInfo* infos = BehaviorRegistry::GetAllComponentInfo();
 
     ComponentSparseSet* vector = (ComponentSparseSet*)m_storage->vector;
-
-    for (auto& hash : BehaviorRegistry::GetActiveBehaviorActive())
+    for (ComponentInfoID id=0;id<BehaviorRegistry::GetCount();id++)
     {
-        ComponentInfo* info = BehaviorRegistry::Get(hash);
-        if (!info->starthash)
+        ComponentInfo& info = infos[id];
+        if (!info.starthash)
             continue;
 
-        size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
+        size_t storageID = info.hash & (COMPONENT_TABLE_SIZE - 1);
 
         ComponentSparseSet& set = vector[storageID];
         if (set.dense == nullptr)
             continue;
 
-        uint8_t* ptr = (uint8_t*)set.dense->vector + info->offset;
-        size_t stride = info->stride;
+        uint8_t* ptr = (uint8_t*)(set.dense->vector) + info.offset;
+        size_t stride = info.stride;
 
         void** vtable = (void**)ptr;
         if (*vtable == nullptr)
         {
-            Console::LogError("[ BehaviorStorage ] the vtable of %s is breaked.", info->name);
+            Console::LogError("[ BehaviorStorage ] the vtable of %s is breaked.", info.name);
             continue;
         }
 
@@ -397,6 +396,7 @@ void BehaviorStorage::start()
 
 void BehaviorStorage::update()
 {
+    /*
     array* infos = BehaviorRegistry::GetBehaviorInfos();
 
     ComponentSparseSet* vector = (ComponentSparseSet*)m_storage->vector;
@@ -425,6 +425,7 @@ void BehaviorStorage::update()
             ptr += stride;
         }
     }
+    */
 }
 
 

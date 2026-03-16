@@ -1,11 +1,14 @@
 #pragma once
 
 #include "componentinfo.hpp"
+#include "gr-base/pool/poolObject.hpp"
 #include "utils.hpp"
 
 #include <cstddef>
 #include <vector>
 #include <bitset>
+
+typedef uint32_t ComponentInfoID;
 
 class BehaviorRegistry
 {
@@ -17,18 +20,22 @@ public:
 
     static ComponentInfo* Get(ComponentHash hash);
 
-    static std::vector<ComponentHash> GetActiveBehaviorActive();
+    static ComponentInfo* GetAllComponentInfo();
 
-    static array* GetBehaviorInfos();
+    static ComponentInfoID GetCount();
 
 private:
     static BehaviorRegistry& GetInstance();
 
     std::bitset<COMPONENT_TABLE_SIZE> m_bitmask;
 
-    std::vector<ComponentHash> m_behaviorActives;
+    ComponentInfoID m_capacity;
 
-    array* m_infos;
+    ComponentInfoID m_count;
+
+    array* m_pool;
+
+    array* m_sparseSet;
 
     BehaviorRegistry();
     ~BehaviorRegistry();
@@ -39,9 +46,19 @@ private:
 
     ComponentInfo* get(ComponentHash hash);
 
+    inline ComponentInfo* getAllComponentInfo() const
+    {
+        return (ComponentInfo*)m_pool->vector;
+    }
+
+    inline const ComponentInfoID& getCount() const
+    {
+        return m_count;
+    }
+
     bool reconfigure(ComponentInfo* dest, const ComponentInfo* src);
 
-    void resizeComponentInfo();
+    void reallocate();
 
     template <typename T>
     static void Constructor(Behavior* dest, const Behavior* src);
