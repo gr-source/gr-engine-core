@@ -77,7 +77,7 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
 
 Behavior* Entity::getComponent(uint64_t hash) const
 {
-    size_t tableID = hash % COMPONENT_TABLE_SIZE;
+    size_t tableID = hash & (COMPONENT_TABLE_SIZE - 1);
     if (m_signature.test(tableID))
     {
         auto& lookup = m_lookupTable[tableID];
@@ -88,17 +88,17 @@ Behavior* Entity::getComponent(uint64_t hash) const
 
 void Entity::destroy(uint64_t hash)
 {
-    size_t tableID = hash % COMPONENT_TABLE_SIZE;
+    size_t tableID = hash & (COMPONENT_TABLE_SIZE - 1);
     if (!m_signature.test(tableID))
         return;
 
     m_signature.set(tableID, false);
 
-    ComponentID id = m_lookupTable[tableID].handle;
+    ComponentHandle handle = m_lookupTable[tableID].handle;
 
     m_activeHashes.erase(std::remove(m_activeHashes.begin(), m_activeHashes.end(), hash), m_activeHashes.end());
 
-    BehaviorStorage::Deallocate(hash, id);
+    BehaviorStorage::Deallocate(hash, handle);
 }
 
 bool Entity::reinstance(const char* name, Behavior* dest, const Behavior* src)
@@ -113,7 +113,7 @@ std::vector<uint64_t> Entity::GetHashes() const
 
 ComponentHandle Entity::GetID(uint64_t hash) const
 {
-    size_t tableID = hash % COMPONENT_TABLE_SIZE;
+    size_t tableID = hash & (COMPONENT_TABLE_SIZE - 1);
     if (!m_signature.test(tableID))
         return INVALID_COMPONENT_ID;
 

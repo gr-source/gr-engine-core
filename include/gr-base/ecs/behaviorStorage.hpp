@@ -57,7 +57,7 @@ private:
 
     ComponentHandle allocate(uint64_t hash, ComponentHandle source);
 
-    void resize(ComponentInfo* info, ComponentSparseSet* set, size_t count);
+    void reallocate(ComponentInfo* info, ComponentSparseSet* set);
 
     void deallocate(uint64_t hash, ComponentHandle handle);
 

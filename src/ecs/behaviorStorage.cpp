@@ -147,8 +147,10 @@ void BehaviorStorage::reallocComponentChunk(ComponentInfo* info, size_t newStrid
 }
 
 
+#include <iostream>
 void BehaviorStorage::restoreVTable(ComponentInfo* info)
 {
+    std::cout << "Restore";
     size_t storageID = info->hash & (COMPONENT_TABLE_SIZE - 1);
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
@@ -174,7 +176,7 @@ ComponentHandle BehaviorStorage::allocate(uint64_t hash, ComponentHandle source)
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
     if (set.freeID == INVALID_COMPONENT_ID)
-        resize(info, &set, 512);
+        reallocate(info, &set);
 
     ComponentSlot* slots = (ComponentSlot*)set.slot->vector;
 
@@ -194,7 +196,6 @@ ComponentHandle BehaviorStorage::allocate(uint64_t hash, ComponentHandle source)
     return handle_create(slotID, slot.version);
 }
 
-#include <string.h>
 void BehaviorStorage::deallocate(uint64_t hash, ComponentHandle handle)
 {
     ComponentInfo* info = BehaviorRegistry::Get(hash);
@@ -296,7 +297,7 @@ static void AddFreeID(ComponentInfo* info, ComponentSparseSet* set, ComponentID 
     set->freeID = first;
 }
 
-void BehaviorStorage::resize(ComponentInfo* info, ComponentSparseSet* set, size_t count)
+void BehaviorStorage::reallocate(ComponentInfo* info, ComponentSparseSet* set)
 {
     size_t lastsize = set->dense != nullptr ? set->dense->length : 0;
     // size_t newsize = lastsize + count;

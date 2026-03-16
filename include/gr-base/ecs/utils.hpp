@@ -5,7 +5,7 @@
 #include "gr-base/externals/utils.h"
 
 template <typename T>
-inline ComponentHash GetHashByType(const char* key) noexcept
+inline ComponentHash GetHashByType(const char* key = nullptr) noexcept
 {
     static ComponentHash hash = GetHash(key);
     return hash;

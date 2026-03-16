@@ -78,20 +78,20 @@ template <typename T, typename... Args>
 inline T* Entity::addComponent(Args &&...args)
 {
     static_assert(sizeof(T) != 0);
-    return static_cast<T*>(addComponent(GetHashByType<T>(nullptr)));
+    return static_cast<T*>(addComponent(GetHashByType<T>()));
 }
 
 template <typename T>
 inline T* Entity::getComponent() const
 {
     static_assert(sizeof(T) != 0);
-    return static_cast<T*>(getComponent(GetHashByType<T>(nullptr)));
+    return static_cast<T*>(getComponent(GetHashByType<T>()));
 }
 
 template <typename T>
 inline ComponentHandle Entity::GetID() const
 {
-    return GetID(GetHashByType<T>(nullptr));
+    return GetID(GetHashByType<T>());
 }
 
 

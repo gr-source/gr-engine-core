@@ -17,6 +17,7 @@ typedef struct ComponentSparseSet
 {
     array* slot;
     array* dense;
+    array* denseIDToSlotID;
     ComponentID count;
     ComponentID freeID;
     ComponentID capacity;
