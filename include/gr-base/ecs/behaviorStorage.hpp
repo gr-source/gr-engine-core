@@ -9,15 +9,6 @@ extern "C"
 #include "gr-base/externals/array.h"
 }
 
-typedef struct ComponentSparseSet
-{
-    array* slot;
-    array* dense;
-    ComponentID count;
-    ComponentID freeID;
-    ComponentID capacity;
-} ComponentSparseSet;
-
 typedef struct ComponentSlot
 {
     ComponentID denseIndex;

@@ -12,6 +12,16 @@ extern "C"
 
 typedef void (*MethodPointer)();
 
+
+typedef struct ComponentSparseSet
+{
+    array* slot;
+    array* dense;
+    ComponentID count;
+    ComponentID freeID;
+    ComponentID capacity;
+} ComponentSparseSet;
+
 typedef struct ComponentInfo
 {
     const char* name;
