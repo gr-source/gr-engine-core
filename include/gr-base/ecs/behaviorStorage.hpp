@@ -23,19 +23,19 @@ class BehaviorStorage
 public:
     static void SetInstance(BehaviorStorage* behaviorStorage);
 
-    static ComponentHandle Allocate(uint64_t hash, ComponentHandle source);
+    static ComponentHandle Allocate(ComponentHash hash, ComponentHandle source);
 
-    static void Deallocate(uint64_t hash, ComponentHandle handle);
+    static void Deallocate(ComponentHash hash, ComponentHandle handle);
 
-    static bool Reinstance(uint64_t hash, Behavior* dest, const Behavior* src);
+    static bool Reinstance(ComponentHash hash, Behavior* dest, const Behavior* src);
 
     template <typename T>
-    static T* GetComponent(ComponentHandle id);
+    static T* GetComponent(ComponentHandle handle);
 
     template <typename T>
     static T* GetDenseArray();
 
-    static Behavior* GetComponent(uint64_t hash, ComponentHandle id);
+    static Behavior* GetComponent(ComponentHash hash, ComponentHandle id);
 
     static void NotifyUpdate(ComponentHash hash, ComponentInfo* src);
 
@@ -59,15 +59,15 @@ private:
 
     void restoreVTable(ComponentInfo* info);
 
-    ComponentHandle allocate(uint64_t hash, ComponentHandle source);
+    ComponentHandle allocate(ComponentHash hash, ComponentHandle source);
 
     void reallocate(ComponentInfo* info, ComponentSparseSet* set);
 
-    void deallocate(uint64_t hash, ComponentHandle handle);
+    void deallocate(ComponentHash hash, ComponentHandle handle);
 
-    Behavior* getComponent(uint64_t hash, ComponentHandle handle);
+    Behavior* getComponent(ComponentHash hash, ComponentHandle handle);
 
-    bool reinstance(uint64_t hash, Behavior* dest, const Behavior* src);
+    bool reinstance(ComponentHash hash, Behavior* dest, const Behavior* src);
 
     void start();
 
@@ -75,9 +75,9 @@ private:
 };
 
 template <typename T>
-inline T* BehaviorStorage::GetComponent(ComponentHandle id)
+inline T* BehaviorStorage::GetComponent(ComponentHandle handle)
 {
-    return static_cast<T*>(s_BehaviorStorage->getComponent(GetHashByType<T>("nill"), id));
+    return static_cast<T*>(s_BehaviorStorage->getComponent(GetHashByType<T>(), handle));
 }
 
 

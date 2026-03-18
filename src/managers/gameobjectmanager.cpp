@@ -148,7 +148,8 @@ void GameObjectManager::destroyImediate(GameObjectHandle handle)
         return;
 
     auto& gameObject = wrapper.gameObject;
-    gameObject.CallDestroy();
+    if (!gameObject.GetIsPrefab())
+        gameObject.CallDestroy();
 
     auto scene = gameObject.GetScene();
     if (scene != nullptr)

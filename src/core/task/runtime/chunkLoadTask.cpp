@@ -253,22 +253,6 @@ int ChunkLoadTask::read_mesh(Stream *stream)
         auto& cache = m_meshCacheList.emplace_back();
         cache.name = name;
         cache.mesh.deserialize(stream);
-
-        /*
-        auto next = stream->tellg() + static_cast<std::streampos>(buffsize);
-
-        auto meshID = AssetsManager::FindMesh(name);
-        if (meshID == ID_INVALID)
-        {
-            meshID = AssetsManager::CreateMesh(name);
-
-            Mesh* mesh = AssetsManager::GetMesh(meshID);
-            mesh->deserialize(stream);
-        } else
-        {
-            stream->seekg(next);
-        }
-        */
     }
     return 0;
 }

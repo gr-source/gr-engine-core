@@ -14,7 +14,7 @@ typedef struct
     std::string variable;
 
     u32 count;
-} ShaderUniform;
+} ShaderUniformRaw;
 
 class ShaderLoadTask : public IAsyncTask<grr::gShader*>
 {
@@ -36,7 +36,7 @@ private:
     void onPostExecute(grr::gShader* result) override;
 
 protected:
-    std::vector<ShaderUniform> s_shader_uniform_list;
+    std::vector<ShaderUniformRaw> s_shader_uniform_list;
 
     grr::gShader *m_shader;
 
@@ -62,9 +62,9 @@ protected:
 
     static std::size_t GetArrayCount(const std::string &content, std::string &name);
 
-    static void SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniform> &vector, bool isarray);
+    static void SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniformRaw> &vector, bool isarray);
 
-    static std::vector<ShaderUniform> GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, std::unordered_map<std::string, std::tuple<std::string, bool>> &fieldMap);
+    static std::vector<ShaderUniformRaw> GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, std::unordered_map<std::string, std::tuple<std::string, bool>> &fieldMap);
 
     static std::unordered_map<std::string, std::tuple<std::string, bool>> ReadUniform(const std::string &content);
 

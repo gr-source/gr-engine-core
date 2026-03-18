@@ -308,7 +308,7 @@ std::size_t ShaderLoadTask::GetArrayCount(const std::string &content, std::strin
     return std::atoi(content.substr(start_array + 1, end_array - (start_array + 1)).c_str());
 }
 
-void ShaderLoadTask::SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniform> &vector, bool isarray)
+void ShaderLoadTask::SetUniformList(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, const std::string &name, const std::string &type, std::vector<ShaderUniformRaw> &vector, bool isarray)
 {
     if (isarray)
     {
@@ -330,14 +330,14 @@ void ShaderLoadTask::SetUniformList(std::unordered_map<std::string, std::vector<
                 {
                     auto item_name(field_name + '[' + std::to_string(i) + "]." + name);
 
-                    vector.emplace_back(ShaderUniform{item_name, variablename, 1});
+                    vector.emplace_back(ShaderUniformRaw{item_name, variablename, 1});
                 }
             }
             return;
         }
 
 
-        vector.emplace_back(ShaderUniform{field_name, type, static_cast<u32>(count)});
+        vector.emplace_back(ShaderUniformRaw{field_name, type, static_cast<u32>(count)});
         
         return;
     }
@@ -345,7 +345,7 @@ void ShaderLoadTask::SetUniformList(std::unordered_map<std::string, std::vector<
     auto it = structMap.find(type);
     if (it == structMap.end())
     {
-        vector.emplace_back(ShaderUniform{name, type, 1});
+        vector.emplace_back(ShaderUniformRaw{name, type, 1});
         return;
     }
 
@@ -357,9 +357,9 @@ void ShaderLoadTask::SetUniformList(std::unordered_map<std::string, std::vector<
     }
 }
 
-std::vector<ShaderUniform> ShaderLoadTask::GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, std::unordered_map<std::string, std::tuple<std::string, bool>> &uniformMap)
+std::vector<ShaderUniformRaw> ShaderLoadTask::GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, std::unordered_map<std::string, std::tuple<std::string, bool>> &uniformMap)
 {
-    std::vector<ShaderUniform> uniformFromRegister;
+    std::vector<ShaderUniformRaw> uniformFromRegister;
     for (auto &&[name, tuple] : uniformMap)
     {
         auto &&[variablename, isarray] = tuple;

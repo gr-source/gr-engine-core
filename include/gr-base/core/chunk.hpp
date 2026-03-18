@@ -17,7 +17,7 @@ extern "C"
 #define INVALID_CHUNK INVALID_POOL
 
 #define CHUNK_RENDER_DISTANCE 8
-#define CHUNK_SIZE 16
+#define CHUNK_SIZE 32
 
 typedef PoolID ChunkID;
 

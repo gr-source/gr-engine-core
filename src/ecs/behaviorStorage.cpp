@@ -17,22 +17,22 @@ void BehaviorStorage::SetInstance(BehaviorStorage *behaviorStorage)
     s_BehaviorStorage = behaviorStorage;
 }
 
-ComponentHandle BehaviorStorage::Allocate(uint64_t hash, ComponentHandle source)
+ComponentHandle BehaviorStorage::Allocate(ComponentHash hash, ComponentHandle source)
 {
     return s_BehaviorStorage->allocate(hash, source);
 }
 
-void BehaviorStorage::Deallocate(uint64_t hash, ComponentHandle handle)
+void BehaviorStorage::Deallocate(ComponentHash hash, ComponentHandle handle)
 {
     return s_BehaviorStorage->deallocate(hash, handle);
 }
 
-bool BehaviorStorage::Reinstance(uint64_t hash, Behavior* dest, const Behavior* src)
+bool BehaviorStorage::Reinstance(ComponentHash hash, Behavior* dest, const Behavior* src)
 {
     return s_BehaviorStorage->reinstance(hash, dest, src);
 }
 
-Behavior* BehaviorStorage::GetComponent(uint64_t hash, ComponentHandle handle)
+Behavior* BehaviorStorage::GetComponent(ComponentHash hash, ComponentHandle handle)
 {
     return s_BehaviorStorage->getComponent(hash, handle);
 }
@@ -163,7 +163,7 @@ void BehaviorStorage::restoreVTable(ComponentInfo* info)
     }
 }
 
-ComponentHandle BehaviorStorage::allocate(uint64_t hash, ComponentHandle source)
+ComponentHandle BehaviorStorage::allocate(ComponentHash hash, ComponentHandle source)
 {
     ComponentInfo* info = BehaviorRegistry::Get(hash);
     if (info == nullptr)
@@ -193,7 +193,7 @@ ComponentHandle BehaviorStorage::allocate(uint64_t hash, ComponentHandle source)
     return handle_create(slotID, slot->version);
 }
 
-void BehaviorStorage::deallocate(uint64_t hash, ComponentHandle handle)
+void BehaviorStorage::deallocate(ComponentHash hash, ComponentHandle handle)
 {
     ComponentInfo* info = BehaviorRegistry::Get(hash);
     if (info == nullptr)
@@ -238,7 +238,7 @@ void BehaviorStorage::deallocate(uint64_t hash, ComponentHandle handle)
     slot->version++;
 }
 
-Behavior* BehaviorStorage::getComponent(uint64_t hash, ComponentHandle handle)
+Behavior* BehaviorStorage::getComponent(ComponentHash hash, ComponentHandle handle)
 {
     ComponentInfo* info = BehaviorRegistry::Get(hash);
     if (info == nullptr)
@@ -260,7 +260,7 @@ Behavior* BehaviorStorage::getComponent(uint64_t hash, ComponentHandle handle)
     return (Behavior *)(wrapper + (slot->denseIndex * info->stride + info->offset));
 }
 
-bool BehaviorStorage::reinstance(uint64_t hash, Behavior* dest, const Behavior* src)
+bool BehaviorStorage::reinstance(ComponentHash hash, Behavior* dest, const Behavior* src)
 {
     ComponentInfo* info = BehaviorRegistry::Get(hash);
     if (info == nullptr)
@@ -293,8 +293,6 @@ void BehaviorStorage::reallocate(ComponentInfo* info, ComponentSparseSet* set)
             newFreeList += info->stride;
             lastFreeList += info->stride;
         }
-        // for (size_t i=0;i<lastsize;i++)
-            // *(ComponentID*)(newComponentWrapper + (i * info->size)) = *(ComponentID*)(lastComponentWrapper + (i * info->size));
 
         for (size_t i=0;i<set->count;i++)
         {

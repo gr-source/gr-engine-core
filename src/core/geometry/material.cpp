@@ -149,11 +149,12 @@ void Material::serialize(Stream *stream) const
         return;
     }
 
+    auto uniforms = m_shader->GetUniforms();
     for (auto &&[data, id] : m_field_list)
     {
-        auto uniform = m_shader->GetUniform(id);
+        auto &uniform = uniforms[id];
 
-        std::string name = uniform->name;
+        std::string name = uniform.name;
         
         auto nsize = name.size();
         if (!stream->write(&nsize, sizeof(std::size_t)))
@@ -167,12 +168,12 @@ void Material::serialize(Stream *stream) const
         }
         
 
-        if (!stream->write(&uniform->stride, sizeof(uint32_t)))
+        if (!stream->write(&uniform.stride, sizeof(uint32_t)))
         {
             return;
         }
 
-        if (!stream->write(data, uniform->stride))
+        if (!stream->write(data, uniform.stride))
         {
             return;
         }
@@ -316,11 +317,11 @@ void *Material::internal_set_value(const char *name, u8 count, const void *data)
         if (id == GR_INVALID_ID)
             return nullptr;
 
-        auto uniform = m_shader->GetUniform(id);
+        auto &uniform = m_shader->GetUniforms()[id];
 
-        auto ptr = std::malloc(uniform->stride);
+        auto ptr = std::malloc(uniform.stride);
         
-        m_field_data.emplace(name, std::make_tuple(ptr, uniform->stride));
+        m_field_data.emplace(name, std::make_tuple(ptr, uniform.stride));
 
         m_field_list.emplace_back(ptr, id);
     }
