@@ -119,7 +119,7 @@ set(managers_src
     src/managers/assetsManager.cpp
     src/managers/shadermanager.cpp
     src/managers/sceneManager.cpp
-    src/managers/chunkmanager.cpp
+    src/managers/worldmanager.cpp
     src/managers/meshmanager.cpp
 )
 

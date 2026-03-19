@@ -9,7 +9,8 @@
 #include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
-#include "gr-base/managers/chunkmanager.hpp"
+#include "gr-base/managers/worldmanager.hpp"
+
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/meshFilter.hpp"
@@ -21,7 +22,7 @@ ChunkSaveTask::ChunkSaveTask(ChunkID chunkID, std::function<void (ChunkID)> func
 // private
 int ChunkSaveTask::doInBackground()
 {
-    StreamChunk* chunk = ChunkManager::Get(m_chunkID);
+    StreamChunk* chunk = WorldManager::Get(m_chunkID);
 
     FileStream stream("/home/NoirVoid/gr-engine/" + std::string(chunk->name) + ".grck", StreamType::OUTPUT);
 
@@ -209,7 +210,7 @@ int ChunkSaveTask::write_mesh(Stream *stream)
 
 int ChunkSaveTask::write_gameobject(Stream *stream)
 {
-    StreamChunk* chunk = ChunkManager::Get(m_chunkID);
+    StreamChunk* chunk = WorldManager::Get(m_chunkID);
 
     GameObjectHandle* objects = chunk->objects;
 
@@ -285,7 +286,7 @@ int ChunkSaveTask::write_script(Stream *stream)
 
 void ChunkSaveTask::read_gameobject()
 {
-    StreamChunk* chunk = ChunkManager::Get(m_chunkID);
+    StreamChunk* chunk = WorldManager::Get(m_chunkID);
 
     GameObjectHandle* objects = chunk->objects;
 

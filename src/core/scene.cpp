@@ -1,26 +1,17 @@
 #include "gr-base/core/scene.hpp"
 
-#include "LinearMath/btQuaternion.h"
 #include "gr-base/core/default.hpp"
-#include "gr-base/core/file/file.hpp"
-#include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/gameObject.hpp"
 
-// #include "gr-base/core/scenemanager.hpp"
 #include "gr-base/core/thread/threadpool.hpp"
 #include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/ecs/default.hpp"
-#include "gr-base/managers/assetsManager.hpp"
-#include "gr-base/managers/chunkmanager.hpp"
-#include "gr-base/managers/gameobjectmanager.hpp"
+
 #include "gr-base/managers/sceneManager.hpp"
-#include "gr-base/script/transform.hpp"
+
 #include "gr-base/script/camera.hpp"
 
 #include <algorithm>
-#include <gr-math/gmath.hpp>
-#include <set>
-#include <string>
 
 // public
 Scene* Scene::GetCurrent()
@@ -175,83 +166,6 @@ std::string Scene::GetName() const
 void Scene::AddMesh(MeshID meshID)
 {
     m_meshes.push_back(meshID);
-}
-
-void Save(Chunk* chunk, std::string key)
-{
-}
-
-#define STREAMING_RENDER_DISTANCE 8
-
-void Scene::Update()
-{
-    /*
-    auto camera = getCamera();
-    if (camera == nullptr)
-        return;
-
-    auto position = camera->getPosition();
-
-    int currentX = floor(position.x / 16.0f);
-    int currentZ = floor(position.z / 16.0f);
-
-    std::unordered_set<std::string> m_chunksToKeep;
-
-    for (int x =-STREAMING_RENDER_DISTANCE;x<STREAMING_RENDER_DISTANCE;x++)
-    {
-        for (int z =-STREAMING_RENDER_DISTANCE;z<STREAMING_RENDER_DISTANCE;z++)
-        {
-            int targetX = currentX + x;
-            int targetZ = currentZ + z;
-
-            Chunk* chunk = ChunkManager::GetChunk(targetX, targetZ);
-            if (chunk == nullptr)
-            {
-                // std::cout << "not found " << targetX << " " << targetZ << std::endl;
-                // chunk = ChunkManager::LoadChunk(targetX, targetZ);
-            } else
-            {
-            }
-
-            std::string key = std::to_string(targetX) + "_" + std::to_string(targetZ);
-
-            // std::cout << "Chunks: " << key << std::endl;
-
-            m_chunksToKeep.emplace(key);
-        }
-    }
-
-    auto& allLoaded = ChunkManager::m_chunkLoaded;
-
-    for (auto it = allLoaded.begin(); it != allLoaded.end(); )
-    {
-        auto key = it->first;
-
-        if (m_chunksToKeep.find(key) == m_chunksToKeep.end())
-        {
-            auto& chunk = it->second;
-
-            if (chunk->dirty)
-                Save(chunk.get(), key);
-
-            // for (auto& id : chunk->getEntities()) {
-            //     GameObjectManager::Destroy(id);
-            // }
-
-            // delete chunk;
-            it = allLoaded.erase(it); // Remove do mapa e avança o iterador com segurança
-            // std::cout << "Unloaded chunk: " << cx << " " << cz << std::endl;
-        }
-        else {
-            ++it;
-        }
-    }
-    */
-}
-
-void Scene::loadChunk(std::string name)
-{
-    std::cout << "request load: " << name << std::endl;
 }
 
 GameObjectHandle Scene::CreateEngineCamera()

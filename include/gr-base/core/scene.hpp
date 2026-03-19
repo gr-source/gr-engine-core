@@ -67,8 +67,6 @@ public:
 
     void AddMesh(MeshID meshID);
 
-    void Update();
-
 private:
     std::unordered_set<std::string> m_chunksLoaded;
 

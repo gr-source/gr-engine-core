@@ -4,9 +4,11 @@
 
 #include <unordered_map>
 
-class ChunkManager
+class WorldManager
 {
 public:
+    static WorldManager& GetInstance();
+
     static ChunkID Create(const std::string& name);
 
     static ChunkID Find(const std::string& name);
@@ -15,8 +17,11 @@ public:
 
     static void Update();
 
+    int CunkSize;
+
+    int RenderDistance;
+
 private:
-    static ChunkManager& GetInstance();
 
     std::unordered_map<std::string, ChunkID> m_chunkNameMap;
 
@@ -24,8 +29,8 @@ private:
 
     ObjectPool<StreamChunk> m_pool;
 
-    ChunkManager();
-    ~ChunkManager();
+    WorldManager();
+    ~WorldManager();
 
     ChunkID create(const std::string& name);
 

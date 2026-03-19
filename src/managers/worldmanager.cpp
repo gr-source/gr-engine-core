@@ -1,51 +1,52 @@
-#include "gr-base/managers/chunkmanager.hpp"
+#include "gr-base/managers/worldmanager.hpp"
 
 #include "gr-base/core/debugdraw.hpp"
-#include "gr-base/core/file/file.hpp"
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/core/task/runtime/chunkLoadTask.hpp"
 #include "gr-base/core/task/runtime/chunkSaveTask.hpp"
-#include "gr-base/core/thread/taskmanager.hpp"
-#include "gr-base/externals/array.h"
-#include "gr-base/script/camera.hpp"
-#include <functional>
 
-ChunkID ChunkManager::Create(const std::string &name)
+#include "gr-base/core/thread/taskmanager.hpp"
+
+#include "gr-base/core/file/file.hpp"
+
+#include "gr-base/script/camera.hpp"
+
+ChunkID WorldManager::Create(const std::string &name)
 {
     return GetInstance().create(name);
 }
 
-ChunkID ChunkManager::Find(const std::string &name)
+ChunkID WorldManager::Find(const std::string &name)
 {
     return GetInstance().find(name);
 }
 
-StreamChunk* ChunkManager::Get(ChunkID id)
+StreamChunk* WorldManager::Get(ChunkID id)
 {
     return GetInstance().get(id);
 }
 
-void ChunkManager::Update()
+void WorldManager::Update()
 {
     GetInstance().update();
 }
 
 // private
-ChunkManager& ChunkManager::GetInstance()
+WorldManager& WorldManager::GetInstance()
 {
-    static ChunkManager s_ChunkManager;
-    return s_ChunkManager;
+    static WorldManager s_WorldManager;
+    return s_WorldManager;
 }
 
-ChunkManager::ChunkManager()
+WorldManager::WorldManager()
 {}
 
-ChunkManager::~ChunkManager()
+WorldManager::~WorldManager()
 {}
 
-ChunkID ChunkManager::create(const std::string &name)
+ChunkID WorldManager::create(const std::string &name)
 {
     ChunkID id = m_pool.allocate();
 
@@ -59,7 +60,7 @@ ChunkID ChunkManager::create(const std::string &name)
     return id;
 }
 
-ChunkID ChunkManager::find(const std::string &name)
+ChunkID WorldManager::find(const std::string &name)
 {
     auto it = m_chunkNameMap.find(name);
     if (it == m_chunkNameMap.end())
@@ -67,12 +68,12 @@ ChunkID ChunkManager::find(const std::string &name)
     return it->second;
 }
 
-StreamChunk* ChunkManager::get(ChunkID id)
+StreamChunk* WorldManager::get(ChunkID id)
 {
     return m_pool.get(id);
 }
 
-void ChunkManager::update()
+void WorldManager::update()
 {
     auto scene = Scene::GetCurrent();
     if (scene == nullptr)
@@ -130,7 +131,9 @@ void ChunkManager::update()
 
             if (chunk->dirty)
             {
-                TaskManager::Add<int, ChunkSaveTask>(*it, std::bind(&ChunkManager::unloadChunk, this, std::placeholders::_1));
+                chunk->dirty = false;
+
+                TaskManager::Add<int, ChunkSaveTask>(*it, std::bind(&WorldManager::unloadChunk, this, std::placeholders::_1));
             } else
             {
                 unloadChunk(*it);
@@ -147,7 +150,7 @@ void ChunkManager::update()
         render(get(chunkID));
 }
 
-void ChunkManager::unloadChunk(ChunkID id)
+void WorldManager::unloadChunk(ChunkID id)
 {
     StreamChunk* chunk = get(id);
 
@@ -168,14 +171,14 @@ void ChunkManager::unloadChunk(ChunkID id)
     m_pool.deallocate(id);
 }
 
-void ChunkManager::render(StreamChunk* chunk)
+void WorldManager::render(StreamChunk* chunk)
 {
     Vector2 position = chunk->position;
 
-    Vector3 p1{position.x, 0, position.y};
+    Vector3 p1{position.x,              0, position.y};
     Vector3 p2{position.x + CHUNK_SIZE, 0, position.y};
     Vector3 p3{position.x + CHUNK_SIZE, 0, position.y + CHUNK_SIZE};
-    Vector3 p4{position.x, 0, position.y + CHUNK_SIZE};
+    Vector3 p4{position.x,              0, position.y + CHUNK_SIZE};
 
     DebugDraw::DrawLine(p1, p2);
     DebugDraw::DrawLine(p2, p3);
