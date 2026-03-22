@@ -148,6 +148,7 @@ void Entity::CallDestroy()
         behavior->Destroy();
     }
 
+    /*
     auto transform = getComponent<Transform>();
 
     for (auto& childID : transform->getChildren())
@@ -156,6 +157,7 @@ void Entity::CallDestroy()
 
         gameObject->CallDestroy();
     }
+    */
 }
 
 
