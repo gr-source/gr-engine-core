@@ -9,16 +9,16 @@ enum class TextureLoadFlags {};
 
 using TextureLoadFlags_ = uint8_t;
 
-using TextureFunc = std::function<void (grr::gTexture *)>;
+using TextureFunc = std::function<void (gr::gTexture *)>;
 
-class TextureLoadTask : public IAsyncTask<grr::gTexture*>
+class TextureLoadTask : public IAsyncTask<gr::gTexture*>
 {
 public:
     TextureLoadTask(const std::string &path, TextureFunc func);
 
     void addFunction(TextureFunc func);
 
-    void invoke(grr::gTexture *texture);
+    void invoke(gr::gTexture *texture);
 
 private:
     std::vector<TextureFunc> m_functions;
@@ -34,9 +34,9 @@ protected:
 
     int height;
 
-    grr::gTexture* doInBackground() override;
+    gr::gTexture* doInBackground() override;
 
-    void onPostExecute(grr::gTexture* texture) override;
+    void onPostExecute(gr::gTexture* texture) override;
 };
 
 

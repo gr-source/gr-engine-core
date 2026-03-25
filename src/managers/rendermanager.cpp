@@ -228,7 +228,7 @@ void RenderManager::preRender(const Camera *camera)
     auto list = AssetsManager::GetShaderList(ShaderType::SHADER3D);
     for (auto &shader : list)
     {
-        if (!shader || !shader->isValid())
+        if (!shader)
             continue;
 
         shader->bind();
@@ -415,7 +415,7 @@ void RenderManager::posRender()
 {
 }
 
-void RenderManager::setuplight(const Scene* scene, grr::gShader *shader)
+void RenderManager::setuplight(const Scene* scene, gr::Shader *shader)
 {
     auto lights = scene->GetLights();
 

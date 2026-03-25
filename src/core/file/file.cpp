@@ -1,54 +1,9 @@
 #include "gr-base/core/file/file.hpp"
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
-#include <fstream>
-
-std::string File::m_currentPath;
-
-std::string File::m_configPath;
-
-std::string File::m_cachePath;
-
-std::string File::m_userPath;
-
-std::stringstream File::m_error;
-
-void File::SetConfigPath(const std::string &path) {
-    m_configPath = path;
-}
-
-void File::SetCachePath(const std::string &path) {
-    m_cachePath = path;
-}
-
-void File::SetUserPath(const std::string &path) {
-    m_userPath = path;
-}
-
-std::string File::GetUserFile(const std::string &path) {
-    return m_userPath + path;
-}
-
-std::string File::GetCacheFile(const std::string &path) {
-    return m_cachePath + path;
-}
-
-std::string File::GetFileContent(const std::string &path) {
-    std::ifstream is(path);
-    if (!is.is_open())
-        return "";
-        
-    std::string content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
-
-    is.close();
-    return content;
-}
-
-void File::rename(const std::string &from, const std::string &to) {
-    std::filesystem::rename(from, to);
-}
 
 // ********** gfile ********** //
 std::string gfile::create_temp_file(const std::string &name)
@@ -150,14 +105,28 @@ bool gfile::move(const char* src_path, const char* dest_path)
     return remove(src_path);
 }
 
-#include <exception>
-
 bool gfile::copy(const char* src_path, const char* dest_path)
 {
-    try
+    if (gfile::is_directory(src_path))
     {
-        std::filesystem::copy(src_path, dest_path);
-    } catch (const std::exception& e)
+        if (!gfile::exists(dest_path))
+            gfile::create_directory(dest_path);
+
+        for (auto& entry : std::filesystem::directory_iterator(src_path))
+        {
+            char path[512];
+            sprintf(path, "%s/%s", dest_path, entry.path().filename().c_str());
+
+            if (entry.is_directory())
+            {
+                if (!copy(entry.path().c_str(), path))
+                    break;
+            } else
+            {
+                std::filesystem::copy_file(entry, path);
+            }
+        }
+    } else
     {
         return false;
     }

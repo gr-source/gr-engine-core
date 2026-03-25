@@ -5,9 +5,9 @@
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/core/geometry/shaderData.hpp"
 
-#include <gr-render/gShader.h>
+#include <gr-render/shader.hpp>
 
 #include <string.h>
 
@@ -29,27 +29,27 @@ Material::~Material()
     */
 }
 
-void Material::setTexture(int idx, grr::gTexture *texture)
+void Material::setTexture(int idx, gr::gTexture *texture)
 {
     m_textures[idx >= m_textures.size() ? 0 : idx] = texture;
 }
 
-grr::gTexture *Material::getTexture(int idx) const
+gr::gTexture *Material::getTexture(int idx) const
 {
     return m_textures[idx >= m_textures.size() ? 0 : idx];
 }
 
-std::array<grr::gTexture *, 10> Material::getTextures() const
+std::array<gr::gTexture *, 10> Material::getTextures() const
 {
     return m_textures;
 }
 
-grr::gShader *Material::GetShader(bool instancing) const
+gr::Shader *Material::GetShader(bool instancing) const
 {
     return instancing ? m_shaderInstancing : m_shader;
 }
 
-void Material::SetShader(grr::gShader *shader, bool instancing)
+void Material::SetShader(gr::Shader *shader, bool instancing)
 {
     if (instancing)
         m_shaderInstancing = shader;
@@ -101,7 +101,7 @@ void Material::serialize(Stream *stream) const
             return;
     }
 
-    std::vector<std::tuple<grr::gTexture *, int>> textures;
+    std::vector<std::tuple<gr::gTexture *, int>> textures;
     for (std::size_t i={};i<m_textures.size();i++)
     {
         if (m_textures[i] != nullptr)
@@ -292,7 +292,7 @@ void Material::deserialize(Stream *stream)
         return;
 }
 
-void Material::flush(grr::gShader* shader) const
+void Material::flush(gr::Shader* shader) const
 {
     for (auto &&[data, id] : m_field_list)
         shader->SetUniform(id, data);
@@ -302,7 +302,7 @@ void Material::flush(grr::gShader* shader) const
     shader->setUniform("u_transform", &u_transform);
 }
 
-bool Material::setupTexture(int id, grr::gTexture *texture)
+bool Material::setupTexture(int id, gr::gTexture *texture)
 {
     m_textures[id > 10 ? 0 : id] = texture;
     return true;

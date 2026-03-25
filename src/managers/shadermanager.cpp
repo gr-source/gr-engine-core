@@ -1,6 +1,5 @@
 #include "gr-base/managers/shadermanager.hpp"
 
-#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
 #include <algorithm>
@@ -11,7 +10,7 @@ ShaderManager::ShaderManager()
 ShaderManager::~ShaderManager()
 {}
 
-grr::gShader *ShaderManager::create(ShaderParams shaderParams)
+gr::Shader *ShaderManager::create(ShaderParams shaderParams)
 {
     auto name = GetShaderParamsName(shaderParams);
 
@@ -24,7 +23,7 @@ grr::gShader *ShaderManager::create(ShaderParams shaderParams)
         }
     }
 
-    s_ShaderMap.emplace(name, std::make_unique<grr::gShader>());
+    s_ShaderMap.emplace(name, std::make_unique<gr::Shader>());
 
     auto shader = s_ShaderMap[name].get();
 
@@ -35,7 +34,7 @@ grr::gShader *ShaderManager::create(ShaderParams shaderParams)
     return shader;
 }
 
-void ShaderManager::destroy(grr::gShader *shader)
+void ShaderManager::destroy(gr::Shader *shader)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
     auto it = s_ShaderNameMap.find(shader);
@@ -52,7 +51,7 @@ void ShaderManager::destroy(grr::gShader *shader)
     s_ShaderNameMap.erase(it);
 }
 
-const char *ShaderManager::get_shader_name(const grr::gShader *shader)
+const char *ShaderManager::get_shader_name(const gr::Shader *shader)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
     auto it = s_ShaderNameMap.find(shader);
@@ -63,7 +62,7 @@ const char *ShaderManager::get_shader_name(const grr::gShader *shader)
     return it->second.c_str();
 }
 
-grr::gShader *ShaderManager::find(const std::string &name)
+gr::Shader *ShaderManager::find(const std::string &name)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
     auto it = s_ShaderMap.find(name);
@@ -74,13 +73,13 @@ grr::gShader *ShaderManager::find(const std::string &name)
     return it->second.get();
 }
 
-std::vector<grr::gShader *> ShaderManager::get_shader(ShaderType type)
+std::vector<gr::Shader *> ShaderManager::get_shader(ShaderType type)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
     return s_ShaderTypeList[static_cast<int>(type)];
 }
 
-std::shared_ptr<TaskInfo<grr::gShader*>> ShaderManager::load(ShaderParams shaderParams, grr::gShader *shader, std::function<void(grr::gShader *)> onLoaded)
+std::shared_ptr<TaskInfo<gr::Shader*>> ShaderManager::load(ShaderParams shaderParams, gr::Shader *shader, std::function<void(gr::Shader *)> onLoaded)
 {
     auto taskname = GetShaderParamsName(shaderParams);
 
@@ -121,7 +120,7 @@ std::shared_ptr<TaskInfo<grr::gShader*>> ShaderManager::load(ShaderParams shader
     }
 
     // cria uma nova task
-    auto taskInfo = TaskManager::Add<grr::gShader*, ShaderLoadTask>(shaderParams, shader);
+    auto taskInfo = TaskManager::Add<gr::Shader*, ShaderLoadTask>(shaderParams, shader);
     s_ShaderTaskMap.emplace(taskname, taskInfo);
 
     auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(taskInfo->task.get());

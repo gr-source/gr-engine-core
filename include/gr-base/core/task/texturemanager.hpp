@@ -17,22 +17,22 @@ public:
     TextureManager() = default;
     ~TextureManager() = default;
 
-    grr::gTexture *create(const std::string &name);
+    gr::gTexture *create(const std::string &name);
 
-    void load(const std::string &path, std::function<void (grr::gTexture *)> func);
+    void load(const std::string &path, std::function<void (gr::gTexture *)> func);
 
     bool remove_task(const std::string &name);
 
-    const char *getname(grr::gTexture *texture);
+    const char *getname(gr::gTexture *texture);
 
     std::size_t getcount();
 
 private:
-    std::unordered_map<std::string, std::shared_ptr<TaskInfo<grr::gTexture*>>> m_texturetaskmap;
+    std::unordered_map<std::string, std::shared_ptr<TaskInfo<gr::gTexture*>>> m_texturetaskmap;
 
-    std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> m_texturemap;
+    std::unordered_map<std::string, std::unique_ptr<gr::gTexture>> m_texturemap;
 
-    std::unordered_map<grr::gTexture *, std::string> m_texturenamemap;
+    std::unordered_map<gr::gTexture *, std::string> m_texturenamemap;
 
     std::mutex m_mutex;
 };

@@ -9,7 +9,7 @@ set(geometry
     src/core/geometry/boneWeight.cpp
     src/core/geometry/batching.cpp
     src/core/geometry/material.cpp
-    src/core/geometry/shader.cpp
+    src/core/geometry/shaderData.cpp
     src/core/geometry/mesh.cpp
 )
 
@@ -94,7 +94,6 @@ set(task
     src/core/task/runtime/animationsavetask.cpp
     src/core/task/animationmanager.cpp
     
-    src/core/task/runtime/shaderProperty.cpp
     src/core/task/runtime/scenesavetask.cpp
     src/core/task/runtime/sceneloadtask.cpp
     src/core/task/runtime/textureloadtask.cpp

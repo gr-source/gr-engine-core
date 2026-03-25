@@ -5,14 +5,14 @@
 #include "gr-base/core/file/file.hpp"
 
 #include "gr-base/core/file/stream.hpp"
-#include "gr-base/core/geometry/shader.hpp"
+// #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/script/camera.hpp"
 
 #include <cstdint>
 #include <gr-render/gCommon.h>
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gTexture.h>
-#include <gr-render/gShader.h>
+#include <gr-render/shader.hpp>
 
 #include <gr-render/gl.h>
 #include <string>
@@ -20,17 +20,17 @@
 Skybox::Skybox() : m_cubemapTexture(nullptr), m_fbo(0), m_rbo(0), m_count(0), m_vbo(0), m_ebo(0), m_skyshader(nullptr)
 {}
 
-void Skybox::set_texture(grr::gTexture *texture)
+void Skybox::set_texture(gr::gTexture *texture)
 {
     build(texture);
 }
 
-void Skybox::set_skyshader(grr::gShader *shader)
+void Skybox::set_skyshader(gr::Shader *shader)
 {
     m_skyshader = shader;
 }
 
-void Skybox::build(grr::gTexture *texture)
+void Skybox::build(gr::gTexture *texture)
 {
     // configure texture cubemap
     m_cubemapTexture = AssetsManager::CreateTexture("##skybox_cubemap");
@@ -87,10 +87,8 @@ void Skybox::build(grr::gTexture *texture)
 
 void Skybox::render(const Camera *camera) const
 {
-    if (m_skyshader == nullptr || !m_skyshader->isValid())
-    {
+    if (m_skyshader == nullptr)
         return;
-    }
 
     auto projection = camera->getPerspesctive();
     auto view = camera->getViewmatrix();
@@ -105,7 +103,7 @@ void Skybox::render(const Camera *camera) const
 
     m_vertexarray->bind();
     
-    grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_count, nullptr);
+    gr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_count, nullptr);
 
     m_vertexarray->unbind();
     m_skyshader->unbind();
@@ -123,7 +121,7 @@ bool Skybox::deserialize(Stream *stream)
 }
 
 // ********** private ********** //
-void Skybox::upload_cubemap_texture(grr::gTexture *texture, grr::gShader *shader)
+void Skybox::upload_cubemap_texture(gr::gTexture *texture, gr::Shader *shader)
 {
     auto projection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
 
@@ -152,12 +150,12 @@ void Skybox::upload_cubemap_texture(grr::gTexture *texture, grr::gShader *shader
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, m_cubemapTexture->getTextureID(), 0);
 
-        grr::gRender::SetBackgroundColor(Color::blue);
-        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER | grr::GR_DEPTH_BUFFER);
+        gr::gRender::SetBackgroundColor(Color::blue);
+        gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_COLOR_BUFFER | gr::GR_DEPTH_BUFFER);
         
         m_vertexarray->bind();
         
-        grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_count, nullptr);
+        gr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_count, nullptr);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -207,21 +205,21 @@ void Skybox::create_cube_mesh()
 
     m_count = indices.size();
 
-    m_vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO, vertices.data(), vertices.size() * sizeof(Vector3));
+    m_vbo = gr::gVertexArray::CreateBuffer(BufferType::VBO, vertices.data(), vertices.size() * sizeof(Vector3));
     assert(m_vbo && "Falied to create vbo.");
 
-    m_ebo = grr::gVertexArray::CreateBuffer(BufferType::EBO, indices.data(), indices.size() * sizeof(std::uint32_t));
+    m_ebo = gr::gVertexArray::CreateBuffer(BufferType::EBO, indices.data(), indices.size() * sizeof(std::uint32_t));
     assert(m_vbo && "Falied to create ebo.");
 
-    m_vertexarray = new grr::gVertexArray();
+    m_vertexarray = new gr::gVertexArray();
     assert(m_vertexarray && "Falied to create vao.");
 
     m_vertexarray->bind();
 
-    grr::gVertexArray::Bind(m_ebo);
+    gr::gVertexArray::Bind(m_ebo);
 
-    grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::SetAttrib(0, 3, sizeof(Vector3), nullptr);
+    gr::gVertexArray::Bind(m_vbo);
+    gr::gVertexArray::SetAttrib(0, 3, sizeof(Vector3), nullptr);
 
     m_vertexarray->unbind();
 }

@@ -64,7 +64,7 @@ private:
 
     std::unordered_map<std::string, GameObjectCache*> m_gameobjectmap;
 
-    std::unordered_map<std::string, grr::gShader *> m_shadermap;
+    std::unordered_map<std::string, gr::Shader *> m_shadermap;
 
     std::string m_name;
 

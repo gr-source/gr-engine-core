@@ -44,7 +44,7 @@ private:
 
         std::shared_ptr<gr::vertex_buffer> m_buffer;
 
-        grr::gShader *m_shader;
+        gr::Shader *m_shader;
 
         LineRender();
 

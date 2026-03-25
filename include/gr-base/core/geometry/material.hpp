@@ -23,15 +23,15 @@ public:
 
     bool bEnableInstancing;
     
-    void setTexture(int idx, grr::gTexture *texture);
+    void setTexture(int idx, gr::gTexture *texture);
 
-    grr::gTexture *getTexture(int idx) const;
+    gr::gTexture *getTexture(int idx) const;
 
-    std::array<grr::gTexture *, 10> getTextures() const;
+    std::array<gr::gTexture *, 10> getTextures() const;
 
-    grr::gShader *GetShader(bool instancing) const;
+    gr::Shader *GetShader(bool instancing) const;
 
-    void SetShader(grr::gShader* shader, bool instancing);
+    void SetShader(gr::Shader* shader, bool instancing);
 
     bool supportsInstancing() const;
 
@@ -56,23 +56,23 @@ public:
     template <typename T>
     T *setValue(const std::string &name, u8 count, const T &value);
 
-    void flush(grr::gShader* shader) const;
+    void flush(gr::Shader* shader) const;
 
 private:
     std::unordered_map<std::string, std::tuple<void *, std::size_t>> m_field_data;
 
     std::vector<std::tuple<void *, int>> m_field_list;
 
-    std::array<grr::gTexture *, 10> m_textures;
+    std::array<gr::gTexture *, 10> m_textures;
 
     Vector2 m_scalling;
 
     Vector2 m_offset;
 
-    grr::gShader *m_shader;
-    grr::gShader *m_shaderInstancing;
+    gr::Shader *m_shader;
+    gr::Shader *m_shaderInstancing;
 
-    bool setupTexture(int id, grr::gTexture *texture);
+    bool setupTexture(int id, gr::gTexture *texture);
 
     void *internal_set_value(const char *name, u8 count, const void *data);
 };

@@ -10,7 +10,7 @@ class MaterialInstance
 {
     MaterialID m_materialID;
 
-    grr::gShader* m_shader;
+    gr::Shader* m_shader;
 
     std::vector<uint8_t> m_parametersBuffer;
 

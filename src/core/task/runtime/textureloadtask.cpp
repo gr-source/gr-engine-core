@@ -19,13 +19,13 @@ void TextureLoadTask::addFunction(TextureFunc func)
     return m_functions.push_back(func);
 }
 
-void TextureLoadTask::invoke(grr::gTexture *texture)
+void TextureLoadTask::invoke(gr::gTexture *texture)
 {
     for (auto func : m_functions)
         func(texture);
 }
 
-grr::gTexture* TextureLoadTask::doInBackground()
+gr::gTexture* TextureLoadTask::doInBackground()
 {
     bool isHDR = stbi_is_hdr(m_path.c_str());
 
@@ -65,7 +65,7 @@ grr::gTexture* TextureLoadTask::doInBackground()
     return AssetsManager::CreateTexture(m_path);
 }
 
-void TextureLoadTask::onPostExecute(grr::gTexture* texture)
+void TextureLoadTask::onPostExecute(gr::gTexture* texture)
 {
     if (texture == nullptr)
     {

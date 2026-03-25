@@ -3,7 +3,7 @@
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/memoryStream.hpp"
 #include "gr-base/core/geometry/default.hpp"
-#include "gr-base/core/geometry/shader.hpp"
+// #include "gr-base/core/geometry/shader.hpp"
 
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/worldmanager.hpp"

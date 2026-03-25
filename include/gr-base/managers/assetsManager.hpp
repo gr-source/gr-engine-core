@@ -6,7 +6,6 @@
 #include "gr-base/core/animation/animation.hpp"
 
 #include "gr-base/core/geometry/material.hpp"
-#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include "gr-base/core/task/scenetaskmanager.hpp"
@@ -34,21 +33,18 @@ public:
     template <typename ...Args>
     static void LoadTexture(const std::string &path, Args &&...args);
 
-    static std::string GetRefTextureName(grr::gTexture *texture);
+    static std::string GetRefTextureName(gr::gTexture *texture);
 
     template <typename ...Args>
-    static std::shared_ptr<TaskInfo<grr::gShader*>> LoadShaderAsync(ShaderParams shaderParams, Args &&...args);
+    static std::shared_ptr<TaskInfo<gr::Shader*>> LoadShaderAsync(ShaderParams shaderParams, Args &&...args);
 
-    template <typename ...Args>
-    static std::shared_ptr<TaskInfo<grr::gShader*>> LoadShader(ShaderParams shaderParams, grr::gShader *shader, Args &&...args);
+    static gr::Shader *CreateShader(ShaderParams shaderParams);
 
-    static grr::gShader *CreateShader(ShaderParams shaderParams);
+    static gr::Shader *FindShader(const std::string &name);
 
-    static grr::gShader *FindShader(const std::string &name);
+    static std::string GetShaderName(gr::Shader *shader);
 
-    static std::string GetShaderName(grr::gShader *shader);
-
-    static void RemoveShader(grr::gShader *shader);
+    static void RemoveShader(gr::Shader *shader);
 
     template <typename ...Args>
     static void LoadGameObject(const std::string &path, Args &&...args);
@@ -71,7 +67,7 @@ public:
     */
 
     // ********** Texture ********** //
-    static grr::gTexture *CreateTexture(const std::string &name);
+    static gr::gTexture *CreateTexture(const std::string &name);
 
     // ********** Mesh ********** //
     static MeshID CreateMesh(const std::string &name, const Mesh* src = nullptr);
@@ -85,10 +81,6 @@ public:
     static void RemoveMesh(MeshID id);
     
     // shader property
-    static ShaderProperty *CreateShaderProperty(grr::gShader *shader);
-
-    static ShaderProperty *GetShaderProperty(grr::gShader *shader);
-
     static usize GetTextureCount();
 
     static size_t GetMeshCount();
@@ -97,7 +89,7 @@ public:
 
     static void SetGameObjectList(const std::string &path, std::function<void(GameObjectHandle)> func);
 
-    static std::vector<grr::gShader *> GetShaderList(ShaderType type);
+    static std::vector<gr::Shader *> GetShaderList(ShaderType type);
 
     static MaterialID CreateMaterial(const std::string &name, const Material* src = nullptr);
 
@@ -111,11 +103,6 @@ public:
 
 private:
     static AssetsManager* s_AssetsManager;
-
-    // static AnimationManager mAnimationManager;
-
-    // sshader property
-    static std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> mShaderPropertyMap;
 
     // fields
     SceneTaskManager mSceneTaskManager;
@@ -166,7 +153,7 @@ inline std::shared_ptr<TaskInfo<int>> AssetsManager::SceneSaveAsync(const std::s
 
 template <typename ...Args>
 inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) {
-    std::function<void(grr::gTexture *)> func = nullptr;
+    std::function<void(gr::gTexture *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0) {
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     }
@@ -176,25 +163,13 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
 
 // ***** Shader ***** //
 template <typename ...Args>
-inline std::shared_ptr<TaskInfo<grr::gShader*>> AssetsManager::LoadShaderAsync(ShaderParams shaderParams, Args &&...args)
+inline std::shared_ptr<TaskInfo<gr::Shader*>> AssetsManager::LoadShaderAsync(ShaderParams shaderParams, Args &&...args)
 {
-    std::function<void(grr::gShader *)> func = nullptr;
+    std::function<void(gr::Shader *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     
     return s_AssetsManager->mShaderManager.load(shaderParams, nullptr, func);
-}
-
-template <typename... Args>
-inline std::shared_ptr<TaskInfo<grr::gShader*>> AssetsManager::LoadShader(ShaderParams shaderParams, grr::gShader *shader, Args &&...args)
-{
-    std::function<void(grr::gShader *)> func = nullptr;
-    if constexpr (sizeof...(Args) > 0)
-    {
-        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
-    }
-    
-    return s_AssetsManager->mShaderManager.load(shaderParams, shader, func);
 }
 
 /*

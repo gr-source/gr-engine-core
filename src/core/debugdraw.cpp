@@ -4,7 +4,7 @@
 
 #include "gr-base/core/file/file.hpp"
 
-#include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/core/geometry/shaderData.hpp"
 
 #include "gr-base/script/camera.hpp"
 
@@ -84,7 +84,7 @@ DebugDraw::LineRender::LineRender() : m_shader(nullptr)
     params.type = ShaderType::LINE;
     params.name = "debug_line";
 
-    AssetsManager::LoadShaderAsync(params, [&](grr::gShader *shader)
+    AssetsManager::LoadShaderAsync(params, [&](gr::Shader *shader)
             {
                 m_shader = shader;
             });
@@ -113,7 +113,7 @@ void DebugDraw::LineRender::render(const Camera *camera, const Line3D *data, std
 
     m_vertex_array->Bind();
 
-    grr::gVertexArray::DrawArrays(PrimitiveType::LINES, size);
+    gr::gVertexArray::DrawArrays(PrimitiveType::LINES, size);
 
     m_shader->unbind();
     m_vertex_array->Unbind();

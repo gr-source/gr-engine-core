@@ -8,11 +8,11 @@
 
 #include "gr-base/core/task/runtime/textureloadtask.hpp"
 
-grr::gTexture *TextureManager::create(const std::string &name)
+gr::gTexture *TextureManager::create(const std::string &name)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    auto &&[it, added] = m_texturemap.emplace(name, std::make_unique<grr::gTexture>());
+    auto &&[it, added] = m_texturemap.emplace(name, std::make_unique<gr::gTexture>());
     if (added)
     {
         m_texturenamemap.emplace(it->second.get(), name);
@@ -21,7 +21,7 @@ grr::gTexture *TextureManager::create(const std::string &name)
     return it->second.get();
 }
 
-void TextureManager::load(const std::string &path, std::function<void (grr::gTexture *)> func)
+void TextureManager::load(const std::string &path, std::function<void (gr::gTexture *)> func)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -44,7 +44,7 @@ void TextureManager::load(const std::string &path, std::function<void (grr::gTex
             if (func == nullptr)
                 return;
 
-            auto taskInfo = static_cast<TaskInfo<grr::gTexture*>*>(it->second.get());
+            auto taskInfo = static_cast<TaskInfo<gr::gTexture*>*>(it->second.get());
 
             TextureLoadTask* textureloadtask = static_cast<TextureLoadTask*>(taskInfo->task.get());
             return textureloadtask->addFunction(func);
@@ -56,7 +56,7 @@ void TextureManager::load(const std::string &path, std::function<void (grr::gTex
         return Console::LogError("[ AssetsManager::Texture ] File not found: %s", path.c_str());
     }
 
-    auto taskInfo = TaskManager::Add<grr::gTexture*, TextureLoadTask>(path, func);
+    auto taskInfo = TaskManager::Add<gr::gTexture*, TextureLoadTask>(path, func);
     m_texturetaskmap.emplace(path, taskInfo);
 }
 
@@ -71,7 +71,7 @@ bool TextureManager::remove_task(const std::string &name)
     return true;
 }
 
-const char *TextureManager::getname(grr::gTexture *texture)
+const char *TextureManager::getname(gr::gTexture *texture)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 

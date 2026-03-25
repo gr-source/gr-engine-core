@@ -10,30 +10,30 @@ public:
     ShaderManager();
     ~ShaderManager();
 
-    grr::gShader *create(ShaderParams shaderParams);
+    gr::Shader *create(ShaderParams shaderParams);
 
-    void destroy(grr::gShader *shader);
+    void destroy(gr::Shader *shader);
 
-    const char *get_shader_name(const grr::gShader *shader);
+    const char *get_shader_name(const gr::Shader *shader);
 
-    grr::gShader *find(const std::string &name);
+    gr::Shader *find(const std::string &name);
 
-    std::vector<grr::gShader *>get_shader(ShaderType type);
+    std::vector<gr::Shader *>get_shader(ShaderType type);
 
-    std::shared_ptr<TaskInfo<grr::gShader*>> load(ShaderParams shaderParams, grr::gShader *shader, std::function<void(grr::gShader *)> onLoaded);
+    std::shared_ptr<TaskInfo<gr::Shader*>> load(ShaderParams shaderParams, gr::Shader *shader, std::function<void(gr::Shader *)> onLoaded);
 
     bool remove_task(const std::string &name);
 
     std::mutex s_Mutex;
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_ShaderMap;
+    std::unordered_map<std::string, std::unique_ptr<gr::Shader>> s_ShaderMap;
 
-    std::unordered_map<const grr::gShader *, const std::string> s_ShaderNameMap;
+    std::unordered_map<const gr::Shader *, const std::string> s_ShaderNameMap;
 
-    std::unordered_map<std::string, std::shared_ptr<TaskInfo<grr::gShader*>>> s_ShaderTaskMap;
+    std::unordered_map<std::string, std::shared_ptr<TaskInfo<gr::Shader*>>> s_ShaderTaskMap;
 
-    std::array<std::vector<grr::gShader *>, ShaderTypeCount> s_ShaderTypeList;
+    std::array<std::vector<gr::Shader *>, ShaderTypeCount> s_ShaderTypeList;
 };
 
 

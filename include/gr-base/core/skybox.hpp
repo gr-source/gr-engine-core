@@ -14,11 +14,11 @@ class Skybox
 public:
     Skybox();
 
-    void set_texture(grr::gTexture *texture);
+    void set_texture(gr::gTexture *texture);
 
-    void set_skyshader(grr::gShader *shader);
+    void set_skyshader(gr::Shader *shader);
 
-    void build(grr::gTexture *texture);
+    void build(gr::gTexture *texture);
 
     void render(const Camera *camera) const;
 
@@ -27,7 +27,7 @@ public:
     bool deserialize(Stream *stream);
 
 private:
-    grr::gTexture *m_cubemapTexture;
+    gr::gTexture *m_cubemapTexture;
 
     std::uint32_t m_fbo;
 
@@ -39,11 +39,11 @@ private:
 
     std::uint32_t m_ebo;
 
-    grr::gVertexArray *m_vertexarray;
+    gr::gVertexArray *m_vertexarray;
 
-    grr::gShader *m_skyshader;
+    gr::Shader *m_skyshader;
 
-    void upload_cubemap_texture(grr::gTexture *texture, grr::gShader *shader);
+    void upload_cubemap_texture(gr::gTexture *texture, gr::Shader *shader);
 
     void create_cube_mesh();
 

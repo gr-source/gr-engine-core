@@ -4,34 +4,6 @@
 #include <string>
 #include <ctime>
 
-class File {
-public:
-    static void SetConfigPath(const std::string &path);
-
-    static void SetCachePath(const std::string &path);
-
-    static void SetUserPath(const std::string &path);
-
-    static std::string GetUserFile(const std::string &path);
-
-    static std::string GetCacheFile(const std::string &path);
-
-    static std::string GetFileContent(const std::string &path);
-
-    static void rename(const std::string &path, const std::string &name);
-    
-private:
-    static std::string m_currentPath;
-
-    static std::string m_configPath;
-
-    static std::string m_cachePath;
-
-    static std::string m_userPath;
-
-    static std::stringstream m_error;
-};
-
 
 class gfile {
 public:

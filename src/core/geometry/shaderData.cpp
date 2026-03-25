@@ -1,4 +1,4 @@
-#include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/core/geometry/shaderData.hpp"
 
 constexpr char KEY = '\x1F';
 
@@ -63,5 +63,4 @@ ShaderParams GetShaderParamsFromName(const std::string &name)
 
     return shaderParams;
 }
-
 

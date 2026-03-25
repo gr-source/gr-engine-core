@@ -4,7 +4,7 @@
 
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/file/file.hpp"
-#include "gr-base/core/geometry/shader.hpp"
+// #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 
 #include <gr-render/gError.h>
@@ -13,14 +13,7 @@
 #include <fstream>
 #include <stack>
 
-#define PRINT_ERROR(func, property, type) \
-    if (func == GR_INVALID_ID) { \
-        Console::LogWarning("[ ShaderLoadTask ] Shader.Regiter uniform: %s", grr::error()); \
-    } else if (userfield.find(name) != userfield.end()) { \
-        property->addProperty(variablename, name, type); \
-    }
-
-std::unordered_map<std::string, UniformType> ShaderLoadTask::mVariableNameToID =
+std::unordered_map<std::string, UniformType> ShaderLoadTask::mTypeMapping =
 {
     {"float",       UniformType::FLOAT},
     {"int",         UniformType::INT},
@@ -35,10 +28,10 @@ std::unordered_map<std::string, UniformType> ShaderLoadTask::mVariableNameToID =
 };
 
 // public
-ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams, grr::gShader *shader) : m_shaderParams(shaderParams), m_path(shaderParams.base), m_shader(shader), bCanCreateShader(shader == nullptr), IAsyncTask(TaskPriority::HIGH)
+ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams, gr::Shader *shader) : m_shaderParams(shaderParams), m_path(shaderParams.base), m_shader(shader), bCanCreateShader(shader == nullptr), IAsyncTask(TaskPriority::HIGH)
 {}
 
-void ShaderLoadTask::addFunction(std::function<void (grr::gShader *)> func)
+void ShaderLoadTask::addFunction(std::function<void (gr::Shader *)> func)
 {
     if (func == nullptr)
         return;
@@ -48,7 +41,7 @@ void ShaderLoadTask::addFunction(std::function<void (grr::gShader *)> func)
 }
 
 // private
-grr::gShader* ShaderLoadTask::doInBackground()
+gr::Shader* ShaderLoadTask::doInBackground()
 {
     if (!gfile::exists(m_path))
     {
@@ -80,7 +73,7 @@ grr::gShader* ShaderLoadTask::doInBackground()
 }
 
 #include <filesystem>
-void ShaderLoadTask::onPostExecute(grr::gShader* result)
+void ShaderLoadTask::onPostExecute(gr::Shader* result)
 {
     if (result == nullptr)
         return AssetsManager::RemoveTask(m_path);
@@ -102,7 +95,7 @@ void ShaderLoadTask::onPostExecute(grr::gShader* result)
     Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name.c_str());
 
 
-    std::vector<std::function<void (grr::gShader *)>> funclist;
+    std::vector<std::function<void (gr::Shader *)>> funclist;
     {
         std::lock_guard<std::mutex> lock(mutex);
         funclist = std::move(m_func_list);
@@ -176,7 +169,7 @@ std::array<std::string, IShaderStage> ShaderLoadTask::LoadShaderBase(ShaderType 
         throw std::runtime_error("Fail to open file: " + path);
     }
 
-    ShaderStage_ shaderstage = ShaderStage::FRAGMENT;
+    ShaderBuildType shaderBuildType = ShaderBuildType::FRAGMENT;
 
     std::string line;
     while (std::getline(is, line))
@@ -185,15 +178,15 @@ std::array<std::string, IShaderStage> ShaderLoadTask::LoadShaderBase(ShaderType 
         {
             if (line.find("frag") != std::string::npos)
             {
-                shaderstage = ShaderStage::FRAGMENT;
+                shaderBuildType = ShaderBuildType::FRAGMENT;
             }
             else if (line.find("vert") != std::string::npos)
             {
-                shaderstage = ShaderStage::VERTEX;
+                shaderBuildType = ShaderBuildType::VERTEX;
             }
             continue;
         }
-        mShaderMap[static_cast<std::uint8_t>(shaderstage)] += line + '\n';
+        mShaderMap[static_cast<std::uint8_t>(shaderBuildType)] += line + '\n';
     }
     is.close();
 
@@ -416,7 +409,7 @@ void ShaderLoadTask::bind_shader(const std::string &path)
 
     std::vector<std::string> defineMap;
 
-    ShaderStage_ shaderstage = ShaderStage::FRAGMENT;
+    ShaderBuildType shaderstage = ShaderBuildType::FRAGMENT;
     std::array<std::string, IShaderStage> mCustomSourceShaderMap;
 
     bool isInDefineType = false;
@@ -432,10 +425,10 @@ void ShaderLoadTask::bind_shader(const std::string &path)
         {
             if (line.find("frag") != std::string::npos)
             {
-                shaderstage = ShaderStage::FRAGMENT;
+                shaderstage = ShaderBuildType::FRAGMENT;
             } else if (line.find("vert") != std::string::npos)
             {
-                shaderstage = ShaderStage::VERTEX;
+                shaderstage = ShaderBuildType::VERTEX;
             }
             isInDefineType = false;
             continue;
@@ -447,7 +440,8 @@ void ShaderLoadTask::bind_shader(const std::string &path)
             continue;
         }
 
-        mCustomSourceShaderMap[shaderstage] += line + '\n';
+        mCustomSourceShaderMap[static_cast<int>(shaderstage)] += line + '\n';
+
     }
 
     is.close();
@@ -458,12 +452,12 @@ void ShaderLoadTask::bind_shader(const std::string &path)
 
         // fragment
         {
-            for (auto &&[name, tuple] : ReadUniform(remove_comment(mCustomSourceShaderMap[ShaderStage::FRAGMENT])))
+            for (auto &&[name, tuple] : ReadUniform(remove_comment(mCustomSourceShaderMap[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))])))
             {
                 auto &&[variablename, isarray] = tuple;
 
-                auto it = mVariableNameToID.find(variablename);
-                if (it != mVariableNameToID.end())
+                auto it = mTypeMapping.find(variablename);
+                if (it != mTypeMapping.end())
                 {
                     variable = it->second;
                 }
@@ -474,12 +468,12 @@ void ShaderLoadTask::bind_shader(const std::string &path)
 
         // vertex
         {
-            for (auto &&[name, tuple] : ReadUniform(remove_comment(mCustomSourceShaderMap[ShaderStage::VERTEX])))
+            for (auto &&[name, tuple] : ReadUniform(remove_comment(mCustomSourceShaderMap[static_cast<int>(static_cast<int>(ShaderBuildType::VERTEX))])))
             {
                 auto &&[variablename, isarray] = tuple;
 
-                auto it = mVariableNameToID.find(variablename);
-                if (it != mVariableNameToID.end())
+                auto it = mTypeMapping.find(variablename);
+                if (it != mTypeMapping.end())
                 {
                     variable = it->second;
                 }
@@ -490,25 +484,25 @@ void ShaderLoadTask::bind_shader(const std::string &path)
     }
 
     {
-        m_shaderSource[ShaderStage::FRAGMENT] += "#version 330 core\n";
-        m_shaderSource[ShaderStage::VERTEX]   += "#version 330 core\n";
+        m_shaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))] += "#version 330 core\n";
+        m_shaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::VERTEX))]   += "#version 330 core\n";
 
         auto baseShaderSource = LoadShaderBase(m_shaderParams.type);
         for (auto defination : defineMap)
         {
-            m_shaderSource[ShaderStage::FRAGMENT] += defination + '\n';
-            m_shaderSource[ShaderStage::VERTEX]   += defination + '\n';
+            m_shaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))] += defination + '\n';
+            m_shaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += defination + '\n';
         }
 
-        m_shaderSource[ShaderStage::FRAGMENT] += baseShaderSource[ShaderStage::FRAGMENT];
-        m_shaderSource[ShaderStage::VERTEX]   += baseShaderSource[ShaderStage::VERTEX];
+        m_shaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] += baseShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)];
+        m_shaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += baseShaderSource[static_cast<int>(ShaderBuildType::VERTEX)];
     }
 
-    m_shaderSource[ShaderStage::FRAGMENT] += mCustomSourceShaderMap[ShaderStage::FRAGMENT];
-    m_shaderSource[ShaderStage::VERTEX]   += mCustomSourceShaderMap[ShaderStage::VERTEX];
+    m_shaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] += mCustomSourceShaderMap[static_cast<int>(ShaderBuildType::FRAGMENT)];
+    m_shaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += mCustomSourceShaderMap[static_cast<int>(ShaderBuildType::VERTEX)];
 
-    m_shaderSource[ShaderStage::FRAGMENT] = remove_comment(m_shaderSource[ShaderStage::FRAGMENT]);
-    m_shaderSource[ShaderStage::VERTEX] = remove_comment(m_shaderSource[ShaderStage::VERTEX]);
+    m_shaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = remove_comment(m_shaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
+    m_shaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = remove_comment(m_shaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
 
     std::unordered_set<std::string> macro_map;
     if (m_shaderParams.type == ShaderType::LINE)
@@ -537,13 +531,13 @@ void ShaderLoadTask::bind_shader(const std::string &path)
         }
     }
 
-    m_shaderSource[ShaderStage::FRAGMENT] = process_macro(m_shaderSource[ShaderStage::FRAGMENT], macro_map);
-    m_shaderSource[ShaderStage::VERTEX] = process_macro(m_shaderSource[ShaderStage::VERTEX], macro_map);
+    m_shaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = process_macro(m_shaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)], macro_map);
+    m_shaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = process_macro(m_shaderSource[static_cast<int>(ShaderBuildType::VERTEX)], macro_map);
 
     // fragment
     {
-        auto structList = ReadStuct(m_shaderSource[ShaderStage::FRAGMENT]);
-        auto uniformMap = ReadUniform(m_shaderSource[ShaderStage::FRAGMENT]);
+        auto structList = ReadStuct(m_shaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
+        auto uniformMap = ReadUniform(m_shaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
 
         auto vector = GetRegistryField(structList, uniformMap);
         if (!vector.empty())
@@ -556,8 +550,8 @@ void ShaderLoadTask::bind_shader(const std::string &path)
 
     // vertex
     {
-        auto structList = ReadStuct(m_shaderSource[ShaderStage::VERTEX]);
-        auto uniformMap = ReadUniform(m_shaderSource[ShaderStage::VERTEX]);
+        auto structList = ReadStuct(m_shaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
+        auto uniformMap = ReadUniform(m_shaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
 
         auto vector = GetRegistryField(structList, uniformMap);
         if (!vector.empty())
@@ -569,33 +563,28 @@ void ShaderLoadTask::bind_shader(const std::string &path)
     }
 }
 
-bool ShaderLoadTask::buildShader(const std::string &name, grr::gShader *shader)
+bool ShaderLoadTask::buildShader(const std::string &name, gr::Shader *shader)
 {
-    auto fragment_source = m_shaderSource[ShaderStage::FRAGMENT].c_str();
-    auto vertex_source = m_shaderSource[ShaderStage::VERTEX].c_str();
+    auto fragment_source = m_shaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)].c_str();
+    auto vertex_source = m_shaderSource[static_cast<int>(ShaderBuildType::VERTEX)].c_str();
 
-    shader->build(&fragment_source, 1, &vertex_source, 1);
-    if (!shader->isValid())
+    if (shader->build(&fragment_source, 1, &vertex_source, 1) == -1)
     {
-        Console::LogError("[ ShaderLoadTask ] Shader.Build Fail to build shader, %s, %s", name.c_str(), grr::error());
+        Console::LogError("[ ShaderLoadTask ] Shader.Build Fail to build shader, %s, %s", name.c_str(), "null");
         return false;
     }
 
-    auto property = AssetsManager::GetShaderProperty(m_shader);
-    if (property == nullptr)
-        property = AssetsManager::CreateShaderProperty(m_shader);
-    property->clear();
-
     for (auto &&[name, variablename, count] : s_shader_uniform_list)
     {
-        auto it = mVariableNameToID.find(variablename);
-        if (it == mVariableNameToID.end())
+        auto it = mTypeMapping.find(variablename);
+        if (it == mTypeMapping.end())
         {
             Console::LogWarning("[ ShaderLoadTask ] Vertex Shader uniform type do not is valid: %s, %s", name.c_str(), variablename.c_str());
             continue;
         }
 
-        PRINT_ERROR(shader->registry(name.c_str(), count, it->second), property, it->second);
+        if (shader->registry(name.c_str(), count, it->second) == GR_INVALID_ID)
+            Console::LogWarning("[ShaderLoadTask] fail in to registry: %s", name.c_str());
     }
     return true;
 }

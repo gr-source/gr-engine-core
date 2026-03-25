@@ -110,7 +110,7 @@ void RenderSystem::update()
 void RenderSystem::renderer()
 {
     const gr::vertex_array* lastVertexArray = nullptr;
-    grr::gShader* lastShader = nullptr;
+    gr::Shader* lastShader = nullptr;
     Material* lastMaterial = nullptr;
 
     size_t drawCallCount = 0;

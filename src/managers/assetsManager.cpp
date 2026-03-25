@@ -5,22 +5,12 @@
 #include "gr-base/core/animation/animation.hpp"
 
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/geometry/shader.hpp"
 
 #include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
-#include <gr-render/gTexture.h>
-#include <gr-render/gShader.h>
-#include <gr-render/gError.h>
-
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
-
-// AnimationManager AssetsManager::mAnimationManager;
-
-// sshader property
-std::unordered_map<grr::gShader *, std::unique_ptr<ShaderProperty>> AssetsManager::mShaderPropertyMap;
 
 void AssetsManager::Initialize()
 {
@@ -46,7 +36,7 @@ const std::string& AssetsManager::GetAssetDir()
     return s_AssetsManager->mAssetDir;
 }
 
-std::string AssetsManager::GetRefTextureName(grr::gTexture *texture)
+std::string AssetsManager::GetRefTextureName(gr::gTexture *texture)
 {
     auto name = s_AssetsManager->mTextureManager.getname(texture);
     if (name == nullptr)
@@ -54,17 +44,17 @@ std::string AssetsManager::GetRefTextureName(grr::gTexture *texture)
     return name;
 }
 
-grr::gShader *AssetsManager::CreateShader(ShaderParams shaderParams)
+gr::Shader *AssetsManager::CreateShader(ShaderParams shaderParams)
 {
     return s_AssetsManager->mShaderManager.create(shaderParams);
 }
 
-grr::gShader *AssetsManager::FindShader(const std::string &name)
+gr::Shader *AssetsManager::FindShader(const std::string &name)
 {
     return s_AssetsManager->mShaderManager.find(name);
 }
 
-std::string AssetsManager::GetShaderName(grr::gShader *shader)
+std::string AssetsManager::GetShaderName(gr::Shader *shader)
 {
     auto name = s_AssetsManager->mShaderManager.get_shader_name(shader);
     if (name == nullptr)
@@ -72,12 +62,12 @@ std::string AssetsManager::GetShaderName(grr::gShader *shader)
     return name;
 }
 
-void AssetsManager::RemoveShader(grr::gShader *shader)
+void AssetsManager::RemoveShader(gr::Shader *shader)
 {
     return s_AssetsManager->mShaderManager.destroy(shader);
 }
 
-grr::gTexture *AssetsManager::CreateTexture(const std::string &name)
+gr::gTexture *AssetsManager::CreateTexture(const std::string &name)
 {
     return s_AssetsManager->mTextureManager.create(name);
 }
@@ -109,25 +99,6 @@ std::string AssetsManager::GetMeshName(MeshID id)
 void AssetsManager::RemoveMesh(MeshID id)
 {
     s_AssetsManager->mMeshManager.destroy(id);
-}
-
-ShaderProperty *AssetsManager::CreateShaderProperty(grr::gShader *shader)
-{
-    std::lock_guard<std::mutex> lock(s_AssetsManager->mShaderManager.s_Mutex);
-    mShaderPropertyMap.emplace(shader, std::make_unique<ShaderProperty>());
-    
-    return &(*mShaderPropertyMap[shader]);
-}
-
-ShaderProperty *AssetsManager::GetShaderProperty(grr::gShader *shader)
-{
-    std::lock_guard<std::mutex> lock(s_AssetsManager->mShaderManager.s_Mutex);
-    auto it = mShaderPropertyMap.find(shader);
-    if (it == mShaderPropertyMap.end())
-    {
-        return nullptr;
-    }
-    return &(*it->second);
 }
 
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObjectHandle)> func)
@@ -189,13 +160,13 @@ std::string AssetsManager::GetAnimationName(const Animation *animation)
 }
 */
 /*
-std::vector<grr::gShader *> AssetsManager::GetShaderList(AssetShader_ type, ShaderOptimize_ optimize)
+std::vector<gr::gShader *> AssetsManager::GetShaderList(AssetShader_ type, ShaderOptimize_ optimize)
 {
     return s_AssetsManager->mShaderManager.get_shader(type, optimize);
 }
 */
 
-std::vector<grr::gShader *> AssetsManager::GetShaderList(ShaderType type)
+std::vector<gr::Shader *> AssetsManager::GetShaderList(ShaderType type)
 {
     return s_AssetsManager->mShaderManager.get_shader(type);
 }

@@ -13,13 +13,13 @@
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
-#include "gr-base/core/geometry/shader.hpp"
+// #include "gr-base/core/geometry/shader.hpp"
 
 #include "gr-base/script/skinnedMeshRender.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 
-#include <gr-render/gShader.h>
+#include <gr-render/shader.hpp>
 
 GameObjectLoadTask::GameObjectLoadTask(const std::string &path, std::function<void (GameObjectHandle)> func) : m_path(path), m_func(func), m_gameObject(HANDLE_INVALID), m_root(nullptr)
 {}

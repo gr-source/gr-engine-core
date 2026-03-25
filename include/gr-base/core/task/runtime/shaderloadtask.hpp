@@ -1,11 +1,12 @@
 #pragma once
 
 #include "gr-base/core/thread/asynctask.hpp"
-#include "shaderProperty.hpp"
 
 #include "default.hpp"
 
-#include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/core/geometry/shaderData.hpp"
+
+#include <unordered_set>
 
 typedef struct
 {
@@ -16,29 +17,29 @@ typedef struct
     u32 count;
 } ShaderUniformRaw;
 
-class ShaderLoadTask : public IAsyncTask<grr::gShader*>
+class ShaderLoadTask : public IAsyncTask<gr::Shader*>
 {
 public:
     ShaderLoadTask() = delete;
-    ShaderLoadTask(ShaderParams shaderParams, grr::gShader *shader);
+    ShaderLoadTask(ShaderParams shaderParams, gr::Shader *shader);
 
-    void addFunction(std::function<void (grr::gShader *)> func);
+    void addFunction(std::function<void (gr::Shader *)> func);
 
 private:
-    std::vector<std::function<void (grr::gShader *)>> m_func_list;
+    std::vector<std::function<void (gr::Shader *)>> m_func_list;
 
     ShaderParams m_shaderParams;
 
     const std::string m_path;
 
-    grr::gShader* doInBackground() override;
+    gr::Shader* doInBackground() override;
 
-    void onPostExecute(grr::gShader* result) override;
+    void onPostExecute(gr::Shader* result) override;
 
 protected:
     std::vector<ShaderUniformRaw> s_shader_uniform_list;
 
-    grr::gShader *m_shader;
+    gr::Shader *m_shader;
 
     bool bCanCreateShader;
 
@@ -48,7 +49,7 @@ protected:
 
     static ShaderType get_shader_asset_type(const std::string &path);
 
-    static std::unordered_map<std::string, UniformType> mVariableNameToID;
+    static std::unordered_map<std::string, UniformType> mTypeMapping;
 
     static std::array<std::string, IShaderStage> LoadShaderBase(ShaderType type);
 
@@ -72,13 +73,13 @@ protected:
 
     void bind_shader(const std::string &path);
 
-    bool buildShader(const std::string &name, grr::gShader *shader);
+    bool buildShader(const std::string &name, gr::Shader *shader);
 
     static std::string remove_comment(const std::string &str);
 };
 
 /*
-using ShaderFunc = std::function<void (grr::gShader *)>;
+using ShaderFunc = std::function<void (gr::gShader *)>;
 
 typedef struct
 {
@@ -92,7 +93,7 @@ typedef struct
 class ShaderLoadTask : public AsyncTask
 {
 public:
-    ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, grr::gShader *shader = nullptr);
+    ShaderLoadTask(ShaderOptimize_ optimize, const std::string &path, ShaderFunc func, gr::gShader *shader = nullptr);
     ~ShaderLoadTask();
 
     void addFunction(ShaderFunc func);
@@ -109,13 +110,13 @@ private:
     
     AssetShader m_asset_shader_type;
 
-    grr::gShader *m_shader;
+    gr::gShader *m_shader;
 
     const std::string m_path;
 
     const bool bShaderCreated;
 
-    void invoke(grr::gShader *shader);
+    void invoke(gr::gShader *shader);
     
     void upload(std::string path);
 
@@ -151,7 +152,7 @@ public:
 
     void bind_shader(const std::string &path);
 
-    bool buildShader(const std::string &name, grr::gShader *shader);
+    bool buildShader(const std::string &name, gr::gShader *shader);
 
     static std::string remove_comment(const std::string &str);
 };

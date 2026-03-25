@@ -17,12 +17,12 @@ MaterialInstance::MaterialInstance(MaterialID materialID) : m_materialID(materia
 // public
 void MaterialInstance::Flush() const
 {
-    grr::ShaderUniform* uniforms = m_shader->GetUniforms();
+    gr::ShaderUniform* uniforms = m_shader->GetUniforms();
 
     size_t length = m_shader->GetUniformCount();
     for (size_t i=0;i<length;i++)
     {
-        grr::ShaderUniform& uniform = uniforms[i];
+        gr::ShaderUniform& uniform = uniforms[i];
 
         m_shader->SetUniform(uniform.id, m_parametersBuffer.data() + uniform.offset);
     }
@@ -82,7 +82,7 @@ void MaterialInstance::Set(const char* name, const void* data, size_t size)
     if (uniformID == GR_INVALID_ID)
         return;
 
-    grr::ShaderUniform& shaderUniform = m_shader->GetUniforms()[uniformID];
+    gr::ShaderUniform& shaderUniform = m_shader->GetUniforms()[uniformID];
 
     memcpy(m_parametersBuffer.data() + shaderUniform.offset, data, shaderUniform.stride);
 

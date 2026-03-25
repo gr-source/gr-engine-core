@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gr-render/gShader.h>
+#include <gr-render/shader.hpp>
 
 using ShaderOptimize_ = std::uint8_t;
 
@@ -31,10 +31,19 @@ struct ShaderParams
     ShaderOptimize_ flags;
 };
 
+
+enum class ShaderBuildType
+{
+    FRAGMENT,
+    VERTEX,
+    COUNT
+};
+
+#define IShaderStage 2
+
 std::string GetShaderParamsName(ShaderParams shaderParams);
 
 ShaderParams GetShaderParamsFromName(const std::string &name);
-
 
 
 
