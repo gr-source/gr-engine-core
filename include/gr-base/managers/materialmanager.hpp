@@ -16,7 +16,7 @@ class MaterialManager
 public:
     MaterialManager();
 
-    MaterialID create(const std::string &name, const Material* src);
+    MaterialID create(const std::string &name);
 
     Material *get(MaterialID id);
 

@@ -5,15 +5,6 @@
 #include <array>
 
 #include <gr-render/gRender.h>
-#include <unordered_map>
-
-class Stream;
-
-typedef struct
-{
-    void *data;
-    u32 id;
-} Params;
 
 class Material
 {
@@ -35,67 +26,39 @@ public:
 
     bool supportsInstancing() const;
 
-    void set_scaling(const Vector2 &value);
-
-    Vector2 &get_scalling();
-
-    void set_offset(const Vector2 &value);
-
-    Vector2 &get_offset();
-
-    void serialize(Stream *stream) const;
-
-    void deserialize(Stream *stream);
+    template <typename T>
+    T *Get(const std::string &name);
 
     template <typename T>
-    T *getValue(const std::string &name);
-
-    template <typename T>
-    T *setValue(const std::string &name, const T &value);
-
-    template <typename T>
-    T *setValue(const std::string &name, u8 count, const T &value);
+    void Set(const std::string &name, const T &value);
 
     void flush(gr::Shader* shader) const;
 
 private:
-    std::unordered_map<std::string, std::tuple<void *, std::size_t>> m_field_data;
-
-    std::vector<std::tuple<void *, int>> m_field_list;
-
     std::array<gr::gTexture *, 10> m_textures;
 
-    Vector2 m_scalling;
-
-    Vector2 m_offset;
+    std::vector<uint8_t> m_buffer;
 
     gr::Shader *m_shader;
     gr::Shader *m_shaderInstancing;
 
     bool setupTexture(int id, gr::gTexture *texture);
 
-    void *internal_set_value(const char *name, u8 count, const void *data);
+    void Set(const char *name, u8 count, const void *data);
+
+    void* Get(const char* name);
 };
 
 template <typename T>
-inline T *Material::getValue(const std::string &name)
+inline T *Material::Get(const std::string &name)
 {
-    auto it = m_field_data.find(name);
-    if (it == m_field_data.end())
-    {
-        return nullptr;
-    }
-    return reinterpret_cast<T *>(std::get<0>(it->second));
+    return reinterpret_cast<T*>(Get(name.c_str()));
 }
 
 template <typename T>
-inline T *Material::setValue(const std::string &name, const T &value)
+inline void Material::Set(const std::string &name, const T &value)
 {
-    return setValue(name, 1, value);
+    Set(name.c_str(), 1, (const void*)&value);
 }
 
-template <typename T>
-inline T *Material::setValue(const std::string &name, u8 count, const T &value)
-{
-    return reinterpret_cast<T *>(internal_set_value(name.c_str(), count, &value));
-}
+

@@ -206,6 +206,7 @@ int GameObjectSaveTask::write_texture(Stream *stream)
 
 int GameObjectSaveTask::write_material(Stream *stream)
 {
+    /*
     auto length = m_materialmap.size();
     if (!stream->write(length))
         return 1;
@@ -232,6 +233,7 @@ int GameObjectSaveTask::write_material(Stream *stream)
 
         material->serialize(stream);
     }
+    */
     return 0;
 }
 

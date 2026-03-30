@@ -73,11 +73,13 @@ void GameObjectLoadTask::CreateMaterialFromCache()
 
     for (auto &cache : m_materialCacheList)
     {
+        /*
         MaterialID materialID = AssetsManager::FindMaterial(cache.name);
         if (materialID == ID_INVALID)
         {
             materialID = AssetsManager::CreateMaterial(cache.name, &cache.material);
         }
+        */
     }
 }
 
@@ -278,6 +280,7 @@ int GameObjectLoadTask::read_texture(Stream *stream)
 
 int GameObjectLoadTask::read_material(Stream *stream)
 {
+    /*
     std::size_t length = {};
     if (!stream->read(length))
         return 1;
@@ -296,31 +299,8 @@ int GameObjectLoadTask::read_material(Stream *stream)
         auto& cache = m_materialCacheList.emplace_back();
         cache.name = name;
         cache.material.deserialize(stream);
-
-        // auto next = stream->tellg() + static_cast<std::streampos>(bufferSize);
-
-        /*
-        auto materialID = AssetsManager::FindMaterial(name);
-        if (materialID == nill)
-        {
-            auto it = m_materialmap.find(name);
-            if (it == m_materialmap.end())
-            {
-                materialID = AssetsManager::CreateMaterial(name);
-                {
-                    auto &material = AssetsManager::GetMaterial(materialID);
-                    material.deserialize(stream);
-                }
-            }
-        }
-
-        if (materialID != nill)
-            m_materialmap.emplace(name, materialID);
-
-        if (stream->tellg() != next)
-            stream->seekg(next);
-        */
     }
+    */
     return 0;
 }
 

@@ -82,9 +82,6 @@ set(culling
 )
 
 set(task
-    src/core/task/runtime/chunkSaveTask.cpp
-    src/core/task/runtime/chunkLoadTask.cpp
-
     src/core/task/runtime/materialSaveTask.cpp
 
     src/core/task/runtime/gameobjectsavetask.cpp

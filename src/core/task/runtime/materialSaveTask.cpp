@@ -3,6 +3,7 @@
 #include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/geometry/material.hpp"
 
 #include "gr-base/core/file/stream.hpp"
@@ -13,23 +14,17 @@ MaterialSaveTask::MaterialSaveTask(const std::string& file, const Material* mate
 // private
 int MaterialSaveTask::doInBackground()
 {
-    return 1;
-    /*
-    Stream stream(m_file, std::ios_base::out | std::ios_base::binary);
-    if (!stream.is_open())
-        return 1;
+    FileStream stream(m_file, StreamType::OUTPUT);
 
-    FileHeader header{{'g', 'r', 'm', 't'}, 1.0f, 0};
+    FileHeader header{{'g', 'r', 'm', 't'}, 1.0f};
     if (!stream.write(&header, sizeof(FileHeader)))
         return 2;
-    stream.flush();
 
-    m_material->serialize(&stream);
+    // m_material->serialize(&stream);
 
     stream.close();
 
     return 0;
-    */
 }
 
 void MaterialSaveTask::onPostExecute(int result)

@@ -4,9 +4,6 @@
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/core/task/runtime/chunkLoadTask.hpp"
-#include "gr-base/core/task/runtime/chunkSaveTask.hpp"
-
 #include "gr-base/core/thread/taskmanager.hpp"
 
 #include "gr-base/core/file/file.hpp"
@@ -112,9 +109,6 @@ void WorldManager::update()
                 chunk->dirty = false;
 
                 std::string path = dir + key + ".grck";
-
-                if (gfile::exists(path))
-                    TaskManager::Add<int, ChunkLoadTask>(path, chunkID);
             }
 
             m_chunkAvailable.emplace(chunkID);
@@ -132,8 +126,6 @@ void WorldManager::update()
             if (chunk->dirty)
             {
                 chunk->dirty = false;
-
-                TaskManager::Add<int, ChunkSaveTask>(*it, std::bind(&WorldManager::unloadChunk, this, std::placeholders::_1));
             } else
             {
                 unloadChunk(*it);

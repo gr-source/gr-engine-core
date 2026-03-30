@@ -17,7 +17,7 @@ MaterialManager::MaterialManager() : m_pool(nullptr), m_count(0), m_freeID(ID_IN
 {
 }
 
-MaterialID MaterialManager::create(const std::string &name, const Material* src)
+MaterialID MaterialManager::create(const std::string &name)
 {
     auto id = allocate();
 
@@ -25,13 +25,7 @@ MaterialID MaterialManager::create(const std::string &name, const Material* src)
 
     Material *material = &wrapper[id].material;
 
-    if (src != nullptr)
-    {
-        new (material) Material(*src);
-    } else
-    {
-        new (material) Material();
-    }
+    new (material) Material();
 
     m_materialnamemap[name] = id;
     m_materialmap[id] = name;

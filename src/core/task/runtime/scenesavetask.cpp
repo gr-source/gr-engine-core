@@ -151,6 +151,7 @@ int SceneSaveTask::write_texture(Stream *stream)
 
 int SceneSaveTask::write_material(Stream *stream)
 {
+    /*
     auto length = m_materialmap.size();
     if (!stream->write(length))
     {
@@ -189,6 +190,7 @@ int SceneSaveTask::write_material(Stream *stream)
 
         material->serialize(stream);
     }
+    */
     return 0;
 }
 
