@@ -232,9 +232,9 @@ void RenderManager::preRender(const Camera *camera)
             continue;
 
         shader->bind();
-        shader->setUniform("u_projection", &projection);
-        shader->setUniform("u_view",       &view);
-        shader->setUniform("u_eye",        &position);
+        shader->setUniform("u_mat_projection", &projection);
+        shader->setUniform("u_mat_view",       &view);
+        shader->setUniform("u_mat_eye",        &position);
 
         setuplight(scene, shader);
         shader->unbind();

@@ -129,8 +129,8 @@ void RenderSystem::renderer()
             int textureID[10] = {0};
 
             shader->bind();
-            shader->setUniform("u_texture", textureID);
-            shader->setUniform("u_enable", enable);
+            shader->setUniform("u_mat_texture", textureID);
+            shader->setUniform("u_mat_enable", enable);
         }
 
         if (lastMaterial != material)
@@ -140,7 +140,7 @@ void RenderSystem::renderer()
             material->flush(shader);
         }
 
-        ShaderID u_model = shader->findUniform("u_model");
+        ShaderID u_model = shader->findUniform("u_mat_model");
 
         for (auto&& [meshID, transforms] : sortByMesh)
         {

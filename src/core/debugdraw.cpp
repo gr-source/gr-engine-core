@@ -108,8 +108,8 @@ void DebugDraw::LineRender::render(const Camera *camera, const Line3D *data, std
     m_buffer->Unbind();
 
     m_shader->bind();
-    m_shader->set_uniform("u_projection", camera->getPerspesctive());
-    m_shader->set_uniform("u_view", camera->getViewmatrix());
+    m_shader->set_uniform("u_mat_projection", camera->getPerspesctive());
+    m_shader->set_uniform("u_mat_view", camera->getViewmatrix());
 
     m_vertex_array->Bind();
 
