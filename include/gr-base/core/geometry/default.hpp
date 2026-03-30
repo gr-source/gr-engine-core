@@ -9,8 +9,6 @@
 #define ID_INVALID (uint32_t)-1
 
 class BoneWeight;
-class Vertex3D;
-class Vertex2D;
 class Material;
 class Batching;
 class Mesh;
