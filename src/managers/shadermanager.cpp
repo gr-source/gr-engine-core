@@ -79,7 +79,7 @@ std::vector<gr::Shader *> ShaderManager::get_shader(ShaderType type)
     return s_ShaderTypeList[static_cast<int>(type)];
 }
 
-std::shared_ptr<TaskInfo<gr::Shader*>> ShaderManager::load(ShaderParams shaderParams, gr::Shader *shader, std::function<void(gr::Shader *)> onLoaded)
+std::shared_ptr<TaskInfo> ShaderManager::load(ShaderParams shaderParams, gr::Shader *shader, std::function<void(gr::Shader *)> onLoaded)
 {
     auto taskname = GetShaderParamsName(shaderParams);
 
@@ -120,7 +120,7 @@ std::shared_ptr<TaskInfo<gr::Shader*>> ShaderManager::load(ShaderParams shaderPa
     }
 
     // cria uma nova task
-    auto taskInfo = TaskManager::Add<gr::Shader*, ShaderLoadTask>(shaderParams, shader);
+    auto taskInfo = TaskManager::Add<ShaderLoadTask>(shaderParams, shader);
     s_ShaderTaskMap.emplace(taskname, taskInfo);
 
     auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(taskInfo->task.get());

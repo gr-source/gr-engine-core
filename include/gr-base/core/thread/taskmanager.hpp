@@ -6,11 +6,11 @@
 class TaskManager
 {
 public:
-    template <typename R, typename T, typename ...Args>
-    static std::shared_ptr<TaskInfo<R>> Add(Args &&...args);
+    template <typename T, typename ...Args>
+    static std::shared_ptr<TaskInfo> Add(Args &&...args);
 
-    template <typename R, typename T>
-    std::shared_ptr<TaskInfo<R>> add(std::shared_ptr<T> task);
+    template <typename T>
+    std::shared_ptr<TaskInfo> add(std::shared_ptr<T> task);
 
 private:
     TaskManager();
@@ -24,19 +24,19 @@ private:
 };
 
 // static
-template <typename R, typename T, typename ...Args>
-inline std::shared_ptr<TaskInfo<R>> TaskManager::Add(Args &&...args)
+template <typename T, typename ...Args>
+inline std::shared_ptr<TaskInfo> TaskManager::Add(Args &&...args)
 {
     static_assert(std::is_base_of<ITask, T>(), "This class does not inherit from ITask!");
 
-    return GetInstance().add<R>(std::make_shared<T>(std::forward<Args>(args)...));
+    return GetInstance().add(std::make_shared<T>(std::forward<Args>(args)...));
 }
 
 // default
-template <typename R, typename T>
-inline std::shared_ptr<TaskInfo<R>> TaskManager::add(std::shared_ptr<T> task)
+template <typename T>
+inline std::shared_ptr<TaskInfo> TaskManager::add(std::shared_ptr<T> task)
 {
-    auto info = std::make_shared<TaskInfo<R>>();
+    auto info = std::make_shared<TaskInfo>();
     info->task = task;
 
     Threadpool::AddTask(info->task->priority, &TaskManager::update, this, info->task);

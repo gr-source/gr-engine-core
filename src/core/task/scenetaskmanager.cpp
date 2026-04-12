@@ -5,12 +5,12 @@
 
 #include "gr-base/core/thread/taskmanager.hpp"
 
-std::shared_ptr<TaskInfo<int>> SceneTaskManager::create_save_task(const std::string &path, const Scene *scene, std::function<void ()> func)
+std::shared_ptr<TaskInfo> SceneTaskManager::create_save_task(const std::string &path, const Scene *scene, std::function<void ()> func)
 {
-    return TaskManager::Add<int, SceneSaveTask>(path, scene, func);
+    return TaskManager::Add<SceneSaveTask>(path, scene, func);
 }
 
-std::shared_ptr<TaskInfo<int>> SceneTaskManager::create_task(const std::string &path, std::function<void (Scene *)> func)
+std::shared_ptr<TaskInfo> SceneTaskManager::create_task(const std::string &path, std::function<void (Scene *)> func)
 {
     std::unique_lock<std::mutex> lock(m_mutex);
     auto it = m_taskMap.find(path);
@@ -26,7 +26,7 @@ std::shared_ptr<TaskInfo<int>> SceneTaskManager::create_task(const std::string &
         return info;
     }
 
-    auto info = TaskManager::Add<int, SceneLoadTask>(path);
+    auto info = TaskManager::Add<SceneLoadTask>(path);
     auto sceneLoadTask = static_cast<SceneLoadTask *>(info->task.get());
 
     m_taskMap.emplace(path, info);

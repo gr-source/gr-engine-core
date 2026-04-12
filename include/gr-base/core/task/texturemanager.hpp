@@ -28,7 +28,7 @@ public:
     std::size_t getcount();
 
 private:
-    std::unordered_map<std::string, std::shared_ptr<TaskInfo<gr::gTexture*>>> m_texturetaskmap;
+    std::unordered_map<std::string, std::shared_ptr<TaskInfo>> m_texturetaskmap;
 
     std::unordered_map<std::string, std::unique_ptr<gr::gTexture>> m_texturemap;
 

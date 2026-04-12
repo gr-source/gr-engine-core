@@ -36,7 +36,7 @@ public:
     static std::string GetRefTextureName(gr::gTexture *texture);
 
     template <typename ...Args>
-    static std::shared_ptr<TaskInfo<gr::Shader*>> LoadShaderAsync(ShaderParams shaderParams, Args &&...args);
+    static std::shared_ptr<TaskInfo> LoadShaderAsync(ShaderParams shaderParams, Args &&...args);
 
     static gr::Shader *CreateShader(ShaderParams shaderParams);
 
@@ -50,10 +50,10 @@ public:
     static void LoadGameObject(const std::string &path, Args &&...args);
 
     template <typename ...Args>
-    static std::shared_ptr<TaskInfo<int>> LoadScene(const std::string &path, Args &&...args);
+    static std::shared_ptr<TaskInfo> LoadScene(const std::string &path, Args &&...args);
 
     template <typename ...Args>
-    static std::shared_ptr<TaskInfo<int>> SceneSaveAsync(const std::string &path, const Scene* scene, Args &&...args);
+    static std::shared_ptr<TaskInfo> SceneSaveAsync(const std::string &path, const Scene* scene, Args &&...args);
 
     /*
     template <typename ...Args>
@@ -132,7 +132,7 @@ inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...arg
 }
 
 template <typename... Args>
-inline std::shared_ptr<TaskInfo<int>> AssetsManager::LoadScene(const std::string &path, Args &&...args)
+inline std::shared_ptr<TaskInfo> AssetsManager::LoadScene(const std::string &path, Args &&...args)
 {
     std::function<void (Scene *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
@@ -142,7 +142,7 @@ inline std::shared_ptr<TaskInfo<int>> AssetsManager::LoadScene(const std::string
 }
 
 template <typename... Args>
-inline std::shared_ptr<TaskInfo<int>> AssetsManager::SceneSaveAsync(const std::string &path, const Scene* scene, Args &&...args)
+inline std::shared_ptr<TaskInfo> AssetsManager::SceneSaveAsync(const std::string &path, const Scene* scene, Args &&...args)
 {
     std::function<void ()> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
@@ -163,7 +163,7 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
 
 // ***** Shader ***** //
 template <typename ...Args>
-inline std::shared_ptr<TaskInfo<gr::Shader*>> AssetsManager::LoadShaderAsync(ShaderParams shaderParams, Args &&...args)
+inline std::shared_ptr<TaskInfo> AssetsManager::LoadShaderAsync(ShaderParams shaderParams, Args &&...args)
 {
     std::function<void(gr::Shader *)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)

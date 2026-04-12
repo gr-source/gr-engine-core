@@ -44,7 +44,7 @@ void TextureManager::load(const std::string &path, std::function<void (gr::gText
             if (func == nullptr)
                 return;
 
-            auto taskInfo = static_cast<TaskInfo<gr::gTexture*>*>(it->second.get());
+            auto taskInfo = static_cast<TaskInfo*>(it->second.get());
 
             TextureLoadTask* textureloadtask = static_cast<TextureLoadTask*>(taskInfo->task.get());
             return textureloadtask->addFunction(func);
@@ -56,7 +56,7 @@ void TextureManager::load(const std::string &path, std::function<void (gr::gText
         return Console::LogError("[ AssetsManager::Texture ] File not found: %s", path.c_str());
     }
 
-    auto taskInfo = TaskManager::Add<gr::gTexture*, TextureLoadTask>(path, func);
+    auto taskInfo = TaskManager::Add<TextureLoadTask>(path, func);
     m_texturetaskmap.emplace(path, taskInfo);
 }
 

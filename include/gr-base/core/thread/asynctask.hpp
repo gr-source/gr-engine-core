@@ -58,16 +58,18 @@ inline void IAsyncTask<R>::finish()
     return onPostExecute(result);
 }
 
-template <typename R>
 struct TaskInfo
 {
-    std::shared_ptr<IAsyncTask<R>> task;
+    std::shared_ptr<ITask> task;
 
-    R get()
+    template <typename R>
+    inline R get()
     {
+        IAsyncTask<R>* wrapper = static_cast<IAsyncTask<R>*>(task.get());
+
         std::unique_lock<std::mutex> lock(task->mutex);
-        task->cv.wait(lock, [this] { return task->finished; });
-        return task->result;
+        task->cv.wait(lock, [&] { return wrapper->finished; });
+        return wrapper->result;
     }
 };
 

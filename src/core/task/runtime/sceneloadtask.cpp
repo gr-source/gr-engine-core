@@ -239,7 +239,7 @@ int SceneLoadTask::read_shader(Stream *stream)
         if (shader == nullptr)
         {
             auto info = AssetsManager::LoadShaderAsync(GetShaderParamsFromName(shadername));
-            shader = info->get();
+            shader = info->get<gr::Shader*>();
         }
         if (shader != nullptr)
             m_shadermap.emplace(shadername, shader);

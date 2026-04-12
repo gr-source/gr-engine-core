@@ -103,7 +103,7 @@ void AssetsManager::RemoveMesh(MeshID id)
 
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObjectHandle)> func)
 {
-    TaskManager::Add<int, GameObjectLoadTask>(path, func);
+    TaskManager::Add<GameObjectLoadTask>(path, func);
 }
 
 /*
