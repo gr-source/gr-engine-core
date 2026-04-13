@@ -21,6 +21,8 @@ public:
 
     virtual ~ITask() = default;
 
+    virtual void onPreExecute() {}
+
     virtual void run() = 0;
 
     virtual void finish() = 0;
@@ -35,6 +37,8 @@ public:
     IAsyncTask(TaskPriority taskPriority = TaskPriority::LOW) : ITask(taskPriority) {}
 
     virtual ~IAsyncTask() = default;
+
+    virtual void onPreExecute() override {}
 
     virtual R doInBackground() = 0;
 

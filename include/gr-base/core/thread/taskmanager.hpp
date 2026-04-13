@@ -39,6 +39,8 @@ inline std::shared_ptr<TaskInfo> TaskManager::add(std::shared_ptr<T> task)
     auto info = std::make_shared<TaskInfo>();
     info->task = task;
 
+    info->task->onPreExecute();
+
     Threadpool::AddTask(info->task->priority, &TaskManager::update, this, info->task);
 
     return info;

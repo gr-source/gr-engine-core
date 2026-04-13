@@ -1,8 +1,10 @@
 #pragma once
 
-#include <cstring>
+#include "gr-base/core/file/default.hpp"
+
 #include <unordered_map>
 #include <cstdint>
+#include <cstring>
 #include <vector>
 #include <string>
 
@@ -24,6 +26,10 @@ public:
 
         return reinterpret_cast<T*>(it->second.data());
     }
+
+    bool serialize(Stream* stream) const;
+
+    bool deserialize(Stream* stream);
 
 private:
     std::unordered_map<std::string, std::vector<uint8_t>> m_overrides;

@@ -126,8 +126,12 @@ set(ECS_SRC
     src/ecs/entity.cpp
 )
 
-set(EXTERNALS
+set(EXTERNAL_SRC
     src/externals/array.c
+)
+
+set(ASSET_SRC
+    src/asset/materialasset.cpp
 )
 
 find_package(Bullet QUIET)
@@ -136,7 +140,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNALS} ${ECS_SRC})
+add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNAL_SRC} ${ECS_SRC} ${ASSET_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
