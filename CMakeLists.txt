@@ -82,8 +82,6 @@ set(culling
 )
 
 set(task
-    src/core/task/runtime/materialSaveTask.cpp
-
     src/core/task/runtime/gameobjectsavetask.cpp
     src/core/task/runtime/gameobjectloadtask.cpp
 
@@ -96,9 +94,6 @@ set(task
     src/core/task/runtime/textureloadtask.cpp
 
     src/core/task/runtime/shaderloadtask.cpp
-
-    src/core/task/runtime/meshLoadTask.cpp
-    src/core/task/runtime/meshSaveTask.cpp
 
     src/core/task/scenetaskmanager.cpp
     src/core/task/texturemanager.cpp
@@ -132,6 +127,12 @@ set(EXTERNAL_SRC
 
 set(ASSET_SRC
     src/asset/materialasset.cpp
+    src/asset/modelasset.cpp
+    src/asset/meshasset.cpp
+)
+
+SET(TASK_SRC
+    src/task/modelloadtask.cpp
 )
 
 find_package(Bullet QUIET)
@@ -140,7 +141,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNAL_SRC} ${ECS_SRC} ${ASSET_SRC})
+add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNAL_SRC} ${ECS_SRC} ${ASSET_SRC} ${TASK_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

@@ -9,6 +9,7 @@
 #include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
+#include "gr-base/task/modelloadtask.hpp"
 
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
 
@@ -103,7 +104,7 @@ void AssetsManager::RemoveMesh(MeshID id)
 
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObjectHandle)> func)
 {
-    TaskManager::Add<GameObjectLoadTask>(path, func);
+    TaskManager::Add<ModelLoadTask>(path, func);
 }
 
 /*
