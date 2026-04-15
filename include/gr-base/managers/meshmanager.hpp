@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/asset/meshasset.hpp"
 #include "gr-base/core/task/runtime/default.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
@@ -17,7 +18,7 @@ class MeshManager
 public:
     MeshManager();
 
-    MeshID create(const std::string& name, const Mesh* src);
+    MeshID create(const std::string& name, const MeshAsset* src);
 
     Mesh *get(MeshID id);
 
@@ -45,6 +46,8 @@ private:
     MeshID m_count;
 
     std::mutex m_mutex;
+
+    void SetupMesh(Mesh* mesh, const MeshAsset* asset);
 
     void realloc(MeshID count);
 

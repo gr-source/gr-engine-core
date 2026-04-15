@@ -13,19 +13,18 @@ public:
 
     virtual bool Deserialize(Stream *stream) override;
 
-    void addMaterial(MaterialID id);
+    inline void SetMaterial(const std::vector<MaterialID>& materials)
+    {
+        m_materials = materials;
+    }
 
-    bool hasMaterial(MaterialID id) const;
-
-    std::vector<MaterialID> getMaterialIDs() const;
-
-    void removeMaterial(MaterialID id);
+    inline std::vector<MaterialID> getMaterialIDs() const
+    {
+        return m_materials;
+    }
 
 private:
     std::vector<MaterialID> m_materials;
-
-    friend class SkinnedMeshRender;
-    friend class MeshRender;
 };
 
 REGISTER_COMPONENT(BaseRender, (uint64_t)-1)

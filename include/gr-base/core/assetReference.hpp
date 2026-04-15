@@ -18,14 +18,14 @@ public:
 
     static void Save(const std::string &file);
 
-    static void Registry(const std::string &name);
+    static void Registry(const std::string &name, const std::string& file);
 
     static std::string Get(AssetHash hash);
 
 private:
     static AssetReference* s_AssetReference;
 
-    std::unordered_map<std::string, AssetHash> m_refMapped;
+    std::unordered_map<std::string, std::string> m_refMapped;
 
     std::unordered_map<AssetHash, std::string> m_refHashMapped;
 
@@ -33,7 +33,7 @@ private:
 
     void save(const std::string &file);
 
-    void registry(const std::string &name);
+    void registry(const std::string &name, const std::string& file);
 
     std::string get(AssetHash hash);
 };

@@ -14,19 +14,18 @@ typedef struct MeshWrapper
 MeshManager::MeshManager() : m_pool(nullptr), m_count(0), m_freeID(ID_INVALID)
 {}
 
-MeshID MeshManager::create(const std::string &name, const Mesh* src)
+MeshID MeshManager::create(const std::string &name, const MeshAsset* src)
 {
     MeshID id = allocate();
 
     MeshWrapper* wrapper = (MeshWrapper*)m_pool->vector;
 
+    Mesh* mesh = &wrapper[id].mesh;
+
+    new (mesh) Mesh();
+
     if (src != nullptr)
-    {
-        new (&wrapper[id].mesh) Mesh(*src);
-    } else
-    {
-        new (&wrapper[id].mesh) Mesh();
-    }
+        SetupMesh(mesh, src);
 
     m_meshnamemap[id] = name;
     m_meshidmap[name] = id;
@@ -101,6 +100,14 @@ size_t MeshManager::getCount() const
 }
 
 // private
+void MeshManager::SetupMesh(Mesh* mesh, const MeshAsset* asset)
+{
+    mesh->SetVertices(asset->vertices);
+
+    for (auto& sub : asset->submeshes)
+        mesh->addTriangles(sub.indices);
+}
+
 void MeshManager::realloc(MeshID size)
 {
     size_t lastsize = m_pool != nullptr ? m_pool->length : 0;

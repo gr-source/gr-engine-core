@@ -23,6 +23,7 @@ void MeshCollider::Init()
     try {
         Mesh mesh_out;
 
+        /*
         std::size_t nextIndice = 0;
         for (auto &meshID : meshFilter->getMesh())
         {
@@ -38,6 +39,7 @@ void MeshCollider::Init()
             }
             nextIndice += mesh->getVertices().size();
         }
+        */
          
         buildMesh(&mesh_out);
     } catch (const std::exception &e) {
@@ -50,16 +52,16 @@ void MeshCollider::buildMesh(Mesh *mesh)
 {
     m_triangleMesh = std::make_shared<btTriangleMesh>();
 
-    auto indices = mesh->getIndices();
-    auto vertices = mesh->getVertices();
+    // auto indices = mesh->getIndices();
+    auto vertices = mesh->GetVertices();
 
     if (vertices.empty()) {
         throw std::runtime_error("Mesh do not has vertices");
     }
 
-    if (!indices.empty()) {
-        return buildWithIndice(indices, vertices);
-    }
+    // if (!indices.empty()) {
+    //     return buildWithIndice(indices, vertices);
+    // }
     buildWithVertice(vertices);
 }
 

@@ -14,21 +14,24 @@ public:
     Mesh();
 
     template <typename ...Args>
-    std::size_t addVertex(Args &&...args);
+    void addVertex(Args &&...args);
 
-    std::vector<Vertex3D> getVertices() const;
+    inline std::vector<Vertex3D> GetVertices() const
+    {
+        return m_vertices;
+    }
 
-    void setVertices(const std::vector<Vertex3D> &vertices);
+    inline void SetVertices(const std::vector<Vertex3D> &vertices)
+    {
+        m_vertices = vertices;
+    }
 
-    void addTriangles(int t0, int t1, int t2);
+    void addTriangles(const std::vector<uint32_t> &indices);
 
-    void addIndice(int t0);
-
-    std::vector<int> getIndices() const;
-
-    void setIndices(const std::vector<int> &indices);
-
-    bool hasIndices() const;
+    inline size_t GetSubMeshCount() const
+    {
+        return m_submeshes.size();
+    }
 
     template <typename ...Args>
     BoneWeight &addBoneWeight(Args &&...args);
@@ -38,10 +41,6 @@ public:
     void CalculateLocalBounds();
 
     const Boundbox &getBoundbox() const;
-
-    int serialize(Stream *stream) const;
-
-    int deserialize(Stream *stream);
 
     void SetName(const std::string& name);
 
@@ -64,7 +63,7 @@ private:
 
     std::vector<Vertex3D> m_vertices;
 
-    std::vector<int> m_indices;
+    std::vector<std::vector<uint32_t>> m_submeshes;
 
     Boundbox m_boundbox;
 
@@ -76,11 +75,9 @@ private:
 };
 
 template <typename ...Args>
-inline std::size_t Mesh::addVertex(Args&& ...args)
+inline void Mesh::addVertex(Args&& ...args)
 {
     m_vertices.push_back(Vertex3D{std::forward<Args>(args)...});
-
-    return m_vertices.size() - 1;
 }
 
 template <typename... Args>

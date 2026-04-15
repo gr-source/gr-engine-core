@@ -17,7 +17,7 @@ bool MeshAsset::serialize(Stream* stream) const
 
     for (auto& sub : submeshes)
     {
-        if (!stream->write(sub.materialID))
+        if (!stream->write(sub.materialName))
             return false;
 
         uint64_t indicescount = static_cast<uint64_t>(sub.indices.size());
@@ -48,7 +48,7 @@ bool MeshAsset::deserialize(Stream* stream)
     submeshes.resize(subcount, {});
     for (auto& sub : submeshes)
     {
-        if (!stream->read(sub.materialID))
+        if (!stream->read(sub.materialName))
             return false;
 
         uint64_t indicescount = 0;

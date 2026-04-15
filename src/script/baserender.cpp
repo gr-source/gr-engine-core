@@ -34,37 +34,15 @@ bool BaseRender::Deserialize(Stream *stream)
     {
         std::string name;
         if (!stream->read(name))
-        {
             return false;
-        }
 
         auto materialID = AssetsManager::FindMaterial(name);
         if (materialID == ID_INVALID)
             continue;
 
-        addMaterial(materialID);
+        m_materials.push_back(materialID);
     }
     return true;
-}
-
-void BaseRender::addMaterial(MaterialID id)
-{
-    m_materials.push_back(id);
-}
-
-bool BaseRender::hasMaterial(MaterialID id) const
-{
-    return std::find(m_materials.begin(), m_materials.end(), id) != m_materials.end();
-}
-
-std::vector<MaterialID> BaseRender::getMaterialIDs() const
-{
-    return m_materials;
-}
-
-void BaseRender::removeMaterial(MaterialID id)
-{
-    m_materials.erase(std::remove(m_materials.begin(), m_materials.end(), id), m_materials.end());
 }
 
 

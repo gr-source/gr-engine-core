@@ -174,11 +174,11 @@ void SceneLoadTask::CreateMeshFromCache()
 
     for (auto &cache : m_meshCacheList)
     {
-        auto meshID = AssetsManager::FindMesh(cache.name);
-        if (meshID == ID_INVALID)
-        {
-            meshID = AssetsManager::CreateMesh(cache.name, &cache.mesh);
-        }
+        // auto meshID = AssetsManager::FindMesh(cache.name);
+        // if (meshID == ID_INVALID)
+        // {
+        //     meshID = AssetsManager::CreateMesh(cache.name, &cache.mesh);
+        // }
     }
 }
 
@@ -297,9 +297,9 @@ int SceneLoadTask::read_mesh(Stream *stream)
         if (!stream->read(buffsize))
             return 3;
 
-        auto& cache = m_meshCacheList.emplace_back();
-        cache.name = name;
-        cache.mesh.deserialize(stream);
+        // auto& cache = m_meshCacheList.emplace_back();
+        // cache.name = name;
+        // cache.mesh.deserialize(stream);
 
         /*
         auto next = stream->tellg() + static_cast<std::streampos>(buffsize);

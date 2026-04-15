@@ -4,6 +4,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 AssetReference* AssetReference::s_AssetReference = nullptr;
 
@@ -31,9 +32,9 @@ void AssetReference::Save(const std::string &file)
     s_AssetReference->save(file);
 }
 
-void AssetReference::Registry(const std::string &name)
+void AssetReference::Registry(const std::string &name, const std::string& file)
 {
-    s_AssetReference->registry(name);
+    s_AssetReference->registry(name, file);
 }
 
 std::string AssetReference::Get(AssetHash hash)
@@ -52,7 +53,15 @@ void AssetReference::load(const std::string &file)
 
     std::string line;
     while (std::getline(is, line))
-        registry(line);
+    {
+        std::string name, file;
+
+        std::stringstream iss(line);
+        if (!(iss >> name >> file))
+            continue;
+
+        registry(name, file);
+    }
 
     is.close();
 }
@@ -60,16 +69,16 @@ void AssetReference::load(const std::string &file)
 void AssetReference::save(const std::string &file)
 {
     std::ofstream os(file);
-    for (auto &&[name, hash] : m_refMapped)
-        os << name << std::endl;
+    for (auto &&[name, file] : m_refMapped)
+        os << name<< " " << file << std::endl;
     os.close();
 }
 
-void AssetReference::registry(const std::string &name)
+void AssetReference::registry(const std::string &name, const std::string& file)
 {
     AssetHash hash = GetHash(name.c_str());
 
-    m_refMapped.emplace(name, hash);
+    m_refMapped.emplace(name, file);
 
     m_refHashMapped.emplace(hash, name);
 }

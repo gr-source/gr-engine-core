@@ -161,7 +161,7 @@ void RenderSystem::renderer()
                 pbo->SetData(transforms.data(), transforms.size() * sizeof(Matrix4x4));
                 pbo->Unbind();
 
-                glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr, transforms.size());
+                // glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr, transforms.size());
 
                 drawCallCount++;
             } else
@@ -170,7 +170,7 @@ void RenderSystem::renderer()
                 {
                     shader->SetUniform(u_model, &matrix);
 
-                    glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+                    // glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
                 }
 
                 drawCallCount += transforms.size();
@@ -201,19 +201,24 @@ void RenderSystem::setup(std::unordered_set<GameObjectHandle> objects)
         }
 
         auto materialIDs = meshRender->getMaterialIDs();
-        auto meshIDs = meshFilter->getMesh();
+        auto meshID = meshFilter->getMeshID();
 
-        if (materialIDs.size() != meshIDs.size())
+        if (meshID == ID_INVALID)
+            continue;
+
+        auto mesh = AssetsManager::GetMesh(meshID);
+
+        if (materialIDs.size() != mesh->GetSubMeshCount())
         {
-            Console::LogError("[RenderSystem] Erro de configuracao no objeto '%s': Quantidade de materiais (%ld) nao condiz com a quantidade de sub-meshes (%ld).", gameobject->GetName().c_str(), materialIDs.size(), meshIDs.size());
+            Console::LogError("[RenderSystem] Erro de configuracao no objeto '%s': Quantidade de materiais (%ld) nao condiz com a quantidade de sub-meshes (%ld).", gameobject->GetName().c_str(), materialIDs.size(), mesh->GetSubMeshCount());
             continue;
         }
 
-        size_t count = meshIDs.size();
+        size_t count = mesh->GetSubMeshCount();
         for (size_t i=0;i<count;i++)
         {
             MaterialID materialID = materialIDs[i];
-            MeshID meshID = meshIDs[i];
+            // MeshID meshID = meshIDs[i];
 
             Mesh* mesh = AssetsManager::GetMesh(meshID);
 

@@ -74,7 +74,7 @@ gr::gTexture *AssetsManager::CreateTexture(const std::string &name)
 }
 
 // ********** Mesh ********** //
-MeshID AssetsManager::CreateMesh(const std::string &name, const Mesh* src)
+MeshID AssetsManager::CreateMesh(const std::string &name, const MeshAsset* src)
 {
     return s_AssetsManager->mMeshManager.create(name, src);
 }

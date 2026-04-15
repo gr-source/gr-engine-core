@@ -12,7 +12,7 @@ class SubMesh
 public:
     std::vector<uint32_t> indices;
 
-    uint32_t materialID;
+    std::string materialName;
 };
 
 class MeshAsset

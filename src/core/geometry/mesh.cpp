@@ -5,39 +5,14 @@
 Mesh::Mesh() : m_boundbox{Vector3::zero, Vector3::zero}, m_vertexarray(nullptr), m_pbo(nullptr)
 {}
 
-std::vector<Vertex3D> Mesh::getVertices() const
-{
-    return m_vertices;
-}
-
-void Mesh::setVertices(const std::vector<Vertex3D> &vertices) {
-    m_vertices = vertices;
-}
-
 // addTriangle
-void Mesh::addTriangles(int t0, int t1, int t2) {
-    m_indices.push_back(t0);
-    m_indices.push_back(t1);
-    m_indices.push_back(t2);
+void Mesh::addTriangles(const std::vector<uint32_t> &indices)
+{
+    m_submeshes.push_back(indices);
 }
 
-void Mesh::addIndice(int t0) {
-    m_indices.push_back(t0);
-}
-
-std::vector<int> Mesh::getIndices() const {
-    return m_indices;
-}
-
-void Mesh::setIndices(const std::vector<int> &indices) {
-    m_indices = indices;
-}
-
-bool Mesh::hasIndices() const {
-    return !m_indices.empty();
-}
-
-std::vector<BoneWeight> Mesh::getBoneWeight() const {
+std::vector<BoneWeight> Mesh::getBoneWeight() const
+{
     return m_boneWeight;
 }
 
@@ -56,71 +31,6 @@ void Mesh::CalculateLocalBounds()
 const Boundbox &Mesh::getBoundbox() const
 {
     return m_boundbox;
-}
-
-int Mesh::serialize(Stream *stream) const
-{
-    if (!stream->write(m_boundbox))
-        return 1;
-
-    // Serialize vertices
-    std::size_t vericecount = m_vertices.size();
-    if (!stream->write(vericecount))
-        return 2;
-
-    if (!stream->write(m_vertices.data(), vericecount * sizeof(Vertex3D)))
-        return 3;
-
-    // Serialize indices
-    std::size_t indicecount = m_indices.size();
-    if (!stream->write(indicecount))
-        return 4;
-
-    if (!stream->write(m_indices.data(), indicecount * sizeof(int)))
-        return 5;
-
-    // Serialize bone
-    std::size_t bonewightcount = m_boneWeight.size();
-    if (!stream->write(bonewightcount))
-        return 6;
-
-    if (!stream->write(m_boneWeight.data(), bonewightcount * sizeof(BoneWeight)))
-        return 7;
-    
-    return 0;
-}
-
-int Mesh::deserialize(Stream *stream)
-{
-    if (!stream->read(m_boundbox))
-        return 1;
-
-    // Deserialize vertices
-    std::size_t vericecount = {};
-    if (!stream->read(vericecount))
-        return 2;
-
-    m_vertices.resize(vericecount);
-    if (!stream->read(reinterpret_cast<char *>(m_vertices.data()), vericecount * sizeof(Vertex3D)))
-        return 3;
-
-    // Deserialize indices
-    std::size_t indicecount = {};
-    if (!stream->read(indicecount))
-        return 4;
-
-    m_indices.resize(indicecount, 0);
-    if (!stream->read(reinterpret_cast<char *>(m_indices.data()), indicecount * sizeof(int)))
-        return 5;
-
-    std::size_t bonewightcount = {};
-    if (!stream->read(bonewightcount))
-        return 6;
-
-    m_boneWeight.resize(bonewightcount);
-    if (!stream->read(reinterpret_cast<char *>(m_boneWeight.data()), bonewightcount * sizeof(BoneWeight)))
-        return 7;
-    return 0;
 }
 
 void Mesh::SetName(const std::string& name)
@@ -154,12 +64,14 @@ void Mesh::Build()
     m_pbo = gr::vertex_buffer::create(nullptr, 1024 * sizeof(Matrix4x4), gr::buffer_usage::dynamic_draw);
     m_pbo->SetLayout(instanceLayout);
 
+    /*
     auto ibo = gr::index_buffer::create(m_indices.data(), m_indices.size() * sizeof(uint32_t));
 
     m_vertexarray = gr::vertex_array::create();
     m_vertexarray->AddVertexBuffer(vbo);
     m_vertexarray->AddVertexBuffer(m_pbo);
     m_vertexarray->SetIndexBuffer(ibo);
+    */
 }
 
 

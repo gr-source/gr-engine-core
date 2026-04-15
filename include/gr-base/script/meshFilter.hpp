@@ -9,16 +9,22 @@ class MeshFilter : public BehaviorImpl<MeshFilter>
 public:
     MeshFilter();
 
-    void addMesh(MeshID id);
+    inline void SetMesh(MeshID id)
+    {
+        m_meshID = id;
+    }
 
-    std::vector<MeshID> getMesh() const;
+    inline MeshID getMeshID() const
+    {
+        return m_meshID;
+    }
 
     bool Serialize(Stream *stream) const override;
 
     bool Deserialize(Stream *stream) override;
     
 private:
-    std::vector<MeshID> m_meshes;
+    MeshID m_meshID;
 };
 
 REGISTER_COMPONENT(MeshFilter, (uint64_t)-1)

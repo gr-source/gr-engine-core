@@ -208,14 +208,14 @@ int SceneSaveTask::write_mesh(Stream *stream)
 
         Mesh* mesh = AssetsManager::GetMesh(meshID);
 
-        MemoryStream temp;
-        mesh->serialize(&temp);
-
-        std::size_t length = temp.tellg();
-        if (!stream->write(length))
-            return 3;
-
-        mesh->serialize(stream);
+        // MemoryStream temp;
+        // mesh->serialize(&temp);
+        //
+        // std::size_t length = temp.tellg();
+        // if (!stream->write(length))
+        //     return 3;
+        //
+        // mesh->serialize(stream);
     }
     return 0;
 }
@@ -343,10 +343,7 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
 
     auto meshFilter = gameObject->getComponent<MeshFilter>();
     if (meshFilter != nullptr)
-    {
-        for (auto &meshID : meshFilter->getMesh())
-            m_meshmap.emplace(meshID);
-    }
+        m_meshmap.emplace(meshFilter->getMeshID());
 
     if (gameObject->getComponent<MeshRender>() || gameObject->getComponent<SkinnedMeshRender>())
     {

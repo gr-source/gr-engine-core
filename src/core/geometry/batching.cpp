@@ -26,6 +26,7 @@ void Batching::insert(const Matrix4x4& matrix)
 
 void Batching::build(MeshID meshID, MaterialID materialID)
 {
+    /*
     Mesh* mesh = AssetsManager::GetMesh(meshID);
 
     auto vertices = mesh->getVertices();
@@ -60,6 +61,7 @@ void Batching::build(MeshID meshID, MaterialID materialID)
     m_indexCount = indices.size();
 
     m_materialID = materialID;
+    */
 }
 
 void Batching::render()

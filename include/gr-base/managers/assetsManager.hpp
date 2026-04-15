@@ -70,7 +70,7 @@ public:
     static gr::gTexture *CreateTexture(const std::string &name);
 
     // ********** Mesh ********** //
-    static MeshID CreateMesh(const std::string &name, const Mesh* src = nullptr);
+    static MeshID CreateMesh(const std::string &name, const MeshAsset* src = nullptr);
 
     static Mesh *GetMesh(MeshID id);
 
