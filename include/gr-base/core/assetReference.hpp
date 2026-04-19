@@ -20,14 +20,12 @@ public:
 
     static void Registry(const std::string &name, const std::string& file);
 
-    static std::string Get(AssetHash hash);
+    static const std::string& GetFile(const std::string &name);
 
 private:
     static AssetReference* s_AssetReference;
 
     std::unordered_map<std::string, std::string> m_refMapped;
-
-    std::unordered_map<AssetHash, std::string> m_refHashMapped;
 
     void load(const std::string &file);
 
@@ -35,7 +33,7 @@ private:
 
     void registry(const std::string &name, const std::string& file);
 
-    std::string get(AssetHash hash);
+    const std::string& getFile(const std::string& name);
 };
 
 

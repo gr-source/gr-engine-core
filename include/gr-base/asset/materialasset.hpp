@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gr-base/core/file/default.hpp"
+#include "gr-base/asset/asset.hpp"
 
 #include <unordered_map>
 #include <cstdint>
@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 
-class MaterialAsset
+class MaterialAsset : public Asset
 {
 public:
     template <typename T>
@@ -27,20 +27,38 @@ public:
         return reinterpret_cast<T*>(it->second.data());
     }
 
-    bool serialize(Stream* stream) const;
+    inline void SetShader(const std::string& name)
+    {
+        m_shader = name;
+    }
 
-    bool deserialize(Stream* stream);
+    inline const std::string& GetShader() const
+    {
+        return m_shader;
+    }
+
+    inline void SetName(const std::string& name)
+    {
+        m_name = name;
+    }
+
+    inline const std::string& GetName() const
+    {
+        return m_name;
+    }
+
+    bool serialize(Stream* stream) const override;
+
+    bool deserialize(Stream* stream) override;
 
 private:
     std::unordered_map<std::string, std::vector<uint8_t>> m_overrides;
 
-    void Set(const std::string& name, const void* data, size_t size)
-    {
-        auto& cache = m_overrides[name];
-        cache.resize(size, 0);
+    std::string m_shader;
 
-        memcpy(cache.data(), data, size);
-    }
+    std::string m_name;
+
+    void Set(const std::string& name, const void* data, size_t size);
 };
 
 

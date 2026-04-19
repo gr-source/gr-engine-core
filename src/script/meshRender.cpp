@@ -11,12 +11,12 @@ MeshRender::~MeshRender()
 
 void MeshRender::Init()
 {
-    RenderSystem::Insert(entityID);
+    // RenderSystem::Insert(entityID);
 }
 
 void MeshRender::Destroy()
 {
-    RenderSystem::Remove(entityID);
+    // RenderSystem::Remove(entityID);
 }
 
 bool MeshRender::Serialize(Stream* stream) const

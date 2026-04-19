@@ -1,9 +1,13 @@
 #include "gr-base/script/baserender.hpp"
 
-#include "gr-base/core/geometry/default.hpp"
-#include "gr-base/managers/assetsManager.hpp"
+#include "gr-base/core/assetReference.hpp"
+#include "gr-base/core/console.hpp"
 
-#include <algorithm>
+#include "gr-base/core/geometry/default.hpp"
+
+#include "gr-base/core/file/stream.hpp"
+
+#include "gr-base/managers/assetsManager.hpp"
 
 BaseRender::BaseRender()
 {}
@@ -24,6 +28,7 @@ bool BaseRender::Serialize(Stream *stream) const
     return true;
 }
 
+#include <exception>
 bool BaseRender::Deserialize(Stream *stream)
 {
     std::size_t count = {};
@@ -38,7 +43,16 @@ bool BaseRender::Deserialize(Stream *stream)
 
         auto materialID = AssetsManager::FindMaterial(name);
         if (materialID == ID_INVALID)
-            continue;
+        {
+            try
+            {
+                materialID = AssetsManager::LoadMaterial(name);
+            } catch (const std::exception& e)
+            {
+                Console::LogError("[BaseRender::Deserialize] %s", e.what());
+                continue;
+            }
+        }
 
         m_materials.push_back(materialID);
     }

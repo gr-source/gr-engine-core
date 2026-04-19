@@ -4,6 +4,12 @@
 
 bool MaterialAsset::serialize(Stream* stream) const
 {
+    if (!stream->write(m_name))
+        return false;
+
+    if (!stream->write(m_shader))
+        return false;
+
     uint64_t count = static_cast<uint64_t>(m_overrides.size());
     if (!stream->write(count))
         return false;
@@ -26,6 +32,12 @@ bool MaterialAsset::serialize(Stream* stream) const
 
 bool MaterialAsset::deserialize(Stream* stream)
 {
+    if (!stream->read(m_name))
+        return false;
+
+    if (!stream->read(m_shader))
+        return false;
+
     uint64_t count = 0;
     if (!stream->read(count))
         return false;
@@ -50,4 +62,12 @@ bool MaterialAsset::deserialize(Stream* stream)
     return true;
 }
 
+// private
+void MaterialAsset::Set(const std::string& name, const void* data, size_t size)
+{
+    auto& cache = m_overrides[name];
+    cache.resize(size, 0);
+
+    memcpy(cache.data(), data, size);
+}
 

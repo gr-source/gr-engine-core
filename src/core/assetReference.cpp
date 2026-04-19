@@ -1,10 +1,12 @@
 #include "gr-base/core/assetReference.hpp"
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/string.hpp"
 
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 AssetReference* AssetReference::s_AssetReference = nullptr;
 
@@ -37,9 +39,9 @@ void AssetReference::Registry(const std::string &name, const std::string& file)
     s_AssetReference->registry(name, file);
 }
 
-std::string AssetReference::Get(AssetHash hash)
+const std::string& AssetReference::GetFile(const std::string &name)
 {
-    return s_AssetReference->get(hash);
+    return s_AssetReference->getFile(name);
 }
 
 // private
@@ -79,16 +81,15 @@ void AssetReference::registry(const std::string &name, const std::string& file)
     AssetHash hash = GetHash(name.c_str());
 
     m_refMapped.emplace(name, file);
-
-    m_refHashMapped.emplace(hash, name);
 }
 
-std::string AssetReference::get(AssetHash hash)
+const std::string& AssetReference::getFile(const std::string& name)
 {
-    auto it = m_refHashMapped.find(hash);
-    if (it != m_refHashMapped.end())
+    auto it = m_refMapped.find(name);
+    if (it != m_refMapped.end())
         return it->second;
-    return "";
+
+    throw std::runtime_error(String::format("Reference '%s' not found...", name.c_str()));
 }
 
 

@@ -24,10 +24,6 @@ public:
 
     void Flush() const;
 
-    void Serialize(Stream* stream) const;
-
-    void Deserialize(Stream* stream);
-
 private:
     void Set(const char* name, const void* data, size_t size);
 };

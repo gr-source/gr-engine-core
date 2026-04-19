@@ -3,21 +3,19 @@
 #include <gr-render/gRender.h>
 #include <memory>
 
-#include "gr-base/core/animation/animation.hpp"
-
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/task/texturemanager.hpp"
 
-#include "gr-base/core/task/animationmanager.hpp"
-
 #include "gr-base/managers/materialmanager.hpp"
 #include "gr-base/managers/shadermanager.hpp"
 #include "gr-base/managers/meshmanager.hpp"
 
 #include "gr-base/ecs/default.hpp"
+
+#include "gr-base/asset/asset.hpp"
 
 class AssetsManager
 {
@@ -101,6 +99,10 @@ public:
 
     static void RemoveTask(const std::string &name);
 
+    static MaterialID LoadMaterial(const std::string& name);
+
+    static MaterialID LoadMaterialFromFile(const std::string& file);
+
 private:
     static AssetsManager* s_AssetsManager;
 
@@ -119,6 +121,8 @@ private:
 
     AssetsManager() = default;
     ~AssetsManager() = default;
+
+    static bool LoadFromFile(const std::string& file, Asset* asset);
 };
 
 template <typename... Args>
@@ -179,6 +183,7 @@ void AssetsManager::LoadAnimation(const std::string &path, Args &&...args)
     return mAnimationManager.load(path, std::forward<Args>(args)...);
 }
 */
+
 
 
 

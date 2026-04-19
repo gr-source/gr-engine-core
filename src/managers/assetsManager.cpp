@@ -1,15 +1,21 @@
 #include "gr-base/managers/assetsManager.hpp"
 
+#include "gr-base/asset/materialasset.hpp"
+#include "gr-base/core/assetReference.hpp"
+#include "gr-base/core/binary/gHeader.hpp"
 #include "gr-base/core/file/file.hpp"
 
 #include "gr-base/core/animation/animation.hpp"
 
 #include "gr-base/core/console.hpp"
 
+#include "gr-base/core/file/fileStream.hpp"
+#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 #include "gr-base/task/modelloadtask.hpp"
+#include <exception>
 
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
 
@@ -221,6 +227,49 @@ void AssetsManager::RemoveTask(const std::string &name)
         return;
 }
 
+// public, static
+MaterialID AssetsManager::LoadMaterial(const std::string& name)
+{
+    try
+    {
+        return LoadMaterialFromFile(AssetReference::GetFile(name));
+    } catch (const std::exception& e)
+    {
+        Console::LogError("[AssetsManager] Falied to load '%s' not found.", name.c_str());
+    }
+
+    return ID_INVALID;
+}
+
+MaterialID AssetsManager::LoadMaterialFromFile(const std::string& file)
+{
+    MaterialAsset asset;
+    if (!LoadFromFile(file, &asset))
+        return ID_INVALID;
+
+    std::cout << "Shader: " << asset.GetShader() << std::endl;
+
+    MaterialID materialID = CreateMaterial(asset.GetName());
+    return materialID;
+}
+
+// private
+bool AssetsManager::LoadFromFile(const std::string& file, Asset* asset)
+{
+    FileStream stream(file, StreamType::INPUT);
+
+    bool result = false;
+
+    FileHeader header{};
+    if (stream.read(&header, sizeof(FileHeader)))
+    {
+        if (asset->deserialize(&stream))
+            result = true;
+    }
+    stream.close();
+
+    return result;
+}
 
 
 

@@ -28,53 +28,6 @@ void MaterialInstance::Flush() const
     }
 }
 
-void MaterialInstance::Serialize(Stream* stream) const
-{
-    uint64_t count = static_cast<uint64_t>(m_parameterMap.size());
-    if (!stream->write(count))
-        return;
-
-    auto uniforms = m_shader->GetUniforms();
-    auto buffer = m_parametersBuffer.data();
-
-    for (auto &&[name, uniformID] : m_parameterMap)
-    {
-        if (!stream->write(name))
-            return;
-
-        auto& uniform = uniforms[uniformID];
-        if (!stream->write(uniform.stride))
-            return;
-
-        if (!stream->write(buffer + uniform.offset, uniform.stride))
-            return;
-    }
-}
-
-void MaterialInstance::Deserialize(Stream* stream)
-{
-    uint64_t count = 0;
-    if (!stream->read(count))
-        return;
-
-    for (size_t i=0;i<count;i++)
-    {
-        std::string name;
-        if (!stream->read(name))
-            return;
-
-        uint32_t stride = 0;
-        if (!stream->read(stride))
-            return;
-
-        std::vector<uint8_t> data(stride, 0);
-        if (!stream->read(data.data(), stride))
-            return;
-
-        Set(name.c_str(), data.data(), data.size());
-    }
-}
-
 // private
 void MaterialInstance::Set(const char* name, const void* data, size_t size)
 {
