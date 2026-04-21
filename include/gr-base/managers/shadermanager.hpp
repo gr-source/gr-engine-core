@@ -10,7 +10,7 @@ public:
     ShaderManager();
     ~ShaderManager();
 
-    gr::Shader *create(ShaderParams shaderParams);
+    gr::Shader *create(const std::string& name);
 
     void destroy(gr::Shader *shader);
 
@@ -20,7 +20,7 @@ public:
 
     std::vector<gr::Shader *>get_shader(ShaderType type);
 
-    std::shared_ptr<TaskInfo> load(ShaderParams shaderParams, gr::Shader *shader, std::function<void(gr::Shader *)> onLoaded);
+    std::shared_ptr<TaskInfo> load(ShaderParams shaderParams, std::function<void(gr::Shader *)> onLoaded);
 
     bool remove_task(const std::string &name);
 
@@ -33,7 +33,7 @@ private:
 
     std::unordered_map<std::string, std::shared_ptr<TaskInfo>> s_ShaderTaskMap;
 
-    std::array<std::vector<gr::Shader *>, ShaderTypeCount> s_ShaderTypeList;
+    std::vector<gr::Shader *> s_ShaderTypeList;
 };
 
 

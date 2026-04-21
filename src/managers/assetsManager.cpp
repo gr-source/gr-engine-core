@@ -51,9 +51,9 @@ std::string AssetsManager::GetRefTextureName(gr::gTexture *texture)
     return name;
 }
 
-gr::Shader *AssetsManager::CreateShader(ShaderParams shaderParams)
+gr::Shader *AssetsManager::CreateShader(const std::string& name)
 {
-    return s_AssetsManager->mShaderManager.create(shaderParams);
+    return s_AssetsManager->mShaderManager.create(name);
 }
 
 gr::Shader *AssetsManager::FindShader(const std::string &name)
@@ -250,6 +250,9 @@ MaterialID AssetsManager::LoadMaterialFromFile(const std::string& file)
     std::cout << "Shader: " << asset.GetShader() << std::endl;
 
     MaterialID materialID = CreateMaterial(asset.GetName());
+
+    auto material = GetMaterialName(materialID);
+
     return materialID;
 }
 

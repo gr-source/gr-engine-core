@@ -10,10 +10,8 @@ ShaderManager::ShaderManager()
 ShaderManager::~ShaderManager()
 {}
 
-gr::Shader *ShaderManager::create(ShaderParams shaderParams)
+gr::Shader *ShaderManager::create(const std::string& name)
 {
-    auto name = GetShaderParamsName(shaderParams);
-
     std::unique_lock<std::mutex> lock(s_Mutex);
     {
         auto it = s_ShaderMap.find(name);
@@ -29,7 +27,7 @@ gr::Shader *ShaderManager::create(ShaderParams shaderParams)
 
     s_ShaderNameMap.emplace(shader, name);
 
-    s_ShaderTypeList[static_cast<int>(shaderParams.type)].push_back(shader);
+    s_ShaderTypeList.push_back(shader);
 
     return shader;
 }
@@ -41,11 +39,7 @@ void ShaderManager::destroy(gr::Shader *shader)
     if (it == s_ShaderNameMap.end())
         return;
 
-    auto shaderParams = GetShaderParamsFromName(it->second);
-    {
-        auto &shaderlist = s_ShaderTypeList[static_cast<int>(shaderParams.type)];
-        shaderlist.erase(std::remove(shaderlist.begin(), shaderlist.end(), shader), shaderlist.end());
-    }
+    s_ShaderTypeList.erase(std::remove(s_ShaderTypeList.begin(), s_ShaderTypeList.end(), shader), s_ShaderTypeList.end());
 
     s_ShaderMap.erase(it->second);
     s_ShaderNameMap.erase(it);
@@ -76,10 +70,10 @@ gr::Shader *ShaderManager::find(const std::string &name)
 std::vector<gr::Shader *> ShaderManager::get_shader(ShaderType type)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
-    return s_ShaderTypeList[static_cast<int>(type)];
+    return s_ShaderTypeList;
 }
 
-std::shared_ptr<TaskInfo> ShaderManager::load(ShaderParams shaderParams, gr::Shader *shader, std::function<void(gr::Shader *)> onLoaded)
+std::shared_ptr<TaskInfo> ShaderManager::load(ShaderParams shaderParams, std::function<void(gr::Shader *)> onLoaded)
 {
     auto taskname = GetShaderParamsName(shaderParams);
 
@@ -120,7 +114,7 @@ std::shared_ptr<TaskInfo> ShaderManager::load(ShaderParams shaderParams, gr::Sha
     }
 
     // cria uma nova task
-    auto taskInfo = TaskManager::Add<ShaderLoadTask>(shaderParams, shader);
+    auto taskInfo = TaskManager::Add<ShaderLoadTask>(shaderParams);
     s_ShaderTaskMap.emplace(taskname, taskInfo);
 
     auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(taskInfo->task.get());

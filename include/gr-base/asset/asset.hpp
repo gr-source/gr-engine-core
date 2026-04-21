@@ -2,6 +2,8 @@
 
 #include "gr-base/core/file/default.hpp"
 
+#include <string>
+
 class Asset
 {
 public:

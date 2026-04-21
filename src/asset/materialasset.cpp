@@ -2,6 +2,8 @@
 
 #include "gr-base/core/file/stream.hpp"
 
+#include <cstring>
+
 bool MaterialAsset::serialize(Stream* stream) const
 {
     if (!stream->write(m_name))

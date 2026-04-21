@@ -28,7 +28,7 @@ std::unordered_map<std::string, UniformType> ShaderLoadTask::mTypeMapping =
 };
 
 // public
-ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams, gr::Shader *shader) : m_shaderParams(shaderParams), m_path(shaderParams.base), m_shader(shader), bCanCreateShader(shader == nullptr), IAsyncTask(TaskPriority::HIGH)
+ShaderLoadTask::ShaderLoadTask(ShaderParams shaderParams) : m_shaderParams(shaderParams), m_path(shaderParams.base), IAsyncTask(TaskPriority::HIGH)
 {}
 
 void ShaderLoadTask::addFunction(std::function<void (gr::Shader *)> func)
@@ -41,17 +41,9 @@ void ShaderLoadTask::addFunction(std::function<void (gr::Shader *)> func)
 }
 
 // private
-gr::Shader* ShaderLoadTask::doInBackground()
+int ShaderLoadTask::doInBackground()
 {
-    if (!gfile::exists(m_path))
-    {
-        Console::LogError("[ ShaderLoadTask ] file %s, do not found", m_path.c_str());
-        return m_shader;
-    }
-
     m_shaderParams.type = get_shader_asset_type(m_path);
-
-    m_shader = bCanCreateShader ? AssetsManager::CreateShader(m_shaderParams) : m_shader;
 
     try
     {
@@ -59,41 +51,34 @@ gr::Shader* ShaderLoadTask::doInBackground()
     } catch (const std::exception &e)
     {
         Console::LogError("[ ShaderLoadTask ] Failt to load shader %s: %s", m_path.c_str(), e.what());
-        if (bCanCreateShader)
-        {
-            AssetsManager::RemoveShader(m_shader);
-            m_shader = nullptr;
-        }
 
         AssetsManager::RemoveTask(m_path);
-        return m_shader;
+        return 1;
     }
 
-    return m_shader;
+    return 0;
 }
 
-#include <filesystem>
-void ShaderLoadTask::onPostExecute(gr::Shader* result)
+void ShaderLoadTask::onPostExecute(int result)
 {
-    if (result == nullptr)
+    if (result != 0)
         return AssetsManager::RemoveTask(m_path);
 
-    auto name = std::filesystem::path(m_path).filename().string();
-    if (!buildShader(name, m_shader))
-    {
-        if (bCanCreateShader)
-        {
-            AssetsManager::RemoveShader(m_shader);
-            m_shader = nullptr;
-        }
+    auto name = gfile::getname(m_path.c_str());
 
+    std::cout << name << std::endl;
+
+    auto shader = AssetsManager::CreateShader(name);
+    if (!buildShader(name, shader))
+    {
         Console::LogError("[ ShaderLoadTask ] Fail to build shader: %s", m_path.c_str());
+
+        AssetsManager::RemoveShader(shader);
 
         return AssetsManager::RemoveTask(m_path);
     }
 
-    Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name.c_str());
-
+    Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name);
 
     std::vector<std::function<void (gr::Shader *)>> funclist;
     {
@@ -102,7 +87,7 @@ void ShaderLoadTask::onPostExecute(gr::Shader* result)
     }
 
     for (auto &func : funclist)
-        func(m_shader);
+        func(shader);
 
     AssetsManager::RemoveTask(m_path);
 }
@@ -193,6 +178,7 @@ std::array<std::string, IShaderStage> ShaderLoadTask::LoadShaderBase(ShaderType 
     return mShaderMap;
 }
 
+#include <sstream>
 bool ShaderLoadTask::ValidStr(const std::string &str, std::string *data, int count)
 {
     std::stringstream iss(str);

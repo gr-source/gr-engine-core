@@ -6,6 +6,7 @@ using ShaderOptimize_ = std::uint8_t;
 
 enum class ShaderType : uint8_t
 {
+    NONE,
     SHADER2D,
     SHADER3D,
     SKY,
@@ -34,12 +35,13 @@ struct ShaderParams
 
 enum class ShaderBuildType
 {
+    NONE,
     FRAGMENT,
     VERTEX,
     COUNT
 };
 
-#define IShaderStage 2
+#define IShaderStage 3
 
 std::string GetShaderParamsName(ShaderParams shaderParams);
 

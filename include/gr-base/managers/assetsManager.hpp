@@ -36,7 +36,7 @@ public:
     template <typename ...Args>
     static std::shared_ptr<TaskInfo> LoadShaderAsync(ShaderParams shaderParams, Args &&...args);
 
-    static gr::Shader *CreateShader(ShaderParams shaderParams);
+    static gr::Shader *CreateShader(const std::string& name);
 
     static gr::Shader *FindShader(const std::string &name);
 
@@ -173,7 +173,7 @@ inline std::shared_ptr<TaskInfo> AssetsManager::LoadShaderAsync(ShaderParams sha
     if constexpr (sizeof...(Args) > 0)
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
     
-    return s_AssetsManager->mShaderManager.load(shaderParams, nullptr, func);
+    return s_AssetsManager->mShaderManager.load(shaderParams, func);
 }
 
 /*

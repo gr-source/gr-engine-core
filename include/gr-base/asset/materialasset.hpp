@@ -4,9 +4,7 @@
 
 #include <unordered_map>
 #include <cstdint>
-#include <cstring>
 #include <vector>
-#include <string>
 
 class MaterialAsset : public Asset
 {

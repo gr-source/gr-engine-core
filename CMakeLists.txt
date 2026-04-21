@@ -132,6 +132,7 @@ set(ASSET_SRC
 )
 
 SET(TASK_SRC
+    src/task/shaderbuildtask.cpp
     src/task/modelloadtask.cpp
 )
 
