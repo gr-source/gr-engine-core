@@ -115,9 +115,9 @@ set(managers_src
 )
 
 set(ECS_SRC
-    src/ecs/behaviorRegistry.cpp
-    src/ecs/behaviorStorage.cpp
-    src/ecs/behavior.cpp
+    src/ecs/componentregistry.cpp
+    src/ecs/componentstorage.cpp
+    src/ecs/component.cpp
     src/ecs/entity.cpp
 )
 

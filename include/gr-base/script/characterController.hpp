@@ -1,12 +1,12 @@
 #pragma once
 
-#include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/component.hpp"
 
 #include "gr-base/physics/default.hpp"
 
 #include <gr-math/gmath.hpp>
 
-class CharacterController : public BehaviorImpl<CharacterController>
+class CharacterController : public ComponentImpl<CharacterController>
 {
 public:
     CharacterController();

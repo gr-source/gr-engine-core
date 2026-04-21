@@ -5,13 +5,11 @@
 #include "gr-base/core/geometry/vertex3D.hpp"
 #include "gr-base/core/geometry/default.hpp"
 
-#include "gr-base/ecs/behavior.hpp"
 #include "gr-base/physics/default.hpp"
 
-#include "gr-base/ecs/entity.hpp"
 #include "gr-base/script/collider.hpp"
 
-#include <memory>
+#include "gr-base/ecs/entity.hpp"
 
 class MeshCollider : public Collider
 {

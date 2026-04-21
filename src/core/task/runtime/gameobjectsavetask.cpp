@@ -2,7 +2,9 @@
 
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/memoryStream.hpp"
-#include "gr-base/ecs/behaviorStorage.hpp"
+
+#include "gr-base/ecs/componentstorage.hpp"
+
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
@@ -281,7 +283,7 @@ int GameObjectSaveTask::write_gameobject(Stream *stream, const GameObject *go)
 
     for (auto &child : children)
     {
-        int result = write_gameobject(stream, BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
+        int result = write_gameobject(stream, ComponentStorage::GetComponent<Transform>(child)->GetGameObject());
         if (result != 0)
             return 4;
     }
@@ -347,7 +349,7 @@ int GameObjectSaveTask::write_script(Stream *stream)
 
 void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
 {
-    std::vector<std::tuple<uint64_t, const Behavior*>> behaviorList;
+    std::vector<std::tuple<uint64_t, const Component*>> behaviorList;
     for (uint64_t hash : gameObject->GetHashes())
         behaviorList.emplace_back(hash, gameObject->getComponent(hash));
 
@@ -387,7 +389,7 @@ void GameObjectSaveTask::read_gameobject(const GameObject *gameObject)
 
     auto transform = gameObject->GetTransform();
     for (auto &child : transform->getChildren())
-        read_gameobject(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
+        read_gameobject(ComponentStorage::GetComponent<Transform>(child)->GetGameObject());
 }
 
 

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/component.hpp"
 
 #include <gr-math/gmath.hpp>
 
 #include "gr-base/core/file/default.hpp"
 
-class Transform : public BehaviorImpl<Transform>
+class Transform : public ComponentImpl<Transform>
 {
 public:
     Transform();

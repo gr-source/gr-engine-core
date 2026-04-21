@@ -2,11 +2,11 @@
 
 #include "default.hpp"
 
-#include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/component.hpp"
 
 #include <gr-math/gmath.hpp>
 
-class Light : public BehaviorImpl<Light>
+class Light : public ComponentImpl<Light>
 {
 public:
     enum LightType : int {

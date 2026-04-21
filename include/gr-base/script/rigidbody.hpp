@@ -1,6 +1,7 @@
 #pragma once
 
-#include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/component.hpp"
+
 #include "gr-base/physics/default.hpp"
 
 #include "gr-base/ecs/entity.hpp"
@@ -8,9 +9,10 @@
 #include "default.hpp"
 
 #include <gr-math/gmath.hpp>
+
 #include <memory>
 
-class Rigidbody : public BehaviorImpl<Rigidbody>
+class Rigidbody : public ComponentImpl<Rigidbody>
 {
     CLASS_FUNCTIONS
 public:

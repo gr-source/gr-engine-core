@@ -6,7 +6,9 @@
 #include "gr-base/core/debugdraw.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/status.hpp"
-#include "gr-base/ecs/behaviorStorage.hpp"
+
+#include "gr-base/ecs/componentstorage.hpp"
+
 #include "gr-base/managers/bvhtreemanager.hpp"
 #include "gr-base/managers/octreemanager.hpp"
 
@@ -428,7 +430,7 @@ void RenderManager::setuplight(const Scene* scene, gr::Shader *shader)
 
     for (std::size_t i={};i<lights.size();i++)
     {
-        auto light = BehaviorStorage::GetComponent<Light>(lights[i]);
+        auto light = ComponentStorage::GetComponent<Light>(lights[i]);
 
         auto position   = light->getPosition();
         auto forward    = light->getForward();

@@ -2,10 +2,10 @@
 
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/default.hpp"
-#include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/ecs/behaviorStorage.hpp"
+#include "gr-base/ecs/componentstorage.hpp"
+
 #include "gr-base/externals/array.h"
 #include "gr-base/script/transform.hpp"
 
@@ -158,7 +158,7 @@ void GameObjectManager::destroyImediate(GameObjectHandle handle)
     {
         auto transform = gameObject.GetTransform();
         for (auto child : transform->getChildren())
-            destroyImediate(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject()->GetCacheID());
+            destroyImediate(ComponentStorage::GetComponent<Transform>(child)->GetGameObject()->GetCacheID());
     }
 
     gameObject.~GameObject();

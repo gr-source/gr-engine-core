@@ -2,9 +2,9 @@
 
 #include "gr-base/core/geometry/default.hpp"
 
-#include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/component.hpp"
 
-class MeshFilter : public BehaviorImpl<MeshFilter>
+class MeshFilter : public ComponentImpl<MeshFilter>
 {
 public:
     MeshFilter();

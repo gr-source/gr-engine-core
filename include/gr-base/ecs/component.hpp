@@ -7,15 +7,15 @@ class GameObject;
 class Entity;
 class Stream;
 
-class Behavior
+class Component
 {
 public:
     GameObjectHandle entityID;
 
     bool bCanEnableUpdate;
 
-    Behavior() = default;
-    virtual ~Behavior() {}
+    Component() = default;
+    virtual ~Component() {}
 
     GameObject* GetGameObject() const;
 
@@ -42,13 +42,13 @@ public:
 };
 
 template <typename T>
-inline T* Behavior::GetObject() const
+inline T* Component::GetObject() const
 {
     return static_cast<T*>(GetGameObject());
 }
 
 template <typename T>
-class BehaviorImpl : public Behavior
+class ComponentImpl : public Component
 {
 public:
     inline uint64_t GetHash() const override
@@ -68,14 +68,14 @@ public:
         return GetObject<Entity>()->getComponent<T>(); \
     }
 
-#include "gr-base/ecs/behaviorRegistry.hpp"
+#include "gr-base/ecs/componentregistry.hpp"
 
 #define CLASS_TO_HASH(k) k##Hash
 
 // static_assert(std::is_base_of<BehaviorImpl<k>, k>::value, "Esta classe precisa ser herdade de BehaviorImpl<T>");
 #define REGISTER_COMPONENT(k, p) \
     inline static uint64_t k##Hash = GetHashByType<k>(#k); \
-    inline static ComponentInfo k##Info = BehaviorRegistry::Registry<k>(#k, k##Hash, p);
+    inline static ComponentInfo k##Info = ComponentRegistry::Registry<k>(#k, k##Hash, p);
 
 
 

@@ -19,13 +19,13 @@ struct ComponentWrapper
 };
 
 template <typename T>
-inline void StartWrapper(Behavior* obj)
+inline void StartWrapper(Component* obj)
 {
     static_cast<T*>(obj)->Start();
 }
 
 template <typename T>
-inline void UpdateWrapper(Behavior* obj)
+inline void UpdateWrapper(Component* obj)
 {
     static_cast<T*>(obj)->Update();
 }
@@ -37,7 +37,7 @@ struct has_start
 {
     static constexpr bool value =
         std::is_same<decltype(&T::Start), void (T::*)()>::value &&
-        !std::is_same<decltype(&T::Start), void (Behavior::*)()>::value;
+        !std::is_same<decltype(&T::Start), void (Component::*)()>::value;
 };
 
 template <typename T>
@@ -45,7 +45,7 @@ struct has_update
 {
     static constexpr bool value =
         std::is_same<decltype(&T::Update), void (T::*)()>::value &&
-        !std::is_same<decltype(&T::Update), void (Behavior::*)()>::value;
+        !std::is_same<decltype(&T::Update), void (Component::*)()>::value;
 };
 
 template <typename T>
@@ -53,7 +53,7 @@ struct has_destroy
 {
     static constexpr bool value =
         std::is_same<decltype(&T::Destroy), void (T::*)()>::value &&
-        !std::is_same<decltype(&T::Destroy), void (Behavior::*)()>::value;
+        !std::is_same<decltype(&T::Destroy), void (Component::*)()>::value;
 };
 
 

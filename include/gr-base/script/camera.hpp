@@ -5,11 +5,10 @@
 #include "gr-base/core/rendertarget.hpp"
 
 #include <gr-render/gRender.h>
-#include <memory>
 
-#include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/component.hpp"
 
-class Camera : public BehaviorImpl<Camera>
+class Camera : public ComponentImpl<Camera>
 {
 public:
     static Camera *Current();

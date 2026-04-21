@@ -1,12 +1,12 @@
 #pragma once
 
-#include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/component.hpp"
 
 #include "gr-base/physics/default.hpp"
 
 #include <memory>
 
-class Collider : public BehaviorImpl<Collider>
+class Collider : public ComponentImpl<Collider>
 {
 public:
     std::shared_ptr<btCollisionShape> shape;

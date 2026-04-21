@@ -2,9 +2,9 @@
 
 #include "gr-base/core/geometry/default.hpp"
 
-#include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/component.hpp"
 
-class BaseRender : public BehaviorImpl<BaseRender>
+class BaseRender : public ComponentImpl<BaseRender>
 {
 public:
     BaseRender();

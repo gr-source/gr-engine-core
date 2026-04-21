@@ -4,7 +4,8 @@
 #include "gr-base/core/gameObject.hpp"
 
 #include "gr-base/core/thread/threadpool.hpp"
-#include "gr-base/ecs/behaviorStorage.hpp"
+
+#include "gr-base/ecs/componentstorage.hpp"
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/managers/sceneManager.hpp"
@@ -62,7 +63,7 @@ void Scene::SetCamera(ComponentHandle id)
 
 Camera *Scene::getCamera() const
 {
-    return m_cameraID != INVALID_COMPONENT_ID ? BehaviorStorage::GetComponent<Camera>(m_cameraID) : nullptr;
+    return m_cameraID != INVALID_COMPONENT_ID ? ComponentStorage::GetComponent<Camera>(m_cameraID) : nullptr;
 }
 
 // ********** public ********** //

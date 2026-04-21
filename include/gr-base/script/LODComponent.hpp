@@ -1,7 +1,9 @@
 #pragma once
 
 #include "gr-base/core/geometry/default.hpp"
-#include "gr-base/ecs/behavior.hpp"
+
+#include "gr-base/ecs/component.hpp"
+
 #include <vector>
 
 typedef struct LODMesh
@@ -10,7 +12,7 @@ typedef struct LODMesh
     float minDistance;
 } LODMesh;
 
-class LODComponent : public BehaviorImpl<LODComponent>
+class LODComponent : public ComponentImpl<LODComponent>
 {
 public:
     std::vector<LODMesh> meshesLOD;

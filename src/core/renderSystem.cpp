@@ -2,7 +2,7 @@
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/gameObject.hpp"
 
-#include "gr-base/ecs/behaviorStorage.hpp"
+#include "gr-base/ecs/componentstorage.hpp"
 
 #include "gr-base/externals/handle.h"
 #include "gr-base/managers/assetsManager.hpp"
@@ -100,7 +100,7 @@ void RenderSystem::update()
 
         for (size_t i=0;i<count;i++)
         {
-            Transform* transform = BehaviorStorage::GetComponent<Transform>(transforms[i]);
+            Transform* transform = ComponentStorage::GetComponent<Transform>(transforms[i]);
 
             vec[i] = transform->getGlobalMatrix();
         }

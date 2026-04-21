@@ -1,6 +1,7 @@
-#include "gr-base/ecs/behaviorRegistry.hpp"
+#include "gr-base/ecs/componentregistry.hpp"
 
-#include "gr-base/ecs/behaviorStorage.hpp"
+#include "gr-base/ecs/componentstorage.hpp"
+
 #include "gr-base/externals/array.h"
 
 #include <algorithm>
@@ -9,39 +10,39 @@
 #include <string.h>
 
 // public
-void BehaviorRegistry::Unregistry(ComponentHash hash)
+void ComponentRegistry::Unregistry(ComponentHash hash)
 {
     GetInstance().unregistry(hash);
 }
 
-ComponentInfo* BehaviorRegistry::Get(ComponentHash hash)
+ComponentInfo* ComponentRegistry::Get(ComponentHash hash)
 {
     return GetInstance().get(hash);
 }
 
-ComponentInfo* BehaviorRegistry::GetAllComponentInfo()
+ComponentInfo* ComponentRegistry::GetAllComponentInfo()
 {
     return GetInstance().getAllComponentInfo();
 }
 
-ComponentInfoID BehaviorRegistry::GetCount()
+ComponentInfoID ComponentRegistry::GetCount()
 {
     return GetInstance().getCount();
 }
 
 // private
-BehaviorRegistry& BehaviorRegistry::GetInstance()
+ComponentRegistry& ComponentRegistry::GetInstance()
 {
-    static BehaviorRegistry s_BehaviorRegistry;
-    return s_BehaviorRegistry;
+    static ComponentRegistry s_ComponentRegistry;
+    return s_ComponentRegistry;
 }
 
-BehaviorRegistry::BehaviorRegistry() : m_sparseSet(nullptr), m_pool(nullptr), m_capacity(0), m_count(0)
+ComponentRegistry::ComponentRegistry() : m_sparseSet(nullptr), m_pool(nullptr), m_capacity(0), m_count(0)
 {
     m_sparseSet = array_create(COMPONENT_TABLE_SIZE, sizeof(ComponentInfoID));
 }
 
-BehaviorRegistry::~BehaviorRegistry()
+ComponentRegistry::~ComponentRegistry()
 {
     if (m_sparseSet != nullptr)
         array_free(m_sparseSet);
@@ -50,7 +51,7 @@ BehaviorRegistry::~BehaviorRegistry()
         array_free(m_pool);
 }
 
-void BehaviorRegistry::registry(ComponentInfo* info)
+void ComponentRegistry::registry(ComponentInfo* info)
 {
     size_t mapID = info->hash & (COMPONENT_TABLE_SIZE - 1);
     if (m_bitmask.test(mapID))
@@ -63,7 +64,7 @@ void BehaviorRegistry::registry(ComponentInfo* info)
         {
             componentInfo->name = info->name;
 
-            BehaviorStorage::NotifyUpdate(info->hash, info);
+            ComponentStorage::NotifyUpdate(info->hash, info);
         }
         return;
     }
@@ -92,7 +93,7 @@ void BehaviorRegistry::registry(ComponentInfo* info)
     m_bitmask.set(mapID, true);
 }
 
-void BehaviorRegistry::unregistry(ComponentHash hash)
+void ComponentRegistry::unregistry(ComponentHash hash)
 {
     throw std::runtime_error("Falta corrigir aqui");
     /*
@@ -108,7 +109,7 @@ void BehaviorRegistry::unregistry(ComponentHash hash)
     */
 }
 
-ComponentInfo* BehaviorRegistry::get(ComponentHash hash)
+ComponentInfo* ComponentRegistry::get(ComponentHash hash)
 {
     size_t mapID = hash & (COMPONENT_TABLE_SIZE - 1);
     if (m_bitmask.test(mapID))
@@ -120,7 +121,7 @@ ComponentInfo* BehaviorRegistry::get(ComponentHash hash)
     return nullptr;
 }
 
-bool BehaviorRegistry::reconfigure(ComponentInfo* dest, const ComponentInfo* src)
+bool ComponentRegistry::reconfigure(ComponentInfo* dest, const ComponentInfo* src)
 {
     dest->name = src->name;
     dest->parent = src->parent;
@@ -139,7 +140,7 @@ bool BehaviorRegistry::reconfigure(ComponentInfo* dest, const ComponentInfo* src
     return false;
 }
 
-void BehaviorRegistry::reallocate()
+void ComponentRegistry::reallocate()
 {
     if (m_capacity)
     {

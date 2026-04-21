@@ -18,16 +18,16 @@ typedef struct ComponentSlot
 
 typedef uint32_t SlotID;
 
-class BehaviorStorage
+class ComponentStorage
 {
 public:
-    static void SetInstance(BehaviorStorage* behaviorStorage);
+    static void SetInstance(ComponentStorage* behaviorStorage);
 
     static ComponentHandle Allocate(ComponentHash hash, ComponentHandle source);
 
     static void Deallocate(ComponentHash hash, ComponentHandle handle);
 
-    static bool Reinstance(ComponentHash hash, Behavior* dest, const Behavior* src);
+    static bool Reinstance(ComponentHash hash, Component* dest, const Component* src);
 
     template <typename T>
     static T* GetComponent(ComponentHandle handle);
@@ -35,7 +35,7 @@ public:
     template <typename T>
     static T* GetDenseArray();
 
-    static Behavior* GetComponent(ComponentHash hash, ComponentHandle id);
+    static Component* GetComponent(ComponentHash hash, ComponentHandle id);
 
     static void NotifyUpdate(ComponentHash hash, ComponentInfo* src);
 
@@ -43,11 +43,11 @@ public:
 
     static void Update();
 
-    BehaviorStorage();
-    ~BehaviorStorage();
+    ComponentStorage();
+    ~ComponentStorage();
 
 private:
-    static BehaviorStorage* s_BehaviorStorage;
+    static ComponentStorage* s_ComponentStorage;
 
     ObjectPool<ComponentSlot> m_slots;
 
@@ -65,9 +65,9 @@ private:
 
     void deallocate(ComponentHash hash, ComponentHandle handle);
 
-    Behavior* getComponent(ComponentHash hash, ComponentHandle handle);
+    Component* getComponent(ComponentHash hash, ComponentHandle handle);
 
-    bool reinstance(ComponentHash hash, Behavior* dest, const Behavior* src);
+    bool reinstance(ComponentHash hash, Component* dest, const Component* src);
 
     void start();
 
@@ -75,13 +75,13 @@ private:
 };
 
 template <typename T>
-inline T* BehaviorStorage::GetComponent(ComponentHandle handle)
+inline T* ComponentStorage::GetComponent(ComponentHandle handle)
 {
-    return static_cast<T*>(s_BehaviorStorage->getComponent(GetHashByType<T>(), handle));
+    return static_cast<T*>(s_ComponentStorage->getComponent(GetHashByType<T>(), handle));
 }
 
 
 template <typename T>
-inline T* BehaviorStorage::GetDenseArray()
+inline T* ComponentStorage::GetDenseArray()
 {}
 

@@ -18,17 +18,17 @@ public:
     template <typename T>
     T* getComponent() const;
 
-    Behavior* addComponent(const char* name);
+    Component* addComponent(const char* name);
 
-    Behavior* getComponent(const char* name) const;
+    Component* getComponent(const char* name) const;
 
-    Behavior* addComponent(uint64_t hash, ComponentHandle source = HANDLE_INVALID);
+    Component* addComponent(uint64_t hash, ComponentHandle source = HANDLE_INVALID);
 
-    Behavior* getComponent(uint64_t hash) const;
+    Component* getComponent(uint64_t hash) const;
 
     void destroy(uint64_t hash);
 
-    bool reinstance(const char* name, Behavior* dest, const Behavior* src);
+    bool reinstance(const char* name, Component* dest, const Component* src);
 
     std::vector<uint64_t> GetHashes() const;
 

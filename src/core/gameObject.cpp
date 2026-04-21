@@ -4,8 +4,9 @@
 #include "gr-base/core/default.hpp"
 #include "gr-base/core/file/stream.hpp"
 
-#include "gr-base/ecs/behaviorStorage.hpp"
+#include "gr-base/ecs/componentstorage.hpp"
 #include "gr-base/ecs/default.hpp"
+
 #include "gr-base/managers/gameobjectmanager.hpp"
 
 #include "gr-base/script/transform.hpp"
@@ -56,12 +57,12 @@ GameObject::GameObject(GameObject&& other) noexcept : Entity(std::move(other))
 GameObject::~GameObject()
 {
     for (auto &hash : GetHashes())
-        BehaviorStorage::Deallocate(hash, GetID(hash));
+        ComponentStorage::Deallocate(hash, GetID(hash));
 }
 
 Transform* GameObject::GetTransform() const
 {
-    return BehaviorStorage::GetComponent<Transform>(m_transform);
+    return ComponentStorage::GetComponent<Transform>(m_transform);
 }
 
 void GameObject::Copy(GameObjectHandle otherID)
@@ -83,7 +84,7 @@ void GameObject::Copy(GameObjectHandle otherID)
 
     for (auto& transformID : otherTrans->getChildren())
     {
-        auto childTransform = BehaviorStorage::GetComponent<Transform>(transformID);
+        auto childTransform = ComponentStorage::GetComponent<Transform>(transformID);
 
         auto childGO = childTransform->GetGameObject();
         GameObjectHandle childID = childGO->GetCacheID();
@@ -91,7 +92,7 @@ void GameObject::Copy(GameObjectHandle otherID)
         GameObjectHandle newChildID = GameObject::Create(childGO->GetName());
 
         auto newChildGO = GameObject::Get(newChildID);
-        newChildGO->GetTransform()->setParent(BehaviorStorage::GetComponent<Transform>(myTransformID));
+        newChildGO->GetTransform()->setParent(ComponentStorage::GetComponent<Transform>(myTransformID));
 
         newChildGO->Copy(childID);
     }
@@ -102,7 +103,7 @@ void GameObject::Copy(GameObjectHandle otherID)
         if (hash == GetHashByType<Transform>(nullptr))
             continue;
 
-        Behavior* myComp = getComponent(hash);
+        Component* myComp = getComponent(hash);
         if (myComp == nullptr)
             myComp = addComponent(hash, otherGO->GetID(hash));
     }
@@ -115,7 +116,7 @@ GameObjectHandle GameObject::FindChildByName(const std::string& name)
 
     for (auto &transformID : GetTransform()->getChildren())
     {
-        auto transform = BehaviorStorage::GetComponent<Transform>(transformID);
+        auto transform = ComponentStorage::GetComponent<Transform>(transformID);
 
         GameObjectHandle found = transform->GetGameObject()->FindChildByName(name);
         if (found != HANDLE_INVALID)

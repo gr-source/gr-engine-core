@@ -17,6 +17,6 @@ typedef uint32_t ComponentID;
 typedef uint64_t ComponentHash;
 
 class GameObject;
-class Behavior;
+class Component;
 class Entity;
 

@@ -2,7 +2,8 @@
 
 #include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/gameObject.hpp"
-#include "gr-base/ecs/behaviorStorage.hpp"
+
+#include "gr-base/ecs/componentstorage.hpp"
 
 #include <algorithm>
 
@@ -37,7 +38,7 @@ Quaternion Transform::getRotation() const
 {
     if (m_parent != HANDLE_INVALID)
     {
-        auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
+        auto parent = ComponentStorage::GetComponent<Transform>(m_parent);
 
         return parent->getRotation() * m_rotation;
     }
@@ -118,7 +119,7 @@ void Transform::setParent(Transform* newParent, bool)
 
     if (m_parent != HANDLE_INVALID)
     {
-        auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
+        auto parent = ComponentStorage::GetComponent<Transform>(m_parent);
 
         auto& children = parent->m_children;
         children.erase(std::remove(children.begin(), children.end(), GetGameObject()->GetID<Transform>()), children.end());
@@ -128,7 +129,7 @@ void Transform::setParent(Transform* newParent, bool)
 
     if (m_parent != HANDLE_INVALID)
     {
-        auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
+        auto parent = ComponentStorage::GetComponent<Transform>(m_parent);
 
         auto& children = parent->m_children;
         children.push_back(GetGameObject()->GetID<Transform>());
@@ -139,7 +140,7 @@ void Transform::setParent(Transform* newParent, bool)
 
 Transform *Transform::getParent() const
 {
-    return m_parent != HANDLE_INVALID ? BehaviorStorage::GetComponent<Transform>(m_parent) : nullptr;
+    return m_parent != HANDLE_INVALID ? ComponentStorage::GetComponent<Transform>(m_parent) : nullptr;
 }
 
 void Transform::addChildren(Transform *child)
@@ -172,14 +173,14 @@ void Transform::updateGlobalMatrix()
 
     if (m_parent != HANDLE_INVALID)
     {
-        auto parent = BehaviorStorage::GetComponent<Transform>(m_parent);
+        auto parent = ComponentStorage::GetComponent<Transform>(m_parent);
 
         m_globalMatrix = parent->getGlobalMatrix() * m_globalMatrix;
     }
 
     for (auto &handle : m_children)
     {
-        auto transform = BehaviorStorage::GetComponent<Transform>(handle);
+        auto transform = ComponentStorage::GetComponent<Transform>(handle);
         transform->updateGlobalMatrix();
     }
 }

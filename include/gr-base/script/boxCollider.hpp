@@ -1,16 +1,10 @@
 #pragma once
 
-#include "gr-base/ecs/behavior.hpp"
-#include "gr-base/physics/default.hpp"
-
-#include "gr-base/ecs/entity.hpp"
-
 #include "default.hpp"
 
 #include "gr-base/script/collider.hpp"
 
 #include <gr-math/gmath.hpp>
-#include <memory>
 
 class BoxCollider : public Collider
 {

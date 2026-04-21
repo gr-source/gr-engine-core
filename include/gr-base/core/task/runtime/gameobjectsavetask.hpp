@@ -31,7 +31,7 @@ private:
 
     std::vector<std::tuple<std::string, std::string, std::string>> m_textureMap;
 
-    std::vector<std::tuple<std::string, std::vector<std::tuple<uint64_t, const Behavior *>>>> m_componentdata;
+    std::vector<std::tuple<std::string, std::vector<std::tuple<uint64_t, const Component *>>>> m_componentdata;
 
     std::unordered_map<std::string, MaterialID> m_materialmap;
 

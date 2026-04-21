@@ -56,7 +56,7 @@ GameObjectHandle ModelLoadTask::CreateFromAsset(const ModelAsset* asset, GameObj
 
     for (auto &&[hash, buffer] : asset->componentBuffer)
     {
-        Behavior* behavior = gameObject->getComponent(hash);
+        Component* behavior = gameObject->getComponent(hash);
         if (behavior == nullptr)
             behavior = gameObject->addComponent(hash);
 

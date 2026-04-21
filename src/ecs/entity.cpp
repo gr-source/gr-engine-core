@@ -2,9 +2,9 @@
 
 #include "gr-base/core/gameObject.hpp"
 
-#include "gr-base/ecs/behavior.hpp"
-#include "gr-base/ecs/behaviorRegistry.hpp"
-#include "gr-base/ecs/behaviorStorage.hpp"
+#include "gr-base/ecs/componentregistry.hpp"
+#include "gr-base/ecs/componentstorage.hpp"
+#include "gr-base/ecs/component.hpp"
 
 #include <algorithm>
 
@@ -25,27 +25,27 @@ Entity::Entity(Entity&& other) noexcept
     m_bPrefab = other.m_bPrefab;
 }
 
-Behavior* Entity::addComponent(const char* name)
+Component* Entity::addComponent(const char* name)
 {
     return addComponent(GetHash(name));
 }
 
-Behavior* Entity::getComponent(const char* name) const
+Component* Entity::getComponent(const char* name) const
 {
     return getComponent(GetHash(name));
 }
 
 // #include <iostream>
-Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
+Component* Entity::addComponent(uint64_t hash, ComponentHandle source)
 {
     size_t tableID = hash % COMPONENT_TABLE_SIZE;
     if (m_signature.test(tableID))
     {
         auto& lookup = m_lookupTable[tableID];
-        return BehaviorStorage::GetComponent(lookup.hash, lookup.handle);
+        return ComponentStorage::GetComponent(lookup.hash, lookup.handle);
     }
 
-    ComponentHandle handle = BehaviorStorage::Allocate(hash, source);
+    ComponentHandle handle = ComponentStorage::Allocate(hash, source);
     if (handle == HANDLE_INVALID)
         return nullptr;
 
@@ -55,10 +55,10 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
 
     m_activeHashes.push_back(hash);
 
-    ComponentInfo* info = BehaviorRegistry::Get(hash);
+    ComponentInfo* info = ComponentRegistry::Get(hash);
     while (info->parent != (ComponentHash)-1)
     {
-        info = BehaviorRegistry::Get(info->parent);
+        info = ComponentRegistry::Get(info->parent);
 
         tableID = info->hash % COMPONENT_TABLE_SIZE;
 
@@ -67,7 +67,7 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
         m_lookupTable[tableID] = {hash, handle};
     }
 
-    auto behavior = BehaviorStorage::GetComponent(hash, handle);
+    auto behavior = ComponentStorage::GetComponent(hash, handle);
     behavior->entityID = m_cacheID;
     if (!m_bPrefab)
         behavior->Init();
@@ -75,13 +75,13 @@ Behavior* Entity::addComponent(uint64_t hash, ComponentHandle source)
     return behavior;
 }
 
-Behavior* Entity::getComponent(uint64_t hash) const
+Component* Entity::getComponent(uint64_t hash) const
 {
     size_t tableID = hash & (COMPONENT_TABLE_SIZE - 1);
     if (m_signature.test(tableID))
     {
         auto& lookup = m_lookupTable[tableID];
-        return BehaviorStorage::GetComponent(lookup.hash, lookup.handle);
+        return ComponentStorage::GetComponent(lookup.hash, lookup.handle);
     }
     return nullptr;
 }
@@ -98,12 +98,12 @@ void Entity::destroy(uint64_t hash)
 
     m_activeHashes.erase(std::remove(m_activeHashes.begin(), m_activeHashes.end(), hash), m_activeHashes.end());
 
-    BehaviorStorage::Deallocate(hash, handle);
+    ComponentStorage::Deallocate(hash, handle);
 }
 
-bool Entity::reinstance(const char* name, Behavior* dest, const Behavior* src)
+bool Entity::reinstance(const char* name, Component* dest, const Component* src)
 {
-    return BehaviorStorage::Reinstance(GetHash(name), dest, src);
+    return ComponentStorage::Reinstance(GetHash(name), dest, src);
 }
 
 std::vector<uint64_t> Entity::GetHashes() const
@@ -125,7 +125,7 @@ void Entity::CallStart()
 {
     for (auto& hash : GetHashes())
     {
-        auto behavior = BehaviorStorage::GetComponent(hash, GetID(hash));
+        auto behavior = ComponentStorage::GetComponent(hash, GetID(hash));
         behavior->Start();
     }
 
@@ -144,7 +144,7 @@ void Entity::CallDestroy()
 {
     for (auto& hash : GetHashes())
     {
-        auto behavior = BehaviorStorage::GetComponent(hash, GetID(hash));
+        auto behavior = ComponentStorage::GetComponent(hash, GetID(hash));
         behavior->Destroy();
     }
 

@@ -2,7 +2,9 @@
 
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/memoryStream.hpp"
-#include "gr-base/ecs/behaviorStorage.hpp"
+
+#include "gr-base/ecs/componentstorage.hpp"
+
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 
@@ -314,7 +316,7 @@ bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
 
     for (auto &child : children)
     {
-        if (!serialize(stream, BehaviorStorage::GetComponent<Transform>(child)->GetGameObject()))
+        if (!serialize(stream, ComponentStorage::GetComponent<Transform>(child)->GetGameObject()))
         {
             return false;
         }
@@ -335,7 +337,7 @@ void SceneSaveTask::read_gameobject()
 
 void SceneSaveTask::read_data(const GameObject *gameObject)
 {
-    std::vector<std::tuple<uint64_t, const Behavior*>> behaviorList;
+    std::vector<std::tuple<uint64_t, const Component*>> behaviorList;
     for (uint64_t hash : gameObject->GetHashes())
         behaviorList.emplace_back(hash, gameObject->getComponent(hash));
 
@@ -372,7 +374,7 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
 
     auto transform = gameObject->GetTransform();
     for (auto &child : transform->getChildren())
-        read_data(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
+        read_data(ComponentStorage::GetComponent<Transform>(child)->GetGameObject());
 }
 
 

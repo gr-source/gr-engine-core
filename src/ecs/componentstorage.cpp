@@ -1,58 +1,58 @@
-#include "gr-base/ecs/behaviorStorage.hpp"
+#include "gr-base/ecs/componentstorage.hpp"
 
 #include "gr-base/core/console.hpp"
 
-#include "gr-base/ecs/behaviorRegistry.hpp"
-#include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/componentregistry.hpp"
+#include "gr-base/ecs/component.hpp"
 
 #include "gr-base/externals/array.h"
 
 #include <iostream>
 
-BehaviorStorage* BehaviorStorage::s_BehaviorStorage = nullptr;
+ComponentStorage* ComponentStorage::s_ComponentStorage = nullptr;
 
 // public
-void BehaviorStorage::SetInstance(BehaviorStorage *behaviorStorage)
+void ComponentStorage::SetInstance(ComponentStorage *behaviorStorage)
 {
-    s_BehaviorStorage = behaviorStorage;
+    s_ComponentStorage = behaviorStorage;
 }
 
-ComponentHandle BehaviorStorage::Allocate(ComponentHash hash, ComponentHandle source)
+ComponentHandle ComponentStorage::Allocate(ComponentHash hash, ComponentHandle source)
 {
-    return s_BehaviorStorage->allocate(hash, source);
+    return s_ComponentStorage->allocate(hash, source);
 }
 
-void BehaviorStorage::Deallocate(ComponentHash hash, ComponentHandle handle)
+void ComponentStorage::Deallocate(ComponentHash hash, ComponentHandle handle)
 {
-    return s_BehaviorStorage->deallocate(hash, handle);
+    return s_ComponentStorage->deallocate(hash, handle);
 }
 
-bool BehaviorStorage::Reinstance(ComponentHash hash, Behavior* dest, const Behavior* src)
+bool ComponentStorage::Reinstance(ComponentHash hash, Component* dest, const Component* src)
 {
-    return s_BehaviorStorage->reinstance(hash, dest, src);
+    return s_ComponentStorage->reinstance(hash, dest, src);
 }
 
-Behavior* BehaviorStorage::GetComponent(ComponentHash hash, ComponentHandle handle)
+Component* ComponentStorage::GetComponent(ComponentHash hash, ComponentHandle handle)
 {
-    return s_BehaviorStorage->getComponent(hash, handle);
+    return s_ComponentStorage->getComponent(hash, handle);
 }
 
-void BehaviorStorage::NotifyUpdate(ComponentHash hash, ComponentInfo* src)
+void ComponentStorage::NotifyUpdate(ComponentHash hash, ComponentInfo* src)
 {
-    s_BehaviorStorage->notifyUpdate(hash, src);
+    s_ComponentStorage->notifyUpdate(hash, src);
 }
 
-void BehaviorStorage::Start()
+void ComponentStorage::Start()
 {
-    s_BehaviorStorage->start();
+    s_ComponentStorage->start();
 }
 
-void BehaviorStorage::Update()
+void ComponentStorage::Update()
 {
-    s_BehaviorStorage->update();
+    s_ComponentStorage->update();
 }
 
-BehaviorStorage::BehaviorStorage() : m_storage(nullptr)
+ComponentStorage::ComponentStorage() : m_storage(nullptr)
 {
     m_storage = array_create(COMPONENT_TABLE_SIZE, sizeof(ComponentSparseSet));
 
@@ -66,7 +66,7 @@ BehaviorStorage::BehaviorStorage() : m_storage(nullptr)
     }
 }
 
-BehaviorStorage::~BehaviorStorage()
+ComponentStorage::~ComponentStorage()
 {
     ComponentSparseSet* vector = (ComponentSparseSet*)m_storage->vector;
     for (uint32_t i=0;i<m_storage->length;i++)
@@ -80,9 +80,9 @@ BehaviorStorage::~BehaviorStorage()
 }
 
 // private
-void BehaviorStorage::notifyUpdate(ComponentHash hash, ComponentInfo* src)
+void ComponentStorage::notifyUpdate(ComponentHash hash, ComponentInfo* src)
 {
-    ComponentInfo* info = BehaviorRegistry::Get(hash);
+    ComponentInfo* info = ComponentRegistry::Get(hash);
     if (!info)
         return;
 
@@ -110,7 +110,7 @@ void BehaviorStorage::notifyUpdate(ComponentHash hash, ComponentInfo* src)
     }
 }
 
-void BehaviorStorage::reallocComponentChunk(ComponentInfo* info, size_t newStride)
+void ComponentStorage::reallocComponentChunk(ComponentInfo* info, size_t newStride)
 {
     size_t storageID = info->hash & (COMPONENT_TABLE_SIZE - 1);
 
@@ -127,9 +127,9 @@ void BehaviorStorage::reallocComponentChunk(ComponentInfo* info, size_t newStrid
     {
         *(ComponentID*)(newPtr) = *(ComponentID*)(oldPtr);
 
-        Behavior* behavior = (Behavior*)(newPtr + info->offset);
+        Component* behavior = (Component*)(newPtr + info->offset);
 
-        ((void (*)(Behavior*, const Behavior*))(info->constructor))(behavior, nullptr);
+        ((void (*)(Component*, const Component*))(info->constructor))(behavior, nullptr);
 
         newPtr += newStride;
         oldPtr += info->stride;
@@ -142,9 +142,9 @@ void BehaviorStorage::reallocComponentChunk(ComponentInfo* info, size_t newStrid
 }
 
 
-void BehaviorStorage::restoreVTable(ComponentInfo* info)
+void ComponentStorage::restoreVTable(ComponentInfo* info)
 {
-    std::cout << "[BehaviorStorage] Restore VTable of: " << info->name << std::endl;
+    std::cout << "[ComponentStorage] Restore VTable of: " << info->name << std::endl;
 
     void* newVTable = ((void*(*)(void))(info->getvetable))();
 
@@ -163,9 +163,9 @@ void BehaviorStorage::restoreVTable(ComponentInfo* info)
     }
 }
 
-ComponentHandle BehaviorStorage::allocate(ComponentHash hash, ComponentHandle source)
+ComponentHandle ComponentStorage::allocate(ComponentHash hash, ComponentHandle source)
 {
-    ComponentInfo* info = BehaviorRegistry::Get(hash);
+    ComponentInfo* info = ComponentRegistry::Get(hash);
     if (info == nullptr)
         return HANDLE_INVALID;
 
@@ -187,15 +187,15 @@ ComponentHandle BehaviorStorage::allocate(ComponentHash hash, ComponentHandle so
 
     *(ComponentID*)(wraper + (slot->denseIndex * info->stride)) = slotID;
 
-    Behavior* behavior = (Behavior*)(wraper + (slot->denseIndex * info->stride + info->offset));
-    ((void(*)(Behavior*, const Behavior*))(info->constructor))(behavior, source != HANDLE_INVALID ? GetComponent(hash, source) : nullptr);
+    Component* behavior = (Component*)(wraper + (slot->denseIndex * info->stride + info->offset));
+    ((void(*)(Component*, const Component*))(info->constructor))(behavior, source != HANDLE_INVALID ? GetComponent(hash, source) : nullptr);
 
     return handle_create(slotID, slot->version);
 }
 
-void BehaviorStorage::deallocate(ComponentHash hash, ComponentHandle handle)
+void ComponentStorage::deallocate(ComponentHash hash, ComponentHandle handle)
 {
-    ComponentInfo* info = BehaviorRegistry::Get(hash);
+    ComponentInfo* info = ComponentRegistry::Get(hash);
     if (info == nullptr)
         return;
 
@@ -214,16 +214,16 @@ void BehaviorStorage::deallocate(ComponentHash hash, ComponentHandle handle)
     ComponentID removeIndex = slot->denseIndex;
     ComponentID lastIndex = --set.count;
 
-    Behavior* behavior = (Behavior*)(wrapper + (removeIndex * info->stride + info->offset));
-    ((void(*)(Behavior*))(info->destructor))(behavior);
+    Component* behavior = (Component*)(wrapper + (removeIndex * info->stride + info->offset));
+    ((void(*)(Component*))(info->destructor))(behavior);
 
     if (removeIndex != lastIndex)
     {
-        Behavior* lastBehavior = (Behavior*)(wrapper + (lastIndex * info->stride + info->offset));
+        Component* lastComponent = (Component*)(wrapper + (lastIndex * info->stride + info->offset));
 
-        ((void(*)(Behavior*, const Behavior*))(info->constructor))(behavior, lastBehavior);
+        ((void(*)(Component*, const Component*))(info->constructor))(behavior, lastComponent);
 
-        // memset((void*)lastBehavior, 0, info->size - info->offset);
+        // memset((void*)lastComponent, 0, info->size - info->offset);
 
         ComponentID newSlotID = *(ComponentID*)(wrapper + (lastIndex * info->stride));
 
@@ -238,9 +238,9 @@ void BehaviorStorage::deallocate(ComponentHash hash, ComponentHandle handle)
     slot->version++;
 }
 
-Behavior* BehaviorStorage::getComponent(ComponentHash hash, ComponentHandle handle)
+Component* ComponentStorage::getComponent(ComponentHash hash, ComponentHandle handle)
 {
-    ComponentInfo* info = BehaviorRegistry::Get(hash);
+    ComponentInfo* info = ComponentRegistry::Get(hash);
     if (info == nullptr)
         return nullptr;
 
@@ -257,21 +257,21 @@ Behavior* BehaviorStorage::getComponent(ComponentHash hash, ComponentHandle hand
 
     uint8_t* wrapper = (uint8_t*)(set.dense->vector);
     
-    return (Behavior *)(wrapper + (slot->denseIndex * info->stride + info->offset));
+    return (Component *)(wrapper + (slot->denseIndex * info->stride + info->offset));
 }
 
-bool BehaviorStorage::reinstance(ComponentHash hash, Behavior* dest, const Behavior* src)
+bool ComponentStorage::reinstance(ComponentHash hash, Component* dest, const Component* src)
 {
-    ComponentInfo* info = BehaviorRegistry::Get(hash);
+    ComponentInfo* info = ComponentRegistry::Get(hash);
     if (info == nullptr)
         return false;
 
-    ((void(*)(Behavior*, const Behavior*))(info->constructor))(dest, src);
+    ((void(*)(Component*, const Component*))(info->constructor))(dest, src);
 
     return true;
 }
 
-void BehaviorStorage::reallocate(ComponentInfo* info, ComponentSparseSet* set)
+void ComponentStorage::reallocate(ComponentInfo* info, ComponentSparseSet* set)
 {
     size_t lastsize = set->dense != nullptr ? set->dense->length : 0;
 
@@ -296,10 +296,10 @@ void BehaviorStorage::reallocate(ComponentInfo* info, ComponentSparseSet* set)
 
         for (size_t i=0;i<set->count;i++)
         {
-            Behavior* lastbehavior = (Behavior *)((lastComponentWrapper + (i * info->stride)) + info->offset);
-            Behavior* newbehavior = (Behavior *)((newComponentWrapper + (i * info->stride)) + info->offset);
+            Component* lastbehavior = (Component *)((lastComponentWrapper + (i * info->stride)) + info->offset);
+            Component* newbehavior = (Component *)((newComponentWrapper + (i * info->stride)) + info->offset);
 
-            ((void(*)(Behavior*, const Behavior*))(info->constructor))(newbehavior, lastbehavior);
+            ((void(*)(Component*, const Component*))(info->constructor))(newbehavior, lastbehavior);
         }
 
         array_free(set->dense);
@@ -312,12 +312,12 @@ void BehaviorStorage::reallocate(ComponentInfo* info, ComponentSparseSet* set)
     }
 }
 
-void BehaviorStorage::start()
+void ComponentStorage::start()
 {
-    ComponentInfo* infos = BehaviorRegistry::GetAllComponentInfo();
+    ComponentInfo* infos = ComponentRegistry::GetAllComponentInfo();
 
     ComponentSparseSet* vector = (ComponentSparseSet*)m_storage->vector;
-    for (ComponentInfoID id=0;id<BehaviorRegistry::GetCount();id++)
+    for (ComponentInfoID id=0;id<ComponentRegistry::GetCount();id++)
     {
         ComponentInfo& info = infos[id];
         if (!info.starthash)
@@ -335,13 +335,13 @@ void BehaviorStorage::start()
         void** vtable = (void**)ptr;
         if (*vtable == nullptr)
         {
-            Console::LogError("[ BehaviorStorage ] the vtable of %s is breaked.", info.name);
+            Console::LogError("[ ComponentStorage ] the vtable of %s is breaked.", info.name);
             continue;
         }
 
         for (ComponentID i=0;i<set.count;i++)
         {
-            Behavior* behavior = (Behavior*)ptr;
+            Component* behavior = (Component*)ptr;
             behavior->Start();
 
             ptr += stride;
@@ -349,12 +349,12 @@ void BehaviorStorage::start()
     }
 }
 
-void BehaviorStorage::update()
+void ComponentStorage::update()
 {
-    ComponentInfo* infos = BehaviorRegistry::GetAllComponentInfo();
+    ComponentInfo* infos = ComponentRegistry::GetAllComponentInfo();
 
     ComponentSparseSet* vector = (ComponentSparseSet*)m_storage->vector;
-    for (ComponentInfoID id=0;id<BehaviorRegistry::GetCount();id++)
+    for (ComponentInfoID id=0;id<ComponentRegistry::GetCount();id++)
     {
         ComponentInfo& info = infos[id];
         if (!info.update)
@@ -372,13 +372,13 @@ void BehaviorStorage::update()
         void** vtable = (void**)ptr;
         if (*vtable == nullptr)
         {
-            Console::LogError("[ BehaviorStorage ] the vtable of %s is breaked.", info.name);
+            Console::LogError("[ ComponentStorage ] the vtable of %s is breaked.", info.name);
             continue;
         }
 
         for (ComponentID i=0;i<set.count;i++)
         {
-            Behavior* behavior = (Behavior*)ptr;
+            Component* behavior = (Component*)ptr;
             behavior->Update();
 
             ptr += stride;
