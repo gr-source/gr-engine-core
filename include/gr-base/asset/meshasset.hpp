@@ -8,7 +8,7 @@
 
 #include <vector>
 
-class SubMesh
+class SubMeshAsset
 {
 public:
     std::vector<uint32_t> indices;
@@ -21,7 +21,7 @@ class MeshAsset : public Asset
 public:
     std::vector<Vertex3D> vertices;
 
-    std::vector<SubMesh> submeshes;
+    std::vector<SubMeshAsset> submeshes;
 
     inline void SetName(const std::string& name)
     {

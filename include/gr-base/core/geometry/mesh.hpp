@@ -8,6 +8,15 @@
 
 #include "gr-base/core/file/default.hpp"
 
+class SubMesh
+{
+public:
+    uint32_t indexOffset;
+    uint32_t indexCount;
+
+    std::vector<uint32_t> indices;
+};
+
 class Mesh
 {
 public:
@@ -33,7 +42,7 @@ public:
         return m_submeshes.size();
     }
 
-    inline const std::vector<uint32_t>& GetSubMesh(int index) const
+    inline const SubMesh& GetSubMesh(int index) const
     {
         return m_submeshes[index];
     }
@@ -68,7 +77,7 @@ private:
 
     std::vector<Vertex3D> m_vertices;
 
-    std::vector<std::vector<uint32_t>> m_submeshes;
+    std::vector<SubMesh> m_submeshes;
 
     Boundbox m_boundbox;
 

@@ -8,7 +8,7 @@ Mesh::Mesh() : m_boundbox{Vector3::zero, Vector3::zero}, m_vertexarray(nullptr),
 // addTriangle
 void Mesh::addTriangles(const std::vector<uint32_t> &indices)
 {
-    m_submeshes.push_back(indices);
+    m_submeshes.push_back({0, 0, indices});
 }
 
 std::vector<BoneWeight> Mesh::getBoneWeight() const
@@ -63,8 +63,19 @@ void Mesh::Build()
 
     m_pbo = gr::vertex_buffer::create(nullptr, 1024 * sizeof(Matrix4x4), gr::buffer_usage::dynamic_draw);
     m_pbo->SetLayout(instanceLayout);
+    
+    std::vector<uint32_t> allIndices;
 
-    auto ibo = gr::index_buffer::create(m_submeshes[0].data(), m_submeshes[0].size() * sizeof(uint32_t));
+    size_t offset = 0;
+    for (auto& submesh : m_submeshes)
+    {
+        submesh.indexOffset = offset;
+        allIndices.insert(allIndices.end(), submesh.indices.begin(), submesh.indices.end());
+        submesh.indexCount = submesh.indices.size();
+        offset += submesh.indices.size();
+    }
+
+    auto ibo = gr::index_buffer::create(allIndices.data(), allIndices.size() * sizeof(uint32_t));
 
     m_vertexarray = gr::vertex_array::create();
     m_vertexarray->AddVertexBuffer(vbo);

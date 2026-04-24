@@ -35,11 +35,11 @@ private:
 
     std::unordered_set<GameObjectHandle> m_markToRender;
 
-    std::unordered_map<MaterialID, std::unordered_map<MeshID, std::vector<Matrix4x4>>> m_queueFirstCmd;
+    std::unordered_map<MaterialID, std::unordered_map<uint64_t, std::vector<Matrix4x4>>> m_queueFirstCmd;
 
     // std::unordered_map<GameObjectHandle, std::vector<RenderCommand>> m_renderable;
 
-    std::unordered_map<uint64_t, std::vector<ComponentHandle>> m_renderable;
+    std::unordered_map<uint64_t, std::tuple<int, std::vector<ComponentHandle>>> m_renderable;
 
     std::unordered_map<GameObjectHandle, uint64_t> m_objectsToRenderKey;
 
@@ -51,7 +51,7 @@ private:
 
     void renderer();
 
-    void setup(std::unordered_set<GameObjectHandle> objects);
+    void setup(GameObjectHandle handle);
 };
 
 

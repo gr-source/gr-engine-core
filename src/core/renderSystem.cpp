@@ -17,8 +17,6 @@
 inline uint64_t CreateSortKey(const RenderCommand& r)
 {
     uint64_t key = 0;
-    key |= (uint64_t)r.materialID << 32;
-    key |= (uint64_t)r.meshID;
     return key;
 }
 
@@ -66,14 +64,14 @@ void RenderSystem::remove(GameObjectHandle gameObjectID)
 
         uint64_t key = it->second;
 
-        auto& vec = m_renderable[key];
+        auto&& [submeshID, vec] = m_renderable[key];
 
         vec.erase(
             std::remove(vec.begin(), vec.end(), myTransformID),
             vec.end()
         );
 
-        if (m_renderable[key].empty())
+        if (vec.empty())
             m_renderable.erase(key);
 
         m_objectsToRenderKey.erase(it);
@@ -84,18 +82,21 @@ void RenderSystem::update()
 {
     if (!m_markToRender.empty())
     {
-        setup(m_markToRender);
+        for (auto& handle : m_markToRender)
+            setup(handle);
         m_markToRender.clear();
     }
 
-    for (auto&& [handle, transforms] : m_renderable)
+    for (auto&& [handle, tuple] : m_renderable)
     {
+        auto&& [submeshID, transforms] = tuple;
+
         MaterialID materialID = handle_get_id(handle);
         MeshID meshID = handle_get_version(handle); 
 
         size_t count = transforms.size();
 
-        auto& vec = m_queueFirstCmd[materialID][meshID];
+        auto& vec = m_queueFirstCmd[materialID][handle_create(meshID, submeshID)];
         vec.resize(count);
 
         for (size_t i=0;i<count;i++)
@@ -106,6 +107,9 @@ void RenderSystem::update()
         }
     }
 }
+
+// sort by
+// [shaderID][materialID][meshID]
 
 void RenderSystem::renderer()
 {
@@ -142,8 +146,10 @@ void RenderSystem::renderer()
 
         ShaderID u_model = shader->findUniform("u_mat_model");
 
-        for (auto&& [meshID, transforms] : sortByMesh)
+        for (auto&& [handle, transforms] : sortByMesh)
         {
+            uint32_t meshID = handle_get_id(handle);
+
             Mesh* mesh = AssetsManager::GetMesh(meshID);
 
             auto vertexarray = mesh->GetGpuMesh();
@@ -166,15 +172,15 @@ void RenderSystem::renderer()
                 drawCallCount++;
             } else
             {
-                auto submeshcount = mesh->GetSubMeshCount();
+                auto &submesh = mesh->GetSubMesh(handle_get_version(handle));
 
                 for (auto& matrix : transforms)
                 {
                     shader->SetUniform(u_model, &matrix);
 
-                    for (int i=0;i<submeshcount;i++)
+                    // for (int i=0;i<submeshcount;i++)
                     {
-                        glDrawElements(GL_TRIANGLES, mesh->GetSubMesh(i).size(), GL_UNSIGNED_INT, nullptr);
+                        glDrawElements(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexOffset * sizeof(uint32_t)));
                     }
                 }
 
@@ -183,61 +189,52 @@ void RenderSystem::renderer()
         }
     }
 
-    // std::cout << "drawCallCount: " << drawCallCount << std::endl;
-
     m_queueFirstCmd.clear();
 }
 
-void RenderSystem::setup(std::unordered_set<GameObjectHandle> objects)
+void RenderSystem::setup(GameObjectHandle gameObjectID)
 {
-    for (auto& gameObjectID : objects)
+    auto gameobject = GameObject::Get(gameObjectID);
+
+    auto meshFilter = gameobject->getComponent<MeshFilter>();
+    auto meshRender = gameobject->getComponent<MeshRender>();
+
+    auto transformID = gameobject->GetID<Transform>();
+
+    if (meshFilter == nullptr || meshRender == nullptr)
+        return Console::LogWarning("[RenderSystem] Objeto '%s' ignorado: MeshFilter ou MeshRender ausente.", gameobject->GetName().c_str());
+
+    auto materialIDs = meshRender->getMaterialIDs();
+    auto meshID = meshFilter->getMeshID();
+
+    if (meshID == ID_INVALID)
+        return;
+
+    auto mesh = AssetsManager::GetMesh(meshID);
+
+    if (materialIDs.size() != mesh->GetSubMeshCount())
+        return Console::LogError("[RenderSystem] Erro de configuracao no objeto '%s': Quantidade de materiais (%ld) nao condiz com a quantidade de sub-meshes (%ld).", gameobject->GetName().c_str(), materialIDs.size(), mesh->GetSubMeshCount());
+
+    size_t submeshcount = mesh->GetSubMeshCount();
+    for (size_t i=0;i<submeshcount;i++)
     {
-        auto gameobject = GameObject::Get(gameObjectID);
+        MaterialID materialID = materialIDs[i];
 
-        auto meshFilter = gameobject->getComponent<MeshFilter>();
-        auto meshRender = gameobject->getComponent<MeshRender>();
+        Mesh* mesh = AssetsManager::GetMesh(meshID);
 
-        auto transformID = gameobject->GetID<Transform>();
+        auto vertexarray = mesh->GetGpuMesh();
 
-        if (meshFilter == nullptr || meshRender == nullptr)
-        {
-            Console::LogWarning("[RenderSystem] Objeto '%s' ignorado: MeshFilter ou MeshRender ausente.", gameobject->GetName().c_str());
-            continue;
-        }
+        if (vertexarray == nullptr)
+            mesh->Build();
 
-        auto materialIDs = meshRender->getMaterialIDs();
-        auto meshID = meshFilter->getMeshID();
+        uint64_t handle = handle_create(materialID, meshID);
 
-        if (meshID == ID_INVALID)
-            continue;
+        auto&& [submeshID, vec] = m_renderable[handle];
+        submeshID = i;
 
-        auto mesh = AssetsManager::GetMesh(meshID);
+        vec.push_back(transformID);
 
-        if (materialIDs.size() != mesh->GetSubMeshCount())
-        {
-            Console::LogError("[RenderSystem] Erro de configuracao no objeto '%s': Quantidade de materiais (%ld) nao condiz com a quantidade de sub-meshes (%ld).", gameobject->GetName().c_str(), materialIDs.size(), mesh->GetSubMeshCount());
-            continue;
-        }
-
-        size_t count = mesh->GetSubMeshCount();
-        for (size_t i=0;i<count;i++)
-        {
-            MaterialID materialID = materialIDs[i];
-            // MeshID meshID = meshIDs[i];
-
-            Mesh* mesh = AssetsManager::GetMesh(meshID);
-
-            auto vertexarray = mesh->GetGpuMesh();
-
-            if (vertexarray == nullptr)
-                mesh->Build();
-
-            uint64_t handle = handle_create(materialID, meshID);
-
-            m_renderable[handle].push_back(transformID);
-
-            m_objectsToRenderKey.emplace(gameObjectID, handle);
-        }
+        m_objectsToRenderKey.emplace(gameObjectID, handle);
     }
 }
 
