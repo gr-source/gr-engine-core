@@ -40,6 +40,8 @@ public:
     template <typename T>
     void Set(const std::string &name, const T &value);
 
+    void Set(const char *name, u8 count, const void *data);
+
     void flush(gr::Shader* shader) const;
 
 private:
@@ -52,8 +54,6 @@ private:
     bool bEnableInstancing;
 
     bool setupTexture(int id, gr::gTexture *texture);
-
-    void Set(const char *name, u8 count, const void *data);
 
     void* Get(const char* name);
 };

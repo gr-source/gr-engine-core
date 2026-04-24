@@ -38,6 +38,18 @@ bool Material::supportsInstancing() const
     return bEnableInstancing;
 }
 
+void Material::Set(const char *name, u8 count, const void *data)
+{
+    UniformID id = m_shader->findUniform(name);
+    if (id == GR_INVALID_ID)
+        return;
+
+    auto &uniform = m_shader->GetUniforms()[id];
+    m_buffer.resize(m_shader->GetUniformBufferSize(), 0);
+
+    memcpy(m_buffer.data() + uniform.offset, data, uniform.stride);
+}
+
 void Material::flush(gr::Shader* shader) const
 {
     if (m_buffer.empty())
@@ -61,18 +73,6 @@ bool Material::setupTexture(int id, gr::gTexture *texture)
 {
     m_textures[id > 10 ? 0 : id] = texture;
     return true;
-}
-
-void Material::Set(const char *name, u8 count, const void *data)
-{
-    UniformID id = m_shader->findUniform(name);
-    if (id == GR_INVALID_ID)
-        return;
-
-    auto &uniform = m_shader->GetUniforms()[id];
-    m_buffer.resize(m_shader->GetUniformBufferSize(), 0);
-
-    memcpy(m_buffer.data() + uniform.offset, data, uniform.stride);
 }
 
 void* Material::Get(const char* name)

@@ -25,6 +25,11 @@ public:
         return reinterpret_cast<T*>(it->second.data());
     }
 
+    inline const std::unordered_map<std::string, std::vector<uint8_t>>& GetOverrides() const
+    {
+        return m_overrides;
+    }
+
     inline void SetShader(const std::string& name)
     {
         m_shader = name;

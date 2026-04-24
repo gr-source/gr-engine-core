@@ -257,6 +257,9 @@ MaterialID AssetsManager::LoadMaterialFromFile(const std::string& file)
     auto material = GetMaterial(materialID);
     material->SetShader(shader);
 
+    for (auto&& [name, buffer] : asset.GetOverrides())
+        material->Set(name.c_str(), 1, (const void*)buffer.data());
+
     return materialID;
 }
 
