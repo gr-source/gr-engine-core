@@ -33,7 +33,9 @@ int SceneSaveTask::doInBackground()
     FileStream stream(m_file, StreamType::OUTPUT);
     // header data
     {
-        FileHeader header{{'g', 'r', 's', 'c'}, 1.0f};
+        FileHeader header{};
+        header.sign = HEADER_SCENE_SIGN;
+        header.version = HEADER_ASSET_VERSION;
 
         if (!stream.write(&header, sizeof(FileHeader)))
             return 1;

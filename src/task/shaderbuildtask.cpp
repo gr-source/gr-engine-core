@@ -131,7 +131,10 @@ int ShaderBuildTask::doInBackground()
 
     FileStream stream(m_file, StreamType::OUTPUT);
     
-    FileHeader header{{'g', 's', 'h', 'd'}, 1.0f};
+    FileHeader header{};
+    header.sign = HEADER_SHADER_SIGN;
+    header.version = HEADER_ASSET_VERSION;
+
     if (!stream.write(&header, sizeof(FileHeader)))
         return 2;
 

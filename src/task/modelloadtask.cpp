@@ -20,11 +20,14 @@ int ModelLoadTask::doInBackground()
     if (!stream.read(&header, sizeof(header)))
         return 1;
 
-    if (strcmp(header.sign, "gmdl") != 0)
+    if (header.sign != HEADER_MODEL_SIGN)
         return 2;
 
-    if (!m_asset.deserialize(&stream))
+    if (header.version != HEADER_ASSET_VERSION)
         return 3;
+
+    if (!m_asset.deserialize(&stream))
+        return 4;
 
     stream.close();
     return 0;
@@ -33,10 +36,7 @@ int ModelLoadTask::doInBackground()
 void ModelLoadTask::onPostExecute(int result)
 {
     if (result != 0)
-    {
-        Console::LogError("[Task] Failed to load '%s'!!!", m_file.c_str());
-        return;
-    }
+        return Console::LogError("[Task] Failed to load '%s' error=%d!!!", m_file.c_str(), result);
 
     auto handle = CreateFromAsset(&m_asset);
 

@@ -36,12 +36,22 @@ static const std::array<std::string, IHeaderType> HeaderName = {
     "SCRIPT"
 };
 
-#define MESH_SIGN 0x4838001395392124604UULL
+#define HEADER_SCENE_SIGN       10005390867908566963ULL
+
+#define HEADER_SHADER_SIGN      5240899614122928136ULL
+
+#define HEADER_MODEL_SIGN       11377574333308104762ULL
+
+#define HEADER_MATERIAL_SIGN    175488002581160416ULL
+
+#define HEADER_MESH_SIGN        4838001395392124604ULL
+
+#define HEADER_ASSET_VERSION    65537U
 
 typedef struct FileHeader
 {
-    char sign[4];
-    float version;
+    uint64_t sign;
+    uint32_t version;
 } FileHeader;
 
 typedef struct DataSegment

@@ -12,7 +12,7 @@
 
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/geometry/default.hpp"
-#include "gr-base/core/task/runtime/gameobjectloadtask.hpp"
+
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 #include "gr-base/task/modelloadtask.hpp"

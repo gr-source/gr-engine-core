@@ -82,9 +82,6 @@ set(culling
 )
 
 set(task
-    src/core/task/runtime/gameobjectsavetask.cpp
-    src/core/task/runtime/gameobjectloadtask.cpp
-
     src/core/task/runtime/animationloadtask.cpp
     src/core/task/runtime/animationsavetask.cpp
     src/core/task/animationmanager.cpp
@@ -135,6 +132,10 @@ set(ASSET_SRC
 SET(TASK_SRC
     src/task/shaderbuildtask.cpp
     src/task/modelloadtask.cpp
+    src/task/modelsavetask.cpp
+
+    src/task/materialsavetask.cpp
+    src/task/meshsavetask.cpp
 )
 
 find_package(Bullet QUIET)
