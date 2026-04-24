@@ -127,6 +127,7 @@ set(EXTERNAL_SRC
 
 set(ASSET_SRC
     src/asset/materialasset.cpp
+    src/asset/shaderasset.cpp
     src/asset/modelasset.cpp
     src/asset/meshasset.cpp
 )

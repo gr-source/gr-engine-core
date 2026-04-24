@@ -36,6 +36,8 @@ static const std::array<std::string, IHeaderType> HeaderName = {
     "SCRIPT"
 };
 
+#define MESH_SIGN 0x4838001395392124604UULL
+
 typedef struct FileHeader
 {
     char sign[4];

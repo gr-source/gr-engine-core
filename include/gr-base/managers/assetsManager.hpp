@@ -103,6 +103,14 @@ public:
 
     static MaterialID LoadMaterialFromFile(const std::string& file);
 
+    static gr::Shader* LoadShader2(const std::string& name);
+
+    static gr::Shader* LoadShaderFromFile(const std::string& file);
+
+    static MeshID LoadMesh(const std::string& name);
+
+    static MeshID LoadMeshFromFile(const std::string& file);
+
 private:
     static AssetsManager* s_AssetsManager;
 

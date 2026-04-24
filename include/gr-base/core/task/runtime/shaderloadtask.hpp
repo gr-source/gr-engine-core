@@ -39,7 +39,7 @@ private:
 protected:
     std::vector<ShaderUniformRaw> s_shader_uniform_list;
 
-    std::unordered_set<std::string> userfield;
+    // std::unordered_set<std::string> userfield;
 
     std::array<std::string, IShaderStage> m_shaderSource;
 

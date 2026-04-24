@@ -434,39 +434,39 @@ void ShaderLoadTask::bind_shader(const std::string &path)
 
     // Create User property
     {
-        UniformType variable = UniformType::BOOL;
+        // UniformType variable = UniformType::BOOL;
 
         // fragment
-        {
-            for (auto &&[name, tuple] : ReadUniform(remove_comment(mCustomSourceShaderMap[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))])))
-            {
-                auto &&[variablename, isarray] = tuple;
-
-                auto it = mTypeMapping.find(variablename);
-                if (it != mTypeMapping.end())
-                {
-                    variable = it->second;
-                }
-
-                userfield.emplace(name);
-            }
-        }
+        // {
+        //     for (auto &&[name, tuple] : ReadUniform(remove_comment(mCustomSourceShaderMap[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))])))
+        //     {
+        //         auto &&[variablename, isarray] = tuple;
+        //
+        //         auto it = mTypeMapping.find(variablename);
+        //         if (it != mTypeMapping.end())
+        //         {
+        //             // variable = it->second;
+        //         }
+        //
+        //         userfield.emplace(name);
+        //     }
+        // }
 
         // vertex
-        {
-            for (auto &&[name, tuple] : ReadUniform(remove_comment(mCustomSourceShaderMap[static_cast<int>(static_cast<int>(ShaderBuildType::VERTEX))])))
-            {
-                auto &&[variablename, isarray] = tuple;
-
-                auto it = mTypeMapping.find(variablename);
-                if (it != mTypeMapping.end())
-                {
-                    variable = it->second;
-                }
-
-                userfield.emplace(name);
-            }
-        }
+        // {
+        //     for (auto &&[name, tuple] : ReadUniform(remove_comment(mCustomSourceShaderMap[static_cast<int>(static_cast<int>(ShaderBuildType::VERTEX))])))
+        //     {
+        //         auto &&[variablename, isarray] = tuple;
+        //
+        //         auto it = mTypeMapping.find(variablename);
+        //         if (it != mTypeMapping.end())
+        //         {
+        //             // variable = it->second;
+        //         }
+        //
+        //         userfield.emplace(name);
+        //     }
+        // }
     }
 
     {

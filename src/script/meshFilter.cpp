@@ -28,14 +28,10 @@ bool MeshFilter::Deserialize(Stream *stream)
         return false;
 
     auto meshID = AssetsManager::FindMesh(name);
-    if (meshID != ID_INVALID)
-    {
-        SetMesh(meshID);
-    } else
-    {
-        Console::LogError("[ MeshFilter ] mesh %s do not found!", name.c_str());
-        return false;
-    }
+    if (meshID == ID_INVALID)
+        meshID = AssetsManager::LoadMesh(name);
+
+    SetMesh(meshID);
     return true;
 }
 

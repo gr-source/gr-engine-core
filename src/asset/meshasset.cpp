@@ -4,6 +4,9 @@
 
 bool MeshAsset::serialize(Stream* stream) const
 {
+    if (!stream->write(m_name))
+        return false;
+
     uint64_t verticecount = static_cast<uint64_t>(vertices.size());
     if (!stream->write(verticecount))
         return false;
@@ -33,6 +36,9 @@ bool MeshAsset::serialize(Stream* stream) const
 
 bool MeshAsset::deserialize(Stream* stream)
 {
+    if (!stream->read(m_name))
+        return false;
+
     uint64_t verticecount = 0;
     if (!stream->read(verticecount))
         return false;

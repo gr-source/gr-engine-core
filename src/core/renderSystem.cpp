@@ -119,7 +119,7 @@ void RenderSystem::renderer()
     {
         Material* material = AssetsManager::GetMaterial(materialID);
 
-        auto shader = material->GetShader(material->bEnableInstancing);
+        auto shader = material->GetShader(false);
 
         if (shader != lastShader)
         {

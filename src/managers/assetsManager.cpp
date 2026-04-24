@@ -1,6 +1,7 @@
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/asset/materialasset.hpp"
+#include "gr-base/asset/shaderasset.hpp"
 #include "gr-base/core/assetReference.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
 #include "gr-base/core/file/file.hpp"
@@ -235,7 +236,7 @@ MaterialID AssetsManager::LoadMaterial(const std::string& name)
         return LoadMaterialFromFile(AssetReference::GetFile(name));
     } catch (const std::exception& e)
     {
-        Console::LogError("[AssetsManager] Falied to load '%s' not found.", name.c_str());
+        throw e;
     }
 
     return ID_INVALID;
@@ -247,13 +248,98 @@ MaterialID AssetsManager::LoadMaterialFromFile(const std::string& file)
     if (!LoadFromFile(file, &asset))
         return ID_INVALID;
 
-    std::cout << "Shader: " << asset.GetShader() << std::endl;
+    auto shader = FindShader(asset.GetShader());
+    if (shader == nullptr)
+        shader = LoadShader2(asset.GetShader());
 
     MaterialID materialID = CreateMaterial(asset.GetName());
 
-    auto material = GetMaterialName(materialID);
+    auto material = GetMaterial(materialID);
+    material->SetShader(shader, false);
 
     return materialID;
+}
+
+gr::Shader* AssetsManager::LoadShader2(const std::string& name)
+{
+    try
+    {
+        return LoadShaderFromFile(AssetReference::GetFile(name));
+    } catch (const std::exception& e)
+    {
+        throw e;
+    }
+}
+
+static std::unordered_map<std::string, UniformType> mTypeMapping =
+{
+    {"float",       UniformType::FLOAT},
+    {"int",         UniformType::INT},
+    {"bool",        UniformType::BOOL},
+    {"samplerCube", UniformType::SAMPLERCUBE},
+    {"sampler2D",   UniformType::SAMPLER2D},
+    {"mat3",        UniformType::MAT3},
+    {"mat4",        UniformType::MAT4},
+    {"vec2",        UniformType::VEC2},
+    {"vec3",        UniformType::VEC3},
+    {"vec4",        UniformType::VEC4},
+};
+
+gr::Shader* AssetsManager::LoadShaderFromFile(const std::string& file)
+{
+    ShaderAsset asset;
+    if (!LoadFromFile(file, &asset))
+        return nullptr;
+
+    auto fragment_source = asset.GetFragment().c_str();
+    auto vertex_source = asset.GetVertex().c_str();
+
+    auto shader = AssetsManager::CreateShader(asset.GetName());
+
+    if (shader->build(&fragment_source, 1, &vertex_source, 1) == -1)
+    {
+        Console::LogError("[ AssetsManager::LoadShaderFromFile ] Shader.Build Fail to build shader, %s, %s", asset.GetName().c_str(), "null");
+        return nullptr;
+    }
+
+    for (auto&& [name, info] : asset.GetUnifoms())
+    {
+        auto &&[typesname, count] = info;
+
+        auto it = mTypeMapping.find(typesname);
+        if (it == mTypeMapping.end())
+        {
+            Console::LogWarning("[ ShaderLoadTask ] Vertex Shader uniform type do not is valid: %s, %s", name.c_str(), typesname.c_str());
+            continue;
+        }
+
+        if (shader->registry(name.c_str(), count, it->second) == GR_INVALID_ID)
+            Console::LogWarning("[ShaderLoadTask] fail in to registry: %s", name.c_str());
+    }
+
+    return shader;
+}
+
+MeshID AssetsManager::LoadMesh(const std::string& name)
+{
+    try
+    {
+        return LoadMeshFromFile(AssetReference::GetFile(name));
+    } catch (const std::exception& e)
+    {
+        throw e;
+    }
+}
+
+MeshID AssetsManager::LoadMeshFromFile(const std::string& file)
+{
+    MeshAsset asset;
+    if (!LoadFromFile(file, &asset))
+        return ID_INVALID;
+
+    MeshID meshID = CreateMesh(asset.GetName(), &asset);
+
+    return meshID;
 }
 
 // private
