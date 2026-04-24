@@ -33,6 +33,11 @@ public:
         return m_submeshes.size();
     }
 
+    inline const std::vector<uint32_t>& GetSubMesh(int index) const
+    {
+        return m_submeshes[index];
+    }
+
     template <typename ...Args>
     BoneWeight &addBoneWeight(Args &&...args);
 

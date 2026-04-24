@@ -9,7 +9,7 @@ MaterialInstance::MaterialInstance(MaterialID materialID) : m_materialID(materia
 {
     Material* material = AssetsManager::GetMaterial(m_materialID);
 
-    m_shader = material->GetShader(material->bEnableInstancing);
+    m_shader = material->GetShader();
 
     m_parametersBuffer.resize(m_shader->GetUniformBufferSize(), 0);
 }

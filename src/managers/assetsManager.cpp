@@ -255,7 +255,7 @@ MaterialID AssetsManager::LoadMaterialFromFile(const std::string& file)
     MaterialID materialID = CreateMaterial(asset.GetName());
 
     auto material = GetMaterial(materialID);
-    material->SetShader(shader, false);
+    material->SetShader(shader);
 
     return materialID;
 }

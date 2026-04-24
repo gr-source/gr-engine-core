@@ -11,8 +11,6 @@ class Material
 public:
     Material();
     ~Material();
-
-    bool bEnableInstancing;
     
     void setTexture(int idx, gr::gTexture *texture);
 
@@ -20,9 +18,19 @@ public:
 
     std::array<gr::gTexture *, 10> getTextures() const;
 
-    gr::Shader *GetShader(bool instancing) const;
+    inline gr::Shader *GetShader() const
+    {
+        return m_shader;
+    }
 
-    void SetShader(gr::Shader* shader, bool instancing);
+    inline void SetShader(gr::Shader* shader)
+    {
+        m_shader = shader;
+    }
+
+    void SetEnableInstancing();
+
+    void SetDisableInstancing();
 
     bool supportsInstancing() const;
 
@@ -40,7 +48,8 @@ private:
     std::vector<uint8_t> m_buffer;
 
     gr::Shader *m_shader;
-    gr::Shader *m_shaderInstancing;
+
+    bool bEnableInstancing;
 
     bool setupTexture(int id, gr::gTexture *texture);
 

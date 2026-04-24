@@ -4,7 +4,7 @@
 
 #include <string.h>
 
-Material::Material() : m_shader(nullptr), m_shaderInstancing(nullptr), bEnableInstancing(false)
+Material::Material() : m_shader(nullptr), bEnableInstancing(false)
 {
     m_textures.fill(nullptr);
 }
@@ -27,26 +27,22 @@ std::array<gr::gTexture *, 10> Material::getTextures() const
     return m_textures;
 }
 
-gr::Shader *Material::GetShader(bool instancing) const
-{
-    return instancing ? m_shaderInstancing : m_shader;
-}
+void Material::SetEnableInstancing()
+{}
 
-void Material::SetShader(gr::Shader *shader, bool instancing)
-{
-    if (instancing)
-        m_shaderInstancing = shader;
-    else
-        m_shader = shader;
-}
+void Material::SetDisableInstancing()
+{}
 
 bool Material::supportsInstancing() const
 {
-    return m_shaderInstancing != nullptr;
+    return bEnableInstancing;
 }
 
 void Material::flush(gr::Shader* shader) const
 {
+    if (m_buffer.empty())
+        return;
+
     auto buffer = m_buffer.data();
 
     auto uniforms = shader->GetUniforms();

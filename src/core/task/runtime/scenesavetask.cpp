@@ -358,7 +358,7 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
             auto material_name = AssetsManager::GetMaterialName(materialID);
             auto material = AssetsManager::GetMaterial(materialID);
 
-            auto shader_name = AssetsManager::GetShaderName(material->GetShader(false));
+            auto shader_name = AssetsManager::GetShaderName(material->GetShader());
 
             {
                 auto it = m_shadermap.find(shader_name);

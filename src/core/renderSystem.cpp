@@ -119,7 +119,7 @@ void RenderSystem::renderer()
     {
         Material* material = AssetsManager::GetMaterial(materialID);
 
-        auto shader = material->GetShader(false);
+        auto shader = material->GetShader();
 
         if (shader != lastShader)
         {
@@ -153,7 +153,7 @@ void RenderSystem::renderer()
                 vertexarray->Bind();
             }
 
-            if (material->bEnableInstancing)
+            if (material->supportsInstancing())
             {
                 auto pbo = mesh->GetIntancingBuffer();
 
@@ -166,11 +166,16 @@ void RenderSystem::renderer()
                 drawCallCount++;
             } else
             {
+                auto submeshcount = mesh->GetSubMeshCount();
+
                 for (auto& matrix : transforms)
                 {
                     shader->SetUniform(u_model, &matrix);
 
-                    // glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+                    for (int i=0;i<submeshcount;i++)
+                    {
+                        glDrawElements(GL_TRIANGLES, mesh->GetSubMesh(i).size(), GL_UNSIGNED_INT, nullptr);
+                    }
                 }
 
                 drawCallCount += transforms.size();

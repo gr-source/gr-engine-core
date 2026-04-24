@@ -64,14 +64,12 @@ void Mesh::Build()
     m_pbo = gr::vertex_buffer::create(nullptr, 1024 * sizeof(Matrix4x4), gr::buffer_usage::dynamic_draw);
     m_pbo->SetLayout(instanceLayout);
 
-    /*
-    auto ibo = gr::index_buffer::create(m_indices.data(), m_indices.size() * sizeof(uint32_t));
+    auto ibo = gr::index_buffer::create(m_submeshes[0].data(), m_submeshes[0].size() * sizeof(uint32_t));
 
     m_vertexarray = gr::vertex_array::create();
     m_vertexarray->AddVertexBuffer(vbo);
     m_vertexarray->AddVertexBuffer(m_pbo);
     m_vertexarray->SetIndexBuffer(ibo);
-    */
 }
 
 

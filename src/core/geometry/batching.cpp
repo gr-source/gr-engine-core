@@ -66,10 +66,10 @@ void Batching::build(MeshID meshID, MaterialID materialID)
 
 void Batching::render()
 {
-    bool isInstancing = instances.size() > 1;
-
     auto material = AssetsManager::GetMaterial(m_materialID);
-    auto shader = material->GetShader(isInstancing);
+
+    bool isInstancing = material->supportsInstancing();
+    auto shader = material->GetShader();
 
     bool enable[10] = {false};
     int textureID[10] = {0};

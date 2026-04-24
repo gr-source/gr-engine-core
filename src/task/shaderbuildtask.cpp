@@ -61,26 +61,24 @@ int ShaderBuildTask::doInBackground()
         {
             macro_map.emplace("ENABLE_SKYBOX");
         }
-        /*
         else
         {
-            if (!(m_shaderParams.flags & ShaderOptimize_static))
+            // if (!(m_shaderParams.flags & ShaderOptimize_static))
             {
-                if (m_shaderParams.flags & ShaderOptimize_dynamic)
+                // if (m_shaderParams.flags & ShaderOptimize_dynamic)
                 {
                     macro_map.emplace("USE_MODEL");
                 }
-                if (m_shaderParams.flags & ShaderOptimize_animated)
+                // if (m_shaderParams.flags & ShaderOptimize_animated)
                 {
-                    macro_map.emplace("ENABLE_ANIMATION");
+                    // macro_map.emplace("ENABLE_ANIMATION");
                 }
-                if (m_shaderParams.flags & ShaderOptimize_instanced)
+                // if (m_shaderParams.flags & ShaderOptimize_instanced)
                 {
-                    macro_map.emplace("USE_INSTANCED");
+                    // macro_map.emplace("USE_INSTANCED");
                 }
             }
         }
-        */
 
 
         resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)], macro_map);
