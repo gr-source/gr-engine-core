@@ -1,4 +1,4 @@
-#include "gr-base/managers/worldmanager.hpp"
+#include "gr-base/system/worldsystem.hpp"
 
 #include "gr-base/core/debugdraw.hpp"
 #include "gr-base/core/gameObject.hpp"
@@ -10,40 +10,45 @@
 
 #include "gr-base/script/camera.hpp"
 
-ChunkID WorldManager::Create(const std::string &name)
+extern "C"
+{
+#include "gr-base/externals/vector.h"
+}
+
+ChunkID WorldSystem::Create(const std::string &name)
 {
     return GetInstance().create(name);
 }
 
-ChunkID WorldManager::Find(const std::string &name)
+ChunkID WorldSystem::Find(const std::string &name)
 {
     return GetInstance().find(name);
 }
 
-StreamChunk* WorldManager::Get(ChunkID id)
+StreamChunk* WorldSystem::Get(ChunkID id)
 {
     return GetInstance().get(id);
 }
 
-void WorldManager::Update()
+void WorldSystem::Update()
 {
     GetInstance().update();
 }
 
 // private
-WorldManager& WorldManager::GetInstance()
+WorldSystem& WorldSystem::GetInstance()
 {
-    static WorldManager s_WorldManager;
-    return s_WorldManager;
+    static WorldSystem s_WorldSystem;
+    return s_WorldSystem;
 }
 
-WorldManager::WorldManager()
+WorldSystem::WorldSystem()
 {}
 
-WorldManager::~WorldManager()
+WorldSystem::~WorldSystem()
 {}
 
-ChunkID WorldManager::create(const std::string &name)
+ChunkID WorldSystem::create(const std::string &name)
 {
     ChunkID id = m_pool.allocate();
 
@@ -57,7 +62,7 @@ ChunkID WorldManager::create(const std::string &name)
     return id;
 }
 
-ChunkID WorldManager::find(const std::string &name)
+ChunkID WorldSystem::find(const std::string &name)
 {
     auto it = m_chunkNameMap.find(name);
     if (it == m_chunkNameMap.end())
@@ -65,12 +70,12 @@ ChunkID WorldManager::find(const std::string &name)
     return it->second;
 }
 
-StreamChunk* WorldManager::get(ChunkID id)
+StreamChunk* WorldSystem::get(ChunkID id)
 {
     return m_pool.get(id);
 }
 
-void WorldManager::update()
+void WorldSystem::update()
 {
     auto scene = Scene::GetCurrent();
     if (scene == nullptr)
@@ -86,8 +91,6 @@ void WorldManager::update()
     int currentZ = floor(position.z / CHUNK_SIZE);
 
     std::unordered_set<ChunkID> m_chunkAvailable;
-
-    std::string dir = "/home/NoirVoid/gr-engine/";
 
     for (int x=-CHUNK_RENDER_DISTANCE;x<CHUNK_RENDER_DISTANCE;x++)
     {
@@ -107,8 +110,6 @@ void WorldManager::update()
                 chunk->position = {(float)(chunkIdX * CHUNK_SIZE), (float)(chunkIdZ * CHUNK_SIZE)};
                 chunk->objects = nullptr;
                 chunk->dirty = false;
-
-                std::string path = dir + key + ".grck";
             }
 
             m_chunkAvailable.emplace(chunkID);
@@ -123,13 +124,7 @@ void WorldManager::update()
 
             m_chunkNameMap.erase(chunk->name);
 
-            if (chunk->dirty)
-            {
-                chunk->dirty = false;
-            } else
-            {
-                unloadChunk(*it);
-            }
+            unloadChunk(*it);
 
             it = m_chunkLoaded.erase(it);
         } else
@@ -142,7 +137,7 @@ void WorldManager::update()
         render(get(chunkID));
 }
 
-void WorldManager::unloadChunk(ChunkID id)
+void WorldSystem::unloadChunk(ChunkID id)
 {
     StreamChunk* chunk = get(id);
 
@@ -163,7 +158,7 @@ void WorldManager::unloadChunk(ChunkID id)
     m_pool.deallocate(id);
 }
 
-void WorldManager::render(StreamChunk* chunk)
+void WorldSystem::render(StreamChunk* chunk)
 {
     Vector2 position = chunk->position;
 

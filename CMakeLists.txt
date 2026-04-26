@@ -48,7 +48,6 @@ set(core
     src/core/clock.cpp
     src/core/scene.cpp
     src/core/input.cpp
-    src/core/chunk.cpp
 )
 
 set(binary
@@ -106,7 +105,6 @@ set(managers_src
     src/managers/assetsManager.cpp
     src/managers/shadermanager.cpp
     src/managers/sceneManager.cpp
-    src/managers/worldmanager.cpp
     src/managers/meshmanager.cpp
 )
 
@@ -128,7 +126,7 @@ set(ASSET_SRC
     src/asset/meshasset.cpp
 )
 
-SET(TASK_SRC
+set(TASK_SRC
     src/task/shaderbuildtask.cpp
     src/task/modelloadtask.cpp
     src/task/modelsavetask.cpp
@@ -137,13 +135,17 @@ SET(TASK_SRC
     src/task/meshsavetask.cpp
 )
 
+set(SYSTEM_SRC
+    src/system/worldsystem.cpp
+)
+
 find_package(Bullet QUIET)
 if(NOT Bullet_FOUND)
     message(FATAL_ERROR "Please install libbullet-dev")
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNAL_SRC} ${ECS_SRC} ${ASSET_SRC} ${TASK_SRC})
+add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNAL_SRC} ${ECS_SRC} ${ASSET_SRC} ${TASK_SRC} ${SYSTEM_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

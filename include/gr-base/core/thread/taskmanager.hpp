@@ -6,6 +6,10 @@
 class TaskManager
 {
 public:
+    static void Initialize();
+    
+    static void Shutdown();
+
     template <typename T, typename ...Args>
     static std::shared_ptr<TaskInfo> Add(Args &&...args);
 
@@ -13,10 +17,7 @@ public:
     std::shared_ptr<TaskInfo> add(std::shared_ptr<T> task);
 
 private:
-    TaskManager();
-    ~TaskManager() = default;
-
-    static TaskManager &GetInstance();
+    static TaskManager* s_TaskManager;
 
     void update(std::shared_ptr<ITask> task);
 
@@ -29,7 +30,7 @@ inline std::shared_ptr<TaskInfo> TaskManager::Add(Args &&...args)
 {
     static_assert(std::is_base_of<ITask, T>(), "This class does not inherit from ITask!");
 
-    return GetInstance().add(std::make_shared<T>(std::forward<Args>(args)...));
+    return s_TaskManager->add(std::make_shared<T>(std::forward<Args>(args)...));
 }
 
 // default

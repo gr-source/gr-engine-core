@@ -2,11 +2,15 @@
 
 #include "gr-base/asset/modelasset.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
+#include "gr-base/ecs/default.hpp"
 
 class ModelSaveTask : public IAsyncTask<int>
 {
 public:
+    static ModelAsset ConvertToAssetModel(GameObjectHandle handle);
+
     ModelSaveTask(const std::string& file, const ModelAsset& asset);
+    ModelSaveTask(const std::string& file, GameObjectHandle handle);
 
 private:
     std::string m_file;

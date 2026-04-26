@@ -2,16 +2,30 @@
 
 #include "gr-base/core/mainthreaddispatcher.hpp"
 
-// private
-TaskManager &TaskManager::GetInstance()
+#include <iostream>
+
+TaskManager* TaskManager::s_TaskManager = nullptr;
+
+// public
+void TaskManager::Initialize()
 {
-    static TaskManager instance;
-    return instance;
+    if (s_TaskManager == nullptr)
+        s_TaskManager = new TaskManager();
+
+    std::cout << "[TaskManager] Initialize" << std::endl;
 }
 
-TaskManager::TaskManager()
-{}
+void TaskManager::Shutdown()
+{
+    if (s_TaskManager != nullptr)
+        delete s_TaskManager;
 
+    s_TaskManager = nullptr;
+
+    std::cout << "[TaskManager] Shutdown" << std::endl;
+}
+
+// private
 void TaskManager::update(std::shared_ptr<ITask> task)
 {
     task->run();

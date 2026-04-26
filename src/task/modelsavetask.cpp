@@ -2,17 +2,60 @@
 
 #include "gr-base/core/binary/gHeader.hpp"
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/file/file.hpp"
+
+#include "gr-base/core/file/memoryStream.hpp"
 #include "gr-base/core/file/fileStream.hpp"
+#include "gr-base/core/file/file.hpp"
+
+#include "gr-base/core/gameObject.hpp"
+
+#include "gr-base/ecs/componentstorage.hpp"
+#include "gr-base/script/transform.hpp"
+
+ModelAsset ModelSaveTask::ConvertToAssetModel(GameObjectHandle handle)
+{
+    auto gameObject = GameObject::Get(handle);
+
+    ModelAsset asset;
+    asset.name = gameObject->GetName();
+    asset.isStatic = gameObject->GetIsStatic();
+
+    for (auto& hash : gameObject->GetHashes())
+    {
+        Component* behavior = gameObject->getComponent(hash);
+
+        MemoryStream stream;
+        behavior->Serialize(&stream);
+
+        std::vector<uint8_t> buffer(stream.tellg(), 0);
+        memcpy(buffer.data(), stream.data(), stream.tellg());
+
+        asset.componentBuffer.emplace(hash, buffer);
+    }
+
+    auto transform = gameObject->GetTransform();
+    for (auto& childID : transform->getChildren())
+    {
+        auto childTransform = ComponentStorage::GetComponent<Transform>(childID);
+
+        asset.childrent.push_back(ConvertToAssetModel(childTransform->GetGameObject()->GetCacheID()));
+    }
+
+    return asset;
+}
 
 ModelSaveTask::ModelSaveTask(const std::string& file, const ModelAsset& asset) : m_file(file), m_asset(asset)
 {}
 
+
+ModelSaveTask::ModelSaveTask(const std::string& file, GameObjectHandle handle) : m_file(file), m_asset(ConvertToAssetModel(handle))
+{}
+
 void ModelSaveTask::onPreExecute()
 {
-    const char* name = gfile::getname(m_file.c_str());
+    auto& name = m_asset.name;
 
-    Console::LogInfo("[Task] Saving '%s' model...", name);
+    Console::LogInfo("[Task] Saving '%s' model...", name.c_str());
 }
 
 // private
@@ -36,12 +79,12 @@ int ModelSaveTask::doInBackground()
 
 void ModelSaveTask::onPostExecute(int result)
 {
-    const char* name = gfile::getname(m_file.c_str());
+    auto& name = m_asset.name;
 
     if (result != 0)
-        return Console::LogError("[Task] Falied in to save '%s'!!!", name);
+        return Console::LogError("[Task] Falied in to save '%s'!!!", name.c_str());
 
-    Console::LogInfo("[Taks] Model '%s' saved in '%s'.", name, m_file.c_str());
+    Console::LogInfo("[Taks] Model '%s' saved in '%s'.", name.c_str(), m_file.c_str());
 }
 
 
