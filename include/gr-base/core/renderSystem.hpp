@@ -3,6 +3,7 @@
 #include "gr-base/core/default.hpp"
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/ecs/default.hpp"
+#include "gr-base/script/camera.hpp"
 
 #include <gr-math/types.hpp>
 #include <map>
@@ -28,6 +29,10 @@ public:
 
     static void Update();
 
+    static void Begin(const Camera* camera);
+    
+    static void End();
+
     static void Renderer();
 
 private:
@@ -49,9 +54,15 @@ private:
 
     void update();
 
+    void begin(const Camera* camera);
+
+    void end();
+
     void renderer();
 
     void setup(GameObjectHandle handle);
+
+    void setuplight(const Scene* scene, gr::Shader *shader);
 };
 
 

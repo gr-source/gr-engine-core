@@ -1,7 +1,6 @@
 #include "gr-base/script/meshRender.hpp"
 
 #include "gr-base/core/renderSystem.hpp"
-#include "gr-base/managers/rendermanager.hpp"
 
 MeshRender::MeshRender()
 {}

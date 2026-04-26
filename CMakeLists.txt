@@ -102,7 +102,6 @@ set(managers_src
     src/managers/materialmanager.cpp
     src/managers/eventManager.cpp
     src/managers/bvhtreemanager.cpp
-    src/managers/rendermanager.cpp
     src/managers/octreemanager.cpp
     src/managers/assetsManager.cpp
     src/managers/shadermanager.cpp

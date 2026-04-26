@@ -1,15 +1,20 @@
 #include "gr-base/core/renderSystem.hpp"
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/culling/frustum.hpp"
 #include "gr-base/core/gameObject.hpp"
 
+#include "gr-base/core/scene.hpp"
 #include "gr-base/ecs/componentstorage.hpp"
 
 #include "gr-base/externals/handle.h"
+
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/batchingmanager.hpp"
+
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
+#include "gr-base/script/light.hpp"
 
 #include <GL/glew.h>
 #include <algorithm>
@@ -40,6 +45,16 @@ void RenderSystem::Remove(GameObjectHandle handle)
 void RenderSystem::Update()
 {
     s_RenderSystem->update();
+}
+
+void RenderSystem::Begin(const Camera* camera)
+{
+    s_RenderSystem->begin(camera);
+}
+
+void RenderSystem::End()
+{
+    s_RenderSystem->end();
 }
 
 void RenderSystem::Renderer()
@@ -110,6 +125,34 @@ void RenderSystem::update()
 
 // sort by
 // [shaderID][materialID][meshID]
+void RenderSystem::begin(const Camera* camera)
+{
+    auto scene = Scene::GetCurrent();
+
+    auto projection = camera->getPerspesctive();
+    auto view = camera->getViewmatrix();
+    auto position = camera->getPosition();
+
+    auto list = AssetsManager::GetShaderList(ShaderType::SHADER3D);
+    for (auto &shader : list)
+    {
+        if (!shader)
+            continue;
+
+        shader->bind();
+        shader->setUniform("u_mat_projection", &projection);
+        shader->setUniform("u_mat_view",       &view);
+        shader->setUniform("u_mat_eye",        &position);
+
+        setuplight(scene, shader);
+        shader->unbind();
+    }
+
+    Frustum::CalculateFrustum(projection * view);
+}
+
+void RenderSystem::end()
+{}
 
 void RenderSystem::renderer()
 {
@@ -235,6 +278,39 @@ void RenderSystem::setup(GameObjectHandle gameObjectID)
         vec.push_back(transformID);
 
         m_objectsToRenderKey.emplace(gameObjectID, handle);
+    }
+}
+
+void RenderSystem::setuplight(const Scene* scene, gr::Shader *shader)
+{
+    auto lights = scene->GetLights();
+
+    int numLight = static_cast<int>(lights.size());
+
+    shader->set_uniform("u_mat_numLights", numLight);
+
+    if (lights.empty())
+        return;
+
+    for (std::size_t i={};i<lights.size();i++)
+    {
+        auto light = ComponentStorage::GetComponent<Light>(lights[i]);
+
+        auto position   = light->getPosition();
+        auto forward    = light->getForward();
+        auto color      = light->getColor();
+        auto type       = light->getType();
+
+        // auto attenuation = Vector3{light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()};
+        // auto params      = Vector3{light->getInnecone(), light->getOutercone(), (float)light->getType()};
+        // auto projection  = light->getProjetion();
+        
+        shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].position").c_str(),    &position);
+        shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].direction").c_str(),   &forward);
+        shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].color").c_str(),       &color);
+        // shader->setUniform(("lights[" + std::to_string(i) + "].attenuation").c_str(), &attenuation);
+        // shader->setUniform(("lights[" + std::to_string(i) + "].params").c_str(),      &params);
+        shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].type").c_str(),       &type);
     }
 }
 
