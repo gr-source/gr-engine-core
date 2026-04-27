@@ -41,6 +41,7 @@ set(core
     src/core/debugdraw.cpp
     src/core/display.cpp
     src/core/console.cpp
+    src/core/logger.cpp
     src/core/window.cpp
     src/core/string.cpp
     src/core/status.cpp

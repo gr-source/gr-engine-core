@@ -17,14 +17,14 @@ std::string gfile::get_home_directory()
     return retval != nullptr ? retval : "";
 }
 
-std::string gfile::get_data_directory(const std::string &path)
+std::string gfile::get_data_directory()
 {
-    return get_home_directory() + "/.local/share/gr-engine" + path;
+    return get_home_directory() + "/.local/share/gr-engine";
 }
 
-std::string gfile::get_config_directory(const std::string &path)
+std::string gfile::get_config_directory()
 {
-    return get_home_directory() + "/.config/gr-engine" + path;
+    return get_home_directory() + "/.config/gr-engine";
 }
 
 std::string gfile::get_cache_directory()

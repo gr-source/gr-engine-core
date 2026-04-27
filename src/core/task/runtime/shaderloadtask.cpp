@@ -146,7 +146,7 @@ std::array<std::string, IShaderStage> ShaderLoadTask::LoadShaderBase(ShaderType 
             break;
     }
 
-    auto path = gfile::get_data_directory(path_to_base);
+    auto path = gfile::get_data_directory() + path_to_base;
 
     std::ifstream is(path);
     if (!is.is_open())

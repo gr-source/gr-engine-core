@@ -1,9 +1,9 @@
 #include "gr-base/core/thread/threadpool.hpp"
 
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/logger.hpp"
 #include "gr-base/core/thread/default.hpp"
 
-#include <iostream>
 #include <thread>
 #include <mutex>
 
@@ -15,7 +15,7 @@ void Threadpool::Initialize()
     if (s_Threadpool == nullptr)
         s_Threadpool = new Threadpool(std::thread::hardware_concurrency());
 
-    std::cout << "[Threadpool] Initialize" << std::endl;
+    logger::info("[Threadpool] Initialize");
 }
 
 void Threadpool::Shutdown()
@@ -25,7 +25,7 @@ void Threadpool::Shutdown()
 
     s_Threadpool = nullptr;
 
-    std::cout << "[Threadpool] Shutdown" << std::endl;
+    logger::info("[Threadpool] Shutdown");
 }
 
 bool Threadpool::IsMainThread()

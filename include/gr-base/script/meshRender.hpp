@@ -20,7 +20,7 @@ public:
     bool Deserialize(Stream *stream) override;
 };
 
-REGISTER_COMPONENT(MeshRender, (uint64_t)-1)
+REGISTER_COMPONENT(MeshRender, CLASS_TO_HASH(BaseRender))
 
 
 

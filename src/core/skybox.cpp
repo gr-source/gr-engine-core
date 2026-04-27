@@ -73,7 +73,7 @@ void Skybox::build(gr::gTexture *texture)
 
     ShaderParams shaderParams;
     shaderParams.name = "skybox";
-    shaderParams.base = gfile::get_data_directory("/assets/shader/skybox/skybox.glsl");
+    shaderParams.base = gfile::get_data_directory() + "/assets/shader/skybox/skybox.glsl";
     shaderParams.flags = ShaderOptimize_static;
     shaderParams.type = ShaderType::SKY;
     
@@ -166,7 +166,7 @@ void Skybox::upload_cubemap_texture(gr::gTexture *texture, gr::Shader *shader)
 
     ShaderParams shaderParams;
     shaderParams.name = "background";
-    shaderParams.base = gfile::get_data_directory("/assets/shader/skybox/background.glsl");
+    shaderParams.base = gfile::get_data_directory() + "/assets/shader/skybox/background.glsl";
     shaderParams.flags = ShaderOptimize_static;
     shaderParams.type = ShaderType::SKY;
 

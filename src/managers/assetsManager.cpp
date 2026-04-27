@@ -13,6 +13,7 @@
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/geometry/default.hpp"
 
+#include "gr-base/core/logger.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 #include "gr-base/task/modelloadtask.hpp"
@@ -24,6 +25,8 @@ void AssetsManager::Initialize()
 {
     if (s_AssetsManager == nullptr)
         s_AssetsManager = new AssetsManager();
+
+    logger::info("[AssetsManager] Initialize.");
 }
 
 void AssetsManager::Shutdown()
@@ -32,6 +35,8 @@ void AssetsManager::Shutdown()
         delete s_AssetsManager;
 
     s_AssetsManager = nullptr;
+
+    logger::info("[AssetsManager] Shutdown.");
 }
 
 void AssetsManager::SetAssetDir(const std::string& dir)

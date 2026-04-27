@@ -2,6 +2,7 @@
 
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/default.hpp"
+#include "gr-base/core/logger.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/ecs/componentstorage.hpp"
@@ -27,6 +28,8 @@ GameObjectManager* GameObjectManager::s_GameObjectManager = nullptr;
 void GameObjectManager::SetInstance(GameObjectManager* gameobjectmanager)
 {
     s_GameObjectManager = gameobjectmanager;
+
+    logger::info("[GameObjectManager] Instance setted 0x%llx", gameobjectmanager);
 }
 
 GameObjectHandle GameObjectManager::Instantiate(GameObjectHandle handle)

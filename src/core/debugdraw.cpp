@@ -1,5 +1,6 @@
 #include "gr-base/core/debugdraw.hpp"
 
+#include "gr-base/core/logger.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/core/file/file.hpp"
@@ -15,6 +16,8 @@ void DebugDraw::Initialize()
 {
     if (s_DebugDraw == nullptr)
         s_DebugDraw = new DebugDraw();
+
+    logger::info("[DebugDraw] Initialized.");
 }
 
 void DebugDraw::Shutdown()
@@ -22,6 +25,8 @@ void DebugDraw::Shutdown()
     if (s_DebugDraw != nullptr)
         delete s_DebugDraw;
     s_DebugDraw = nullptr;
+
+    logger::info("[DebugDraw] Shutdown.");
 }
 
 void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor)
@@ -79,7 +84,7 @@ void DebugDraw::clear()
 DebugDraw::LineRender::LineRender() : m_shader(nullptr)
 {
     ShaderParams params;
-    params.base = gfile::get_data_directory("/assets/shader/line.glsl");
+    params.base = gfile::get_data_directory() + "/assets/shader/line.glsl";
     params.flags = 0;
     params.type = ShaderType::LINE;
     params.name = "debug_line";

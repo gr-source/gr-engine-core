@@ -1,5 +1,6 @@
 #include "gr-base/ecs/componentregistry.hpp"
 
+#include "gr-base/core/logger.hpp"
 #include "gr-base/ecs/componentstorage.hpp"
 
 #include "gr-base/externals/array.h"
@@ -91,6 +92,10 @@ void ComponentRegistry::registry(ComponentInfo* info)
     dest.destroy = info->destroy;
 
     m_bitmask.set(mapID, true);
+
+    // logger::info("[ComponentRegistry] New component registered '%s\t\t%llu\tparent\t%llu'", dest.name, dest.hash, dest.parent);
+    logger::info("[ComponentRegistry] New component registered '%-*s %llu parent %llu'",
+             20, dest.name, dest.hash, dest.parent);   
 }
 
 void ComponentRegistry::unregistry(ComponentHash hash)

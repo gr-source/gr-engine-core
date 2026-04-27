@@ -1,5 +1,6 @@
 #include "gr-base/core/thread/taskmanager.hpp"
 
+#include "gr-base/core/logger.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
 
 #include <iostream>
@@ -12,7 +13,7 @@ void TaskManager::Initialize()
     if (s_TaskManager == nullptr)
         s_TaskManager = new TaskManager();
 
-    std::cout << "[TaskManager] Initialize" << std::endl;
+    logger::info("[TaskManager] Initialize");
 }
 
 void TaskManager::Shutdown()
@@ -22,7 +23,7 @@ void TaskManager::Shutdown()
 
     s_TaskManager = nullptr;
 
-    std::cout << "[TaskManager] Shutdown" << std::endl;
+    logger::info("[TaskManager] Shutdown");
 }
 
 // private

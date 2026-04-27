@@ -2,6 +2,7 @@
 
 #include "gr-base/core/console.hpp"
 
+#include "gr-base/core/logger.hpp"
 #include "gr-base/ecs/componentregistry.hpp"
 #include "gr-base/ecs/component.hpp"
 
@@ -15,6 +16,8 @@ ComponentStorage* ComponentStorage::s_ComponentStorage = nullptr;
 void ComponentStorage::SetInstance(ComponentStorage *behaviorStorage)
 {
     s_ComponentStorage = behaviorStorage;
+
+    logger::info("[ComponentStorage] Instance setted 0x%llx", behaviorStorage);
 }
 
 ComponentHandle ComponentStorage::Allocate(ComponentHash hash, ComponentHandle source)
@@ -104,9 +107,13 @@ void ComponentStorage::notifyUpdate(ComponentHash hash, ComponentInfo* src)
     if (info->stride != src->stride)
     {
         reallocComponentChunk(info, src->stride);
+
+        logger::debug("[ComponentStorage] Os dados do component '%s' foram reallocados.", info->name);
     } else
     {
         restoreVTable(info);
+
+        logger::debug("[ComponentStorage] A VTable do component '%s' foram redefinido.", info->name);
     }
 }
 
@@ -144,8 +151,6 @@ void ComponentStorage::reallocComponentChunk(ComponentInfo* info, size_t newStri
 
 void ComponentStorage::restoreVTable(ComponentInfo* info)
 {
-    std::cout << "[ComponentStorage] Restore VTable of: " << info->name << std::endl;
-
     void* newVTable = ((void*(*)(void))(info->getvetable))();
 
     size_t storageID = info->hash & (COMPONENT_TABLE_SIZE - 1);

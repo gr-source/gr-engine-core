@@ -14,6 +14,9 @@ public:
 private:
     static EventManager& GetInstance();
 
+    EventManager();
+    ~EventManager();
+
     std::unordered_map<std::string, std::vector<std::function<void ()>>> m_listener;
 
     void attach(const std::string& name, std::function<void ()> func);

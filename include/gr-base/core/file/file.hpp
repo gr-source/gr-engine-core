@@ -8,9 +8,9 @@ namespace gfile
 
     std::string get_home_directory();
 
-    std::string get_data_directory(const std::string &path = "");
+    std::string get_data_directory();
 
-    std::string get_config_directory(const std::string &path = "");
+    std::string get_config_directory();
 
     std::string get_cache_directory();
 
