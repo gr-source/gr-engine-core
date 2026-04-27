@@ -128,11 +128,31 @@ bool gfile::copy(const char* src_path, const char* dest_path)
         }
     } else
     {
-        return false;
+        std::filesystem::copy_file(src_path, dest_path);
     }
     return true;
 }
 
+uint8_t* gfile::read(const char* file, size_t *length)
+{
+    uint8_t* buffer = NULL;
+
+    FILE* fp = fopen(file, "rb");
+    if (fp != NULL)
+    {
+        fseek(fp, 0, SEEK_END);
+        *length = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+
+        buffer = (uint8_t*)malloc(*length + 1);
+        if (fread(buffer, 1, *length, fp) == *length)
+            buffer[*length] = 0;
+
+        fclose(fp);
+    }
+
+    return buffer;
+}
 
 
 

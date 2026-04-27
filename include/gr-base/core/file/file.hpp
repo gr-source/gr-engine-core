@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace gfile
@@ -31,6 +32,8 @@ namespace gfile
     bool move(const char* src_path, const char* dest_path);
 
     bool copy(const char* src_path, const char* dest_path);
+
+    uint8_t* read(const char* file, size_t *length);
 };
 
 

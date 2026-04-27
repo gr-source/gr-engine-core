@@ -46,8 +46,6 @@ std::size_t Threadpool::GetCount()
 // private
 Threadpool::Threadpool(std::uint32_t maxThread) : m_bStop(false), m_hasTask(false), m_available(0), m_mainThreadID(std::this_thread::get_id())
 {
-    Console::LogInfo("[ Threadpool ] Initialize");
-
     for (std::uint32_t i=0;i<maxThread;i++)
     {
         m_threads.emplace_back(&Threadpool::update, this);
@@ -56,7 +54,6 @@ Threadpool::Threadpool(std::uint32_t maxThread) : m_bStop(false), m_hasTask(fals
 
 Threadpool::~Threadpool()
 {
-    Console::LogInfo("[ Threadpool ] Shutdown");
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_bStop = true;
@@ -75,8 +72,6 @@ Threadpool::~Threadpool()
             thread.join();
         }
     }
-
-    Console::LogInfo("[ Threadpool ] Threadpool stoped.");
 }
 
 bool Threadpool::isMainThread() const
@@ -147,7 +142,7 @@ void Threadpool::update()
                 task();
             } catch (const std::exception &e)
             {
-                Console::LogError("[ Threadpool ] Exception: %s", e.what());
+                logger::error("[Threadpool] Exception detected '%s'.", e.what());
             }
         }
 

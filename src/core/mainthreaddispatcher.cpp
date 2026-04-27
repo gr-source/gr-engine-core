@@ -2,6 +2,7 @@
 
 #include "gr-base/core/clock.hpp"
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/logger.hpp"
 #include <ctime>
 #include <vector>
 
@@ -62,7 +63,7 @@ void MainThreadDispatcher::process()
                 event();
             } catch (const std::exception& e)
             {
-                Console::LogError("[ MainThreadDispatcher ] Exception deceted: %s", e.what());
+                logger::error("[MainThreadDispatcher] Exception detected '%s'.", e.what());
             }
         }
 
