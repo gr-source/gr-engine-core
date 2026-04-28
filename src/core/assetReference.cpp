@@ -1,5 +1,6 @@
 #include "gr-base/core/assetReference.hpp"
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/logger.hpp"
 #include "gr-base/core/string.hpp"
 
 #include <cstring>
@@ -14,6 +15,8 @@ void AssetReference::Initialize()
 {
     if (s_AssetReference == nullptr)
         s_AssetReference = new AssetReference();
+
+    logger::info("[AssetReference] Initialize.");
 }
 
 void AssetReference::Shutdown()
@@ -22,6 +25,8 @@ void AssetReference::Shutdown()
         delete s_AssetReference;
 
     s_AssetReference = nullptr;
+
+    logger::info("[AssetReference] Shutdown.");
 }
 
 void AssetReference::Load(const std::string &file)
@@ -49,9 +54,7 @@ void AssetReference::load(const std::string &file)
 {
     std::ifstream is(file);
     if (!is.is_open())
-    {
-        return Console::LogWarning("[AssetReference] %s; %s", __FUNCTION__, strerror(errno));
-    }
+        return logger::error("[AssetReference] Fail in to load source '%s'.", strerror(errno));
 
     std::string line;
     while (std::getline(is, line))
@@ -66,6 +69,8 @@ void AssetReference::load(const std::string &file)
     }
 
     is.close();
+
+    logger::info("[AssetReference] Reference loaded '%s'.", file.c_str());
 }
 
 void AssetReference::save(const std::string &file)
@@ -78,9 +83,9 @@ void AssetReference::save(const std::string &file)
 
 void AssetReference::registry(const std::string &name, const std::string& file)
 {
-    AssetHash hash = GetHash(name.c_str());
-
     m_refMapped.emplace(name, file);
+
+    logger::debug("[AssetReference] New reference registed: '%s' lookup: '%s'.", name.c_str(), file.c_str());
 }
 
 const std::string& AssetReference::getFile(const std::string& name)
@@ -89,7 +94,7 @@ const std::string& AssetReference::getFile(const std::string& name)
     if (it != m_refMapped.end())
         return it->second;
 
-    throw std::runtime_error(String::format("Reference '%s' not found...", name.c_str()));
+    throw std::runtime_error(String::format("reference '%s' not found...", name.c_str()));
 }
 
 

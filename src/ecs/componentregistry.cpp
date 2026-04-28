@@ -41,6 +41,8 @@ ComponentRegistry& ComponentRegistry::GetInstance()
 ComponentRegistry::ComponentRegistry() : m_sparseSet(nullptr), m_pool(nullptr), m_capacity(0), m_count(0)
 {
     m_sparseSet = array_create(COMPONENT_TABLE_SIZE, sizeof(ComponentInfoID));
+
+    logger::info("[ComponentRegistry] Initialize.");
 }
 
 ComponentRegistry::~ComponentRegistry()
@@ -50,6 +52,8 @@ ComponentRegistry::~ComponentRegistry()
 
     if (m_pool != nullptr)
         array_free(m_pool);
+
+    logger::info("[ComponentRegistry] Shutdown.");
 }
 
 void ComponentRegistry::registry(ComponentInfo* info)
@@ -93,8 +97,7 @@ void ComponentRegistry::registry(ComponentInfo* info)
 
     m_bitmask.set(mapID, true);
 
-    // logger::info("[ComponentRegistry] New component registered '%s\t\t%llu\tparent\t%llu'", dest.name, dest.hash, dest.parent);
-    logger::info("[ComponentRegistry] New component registered '%-*s %llu parent %llu'",
+    logger::debug("[ComponentRegistry] New component registered '%-*s %lu parent %lu'",
              20, dest.name, dest.hash, dest.parent);   
 }
 
