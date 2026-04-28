@@ -27,18 +27,18 @@ Entity::Entity(Entity&& other) noexcept
 
 Component* Entity::addComponent(const char* name)
 {
-    return addComponent(GetHash(name));
+    return addComponent(fnv1_hash(name));
 }
 
 Component* Entity::getComponent(const char* name) const
 {
-    return getComponent(GetHash(name));
+    return getComponent(fnv1_hash(name));
 }
 
 // #include <iostream>
 Component* Entity::addComponent(uint64_t hash, ComponentHandle source)
 {
-    size_t tableID = hash % COMPONENT_TABLE_SIZE;
+    size_t tableID = hash & (COMPONENT_TABLE_SIZE - 1);
     if (m_signature.test(tableID))
     {
         auto& lookup = m_lookupTable[tableID];
@@ -60,7 +60,7 @@ Component* Entity::addComponent(uint64_t hash, ComponentHandle source)
     {
         info = ComponentRegistry::Get(info->parent);
 
-        tableID = info->hash % COMPONENT_TABLE_SIZE;
+        tableID = info->hash & (COMPONENT_TABLE_SIZE - 1);
 
         m_signature.set(tableID, true);
 
@@ -68,7 +68,8 @@ Component* Entity::addComponent(uint64_t hash, ComponentHandle source)
     }
 
     auto behavior = ComponentStorage::GetComponent(hash, handle);
-    behavior->entityID = m_cacheID;
+    behavior->cacheID = m_cacheID;
+
     if (!m_bPrefab)
         behavior->Init();
 
@@ -103,7 +104,7 @@ void Entity::destroy(uint64_t hash)
 
 bool Entity::reinstance(const char* name, Component* dest, const Component* src)
 {
-    return ComponentStorage::Reinstance(GetHash(name), dest, src);
+    return ComponentStorage::Reinstance(fnv1_hash(name), dest, src);
 }
 
 std::vector<uint64_t> Entity::GetHashes() const

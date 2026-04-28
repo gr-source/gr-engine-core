@@ -10,7 +10,7 @@ class Stream;
 class Component
 {
 public:
-    GameObjectHandle entityID;
+    GameObjectHandle cacheID;
 
     bool bCanEnableUpdate;
 

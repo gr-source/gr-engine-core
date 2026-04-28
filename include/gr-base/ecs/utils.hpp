@@ -7,7 +7,7 @@
 template <typename T>
 inline ComponentHash GetHashByType(const char* key = nullptr) noexcept
 {
-    static ComponentHash hash = GetHash(key);
+    static ComponentHash hash = fnv1_hash(key);
     return hash;
 }
 

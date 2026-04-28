@@ -4,7 +4,7 @@
 
 GameObject* Component::GetGameObject() const
 {
-    return GameObjectManager::Get(entityID);
+    return GameObjectManager::Get(cacheID);
 }
 
 
