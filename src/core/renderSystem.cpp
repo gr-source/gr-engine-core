@@ -77,17 +77,18 @@ void RenderSystem::remove(GameObjectHandle gameObjectID)
     {
         auto myTransformID = GameObject::Get(gameObjectID)->GetID<Transform>();
 
-        uint64_t key = it->second;
+        for (auto& key : it->second)
+        {
+            auto&& [submeshID, vec] = m_renderable[key];
 
-        auto&& [submeshID, vec] = m_renderable[key];
+            vec.erase(
+                std::remove(vec.begin(), vec.end(), myTransformID),
+                vec.end()
+            );
 
-        vec.erase(
-            std::remove(vec.begin(), vec.end(), myTransformID),
-            vec.end()
-        );
-
-        if (vec.empty())
-            m_renderable.erase(key);
+            if (vec.empty())
+                m_renderable.erase(key);
+        }
 
         m_objectsToRenderKey.erase(it);
     }
@@ -258,6 +259,8 @@ void RenderSystem::setup(GameObjectHandle gameObjectID)
     if (materialIDs.size() != mesh->GetSubMeshCount())
         return Console::LogError("[RenderSystem] Erro de configuracao no objeto '%s': Quantidade de materiais (%ld) nao condiz com a quantidade de sub-meshes (%ld).", gameobject->GetName().c_str(), materialIDs.size(), mesh->GetSubMeshCount());
 
+    std::vector<uint64_t> handles;
+
     size_t submeshcount = mesh->GetSubMeshCount();
     for (size_t i=0;i<submeshcount;i++)
     {
@@ -277,8 +280,10 @@ void RenderSystem::setup(GameObjectHandle gameObjectID)
 
         vec.push_back(transformID);
 
-        m_objectsToRenderKey.emplace(gameObjectID, handle);
+        handles.push_back(handle);
     }
+
+    m_objectsToRenderKey.emplace(gameObjectID, handles);
 }
 
 void RenderSystem::setuplight(const Scene* scene, gr::Shader *shader)

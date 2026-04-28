@@ -21,9 +21,9 @@ ShaderBuildTask::ShaderBuildTask(const std::string& file, const std::string& sou
 
 void ShaderBuildTask::onPreExecute()
 {
-    auto name = gfile::getname(m_source.c_str());
+    auto name = gfile::get_file_name(m_source.c_str());
 
-    Console::LogInfo("[ShaderBuildTask] Building shader file '%s'", name);
+    Console::LogInfo("[ShaderBuildTask] Building shader file '%s'", name.c_str());
 }
 
 int ShaderBuildTask::doInBackground()
@@ -117,7 +117,7 @@ int ShaderBuildTask::doInBackground()
         return 1;
     }
 
-    auto name = gfile::getname(m_file.c_str());
+    auto name = gfile::get_file_name(m_file.c_str());
 
     ShaderAsset asset;
     asset.SetName(name);
@@ -146,16 +146,16 @@ int ShaderBuildTask::doInBackground()
 
 void ShaderBuildTask::onPostExecute(int result)
 {
-    auto name = gfile::getname(m_source.c_str());
+    auto name = gfile::get_file_name(m_source.c_str());
 
     if (result != 0)
-        return Console::LogError("[ShaderBuildTask] falied in to build shader '%s'!!!", name);
+        return Console::LogError("[ShaderBuildTask] falied in to build shader '%s'!!!", name.c_str());
 
-    name = gfile::getname(m_file.c_str());
+    name = gfile::get_file_name(m_file);
 
     AssetReference::Registry(name, m_file);
 
-    Console::LogInfo("[ShaderBuildTask] Shader building sucessfully '%s'", name);
+    Console::LogInfo("[ShaderBuildTask] Shader building sucessfully '%s'", name.c_str());
 }
 
 std::tuple<std::string, std::string, std::vector<std::string>, ShaderType> ShaderBuildTask::ReadingSourceFileShader()

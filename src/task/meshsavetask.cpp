@@ -12,9 +12,9 @@ MeshSaveTask::MeshSaveTask(const std::string& file, const MeshAsset& asset) : m_
 // private
 void MeshSaveTask::onPreExecute()
 {
-    auto name = gfile::getname(m_file.c_str());
+    auto name = gfile::get_file_name(m_file.c_str());
 
-    Console::LogError("[Task] Saving mesh '%s'", name);
+    Console::LogError("[Task] Saving mesh '%s'", name.c_str());
 }
 
 int MeshSaveTask::doInBackground()
@@ -38,12 +38,12 @@ int MeshSaveTask::doInBackground()
 
 void MeshSaveTask::onPostExecute(int result)
 {
-    auto name = gfile::getname(m_file.c_str());
+    auto name = gfile::get_file_name(m_file.c_str());
 
     if (result != 0)
-        return Console::LogError("[Task] falied in to save mesh '%s'!!!", name);
+        return Console::LogError("[Task] falied in to save mesh '%s'!!!", name.c_str());
 
-    Console::LogInfo("[Task] Mesh saved sucessfully '%s'", name);
+    Console::LogInfo("[Task] Mesh saved sucessfully '%s'", name.c_str());
 
     AssetReference::Registry(m_asset.GetName(), m_file);
 }

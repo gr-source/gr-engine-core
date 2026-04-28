@@ -64,7 +64,7 @@ void ShaderLoadTask::onPostExecute(int result)
     if (result != 0)
         return AssetsManager::RemoveTask(m_path);
 
-    auto name = gfile::getname(m_path.c_str());
+    auto name = gfile::get_file_name(m_path.c_str());
 
     std::cout << name << std::endl;
 
@@ -78,7 +78,7 @@ void ShaderLoadTask::onPostExecute(int result)
         return AssetsManager::RemoveTask(m_path);
     }
 
-    Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name);
+    Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name.c_str());
 
     std::vector<std::function<void (gr::Shader *)>> funclist;
     {

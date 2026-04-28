@@ -1,9 +1,14 @@
 #include "gr-base/core/file/file.hpp"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <filesystem>
+#include <cstdlib>
+#include <cstdio>
+
+#include <sys/stat.h>
+
+#include <string.h>
+#include <dirent.h>
+#include <unistd.h>
 
 // ********** gfile ********** //
 std::string gfile::create_temp_file(const std::string &name)
@@ -13,88 +18,135 @@ std::string gfile::create_temp_file(const std::string &name)
 
 std::string gfile::get_home_directory()
 {
-    const char *retval = getenv("HOME");
-    return retval != nullptr ? retval : "";
+    static const char *retval = getenv("HOME");
+    return retval != NULL ? retval : "/";
 }
 
-std::string gfile::get_data_directory()
+const std::string& gfile::get_data_directory()
 {
-    return get_home_directory() + "/.local/share/gr-engine";
+    static std::string dir = get_home_directory() + "/.local/share/gr-engine";
+    return dir;
 }
 
-std::string gfile::get_config_directory()
+const std::string& gfile::get_config_directory()
 {
-    return get_home_directory() + "/.config/gr-engine";
+    static std::string dir = get_home_directory() + "/.config/gr-engine";
+    return dir;
 }
 
-std::string gfile::get_cache_directory()
+const std::string& gfile::get_cache_directory()
 {
-    return get_home_directory() + "/.cache/gr-engine";
+    static std::string dir = get_home_directory() + "/.cache/gr-engine";
+    return dir;
 }
 
 bool gfile::exists(const std::string &path)
 {
-    return std::filesystem::exists(path);
+    struct stat sb;
+    return stat(path.c_str(), &sb) != -1 ? true : false;
 }
 
 bool gfile::is_directory(const std::string &path)
 {
-    return std::filesystem::is_directory(path);
-}
-
-bool gfile::create_directories(const std::string &path)
-{
-    try
-    {
-        std::filesystem::create_directories(path);
-    } catch (const std::exception &e)
-    {
-        return false;
-    }
-    return true;
+    struct stat sb;
+    return stat(path.c_str(), &sb) != -1 && S_ISDIR(sb.st_mode);
 }
 
 bool gfile::create_directory(const std::string &path)
 {
-    try
+    return mkdir(path.c_str(), 0755) != -1 ? true : false;
+}
+
+bool gfile::create_directories(const std::string &path)
+{
+    char buffer[1024];
+    const char* ptr = path.c_str();
+    size_t len = 0;
+
+    while (*ptr)
     {
-        std::filesystem::create_directory(path);
-    } catch (const std::exception &e)
-    {
-        return false;
+        buffer[len] = *ptr;
+
+        if (*ptr == '/' && len > 0)
+        {
+            buffer[len] = '\0';
+            if (!exists(buffer))
+                if (!create_directory(buffer))
+                    return false;
+
+            buffer[len] = '/';
+        }
+        len++;
+        ptr++;
     }
+
+    if (len > 0 && !create_directory(buffer))
+        return false;
+
     return true;
 }
 
 bool gfile::remove(const std::string &path)
 {
-    if (!std::filesystem::is_directory(path))
+    if (!gfile::exists(path))
+        return false;
+
+    bool result = true;
+
+    if (gfile::is_directory(path))
     {
-        return std::filesystem::remove(path);
+        DIR* dir = opendir(path.c_str());
+        if (dir == NULL)
+            return false;
+
+        struct dirent* entry;
+        while ((entry = readdir(dir)) != NULL)
+        {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                continue;
+
+            char string[1024];
+            sprintf(string, "%s/%s", path.c_str(), entry->d_name);
+
+            if (!gfile::remove(string))
+            {
+                result = false;
+                break;
+            }
+        }
+
+        closedir(dir);
+
+        if (result)
+            result = (rmdir(path.c_str()) == 0);
+    } else
+    {
+        result = (unlink(path.c_str()) == 0);
     }
 
-    for (auto entry : std::filesystem::directory_iterator(path))
-    {
-        if (!remove(entry.path()))
-        {
-            return false;
-        }
-    }
-    return std::filesystem::remove(path);
+    return result;
 }
 
 std::string gfile::get_parent(const std::string &path)
 {
-    auto start = path.rfind('/');
-    if (start == std::string::npos)
-        return path;
-    return path.substr(0, start);
+    const char* str = strrchr(path.c_str(), '/');
+    if (str == NULL)
+        return NULL;
+
+    size_t length = str - path.c_str();
+    if (length == 0)
+        length = 1;
+
+    return std::string(path, length);
 }
 
-const char* gfile::getname(const char* path)
+std::string gfile::get_file_name(const std::string &path)
 {
-    const char* token = strrchr(path, '/');
-    return token != NULL ? token + 1 : path;
+    const char* token = strrchr(path.c_str(), '/');
+    if (token == NULL)
+        return "";
+
+    return token + 1;
 }
 
 bool gfile::move(const char* src_path, const char* dest_path)

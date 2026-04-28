@@ -46,7 +46,7 @@ private:
 
     std::unordered_map<uint64_t, std::tuple<int, std::vector<ComponentHandle>>> m_renderable;
 
-    std::unordered_map<GameObjectHandle, uint64_t> m_objectsToRenderKey;
+    std::unordered_map<GameObjectHandle, std::vector<uint64_t>> m_objectsToRenderKey;
 
     void insert(GameObjectHandle handle);
 

@@ -13,9 +13,9 @@ MaterialSaveTask::MaterialSaveTask(const std::string& file, const MaterialAsset&
 // private
 void MaterialSaveTask::onPreExecute()
 {
-    const char* name = gfile::getname(m_file.c_str());
+    auto name = gfile::get_file_name(m_file.c_str());
 
-    Console::LogInfo("[Task] Saving material '%s'...", name);
+    Console::LogInfo("[Task] Saving material '%s'...", name.c_str());
 }
 
 int MaterialSaveTask::doInBackground()
@@ -38,11 +38,11 @@ int MaterialSaveTask::doInBackground()
 
 void MaterialSaveTask::onPostExecute(int result)
 {
-    const char* name = gfile::getname(m_file.c_str());
+    auto name = gfile::get_file_name(m_file.c_str());
 
     if (result != 0)
     {
-        Console::LogError("[Task] fail in to save material '%s'!!!", name);
+        Console::LogError("[Task] fail in to save material '%s'!!!", name.c_str());
 
         if (gfile::exists(m_file))
             gfile::remove(m_file);
@@ -50,7 +50,7 @@ void MaterialSaveTask::onPostExecute(int result)
         return;
     }
 
-    Console::LogInfo("[Task] Material '%s' saved in '%s'.", name, m_file.c_str());
+    Console::LogInfo("[Task] Material '%s' saved in '%s'.", name.c_str(), m_file.c_str());
 }
 
 
