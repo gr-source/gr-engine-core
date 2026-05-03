@@ -42,7 +42,7 @@ logger::~logger()
 
 void logger::vlog(const char* prefix, const char* fmt, va_list ap)
 {
-    std::lock_guard<std::mutex> lock(m_mutex); // Ensure thread-safety
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     char formatted[512];
     vsnprintf(formatted, sizeof(formatted), fmt, ap);
@@ -53,13 +53,13 @@ void logger::vlog(const char* prefix, const char* fmt, va_list ap)
 
     time_t rawtime = tv.tv_sec;
     struct tm tm_info;
-    localtime_r(&rawtime, &tm_info); // Thread-safe
+    localtime_r(&rawtime, &tm_info);
 
     snprintf(final, sizeof(final),
-             "[%02d:%02d:%02d.%03ld] %s%s\n",
+             "[%02d:%02d:%02d.%03ld] %-*s %s\n",
              tm_info.tm_hour, tm_info.tm_min, tm_info.tm_sec,
              tv.tv_usec / 1000,
-             prefix, formatted);
+             10, prefix, formatted);
 
     size_t len = strlen(final);
 

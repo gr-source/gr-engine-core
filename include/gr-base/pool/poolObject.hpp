@@ -1,131 +1,110 @@
 #pragma once
 
-#include <cstring>
-#include <stdint.h>
-
 extern "C"
 {
 #include "gr-base/externals/array.h"
 }
 
-#define INVALID_POOL (PoolID)-1
+#include <stdint.h>
+#include <string.h>
+
+#define INVALID_ID (PoolID)-1
 
 typedef uint32_t PoolID;
-
-template <typename T>
-struct PoolSlot
-{
-    PoolID next;
-    T element;
-};
 
 template <typename T>
 class ObjectPool
 {
 public:
-    ObjectPool();
-    ~ObjectPool();
+    ObjectPool() : m_freeID(INVALID_ID), m_capacity(0), m_dense(NULL), m_slotID(NULL)
+    {}
 
-    PoolID allocate();
+    ~ObjectPool()
+    {
+        if (m_dense != NULL)
+            array_free(m_dense);
 
-    void deallocate(PoolID id);
+        if (m_slotID != NULL)
+            array_free(m_slotID);
+    }
 
-    T* get(PoolID id);
+    PoolID allocate()
+    {
+        if (m_freeID == INVALID_ID)
+            realloc();
+
+        PoolID id = m_freeID;
+        m_freeID = ((PoolID*)(m_slotID->vector))[id];
+
+        return id;
+    }
+
+    void deallocate(PoolID id)
+    {
+        ((PoolID*)(m_slotID->vector))[id] = m_freeID;
+        m_freeID = id;
+    }
+
+    inline T* get(PoolID id) const
+    {
+        return &reinterpret_cast<T*>(m_dense->vector)[id];
+    }
+
+    inline PoolID getCapacity() const
+    {
+        return m_capacity;
+    }
 
 private:
     PoolID m_capacity;
 
     PoolID m_freeID;
 
-    array* m_pool;
+    array* m_slotID;
 
-    void realloc();
+    array* m_dense;
 
-    void addFreeID(PoolID first);
-};
-
-template <typename T>
-inline ObjectPool<T>::ObjectPool() : m_freeID(INVALID_POOL), m_capacity(0), m_pool(nullptr)
-{}
-
-template <typename T>
-inline ObjectPool<T>::~ObjectPool()
-{
-    if (m_pool != nullptr)
-        array_free(m_pool);
-}
-
-template <typename T>
-inline PoolID ObjectPool<T>::allocate()
-{
-    if (m_freeID == INVALID_POOL)
-        realloc();
-
-    PoolSlot<T>* wrapper = (PoolSlot<T>*)m_pool->vector;
-
-    PoolID id = m_freeID;
-    m_freeID = wrapper[id].next;
-
-    return id;
-}
-
-template <typename T>
-inline void ObjectPool<T>::deallocate(PoolID id)
-{
-    PoolSlot<T>* wrapper = (PoolSlot<T>*)m_pool->vector;
-    wrapper[id].next = m_freeID;
-    m_freeID = id;
-}
-
-template <typename T>
-T* ObjectPool<T>::get(PoolID id)
-{
-    PoolSlot<T>* wrapper = (PoolSlot<T>*)m_pool->vector;
-
-    return &wrapper[id].element;
-}
-
-template <typename T>
-void ObjectPool<T>::realloc()
-{
-    PoolID lastID = m_capacity;
-
-    if (m_capacity)
+    void realloc()
     {
-        m_capacity *= 2;
+        PoolID oldCapacity = m_capacity;
 
-        m_pool = array_resize(m_pool, m_capacity, sizeof(PoolSlot<T>));
+        if (m_capacity)
+        {
+            m_capacity *= 2;
 
+            m_slotID = array_resize(m_slotID, m_capacity, sizeof(PoolID));
 
-        PoolSlot<T>* wrapper = (PoolSlot<T>*)m_pool->vector;
+            PoolID* slotIDs = (PoolID*)(m_slotID->vector);
+            memset(&slotIDs[oldCapacity], INVALID_ID, oldCapacity * sizeof(PoolID));
 
-        memset(&wrapper[lastID], 0,
-               (m_capacity - lastID) * sizeof(PoolSlot<T>));
+            m_dense = array_resize(m_dense, m_capacity, sizeof(T));
 
-    } else
-    {
-        m_capacity = 1;
+            T* dense = (T*)(m_dense->vector);
+            memset(&dense[oldCapacity], 0, oldCapacity * sizeof(T));
+        } else
+        {
+            m_capacity = 1;
 
-        m_pool = array_create(m_capacity, sizeof(PoolSlot<T>));
+            m_slotID = array_create(m_capacity, sizeof(PoolID));
+            memset(m_slotID->vector, INVALID_ID, m_capacity * sizeof(PoolID));
 
-        memset(m_pool->vector, 0, m_capacity * sizeof(PoolSlot<T>));
+            m_dense = array_create(m_capacity, sizeof(T));
+            memset(m_dense->vector, 0, m_capacity * sizeof(T));
+        }
+
+        addFreeID(oldCapacity);
     }
 
-    addFreeID(lastID);
-}
+    void addFreeID(PoolID first)
+    {
+        PoolID* slotIDs = (PoolID*)(m_slotID->vector);
 
-template <typename T>
-void ObjectPool<T>::addFreeID(PoolID first)
-{
-    PoolSlot<T>* wrapper = (PoolSlot<T>*)m_pool->vector;
+        PoolID capacity = m_capacity - 1;
+        for (PoolID id=first;id<capacity;id++)
+            slotIDs[id] = id + 1;
 
-    PoolID lastID = m_capacity - 1;
-    for (PoolID id=first;id<lastID;id++)
-        wrapper[id].next = id + 1;
-
-    wrapper[lastID].next = m_freeID;
-    m_freeID = first;
-}
-
-
+        slotIDs[capacity] = m_freeID;
+        m_freeID = first;
+    }
+};
 
