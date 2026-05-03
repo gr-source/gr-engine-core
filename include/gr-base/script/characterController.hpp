@@ -30,5 +30,5 @@ private:
     btKinematicCharacterController* m_character;
 };
 
-REGISTER_COMPONENT(CharacterController, (uint64_t)-1)
+// REGISTER_COMPONENT(CharacterController, (uint64_t)-1)
 

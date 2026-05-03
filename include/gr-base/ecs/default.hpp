@@ -20,3 +20,7 @@ class GameObject;
 class Component;
 class Entity;
 
+void RegistryDefaultComponent();
+
+
+

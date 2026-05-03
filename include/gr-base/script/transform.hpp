@@ -4,7 +4,7 @@
 
 #include <gr-math/gmath.hpp>
 
-#include "gr-base/core/file/default.hpp"
+#include <vector>
 
 class Transform : public ComponentImpl<Transform>
 {
@@ -79,7 +79,7 @@ private:
     void updateGlobalMatrix();
 };
 
-REGISTER_COMPONENT(Transform, (uint64_t)-1)
+// REGISTER_COMPONENT(Transform, (uint64_t)-1)
 
 
 

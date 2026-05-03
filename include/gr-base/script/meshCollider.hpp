@@ -31,7 +31,7 @@ private:
     void setup(Transform *transform);
 };
 
-REGISTER_COMPONENT(MeshCollider, CLASS_TO_HASH(Collider))
+// REGISTER_COMPONENT(MeshCollider, CLASS_TO_HASH(Collider))
 
 
 

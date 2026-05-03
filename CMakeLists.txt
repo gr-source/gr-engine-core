@@ -55,7 +55,7 @@ set(binary
     src/core/binary/gHeader.cpp
 )
 
-set(script
+set(SCRIPT_SRC
     src/script/characterController.cpp
     src/script/skinnedMeshRender.cpp
     src/script/LODComponent.cpp
@@ -69,6 +69,8 @@ set(script
     src/script/collider.cpp
     src/script/camera.cpp
     src/script/light.cpp
+
+    src/script/default.cpp
 )
 
 set(physics
@@ -146,7 +148,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${script} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNAL_SRC} ${ECS_SRC} ${ASSET_SRC} ${TASK_SRC} ${SYSTEM_SRC})
+add_library(${PROJECT_NAME} SHARED ${SCRIPT_SRC} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNAL_SRC} ${ECS_SRC} ${ASSET_SRC} ${TASK_SRC} ${SYSTEM_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

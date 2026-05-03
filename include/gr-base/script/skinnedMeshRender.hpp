@@ -8,5 +8,5 @@ class SkinnedMeshRender : public BaseRender
 {
 };
 
-REGISTER_COMPONENT(SkinnedMeshRender, CLASS_TO_HASH(BaseRender))
+// REGISTER_COMPONENT(SkinnedMeshRender, CLASS_TO_HASH(BaseRender))
 

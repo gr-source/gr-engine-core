@@ -27,5 +27,5 @@ private:
     MeshID m_meshID;
 };
 
-REGISTER_COMPONENT(MeshFilter, (uint64_t)-1)
+// REGISTER_COMPONENT(MeshFilter, (uint64_t)-1)
 

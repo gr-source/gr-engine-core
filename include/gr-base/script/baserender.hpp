@@ -4,6 +4,8 @@
 
 #include "gr-base/ecs/component.hpp"
 
+#include <vector>
+
 class BaseRender : public ComponentImpl<BaseRender>
 {
 public:
@@ -27,7 +29,7 @@ private:
     std::vector<MaterialID> m_materials;
 };
 
-REGISTER_COMPONENT(BaseRender, (uint64_t)-1)
+// REGISTER_COMPONENT(BaseRender, (uint64_t)-1)
 
 
 

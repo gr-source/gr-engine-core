@@ -16,5 +16,5 @@ public:
     virtual void Init() override {}
 };
 
-REGISTER_COMPONENT(Collider, (uint64_t)-1)
+// REGISTER_COMPONENT(Collider, (uint64_t)-1)
 

@@ -59,7 +59,7 @@ private:
     void updateProjection();
 };
 
-REGISTER_COMPONENT(Camera, (uint64_t)-1)
+// REGISTER_COMPONENT(Camera, (uint64_t)-1)
 
 
 

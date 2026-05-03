@@ -27,6 +27,6 @@ private:
     Vector3 boxSize;
 };
 
-REGISTER_COMPONENT(BoxCollider, CLASS_TO_HASH(Collider))
+// REGISTER_COMPONENT(BoxCollider, CLASS_TO_HASH(Collider))
 
 
