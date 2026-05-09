@@ -29,7 +29,7 @@ void GameObjectManager::SetInstance(GameObjectManager* gameobjectmanager)
 {
     s_GameObjectManager = gameobjectmanager;
 
-    logger::info("[GameObjectManager] Instance setted 0x%llx", gameobjectmanager);
+    logger::info("[GameObjectManager] Instance assigned 0x%lX", gameobjectmanager);
 }
 
 GameObjectHandle GameObjectManager::Instantiate(GameObjectHandle handle)

@@ -11,6 +11,9 @@ public:
     static void debug(const char* fmt, Args&&... args);
 
     template <typename... Args>
+    static void trace(const char* fmt, Args&&... args);
+
+    template <typename... Args>
     static void info(const char* fmt, Args&&... args);
 
     template <typename... Args>
@@ -43,31 +46,37 @@ private:
 };
 
 template <typename... Args>
-void logger::debug(const char* fmt, Args&&... args)
+inline void logger::debug(const char* fmt, Args&&... args)
 {
     log("[ DEBUG ] ", fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void logger::info(const char* fmt, Args&&... args)
+inline void logger::trace(const char* fmt, Args&&... args)
+{
+    log("[ trace ] ", fmt, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+inline void logger::info(const char* fmt, Args&&... args)
 {
     log("[ INFO ] ", fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void logger::error(const char* fmt, Args&&... args)
+inline void logger::error(const char* fmt, Args&&... args)
 {
     log("[ ERROR ] ", fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void logger::critical(const char* fmt, Args&&... args)
+inline void logger::critical(const char* fmt, Args&&... args)
 {
     log("[ CRITICAL ] ", fmt, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void logger::warn(const char* fmt, Args&&... args)
+inline void logger::warn(const char* fmt, Args&&... args)
 {
     log("[ WARNING ] ", fmt, std::forward<Args>(args)...);
 }

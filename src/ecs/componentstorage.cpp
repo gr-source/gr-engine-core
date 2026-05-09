@@ -17,7 +17,7 @@ void ComponentStorage::SetInstance(ComponentStorage *behaviorStorage)
 {
     s_ComponentStorage = behaviorStorage;
 
-    logger::info("[ComponentStorage] Instance setted 0x%llx", behaviorStorage);
+    logger::info("[ComponentStorage] Instance assigned 0x%lX", behaviorStorage);
 }
 
 ComponentHandle ComponentStorage::Allocate(ComponentHash hash, ComponentHandle source)

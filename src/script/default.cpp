@@ -17,10 +17,13 @@
 #include "gr-base/script/light.hpp"
 
 #define REGISTER_COMPONENT_WITH_PARENT(k, p) \
-    static uint64_t k##Hash = GetHashByType<k>(#k); \
-    static ComponentInfo k##Info = ComponentRegistry::Registry<k>(#k, k##Hash, p);
+    do \
+    { \
+        uint64_t k##Hash = GetHashByType<k>(#k); \
+        bool b##k = ComponentRegistry::Registry<k>(#k, k##Hash, p); \
+    } while (0)
 
-#define CLASS_TO_HASH(k) k##Hash
+#define CLASS_TO_HASH(k) GetHashByType<k>(#k)
 
 #define REGISTER_COMPONENT(k) REGISTER_COMPONENT_WITH_PARENT(k, (uint64_t)-1)
 
@@ -28,20 +31,20 @@ void RegistryDefaultComponent()
 {
     logger::debug("[Editor] Carregando script padrões...");
 
-    REGISTER_COMPONENT(CharacterController)
-    REGISTER_COMPONENT(BaseRender)
-    REGISTER_COMPONENT(MeshFilter)
-    REGISTER_COMPONENT(Transform)
-    REGISTER_COMPONENT(Rigidbody)
-    REGISTER_COMPONENT(Collider)
-    REGISTER_COMPONENT(Camera)
-    REGISTER_COMPONENT(Light)
+    REGISTER_COMPONENT(CharacterController);
+    REGISTER_COMPONENT(BaseRender);
+    REGISTER_COMPONENT(MeshFilter);
+    REGISTER_COMPONENT(Transform);
+    REGISTER_COMPONENT(Rigidbody);
+    REGISTER_COMPONENT(Collider);
+    REGISTER_COMPONENT(Camera);
+    REGISTER_COMPONENT(Light);
 
-    REGISTER_COMPONENT_WITH_PARENT(MeshCollider, CLASS_TO_HASH(Collider))
-    REGISTER_COMPONENT_WITH_PARENT(BoxCollider, CLASS_TO_HASH(Collider))
+    REGISTER_COMPONENT_WITH_PARENT(MeshCollider, CLASS_TO_HASH(Collider));
+    REGISTER_COMPONENT_WITH_PARENT(BoxCollider, CLASS_TO_HASH(Collider));
 
-    REGISTER_COMPONENT_WITH_PARENT(MeshRender, CLASS_TO_HASH(BaseRender))
-    REGISTER_COMPONENT_WITH_PARENT(SkinnedMeshRender, CLASS_TO_HASH(BaseRender))
+    REGISTER_COMPONENT_WITH_PARENT(MeshRender, CLASS_TO_HASH(BaseRender));
+    REGISTER_COMPONENT_WITH_PARENT(SkinnedMeshRender, CLASS_TO_HASH(BaseRender));
 }
 
 #undef REGISTER_COMPONENT_WITH_PARENT

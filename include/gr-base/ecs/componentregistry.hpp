@@ -5,6 +5,7 @@
 #include "utils.hpp"
 
 #include <cstddef>
+#include <unordered_map>
 #include <vector>
 #include <bitset>
 
@@ -14,7 +15,7 @@ class ComponentRegistry
 {
 public:
     template <typename T>
-    static ComponentInfo Registry(const char* name, ComponentHash hash, ComponentHash parent);
+    static bool Registry(const char* name, ComponentHash hash, ComponentHash parent);
 
     static void Unregistry(ComponentHash hash);
 
@@ -27,7 +28,9 @@ public:
 private:
     static ComponentRegistry& GetInstance();
 
-    std::bitset<COMPONENT_TABLE_SIZE> m_bitmask;
+    std::unordered_map<size_t, ComponentInfoID> m_lookUpMap;
+
+    // std::bitset<COMPONENT_TABLE_SIZE> m_bitmask;
 
     ComponentInfoID m_capacity;
 
@@ -35,12 +38,12 @@ private:
 
     array* m_pool;
 
-    array* m_sparseSet;
+    // array* m_sparseSet;
 
     ComponentRegistry();
     ~ComponentRegistry();
 
-    void registry(ComponentInfo* info);
+    bool registry(ComponentInfo* info);
 
     void unregistry(ComponentHash hash);
 
@@ -71,7 +74,7 @@ private:
 };
 
 template <typename T>
-inline ComponentInfo ComponentRegistry::Registry(const char* name, ComponentHash hash, ComponentHash parent)
+inline bool ComponentRegistry::Registry(const char* name, ComponentHash hash, ComponentHash parent)
 {
     ComponentInfo info;
     info.stride = sizeof(T);
@@ -90,9 +93,7 @@ inline ComponentInfo ComponentRegistry::Registry(const char* name, ComponentHash
     info.update = has_update<T>::value ? (MethodPointer)UpdateWrapper<T> : 0;
     // info.destroy = has_destroy<T>::value ? (MethodPointer)GetMethodPointer(&T::Destroy) : 0;
 
-    GetInstance().registry(&info);
-
-    return info;
+    return GetInstance().registry(&info);
 }
 
 // private

@@ -56,6 +56,8 @@ void AssetReference::load(const std::string &file)
     if (!is.is_open())
         return logger::error("[AssetReference] Fail in to load source '%s'.", strerror(errno));
 
+    logger::info("[AssetReference] loading ref: '%s'.", file.c_str());
+
     std::string line;
     while (std::getline(is, line))
     {
@@ -69,8 +71,6 @@ void AssetReference::load(const std::string &file)
     }
 
     is.close();
-
-    logger::info("[AssetReference] Reference loaded '%s'.", file.c_str());
 }
 
 void AssetReference::save(const std::string &file)
@@ -85,7 +85,7 @@ void AssetReference::registry(const std::string &name, const std::string& file)
 {
     m_refMapped.emplace(name, file);
 
-    logger::debug("[AssetReference] New reference registed: '%s' lookup: '%s'.", name.c_str(), file.c_str());
+    logger::trace("[AssetReference] registered: '%s' lookup: '%s'.", name.c_str(), file.c_str());
 }
 
 const std::string& AssetReference::getFile(const std::string& name)

@@ -5,9 +5,6 @@
 
 #include "gr-base/externals/array.h"
 
-#include <algorithm>
-
-#include <stdexcept>
 #include <string.h>
 
 // public
@@ -38,17 +35,19 @@ ComponentRegistry& ComponentRegistry::GetInstance()
     return s_ComponentRegistry;
 }
 
-ComponentRegistry::ComponentRegistry() : m_sparseSet(nullptr), m_pool(nullptr), m_capacity(0), m_count(0)
+ComponentRegistry::ComponentRegistry() : /* m_sparseSet(nullptr),*/ m_pool(nullptr), m_capacity(0), m_count(0)
 {
-    m_sparseSet = array_create(COMPONENT_TABLE_SIZE, sizeof(ComponentInfoID));
+    // m_sparseSet = array_create(COMPONENT_TABLE_SIZE, sizeof(ComponentInfoID));
 
     logger::info("[ComponentRegistry] Initialize.");
 }
 
 ComponentRegistry::~ComponentRegistry()
 {
+    /*
     if (m_sparseSet != nullptr)
         array_free(m_sparseSet);
+    */
 
     if (m_pool != nullptr)
         array_free(m_pool);
@@ -56,12 +55,12 @@ ComponentRegistry::~ComponentRegistry()
     logger::info("[ComponentRegistry] Shutdown.");
 }
 
-void ComponentRegistry::registry(ComponentInfo* info)
+bool ComponentRegistry::registry(ComponentInfo* info)
 {
-    size_t mapID = info->hash & (COMPONENT_TABLE_SIZE - 1);
-    if (m_bitmask.test(mapID))
+    size_t infoTableID = info->hash & (COMPONENT_TABLE_SIZE - 1);
+    if (m_lookUpMap.find(infoTableID) != m_lookUpMap.end())
     {
-        ComponentInfoID id = *((ComponentInfoID*)m_sparseSet->vector + mapID);
+        ComponentInfoID& id = m_lookUpMap[infoTableID];
 
         ComponentInfo* componentInfo = ((ComponentInfo*)m_pool->vector + id);
 
@@ -71,15 +70,13 @@ void ComponentRegistry::registry(ComponentInfo* info)
 
             ComponentStorage::NotifyUpdate(info->hash, info);
         }
-        return;
+        return false;
     }
 
     if (m_count >= m_capacity)
         reallocate();
 
     ComponentInfoID id = m_count++;
-
-    *((ComponentInfoID*)m_sparseSet->vector + mapID) = id;
 
     ComponentInfo& dest = ((ComponentInfo*)m_pool->vector)[id];
     dest.hash = info->hash;
@@ -95,38 +92,51 @@ void ComponentRegistry::registry(ComponentInfo* info)
     dest.update = info->update;
     dest.destroy = info->destroy;
 
-    m_bitmask.set(mapID, true);
+    m_lookUpMap.emplace(infoTableID, id);
 
-    logger::debug("[ComponentRegistry] New component registered '%-*s %lu parent %lu'",
-             20, dest.name, dest.hash, dest.parent);   
+    logger::trace("[ComponentRegistry] Registry: '%-*s 0x%lX parent 0x%lX'",
+             20, dest.name, dest.hash, dest.parent);
+
+    return true;
 }
 
 void ComponentRegistry::unregistry(ComponentHash hash)
 {
-    throw std::runtime_error("Falta corrigir aqui");
-    /*
-    size_t poolID = hash & (COMPONENT_TABLE_SIZE - 1);
-
-    if (!m_bitmask.test(poolID))
+    size_t infoTableID = hash & (COMPONENT_TABLE_SIZE - 1);
+    auto it = m_lookUpMap.find(infoTableID);
+    if (it == m_lookUpMap.end())
         return;
-    m_bitmask.set(poolID, false);
 
-    ComponentInfo& info = ((ComponentInfo*)m_infos->vector)[poolID];
+    ComponentInfo& info = ((ComponentInfo*)m_pool->vector)[it->second];
 
-    m_behaviorActives.erase(std::remove(m_behaviorActives.begin(), m_behaviorActives.end(), poolID), m_behaviorActives.end());
-    */
+    logger::trace("[ComponentRegistry] Unregistry: '%-*s 0x%lX parent 0x%lX'",
+             20, info.name, info.hash, info.parent);
+
+    ComponentInfoID lastID = --m_count;
+    if (lastID != it->second)
+    {
+        ComponentInfo& lastInfo = ((ComponentInfo*)m_pool->vector)[lastID];
+
+        size_t targetInfoTableID = lastInfo.hash & (COMPONENT_TABLE_SIZE - 1);
+
+        m_lookUpMap[targetInfoTableID] = it->second;
+
+        memcpy(&info, &lastInfo, sizeof(ComponentInfo));
+        memset(&lastInfo, 0, sizeof(ComponentInfo));
+    }
+
+    m_lookUpMap.erase(infoTableID);
 }
 
 ComponentInfo* ComponentRegistry::get(ComponentHash hash)
 {
-    size_t mapID = hash & (COMPONENT_TABLE_SIZE - 1);
-    if (m_bitmask.test(mapID))
-    {
-        ComponentInfoID id = *((ComponentInfoID*)m_sparseSet->vector + mapID);
+    size_t infoTableID = hash & (COMPONENT_TABLE_SIZE - 1);
 
-        return (ComponentInfo *)(m_pool->vector) + id;
-    }
-    return nullptr;
+    auto it = m_lookUpMap.find(infoTableID);
+    if (it == m_lookUpMap.end())
+        return nullptr;
+
+    return ((ComponentInfo *)(m_pool->vector)) + it->second;
 }
 
 bool ComponentRegistry::reconfigure(ComponentInfo* dest, const ComponentInfo* src)
