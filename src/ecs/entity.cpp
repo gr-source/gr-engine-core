@@ -93,9 +93,12 @@ void Entity::destroy(uint64_t hash)
     if (!m_signature.test(tableID))
         return;
 
-    m_signature.set(tableID, false);
-
     ComponentHandle handle = m_lookupTable[tableID].handle;
+
+    auto behavior = ComponentStorage::GetComponent(hash, handle);
+    behavior->Destroy();
+
+    m_signature.set(tableID, false);
 
     m_activeHashes.erase(std::remove(m_activeHashes.begin(), m_activeHashes.end(), hash), m_activeHashes.end());
 

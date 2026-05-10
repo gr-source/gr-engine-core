@@ -9,9 +9,10 @@
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/task/texturemanager.hpp"
 
-#include "gr-base/managers/materialmanager.hpp"
 #include "gr-base/managers/shadermanager.hpp"
 #include "gr-base/managers/meshmanager.hpp"
+
+#include "gr-base/managers/default.hpp"
 
 #include "gr-base/ecs/default.hpp"
 
@@ -23,10 +24,6 @@ public:
     static void Initialize();
 
     static void Shutdown();
-
-    static void SetAssetDir(const std::string& dir);
-
-    static const std::string& GetAssetDir();
 
     template <typename ...Args>
     static void LoadTexture(const std::string &path, Args &&...args);
@@ -45,7 +42,10 @@ public:
     static void RemoveShader(gr::Shader *shader);
 
     template <typename ...Args>
-    static void LoadGameObject(const std::string &path, Args &&...args);
+    static void LoadGameObject(const std::string &name, Args &&...args);
+
+    template <typename ...Args>
+    static void LoadGameObjectFromFile(const std::string &file, Args &&...args);
 
     template <typename ...Args>
     static std::shared_ptr<TaskInfo> LoadScene(const std::string &path, Args &&...args);
@@ -85,8 +85,6 @@ public:
 
     static MaterialID GetMaterialCount();
 
-    static void SetGameObjectList(const std::string &path, std::function<void(GameObjectHandle)> func);
-
     static std::vector<gr::Shader *> GetShaderList(ShaderType type);
 
     static MaterialID CreateMaterial(const std::string &name);
@@ -117,7 +115,7 @@ private:
     // fields
     SceneTaskManager mSceneTaskManager;
 
-    MaterialManager mMaterialManager;
+    MaterialManager* mMaterialManager;
 
     TextureManager mTextureManager;
 
@@ -127,20 +125,34 @@ private:
 
     std::string mAssetDir;
 
-    AssetsManager() = default;
-    ~AssetsManager() = default;
+    AssetsManager();
+    ~AssetsManager();
 
     static bool LoadFromFile(const std::string& file, Asset* asset);
+
+    void loadGameObject(const std::string &name, std::function<void(GameObjectHandle)> func);
+
+    void loadGameObjectFromFile(const std::string &file, std::function<void(GameObjectHandle)> func);
 };
 
 template <typename... Args>
-inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...args)
+inline void AssetsManager::LoadGameObject(const std::string &name, Args &&...args)
 {
     std::function<void(GameObjectHandle)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
 
-    SetGameObjectList(path, func);
+    s_AssetsManager->loadGameObject(name, func);
+}
+
+template <typename... Args>
+inline void AssetsManager::LoadGameObjectFromFile(const std::string &file, Args &&...args)
+{
+    std::function<void(GameObjectHandle)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0)
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+
+    s_AssetsManager->loadGameObjectFromFile(file, func);
 }
 
 template <typename... Args>

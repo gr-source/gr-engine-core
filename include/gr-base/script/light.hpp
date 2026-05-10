@@ -16,9 +16,10 @@ public:
     };
 
     Light(uint8_t type = eDirection, const Color& color = Color::white, float aConstant = 1.0f, float aLinear = 1.0f, float aQuadract = 1.0f, float inneCone = 1.0f, float outerCone = 1.0f);
-    ~Light();
 
     void Init() override;
+
+    void Destroy() override;
     
     bool Serialize(Stream *stream) const override;
 

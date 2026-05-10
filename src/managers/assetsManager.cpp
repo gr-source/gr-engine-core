@@ -16,8 +16,11 @@
 #include "gr-base/core/logger.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
+
 #include "gr-base/task/modelloadtask.hpp"
 #include <exception>
+
+#include "gr-base/managers/materialmanager.hpp"
 
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
 
@@ -37,16 +40,6 @@ void AssetsManager::Shutdown()
     s_AssetsManager = nullptr;
 
     logger::info("[AssetsManager] Shutdown.");
-}
-
-void AssetsManager::SetAssetDir(const std::string& dir)
-{
-    s_AssetsManager->mAssetDir = dir;
-}
-
-const std::string& AssetsManager::GetAssetDir()
-{
-    return s_AssetsManager->mAssetDir;
 }
 
 std::string AssetsManager::GetRefTextureName(gr::gTexture *texture)
@@ -112,11 +105,6 @@ std::string AssetsManager::GetMeshName(MeshID id)
 void AssetsManager::RemoveMesh(MeshID id)
 {
     s_AssetsManager->mMeshManager.destroy(id);
-}
-
-void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObjectHandle)> func)
-{
-    TaskManager::Add<ModelLoadTask>(path, func);
 }
 
 /*
@@ -186,12 +174,12 @@ std::vector<gr::Shader *> AssetsManager::GetShaderList(ShaderType type)
 
 MaterialID AssetsManager::CreateMaterial(const std::string &name)
 {
-    return s_AssetsManager->mMaterialManager.create(name);
+    return s_AssetsManager->mMaterialManager->create(name);
 }
 
 Material *AssetsManager::GetMaterial(MaterialID id)
 {
-    return s_AssetsManager->mMaterialManager.get(id);
+    return s_AssetsManager->mMaterialManager->get(id);
 }
 
 usize AssetsManager::GetTextureCount()
@@ -206,17 +194,17 @@ size_t AssetsManager::GetMeshCount()
 
 MaterialID AssetsManager::GetMaterialCount()
 {
-    return s_AssetsManager->mMaterialManager.GetCount();
+    return s_AssetsManager->mMaterialManager->GetCount();
 }
 
 MaterialID AssetsManager::FindMaterial(const std::string &name)
 {
-    return s_AssetsManager->mMaterialManager.find(name);
+    return s_AssetsManager->mMaterialManager->find(name);
 }
 
 std::string AssetsManager::GetMaterialName(MaterialID id)
 {
-    return s_AssetsManager->mMaterialManager.getname(id);
+    return s_AssetsManager->mMaterialManager->getname(id);
 }
 
 void AssetsManager::RemoveTask(const std::string &name)
@@ -351,6 +339,14 @@ MeshID AssetsManager::LoadMeshFromFile(const std::string& file)
 }
 
 // private
+AssetsManager::AssetsManager() : mMaterialManager(new MaterialManager())
+{}
+
+AssetsManager::~AssetsManager()
+{
+    delete mMaterialManager;
+}
+
 bool AssetsManager::LoadFromFile(const std::string& file, Asset* asset)
 {
     FileStream stream(file, StreamType::INPUT);
@@ -368,6 +364,15 @@ bool AssetsManager::LoadFromFile(const std::string& file, Asset* asset)
     return result;
 }
 
+void AssetsManager::loadGameObject(const std::string &name, std::function<void(GameObjectHandle)> func)
+{
+    loadGameObjectFromFile(AssetReference::GetFile(name), func);
+}
+
+void AssetsManager::loadGameObjectFromFile(const std::string &file, std::function<void(GameObjectHandle)> func)
+{
+    TaskManager::Add<ModelLoadTask>(file, func);
+}
 
 
 

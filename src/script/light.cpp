@@ -14,18 +14,18 @@ Matrix4x4 Light::mProjection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 
 Light::Light(std::uint8_t type, const Color& color, float aConstant, float aLinear, float aQuadract, float inneCone, float outerCone) : m_type(static_cast<int>(type)), m_color(color), m_attenuationConstant(aConstant), m_attenuationLinear(aLinear), m_attenuationQuadratic(aQuadract), m_angleInnerCone(inneCone), m_angleOuterCone(outerCone)
 {}
 
-Light::~Light()
-{
-    auto scene = Scene::GetCurrent();
-    if (scene != nullptr)
-        scene->RemoveLight(GetGameObject()->GetID<Light>());
-}
-
 void Light::Init()
 {
     auto scene = Scene::GetCurrent();
     if (scene != nullptr)
         scene->AddLight(GetGameObject()->GetID<Light>());
+}
+
+void Light::Destroy()
+{
+    auto scene = Scene::GetCurrent();
+    if (scene != nullptr)
+        scene->RemoveLight(GetGameObject()->GetID<Light>());
 }
 
 bool Light::Serialize(Stream *stream) const

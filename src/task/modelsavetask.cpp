@@ -1,5 +1,6 @@
 #include "gr-base/task/modelsavetask.hpp"
 
+#include "gr-base/core/assetReference.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
 #include "gr-base/core/console.hpp"
 
@@ -85,6 +86,8 @@ void ModelSaveTask::onPostExecute(int result)
         return Console::LogError("[Task] Falied in to save '%s'!!!", name.c_str());
 
     Console::LogInfo("[Taks] Model '%s' saved in '%s'.", name.c_str(), m_file.c_str());
+
+    AssetReference::Registry(name, m_file);
 }
 
 

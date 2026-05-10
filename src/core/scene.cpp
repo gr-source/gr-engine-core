@@ -8,6 +8,7 @@
 #include "gr-base/ecs/componentstorage.hpp"
 #include "gr-base/ecs/default.hpp"
 
+#include "gr-base/externals/handle.h"
 #include "gr-base/managers/sceneManager.hpp"
 
 #include "gr-base/script/camera.hpp"

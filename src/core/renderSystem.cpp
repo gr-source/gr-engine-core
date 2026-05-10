@@ -18,6 +18,7 @@
 
 #include <GL/glew.h>
 #include <algorithm>
+#include <iterator>
 
 inline uint64_t CreateSortKey(const RenderCommand& r)
 {
@@ -297,9 +298,11 @@ void RenderSystem::setuplight(const Scene* scene, gr::Shader *shader)
     if (lights.empty())
         return;
 
-    for (std::size_t i={};i<lights.size();i++)
+    for (int i=0;i<numLight;i++)
     {
         auto light = ComponentStorage::GetComponent<Light>(lights[i]);
+        if (light == nullptr)
+            break;
 
         auto position   = light->getPosition();
         auto forward    = light->getForward();

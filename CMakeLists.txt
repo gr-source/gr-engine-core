@@ -36,7 +36,6 @@ set(core
     src/core/renderSystem.cpp
     src/core/rendertarget.cpp
     src/core/renderer.cpp
-    src/core/nameManager.cpp
     src/core/gameObject.cpp
     src/core/debugdraw.cpp
     src/core/display.cpp
