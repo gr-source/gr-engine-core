@@ -1,10 +1,12 @@
 #pragma once
 
+#include "gr-base/asset/shaderasset.hpp"
 #include "gr-base/core/geometry/shaderData.hpp"
 
 #include "gr-base/core/task/runtime/shaderloadtask.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 
+#include <memory>
 #include <string>
 #include <tuple>
 #include <unordered_set>
@@ -19,13 +21,15 @@ private:
 
     std::string m_source;
 
-    std::vector<ShaderUniformRaw> s_shader_uniform_list;
+    std::vector<std::tuple<std::string, std::string>> m_shaderVariants;
 
     void onPreExecute() override;
 
     int doInBackground() override;
 
     void onPostExecute(int result) override;
+
+    ShaderAsset onStartParceShader(bool instanced);
 
     std::tuple<std::string, std::string, std::vector<std::string>, ShaderType> ReadingSourceFileShader();
 

@@ -18,13 +18,6 @@
 
 #include <GL/glew.h>
 #include <algorithm>
-#include <iterator>
-
-inline uint64_t CreateSortKey(const RenderCommand& r)
-{
-    uint64_t key = 0;
-    return key;
-}
 
 RenderSystem* RenderSystem::s_RenderSystem = nullptr;
 

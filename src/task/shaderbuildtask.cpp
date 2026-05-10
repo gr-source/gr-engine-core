@@ -28,6 +28,69 @@ void ShaderBuildTask::onPreExecute()
 
 int ShaderBuildTask::doInBackground()
 {
+    {
+        ShaderAsset asset = onStartParceShader(false);
+
+        FileStream stream(m_file, StreamType::OUTPUT);
+        
+        FileHeader header{};
+        header.sign = HEADER_SHADER_SIGN;
+        header.version = HEADER_ASSET_VERSION;
+
+        if (!stream.write(&header, sizeof(FileHeader)))
+            return 2;
+
+        if (!asset.serialize(&stream))
+            return 3;
+
+        m_shaderVariants.emplace_back(asset.GetName(), m_file);
+
+        stream.close();
+    }
+
+    {
+        ShaderAsset asset = onStartParceShader(true);
+        asset.SetName(asset.GetName() + "_instanced");
+
+        FileStream stream(m_file + "_instanced", StreamType::OUTPUT);
+        
+        FileHeader header{};
+        header.sign = HEADER_SHADER_SIGN;
+        header.version = HEADER_ASSET_VERSION;
+
+        if (!stream.write(&header, sizeof(FileHeader)))
+            return 2;
+
+        if (!asset.serialize(&stream))
+            return 3;
+
+        m_shaderVariants.emplace_back(asset.GetName(), m_file + "_instanced");
+
+        stream.close();
+    }
+
+    return 0;
+}
+
+void ShaderBuildTask::onPostExecute(int result)
+{
+    auto name = gfile::get_file_name(m_source.c_str());
+
+    if (result != 0)
+        return Console::LogError("[ShaderBuildTask] falied in to build shader '%s'!!!", name.c_str());
+
+    for (auto&& [name, file] : m_shaderVariants)
+    {
+        AssetReference::Registry(name, file);
+    }
+
+    Console::LogInfo("[ShaderBuildTask] Shader building sucessfully '%s'", name.c_str());
+}
+
+
+ShaderAsset ShaderBuildTask::onStartParceShader(bool instanced)
+{
+    std::vector<ShaderUniformRaw> s_shader_uniform_list;
     std::array<std::string, 3> resultShaderSource;
 
     resultShaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))] += "#version 330 core\n";
@@ -65,7 +128,10 @@ int ShaderBuildTask::doInBackground()
         {
             // if (!(m_shaderParams.flags & ShaderOptimize_static))
             {
-                // if (m_shaderParams.flags & ShaderOptimize_dynamic)
+                if (instanced)
+                {
+                    macro_map.emplace("USE_INSTANCED");
+                } else
                 {
                     macro_map.emplace("USE_MODEL");
                 }
@@ -75,7 +141,6 @@ int ShaderBuildTask::doInBackground()
                 }
                 // if (m_shaderParams.flags & ShaderOptimize_instanced)
                 {
-                    // macro_map.emplace("USE_INSTANCED");
                 }
             }
         }
@@ -114,7 +179,7 @@ int ShaderBuildTask::doInBackground()
 
     } catch (const std::exception& e)
     {
-        return 1;
+        throw e;
     }
 
     auto name = gfile::get_file_name(m_file.c_str());
@@ -127,35 +192,7 @@ int ShaderBuildTask::doInBackground()
     for (auto& uniform : s_shader_uniform_list)
         asset.AddUniform(uniform.name, uniform.variable, uniform.count);
 
-    FileStream stream(m_file, StreamType::OUTPUT);
-    
-    FileHeader header{};
-    header.sign = HEADER_SHADER_SIGN;
-    header.version = HEADER_ASSET_VERSION;
-
-    if (!stream.write(&header, sizeof(FileHeader)))
-        return 2;
-
-    if (!asset.serialize(&stream))
-        return 3;
-
-    stream.close();
-
-    return 0;
-}
-
-void ShaderBuildTask::onPostExecute(int result)
-{
-    auto name = gfile::get_file_name(m_source.c_str());
-
-    if (result != 0)
-        return Console::LogError("[ShaderBuildTask] falied in to build shader '%s'!!!", name.c_str());
-
-    name = gfile::get_file_name(m_file);
-
-    AssetReference::Registry(name, m_file);
-
-    Console::LogInfo("[ShaderBuildTask] Shader building sucessfully '%s'", name.c_str());
+    return asset;
 }
 
 std::tuple<std::string, std::string, std::vector<std::string>, ShaderType> ShaderBuildTask::ReadingSourceFileShader()

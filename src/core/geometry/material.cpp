@@ -28,7 +28,10 @@ std::array<gr::gTexture *, 10> Material::getTextures() const
 }
 
 void Material::SetEnableInstancing()
-{}
+{
+    if (supportsInstancing())
+        return;
+}
 
 void Material::SetDisableInstancing()
 {}
