@@ -101,8 +101,8 @@ void RenderSystem::update()
     {
         auto&& [submeshID, transforms] = tuple;
 
-        MaterialID materialID = handle_get_id(handle);
-        MeshID meshID = handle_get_version(handle); 
+        MaterialID materialID = handle_get_first(handle);
+        MeshID meshID = handle_get_second(handle); 
 
         size_t count = transforms.size();
 
@@ -186,7 +186,7 @@ void RenderSystem::renderer()
 
         for (auto&& [handle, transforms] : sortByMesh)
         {
-            uint32_t meshID = handle_get_id(handle);
+            uint32_t meshID = handle_get_first(handle);
 
             Mesh* mesh = AssetsManager::GetMesh(meshID);
 
@@ -210,7 +210,7 @@ void RenderSystem::renderer()
                 drawCallCount++;
             } else
             {
-                auto &submesh = mesh->GetSubMesh(handle_get_version(handle));
+                auto &submesh = mesh->GetSubMesh(handle_get_second(handle));
 
                 for (auto& matrix : transforms)
                 {

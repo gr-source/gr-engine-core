@@ -131,8 +131,8 @@ GameObjectHandle GameObjectManager::create(const std::string &name)
 
 GameObject* GameObjectManager::get(GameObjectHandle id)
 {
-    uint32_t slotID = handle_get_id(id);
-    uint32_t version = handle_get_version(id);
+    uint32_t slotID = handle_get_first(id);
+    uint32_t version = handle_get_second(id);
 
     GameObjectWrapper& wrapper = ((GameObjectWrapper*)m_pool->vector)[slotID];
     if (wrapper.version != version)
@@ -143,8 +143,8 @@ GameObject* GameObjectManager::get(GameObjectHandle id)
 
 void GameObjectManager::destroyImediate(GameObjectHandle handle)
 {
-    uint32_t slotID = handle_get_id(handle);
-    uint32_t version = handle_get_version(handle);
+    uint32_t slotID = handle_get_first(handle);
+    uint32_t version = handle_get_second(handle);
 
     GameObjectWrapper& wrapper = ((GameObjectWrapper*)m_pool->vector)[slotID];
     if (wrapper.version != version)

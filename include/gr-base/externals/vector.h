@@ -14,6 +14,7 @@ typedef struct vector_header
         if ((vec) == NULL) \
         { \
             vector_header* header = (vector_header*)malloc(sizeof(*(vec)) * 2 + sizeof(vector_header)); \
+            assert(header != NULL && strerror(errno)); \
             header->capacity = 2; \
             header->length = 0; \
             (vec) = (__typeof__(vec))((vector_header*)(header) + 1); \
@@ -22,9 +23,11 @@ typedef struct vector_header
         if (header->length >= header->capacity) \
         { \
             size_t new_capacity = header->capacity * 2; \
-            header = (vector_header*)realloc(header, sizeof(*(vec)) * new_capacity + sizeof(vector_header)); \
-            header->capacity = new_capacity; \
-            (vec) = (__typeof__(vec))((vector_header*)(header) + 1); \
+            vector_header* new_header = (vector_header*)realloc(header, sizeof(*(vec)) * new_capacity + sizeof(vector_header)); \
+            assert(new_header != NULL && strerror(errno)); \
+            new_header->capacity = new_capacity; \
+            (vec) = (__typeof__(vec))((vector_header*)new_header + 1); \
+            header = new_header; \
         } \
         (vec)[header->length++] = (e); \
     } while (0)

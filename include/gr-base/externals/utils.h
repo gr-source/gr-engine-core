@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 // https://en.wikipedia.org/wiki/Bitwise_operation
@@ -33,7 +34,7 @@ inline uint64_t fnv1_hash(const char* str)
     return hash;
 }
 
-inline uint64_t fnv1_hash_buff(const uint8_t* buff, uint32_t length)
+inline uint64_t fnv1_hash_buff(const uint8_t* buff, size_t length)
 {
     uint64_t hash = 14695981039346656037UL;
 
@@ -44,5 +45,10 @@ inline uint64_t fnv1_hash_buff(const uint8_t* buff, uint32_t length)
     }
     return hash;
 }
+
+
+uint32_t crc32_str(const char* str);
+
+uint32_t crc32_data(const uint8_t* data, size_t length);
 
 #endif // !UTILS_H

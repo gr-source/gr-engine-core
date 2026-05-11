@@ -7,6 +7,7 @@
 #include "gr-base/ecs/component.hpp"
 
 #include "gr-base/externals/array.h"
+#include "gr-base/externals/handle.h"
 
 #include <iostream>
 
@@ -207,8 +208,8 @@ void ComponentStorage::deallocate(ComponentHash hash, ComponentHandle handle)
     size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
 
-    ComponentID slotID = handle_get_id(handle);
-    ComponentID version = handle_get_version(handle);
+    ComponentID slotID = handle_get_first(handle);
+    ComponentID version = handle_get_second(handle);
 
     ComponentSlot* slot = m_slots.get(slotID);
     if (slot->version != version)
@@ -253,8 +254,8 @@ Component* ComponentStorage::getComponent(ComponentHash hash, ComponentHandle ha
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
 
-    ComponentID slotID = handle_get_id(handle);
-    ComponentID version = handle_get_version(handle);
+    ComponentID slotID = handle_get_first(handle);
+    ComponentID version = handle_get_second(handle);
 
     ComponentSlot* slot = m_slots.get(slotID);
     if (slot->version != version)
