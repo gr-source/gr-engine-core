@@ -57,7 +57,7 @@ private:
 
     void reallocComponentChunk(ComponentInfo* info, size_t newStride);
 
-    void restoreVTable(ComponentInfo* info);
+    void restoreVTable(ComponentInfo* info, void* vtable);
 
     ComponentHandle allocate(ComponentHash hash, ComponentHandle source);
 

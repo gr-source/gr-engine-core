@@ -96,26 +96,15 @@ void ComponentStorage::notifyUpdate(ComponentHash hash, ComponentInfo* src)
     if (info->destructorhash != src->destructorhash)
         info->destructorhash = src->destructorhash;
 
-    if (info->starthash != src->starthash)
-        info->starthash = src->starthash;
-
-    if (info->updatehash != src->updatehash)
-        info->updatehash = src->updatehash;
-
-    if (info->destroyhash != src->destroyhash)
-        info->destroyhash = src->destroyhash;
-
     if (info->stride != src->stride)
     {
         reallocComponentChunk(info, src->stride);
 
-        logger::debug("[ComponentStorage] Os dados do component '%s' foram reallocados.", info->name);
-    } else
-    {
-        restoreVTable(info);
-
-        logger::debug("[ComponentStorage] A VTable do component '%s' foram redefinido.", info->name);
+        if (info->vtable == src->vtable)
+            return;
     }
+
+    restoreVTable(info, src->vtable);
 }
 
 void ComponentStorage::reallocComponentChunk(ComponentInfo* info, size_t newStride)
@@ -146,14 +135,14 @@ void ComponentStorage::reallocComponentChunk(ComponentInfo* info, size_t newStri
     array_free(set.dense);
     set.dense = newDensePool;
 
+    logger::debug("[ComponentStorage] Component '%s' data reallocated before '%ld' after '%ld'", info->name, info->stride, newStride);
+
     info->stride = newStride;
 }
 
 
-void ComponentStorage::restoreVTable(ComponentInfo* info)
+void ComponentStorage::restoreVTable(ComponentInfo* info, void* new_vtable)
 {
-    void* newVTable = ((void*(*)(void))(info->getvetable))();
-
     size_t storageID = info->hash & (COMPONENT_TABLE_SIZE - 1);
 
     ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
@@ -163,10 +152,14 @@ void ComponentStorage::restoreVTable(ComponentInfo* info)
     for (ComponentID id=0;id<set.count;id++)
     {
         void** vtable = (void**)ptr;
-        *vtable = newVTable;
+        *vtable = new_vtable;
 
         ptr += info->stride;
     }
+
+    logger::debug("[ComponentStorage] Component '%s' set vtable '0x%lX' to '0x%lX'", info->name, info->vtable, new_vtable);
+
+    info->vtable = new_vtable;
 }
 
 ComponentHandle ComponentStorage::allocate(ComponentHash hash, ComponentHandle source)
@@ -326,8 +319,6 @@ void ComponentStorage::start()
     for (ComponentInfoID id=0;id<ComponentRegistry::GetCount();id++)
     {
         ComponentInfo& info = infos[id];
-        if (!info.starthash)
-            continue;
 
         size_t storageID = info.hash & (COMPONENT_TABLE_SIZE - 1);
 
@@ -363,8 +354,6 @@ void ComponentStorage::update()
     for (ComponentInfoID id=0;id<ComponentRegistry::GetCount();id++)
     {
         ComponentInfo& info = infos[id];
-        if (!info.update)
-            continue;
 
         size_t storageID = info.hash & (COMPONENT_TABLE_SIZE - 1);
 

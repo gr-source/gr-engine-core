@@ -79,6 +79,7 @@ bool ComponentRegistry::registry(ComponentInfo* info)
     ComponentInfoID id = m_count++;
 
     ComponentInfo& dest = ((ComponentInfo*)m_pool->vector)[id];
+    dest.vtable = info->vtable;
     dest.hash = info->hash;
     dest.name = info->name;
     dest.offset = info->offset;
@@ -87,10 +88,6 @@ bool ComponentRegistry::registry(ComponentInfo* info)
 
     dest.constructor = info->constructor;
     dest.destructor = info->destructor;
-
-    dest.start = info->start;
-    dest.update = info->update;
-    dest.destroy = info->destroy;
 
     m_lookUpMap.emplace(infoTableID, id);
 
@@ -143,13 +140,8 @@ bool ComponentRegistry::reconfigure(ComponentInfo* dest, const ComponentInfo* sr
 {
     dest->name = src->name;
     dest->parent = src->parent;
-    dest->getvetable = src->getvetable;
 
-    if (
-            dest->starthash != src->starthash ||
-            dest->updatehash != src->updatehash ||
-            dest->destroyhash != src->destroyhash
-        )
+    if (dest->vtable != src->vtable)
         return true;
 
     if (dest->stride != src->stride)

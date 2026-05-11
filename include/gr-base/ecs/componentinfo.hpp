@@ -23,6 +23,7 @@ typedef struct ComponentSparseSet
 typedef struct ComponentInfo
 {
     const char* name;
+    void* vtable;
     size_t stride;
     size_t offset;
     ComponentHash hash;
@@ -39,31 +40,6 @@ typedef struct ComponentInfo
         MethodPointer destructor;
         uint64_t destructorhash;
     };
-
-    union
-    {
-        MethodPointer getvetable;
-        uint64_t getvetablehash;
-    };
-
-    union
-    {
-        MethodPointer start;
-        uint64_t starthash;
-    };
-
-    union
-    {
-        MethodPointer update;
-        uint64_t updatehash;
-    };
-
-    union
-    {
-        MethodPointer destroy;
-        uint64_t destroyhash;
-    };
-
 } ComponentInfo;
 
 

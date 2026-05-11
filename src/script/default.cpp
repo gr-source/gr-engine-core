@@ -19,8 +19,7 @@
 #define REGISTER_COMPONENT_WITH_PARENT(k, p) \
     do \
     { \
-        uint64_t k##Hash = GetHashByType<k>(#k); \
-        bool b##k = ComponentRegistry::Registry<k>(#k, k##Hash, p); \
+        bool b##k = ComponentRegistry::Registry<k>(#k, p); \
     } while (0)
 
 #define CLASS_TO_HASH(k) GetHashByType<k>(#k)
