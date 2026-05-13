@@ -1,15 +1,13 @@
 #pragma once
 
-#include "componentinfo.hpp"
+#include "gr-base/ecs/typeinfo.hpp"
+#include "gr-base/ecs/utils.hpp"
+
 #include "gr-base/pool/poolObject.hpp"
-#include "utils.hpp"
 
-#include <cstddef>
 #include <unordered_map>
-#include <vector>
-#include <bitset>
 
-typedef uint32_t ComponentInfoID;
+typedef uint32_t TypeInfoID;
 
 class ComponentRegistry
 {
@@ -19,22 +17,22 @@ public:
 
     static void Unregistry(ComponentHash hash);
 
-    static ComponentInfo* Get(ComponentHash hash);
+    static TypeInfo* Get(ComponentHash hash);
 
-    static ComponentInfo* GetAllComponentInfo();
+    static TypeInfo* GetAllTypeInfo();
 
-    static ComponentInfoID GetCount();
+    static TypeInfoID GetCount();
 
 private:
     static ComponentRegistry& GetInstance();
 
-    std::unordered_map<size_t, ComponentInfoID> m_lookUpMap;
+    std::unordered_map<size_t, TypeInfoID> m_lookUpMap;
 
     // std::bitset<COMPONENT_TABLE_SIZE> m_bitmask;
 
-    ComponentInfoID m_capacity;
+    TypeInfoID m_capacity;
 
-    ComponentInfoID m_count;
+    TypeInfoID m_count;
 
     array* m_pool;
 
@@ -43,23 +41,23 @@ private:
     ComponentRegistry();
     ~ComponentRegistry();
 
-    bool registry(ComponentInfo* info);
+    bool registry(TypeInfo* info);
 
     void unregistry(ComponentHash hash);
 
-    ComponentInfo* get(ComponentHash hash);
+    TypeInfo* get(ComponentHash hash);
 
-    inline ComponentInfo* getAllComponentInfo() const
+    inline TypeInfo* getAllTypeInfo() const
     {
-        return (ComponentInfo*)m_pool->vector;
+        return (TypeInfo*)m_pool->vector;
     }
 
-    inline const ComponentInfoID& getCount() const
+    inline const TypeInfoID& getCount() const
     {
         return m_count;
     }
 
-    bool reconfigure(ComponentInfo* dest, const ComponentInfo* src);
+    bool reconfigure(TypeInfo* dest, const TypeInfo* src);
 
     void reallocate();
 
@@ -76,7 +74,7 @@ private:
 template <typename T>
 inline bool ComponentRegistry::Registry(const char* name, ComponentHash parent)
 {
-    ComponentInfo info;
+    TypeInfo info;
     info.vtable = ComponentRegistry::GetVTablePTR<T>();
     info.stride = sizeof(struct ComponentWrapper<T>);
     info.name = name;

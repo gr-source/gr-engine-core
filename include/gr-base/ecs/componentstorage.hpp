@@ -1,8 +1,9 @@
 #pragma once
 
-#include "gr-base/ecs/componentinfo.hpp"
+#include "gr-base/ecs/typeinfo.hpp"
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/utils.hpp"
+
 #include "gr-base/pool/poolObject.hpp"
 
 extern "C"
@@ -37,7 +38,7 @@ public:
 
     static Component* GetComponent(ComponentHash hash, ComponentHandle id);
 
-    static void NotifyUpdate(ComponentHash hash, ComponentInfo* src);
+    static void NotifyUpdate(ComponentHash hash, TypeInfo* src);
 
     static void Start();
 
@@ -53,15 +54,15 @@ private:
 
     array* m_storage;
 
-    void notifyUpdate(ComponentHash hash, ComponentInfo* src);
+    void notifyUpdate(ComponentHash hash, TypeInfo* src);
 
-    void reallocComponentChunk(ComponentInfo* info, size_t newStride);
+    void reallocComponentChunk(TypeInfo* info, size_t newStride);
 
-    void restoreVTable(ComponentInfo* info, void* vtable);
+    void restoreVTable(TypeInfo* info, void* vtable);
 
     ComponentHandle allocate(ComponentHash hash, ComponentHandle source);
 
-    void reallocate(ComponentInfo* info, ComponentSparseSet* set);
+    void reallocate(TypeInfo* info, ComponentSparseSet* set);
 
     void deallocate(ComponentHash hash, ComponentHandle handle);
 

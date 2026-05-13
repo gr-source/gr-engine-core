@@ -55,7 +55,7 @@ Component* Entity::addComponent(uint64_t hash, ComponentHandle source)
 
     m_activeHashes.push_back(hash);
 
-    ComponentInfo* info = ComponentRegistry::Get(hash);
+    TypeInfo* info = ComponentRegistry::Get(hash);
     while (info->parent != (ComponentHash)-1)
     {
         info = ComponentRegistry::Get(info->parent);

@@ -41,7 +41,7 @@ Component* ComponentStorage::GetComponent(ComponentHash hash, ComponentHandle ha
     return s_ComponentStorage->getComponent(hash, handle);
 }
 
-void ComponentStorage::NotifyUpdate(ComponentHash hash, ComponentInfo* src)
+void ComponentStorage::NotifyUpdate(ComponentHash hash, TypeInfo* src)
 {
     s_ComponentStorage->notifyUpdate(hash, src);
 }
@@ -84,9 +84,9 @@ ComponentStorage::~ComponentStorage()
 }
 
 // private
-void ComponentStorage::notifyUpdate(ComponentHash hash, ComponentInfo* src)
+void ComponentStorage::notifyUpdate(ComponentHash hash, TypeInfo* src)
 {
-    ComponentInfo* info = ComponentRegistry::Get(hash);
+    TypeInfo* info = ComponentRegistry::Get(hash);
     if (!info)
         return;
 
@@ -107,7 +107,7 @@ void ComponentStorage::notifyUpdate(ComponentHash hash, ComponentInfo* src)
     restoreVTable(info, src->vtable);
 }
 
-void ComponentStorage::reallocComponentChunk(ComponentInfo* info, size_t newStride)
+void ComponentStorage::reallocComponentChunk(TypeInfo* info, size_t newStride)
 {
     size_t storageID = info->hash & (COMPONENT_TABLE_SIZE - 1);
 
@@ -141,7 +141,7 @@ void ComponentStorage::reallocComponentChunk(ComponentInfo* info, size_t newStri
 }
 
 
-void ComponentStorage::restoreVTable(ComponentInfo* info, void* new_vtable)
+void ComponentStorage::restoreVTable(TypeInfo* info, void* new_vtable)
 {
     size_t storageID = info->hash & (COMPONENT_TABLE_SIZE - 1);
 
@@ -164,7 +164,7 @@ void ComponentStorage::restoreVTable(ComponentInfo* info, void* new_vtable)
 
 ComponentHandle ComponentStorage::allocate(ComponentHash hash, ComponentHandle source)
 {
-    ComponentInfo* info = ComponentRegistry::Get(hash);
+    TypeInfo* info = ComponentRegistry::Get(hash);
     if (info == nullptr)
         return HANDLE_INVALID;
 
@@ -194,7 +194,7 @@ ComponentHandle ComponentStorage::allocate(ComponentHash hash, ComponentHandle s
 
 void ComponentStorage::deallocate(ComponentHash hash, ComponentHandle handle)
 {
-    ComponentInfo* info = ComponentRegistry::Get(hash);
+    TypeInfo* info = ComponentRegistry::Get(hash);
     if (info == nullptr)
         return;
 
@@ -239,7 +239,7 @@ void ComponentStorage::deallocate(ComponentHash hash, ComponentHandle handle)
 
 Component* ComponentStorage::getComponent(ComponentHash hash, ComponentHandle handle)
 {
-    ComponentInfo* info = ComponentRegistry::Get(hash);
+    TypeInfo* info = ComponentRegistry::Get(hash);
     if (info == nullptr)
         return nullptr;
 
@@ -261,7 +261,7 @@ Component* ComponentStorage::getComponent(ComponentHash hash, ComponentHandle ha
 
 bool ComponentStorage::reinstance(ComponentHash hash, Component* dest, const Component* src)
 {
-    ComponentInfo* info = ComponentRegistry::Get(hash);
+    TypeInfo* info = ComponentRegistry::Get(hash);
     if (info == nullptr)
         return false;
 
@@ -270,7 +270,7 @@ bool ComponentStorage::reinstance(ComponentHash hash, Component* dest, const Com
     return true;
 }
 
-void ComponentStorage::reallocate(ComponentInfo* info, ComponentSparseSet* set)
+void ComponentStorage::reallocate(TypeInfo* info, ComponentSparseSet* set)
 {
     size_t lastsize = set->dense != nullptr ? set->dense->length : 0;
 
@@ -313,12 +313,12 @@ void ComponentStorage::reallocate(ComponentInfo* info, ComponentSparseSet* set)
 
 void ComponentStorage::start()
 {
-    ComponentInfo* infos = ComponentRegistry::GetAllComponentInfo();
+    TypeInfo* infos = ComponentRegistry::GetAllTypeInfo();
 
     ComponentSparseSet* vector = (ComponentSparseSet*)m_storage->vector;
-    for (ComponentInfoID id=0;id<ComponentRegistry::GetCount();id++)
+    for (TypeInfoID id=0;id<ComponentRegistry::GetCount();id++)
     {
-        ComponentInfo& info = infos[id];
+        TypeInfo& info = infos[id];
 
         size_t storageID = info.hash & (COMPONENT_TABLE_SIZE - 1);
 
@@ -348,12 +348,12 @@ void ComponentStorage::start()
 
 void ComponentStorage::update()
 {
-    ComponentInfo* infos = ComponentRegistry::GetAllComponentInfo();
+    TypeInfo* infos = ComponentRegistry::GetAllTypeInfo();
 
     ComponentSparseSet* vector = (ComponentSparseSet*)m_storage->vector;
-    for (ComponentInfoID id=0;id<ComponentRegistry::GetCount();id++)
+    for (TypeInfoID id=0;id<ComponentRegistry::GetCount();id++)
     {
-        ComponentInfo& info = infos[id];
+        TypeInfo& info = infos[id];
 
         size_t storageID = info.hash & (COMPONENT_TABLE_SIZE - 1);
 

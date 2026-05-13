@@ -20,7 +20,13 @@ typedef struct ComponentSparseSet
     ComponentID capacity;
 } ComponentSparseSet;
 
-typedef struct ComponentInfo
+typedef struct MethodInfo
+{
+    char* name;
+    MethodPointer function;
+} MethodInfo;
+
+typedef struct TypeInfo
 {
     const char* name;
     void* vtable;
@@ -40,7 +46,9 @@ typedef struct ComponentInfo
         MethodPointer destructor;
         uint64_t destructorhash;
     };
-} ComponentInfo;
+
+    array* methods;
+} TypeInfo;
 
 
 

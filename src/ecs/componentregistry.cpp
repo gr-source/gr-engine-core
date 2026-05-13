@@ -13,17 +13,17 @@ void ComponentRegistry::Unregistry(ComponentHash hash)
     GetInstance().unregistry(hash);
 }
 
-ComponentInfo* ComponentRegistry::Get(ComponentHash hash)
+TypeInfo* ComponentRegistry::Get(ComponentHash hash)
 {
     return GetInstance().get(hash);
 }
 
-ComponentInfo* ComponentRegistry::GetAllComponentInfo()
+TypeInfo* ComponentRegistry::GetAllTypeInfo()
 {
-    return GetInstance().getAllComponentInfo();
+    return GetInstance().getAllTypeInfo();
 }
 
-ComponentInfoID ComponentRegistry::GetCount()
+TypeInfoID ComponentRegistry::GetCount()
 {
     return GetInstance().getCount();
 }
@@ -37,7 +37,7 @@ ComponentRegistry& ComponentRegistry::GetInstance()
 
 ComponentRegistry::ComponentRegistry() : /* m_sparseSet(nullptr),*/ m_pool(nullptr), m_capacity(0), m_count(0)
 {
-    // m_sparseSet = array_create(COMPONENT_TABLE_SIZE, sizeof(ComponentInfoID));
+    // m_sparseSet = array_create(COMPONENT_TABLE_SIZE, sizeof(TypeInfoID));
 
     logger::info("[ComponentRegistry] Initialize.");
 }
@@ -55,14 +55,14 @@ ComponentRegistry::~ComponentRegistry()
     logger::info("[ComponentRegistry] Shutdown.");
 }
 
-bool ComponentRegistry::registry(ComponentInfo* info)
+bool ComponentRegistry::registry(TypeInfo* info)
 {
     size_t infoTableID = info->hash & (COMPONENT_TABLE_SIZE - 1);
     if (m_lookUpMap.find(infoTableID) != m_lookUpMap.end())
     {
-        ComponentInfoID& id = m_lookUpMap[infoTableID];
+        TypeInfoID& id = m_lookUpMap[infoTableID];
 
-        ComponentInfo* componentInfo = ((ComponentInfo*)m_pool->vector + id);
+        TypeInfo* componentInfo = ((TypeInfo*)m_pool->vector + id);
 
         if (reconfigure(componentInfo, info))
         {
@@ -76,9 +76,9 @@ bool ComponentRegistry::registry(ComponentInfo* info)
     if (m_count >= m_capacity)
         reallocate();
 
-    ComponentInfoID id = m_count++;
+    TypeInfoID id = m_count++;
 
-    ComponentInfo& dest = ((ComponentInfo*)m_pool->vector)[id];
+    TypeInfo& dest = ((TypeInfo*)m_pool->vector)[id];
     dest.vtable = info->vtable;
     dest.hash = info->hash;
     dest.name = info->name;
@@ -104,28 +104,28 @@ void ComponentRegistry::unregistry(ComponentHash hash)
     if (it == m_lookUpMap.end())
         return;
 
-    ComponentInfo& info = ((ComponentInfo*)m_pool->vector)[it->second];
+    TypeInfo& info = ((TypeInfo*)m_pool->vector)[it->second];
 
     logger::trace("[ComponentRegistry] Unregistry: '%-*s 0x%lX parent 0x%lX'",
              20, info.name, info.hash, info.parent);
 
-    ComponentInfoID lastID = --m_count;
+    TypeInfoID lastID = --m_count;
     if (lastID != it->second)
     {
-        ComponentInfo& lastInfo = ((ComponentInfo*)m_pool->vector)[lastID];
+        TypeInfo& lastInfo = ((TypeInfo*)m_pool->vector)[lastID];
 
         size_t targetInfoTableID = lastInfo.hash & (COMPONENT_TABLE_SIZE - 1);
 
         m_lookUpMap[targetInfoTableID] = it->second;
 
-        memcpy(&info, &lastInfo, sizeof(ComponentInfo));
-        memset(&lastInfo, 0, sizeof(ComponentInfo));
+        memcpy(&info, &lastInfo, sizeof(TypeInfo));
+        memset(&lastInfo, 0, sizeof(TypeInfo));
     }
 
     m_lookUpMap.erase(infoTableID);
 }
 
-ComponentInfo* ComponentRegistry::get(ComponentHash hash)
+TypeInfo* ComponentRegistry::get(ComponentHash hash)
 {
     size_t infoTableID = hash & (COMPONENT_TABLE_SIZE - 1);
 
@@ -133,10 +133,10 @@ ComponentInfo* ComponentRegistry::get(ComponentHash hash)
     if (it == m_lookUpMap.end())
         return nullptr;
 
-    return ((ComponentInfo *)(m_pool->vector)) + it->second;
+    return ((TypeInfo *)(m_pool->vector)) + it->second;
 }
 
-bool ComponentRegistry::reconfigure(ComponentInfo* dest, const ComponentInfo* src)
+bool ComponentRegistry::reconfigure(TypeInfo* dest, const TypeInfo* src)
 {
     dest->name = src->name;
     dest->parent = src->parent;
@@ -156,12 +156,12 @@ void ComponentRegistry::reallocate()
     {
         m_capacity *= 2;
 
-        m_pool = array_resize(m_pool, m_capacity, sizeof(ComponentInfo));
+        m_pool = array_resize(m_pool, m_capacity, sizeof(TypeInfo));
     } else
     {
         m_capacity = 1;
 
-        m_pool = array_create(m_capacity, sizeof(ComponentInfo));
+        m_pool = array_create(m_capacity, sizeof(TypeInfo));
     }
 }
 
