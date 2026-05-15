@@ -3,9 +3,12 @@
 #include "gr-base/core/file/default.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
-#include "gr-base/ecs/default.hpp"
+
+#include "gr-base/managers/default.hpp"
 
 #include "gr-base/script/default.hpp"
+
+#include "gr-base/ecs/default.hpp"
 
 #include "default.hpp"
 

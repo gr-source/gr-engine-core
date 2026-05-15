@@ -1,12 +1,15 @@
 #pragma once
 
 #include "gr-base/core/default.hpp"
-#include "gr-base/core/geometry/default.hpp"
+
 #include "gr-base/ecs/default.hpp"
-#include "gr-base/script/camera.hpp"
+
+#include "gr-base/script/default.hpp"
+
+#include "gr-base/managers/default.hpp"
 
 #include <gr-math/types.hpp>
-#include <map>
+#include <gr-render/shader.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>

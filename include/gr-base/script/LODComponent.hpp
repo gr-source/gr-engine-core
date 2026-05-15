@@ -3,6 +3,7 @@
 #include "gr-base/core/geometry/default.hpp"
 
 #include "gr-base/ecs/component.hpp"
+#include "gr-base/managers/default.hpp"
 
 #include <vector>
 
@@ -22,6 +23,5 @@ public:
     bool Deserialize(Stream* stream) override;
 };
 
-// REGISTER_COMPONENT(LODComponent, (uint64_t)-1);
 
 

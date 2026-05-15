@@ -5,9 +5,7 @@ project(gr-base VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 set(geometry
-    src/core/geometry/materialInstance.cpp
     src/core/geometry/boneWeight.cpp
-    src/core/geometry/batching.cpp
     src/core/geometry/material.cpp
     src/core/geometry/shaderData.cpp
     src/core/geometry/mesh.cpp
@@ -99,7 +97,6 @@ set(task
 
 set(managers_src
     src/managers/gameobjectmanager.cpp
-    src/managers/batchingmanager.cpp
     src/managers/materialmanager.cpp
     src/managers/eventManager.cpp
     src/managers/bvhtreemanager.cpp

@@ -15,8 +15,5 @@ class Mesh;
 
 typedef uint32_t BatchID;
 
-typedef uint32_t MaterialID;
-typedef uint32_t MeshID;
-
 constexpr BatchID InvalidBatch = std::numeric_limits<BatchID>::max();
 

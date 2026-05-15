@@ -4,6 +4,8 @@
 
 #include "gr-base/ecs/component.hpp"
 
+#include "gr-base/managers/default.hpp"
+
 class MeshFilter : public ComponentImpl<MeshFilter>
 {
 public:

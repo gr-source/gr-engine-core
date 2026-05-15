@@ -10,12 +10,12 @@
 #include "gr-base/core/task/texturemanager.hpp"
 
 #include "gr-base/managers/shadermanager.hpp"
-#include "gr-base/managers/meshmanager.hpp"
 
 #include "gr-base/managers/default.hpp"
 
 #include "gr-base/ecs/default.hpp"
 
+#include "gr-base/asset/default.hpp"
 #include "gr-base/asset/asset.hpp"
 
 class AssetsManager
@@ -121,7 +121,7 @@ private:
 
     ShaderManager mShaderManager;
 
-    MeshManager mMeshManager;
+    MeshManager* mMeshManager;
 
     std::string mAssetDir;
 

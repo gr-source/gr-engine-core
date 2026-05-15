@@ -10,6 +10,7 @@
 #include "gr-base/core/geometry/default.hpp"
 
 #include "gr-base/ecs/default.hpp"
+#include "gr-base/managers/default.hpp"
 
 #include <unordered_map>
 #include <unordered_set>

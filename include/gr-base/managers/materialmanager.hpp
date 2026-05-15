@@ -11,6 +11,8 @@ extern "C"
 #include "gr-base/externals/array.h"
 }
 
+#include "gr-base/managers/default.hpp"
+
 class MaterialManager
 {
 public:

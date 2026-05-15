@@ -17,6 +17,7 @@
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
+#include "gr-base/managers/meshmanager.hpp"
 #include "gr-base/task/modelloadtask.hpp"
 #include <exception>
 
@@ -81,22 +82,22 @@ gr::gTexture *AssetsManager::CreateTexture(const std::string &name)
 // ********** Mesh ********** //
 MeshID AssetsManager::CreateMesh(const std::string &name, const MeshAsset* src)
 {
-    return s_AssetsManager->mMeshManager.create(name, src);
+    return s_AssetsManager->mMeshManager->create(name, src);
 }
 
 Mesh *AssetsManager::GetMesh(MeshID id)
 {
-    return s_AssetsManager->mMeshManager.get(id);
+    return s_AssetsManager->mMeshManager->get(id);
 }
 
 MeshID AssetsManager::FindMesh(const std::string &name)
 {
-    return s_AssetsManager->mMeshManager.find(name);
+    return s_AssetsManager->mMeshManager->find(name);
 }
 
 std::string AssetsManager::GetMeshName(MeshID id)
 {
-    auto name = s_AssetsManager->mMeshManager.getname(id);
+    auto name = s_AssetsManager->mMeshManager->getname(id);
     if (name == nullptr)
         throw std::runtime_error("MeshList do not register.");
     return name;
@@ -104,7 +105,7 @@ std::string AssetsManager::GetMeshName(MeshID id)
 
 void AssetsManager::RemoveMesh(MeshID id)
 {
-    s_AssetsManager->mMeshManager.destroy(id);
+    s_AssetsManager->mMeshManager->destroy(id);
 }
 
 /*
@@ -189,7 +190,7 @@ usize AssetsManager::GetTextureCount()
 
 size_t AssetsManager::GetMeshCount()
 {
-    return s_AssetsManager->mMeshManager.getCount();
+    return s_AssetsManager->mMeshManager->getCount();
 }
 
 MaterialID AssetsManager::GetMaterialCount()
@@ -339,12 +340,14 @@ MeshID AssetsManager::LoadMeshFromFile(const std::string& file)
 }
 
 // private
-AssetsManager::AssetsManager() : mMaterialManager(new MaterialManager())
+AssetsManager::AssetsManager() : mMaterialManager(new MaterialManager()), mMeshManager(new MeshManager())
 {}
 
 AssetsManager::~AssetsManager()
 {
     delete mMaterialManager;
+
+    delete mMeshManager;
 }
 
 bool AssetsManager::LoadFromFile(const std::string& file, Asset* asset)

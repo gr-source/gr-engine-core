@@ -9,11 +9,11 @@
 #include "gr-base/externals/handle.h"
 
 #include "gr-base/managers/assetsManager.hpp"
-#include "gr-base/managers/batchingmanager.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
+#include "gr-base/script/camera.hpp"
 #include "gr-base/script/light.hpp"
 
 #include <GL/glew.h>
