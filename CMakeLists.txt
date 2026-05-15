@@ -114,6 +114,7 @@ set(ECS_SRC
     src/ecs/componentregistry.cpp
     src/ecs/componentstorage.cpp
     src/ecs/component.cpp
+    src/ecs/typeinfo.cpp
     src/ecs/entity.cpp
 )
 

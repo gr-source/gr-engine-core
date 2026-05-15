@@ -55,22 +55,22 @@ ComponentRegistry::~ComponentRegistry()
     logger::info("[ComponentRegistry] Shutdown.");
 }
 
-bool ComponentRegistry::registry(TypeInfo* info)
+TypeInfo& ComponentRegistry::registry(TypeInfo* src)
 {
-    size_t infoTableID = info->hash & (COMPONENT_TABLE_SIZE - 1);
+    size_t infoTableID = src->hash & (COMPONENT_TABLE_SIZE - 1);
     if (m_lookUpMap.find(infoTableID) != m_lookUpMap.end())
     {
         TypeInfoID& id = m_lookUpMap[infoTableID];
 
-        TypeInfo* componentInfo = ((TypeInfo*)m_pool->vector + id);
+        TypeInfo* info = ((TypeInfo*)m_pool->vector + id);
 
-        if (reconfigure(componentInfo, info))
+        if (reconfigure(info, src))
         {
-            componentInfo->name = info->name;
+            info->name = src->name;
 
-            ComponentStorage::NotifyUpdate(info->hash, info);
+            ComponentStorage::NotifyUpdate(src->hash, src);
         }
-        return false;
+        return *info;
     }
 
     if (m_count >= m_capacity)
@@ -78,23 +78,23 @@ bool ComponentRegistry::registry(TypeInfo* info)
 
     TypeInfoID id = m_count++;
 
-    TypeInfo& dest = ((TypeInfo*)m_pool->vector)[id];
-    dest.vtable = info->vtable;
-    dest.hash = info->hash;
-    dest.name = info->name;
-    dest.offset = info->offset;
-    dest.parent = info->parent;
-    dest.stride = info->stride;
+    TypeInfo* info = ((TypeInfo*)m_pool->vector + id);
+    info->vtable = src->vtable;
+    info->hash = src->hash;
+    info->name = src->name;
+    info->offset = src->offset;
+    info->parent = src->parent;
+    info->stride = src->stride;
 
-    dest.constructor = info->constructor;
-    dest.destructor = info->destructor;
+    info->constructor = src->constructor;
+    info->destructor = src->destructor;
 
     m_lookUpMap.emplace(infoTableID, id);
 
     logger::trace("[ComponentRegistry] Registry: '%-*s 0x%lX parent 0x%lX'",
-             20, dest.name, dest.hash, dest.parent);
+             20, info->name, info->hash, info->parent);
 
-    return true;
+    return *info;
 }
 
 void ComponentRegistry::unregistry(ComponentHash hash)

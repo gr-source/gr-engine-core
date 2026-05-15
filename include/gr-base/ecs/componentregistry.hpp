@@ -13,7 +13,7 @@ class ComponentRegistry
 {
 public:
     template <typename T>
-    static bool Registry(const char* name, ComponentHash parent);
+    static TypeInfo& Registry(const char* name, ComponentHash parent);
 
     static void Unregistry(ComponentHash hash);
 
@@ -41,7 +41,7 @@ private:
     ComponentRegistry();
     ~ComponentRegistry();
 
-    bool registry(TypeInfo* info);
+    TypeInfo& registry(TypeInfo* src);
 
     void unregistry(ComponentHash hash);
 
@@ -72,7 +72,7 @@ private:
 };
 
 template <typename T>
-inline bool ComponentRegistry::Registry(const char* name, ComponentHash parent)
+inline TypeInfo& ComponentRegistry::Registry(const char* name, ComponentHash parent)
 {
     TypeInfo info;
     info.vtable = ComponentRegistry::GetVTablePTR<T>();
@@ -81,6 +81,7 @@ inline bool ComponentRegistry::Registry(const char* name, ComponentHash parent)
     info.hash = GetHashByType<T>(name);
     info.parent = parent;
     info.offset = (size_t)((uint8_t*)&((ComponentWrapper<T>*)0)->component);
+    info.methods = NULL;
 
     info.constructor = (MethodPointer)ComponentRegistry::Constructor<T>;
     info.destructor = (MethodPointer)ComponentRegistry::Destructor<T>;

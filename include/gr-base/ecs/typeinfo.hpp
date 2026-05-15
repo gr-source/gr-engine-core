@@ -47,7 +47,9 @@ typedef struct TypeInfo
         uint64_t destructorhash;
     };
 
-    array* methods;
+    MethodInfo* methods;
+
+    TypeInfo& registry_method(const char* name, MethodPointer pointer);
 } TypeInfo;
 
 

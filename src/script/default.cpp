@@ -17,10 +17,7 @@
 #include "gr-base/script/light.hpp"
 
 #define REGISTER_COMPONENT_WITH_PARENT(k, p) \
-    do \
-    { \
-        bool b##k = ComponentRegistry::Registry<k>(#k, p); \
-    } while (0)
+    TypeInfo& b##k = ComponentRegistry::Registry<k>(#k, p)
 
 #define CLASS_TO_HASH(k) GetHashByType<k>(#k)
 
