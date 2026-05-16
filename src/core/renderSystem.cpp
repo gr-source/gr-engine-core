@@ -155,8 +155,6 @@ void RenderSystem::renderer()
     gr::Shader* lastShader = nullptr;
     Material* lastMaterial = nullptr;
 
-    size_t drawCallCount = 0;
-
     for (auto&& [materialID, sortByMesh] : m_queueFirstCmd)
     {
         Material* material = AssetsManager::GetMaterial(materialID);
@@ -197,6 +195,8 @@ void RenderSystem::renderer()
                 vertexarray->Bind();
             }
 
+            auto &submesh = mesh->GetSubMesh(handle_get_second(handle));
+
             if (material->supportsInstancing())
             {
                 auto pbo = mesh->GetIntancingBuffer();
@@ -205,24 +205,15 @@ void RenderSystem::renderer()
                 pbo->SetData(transforms.data(), transforms.size() * sizeof(Matrix4x4));
                 pbo->Unbind();
 
-                // glDrawElementsInstanced(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr, transforms.size());
-
-                drawCallCount++;
+                glDrawElementsInstanced(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexOffset * sizeof(uint32_t)), transforms.size());
             } else
             {
-                auto &submesh = mesh->GetSubMesh(handle_get_second(handle));
-
                 for (auto& matrix : transforms)
                 {
                     shader->SetUniform(u_model, &matrix);
 
-                    // for (int i=0;i<submeshcount;i++)
-                    {
-                        glDrawElements(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexOffset * sizeof(uint32_t)));
-                    }
+                    glDrawElements(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexOffset * sizeof(uint32_t)));
                 }
-
-                drawCallCount += transforms.size();
             }
         }
     }

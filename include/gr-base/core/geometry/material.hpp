@@ -20,7 +20,7 @@ public:
 
     inline gr::Shader *GetShader() const
     {
-        return m_shader;
+        return bEnableInstancing ? m_shader_instanced : m_shader;
     }
 
     inline void SetShader(gr::Shader* shader)
@@ -48,6 +48,8 @@ private:
     std::array<gr::gTexture *, 10> m_textures;
 
     std::vector<uint8_t> m_buffer;
+
+    gr::Shader *m_shader_instanced;
 
     gr::Shader *m_shader;
 

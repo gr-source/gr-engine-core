@@ -33,9 +33,6 @@ public:
     template <typename T>
     static T* GetComponent(ComponentHandle handle);
 
-    template <typename T>
-    static T* GetDenseArray();
-
     static Component* GetComponent(ComponentHash hash, ComponentHandle id);
 
     static void NotifyUpdate(ComponentHash hash, TypeInfo* src);
@@ -82,7 +79,5 @@ inline T* ComponentStorage::GetComponent(ComponentHandle handle)
 }
 
 
-template <typename T>
-inline T* ComponentStorage::GetDenseArray()
-{}
+
 

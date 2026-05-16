@@ -243,16 +243,16 @@ Component* ComponentStorage::getComponent(ComponentHash hash, ComponentHandle ha
     if (info == nullptr)
         return nullptr;
 
-    size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
-
-    ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
-
     ComponentID slotID = handle_get_first(handle);
     ComponentID version = handle_get_second(handle);
 
     ComponentSlot* slot = m_slots.get(slotID);
     if (slot->version != version)
         return nullptr;
+
+    size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
+
+    ComponentSparseSet& set = ((ComponentSparseSet*)m_storage->vector)[storageID];
 
     uint8_t* wrapper = (uint8_t*)(set.dense->vector);
     

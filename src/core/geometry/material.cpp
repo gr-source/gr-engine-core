@@ -1,10 +1,11 @@
 #include "gr-base/core/geometry/material.hpp"
+#include "gr-base/managers/assetsManager.hpp"
 
 #include <gr-render/shader.hpp>
 
 #include <string.h>
 
-Material::Material() : m_shader(nullptr), bEnableInstancing(false)
+Material::Material() : m_shader(nullptr), bEnableInstancing(false), m_shader_instanced(nullptr)
 {
     m_textures.fill(nullptr);
 }
@@ -31,10 +32,27 @@ void Material::SetEnableInstancing()
 {
     if (supportsInstancing())
         return;
+
+    if (m_shader_instanced == nullptr)
+    {
+        m_shader_instanced = AssetsManager::FindShader(AssetsManager::GetShaderName(m_shader) + "_instanced");
+        if (m_shader_instanced == nullptr)
+            m_shader_instanced = AssetsManager::LoadShader2(AssetsManager::GetShaderName(m_shader) + "_instanced");
+    }
+
+    if (m_shader_instanced == nullptr)
+        return;
+
+    bEnableInstancing = true;
 }
 
 void Material::SetDisableInstancing()
-{}
+{
+    if (!supportsInstancing())
+        return;
+
+    bEnableInstancing = false;
+}
 
 bool Material::supportsInstancing() const
 {

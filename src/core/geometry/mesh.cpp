@@ -46,9 +46,9 @@ std::string Mesh::GetName() const
 void Mesh::Build()
 {
     gr::buffer_layout layout = {
-        {gr::shader_data_type::Float3, "in_position"},
-        {gr::shader_data_type::Float3, "in_normal"},
-        {gr::shader_data_type::Float2, "in_texCoord"},
+        {gr::shader_data_type::Float3, "in_position", false},
+        {gr::shader_data_type::Float3, "in_normal", false},
+        {gr::shader_data_type::Float2, "in_texCoord", false}
     };
 
     auto vbo = gr::vertex_buffer::create(m_vertices.data(), m_vertices.size() * sizeof(Vertex3D), gr::buffer_usage::static_draw);
@@ -61,17 +61,19 @@ void Mesh::Build()
         { gr::shader_data_type::Float4, "a_InstanceMatrixRow3", true }
     };
 
-    m_pbo = gr::vertex_buffer::create(nullptr, 1024 * sizeof(Matrix4x4), gr::buffer_usage::dynamic_draw);
+    m_pbo = gr::vertex_buffer::create(nullptr, sizeof(Matrix4x4), gr::buffer_usage::dynamic_draw);
     m_pbo->SetLayout(instanceLayout);
     
     std::vector<uint32_t> allIndices;
 
-    size_t offset = 0;
+    uint32_t offset = 0;
     for (auto& submesh : m_submeshes)
     {
-        submesh.indexOffset = offset;
         allIndices.insert(allIndices.end(), submesh.indices.begin(), submesh.indices.end());
-        submesh.indexCount = submesh.indices.size();
+
+        submesh.indexCount = static_cast<uint32_t>(submesh.indices.size());
+        submesh.indexOffset = offset;
+
         offset += submesh.indices.size();
     }
 
