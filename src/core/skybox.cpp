@@ -71,6 +71,7 @@ void Skybox::build(gr::gTexture *texture)
 
     create_cube_mesh();
 
+    /*
     ShaderParams shaderParams;
     shaderParams.name = "skybox";
     shaderParams.base = gfile::get_data_directory() + "/assets/shader/skybox/skybox.glsl";
@@ -83,6 +84,7 @@ void Skybox::build(gr::gTexture *texture)
         this,
         texture
     );
+    */
 }
 
 void Skybox::render(const Camera *camera) const
@@ -163,7 +165,7 @@ void Skybox::upload_cubemap_texture(gr::gTexture *texture, gr::Shader *shader)
     texture->unbind();
     shader->unbind();
 
-
+    /*
     ShaderParams shaderParams;
     shaderParams.name = "background";
     shaderParams.base = gfile::get_data_directory() + "/assets/shader/skybox/background.glsl";
@@ -173,6 +175,7 @@ void Skybox::upload_cubemap_texture(gr::gTexture *texture, gr::Shader *shader)
     AssetsManager::LoadShaderAsync(shaderParams,
             &Skybox::set_skyshader, this
             );
+    */
 }
 
 void Skybox::create_cube_mesh()

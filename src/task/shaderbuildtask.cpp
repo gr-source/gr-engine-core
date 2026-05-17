@@ -28,46 +28,23 @@ void ShaderBuildTask::onPreExecute()
 
 int ShaderBuildTask::doInBackground()
 {
-    {
-        ShaderAsset asset = onStartParceShader(false);
+    ShaderAsset asset = onStartParceShader();
 
-        FileStream stream(m_file, StreamType::OUTPUT);
-        
-        FileHeader header{};
-        header.sign = HEADER_SHADER_SIGN;
-        header.version = HEADER_ASSET_VERSION;
+    FileStream stream(m_file, StreamType::OUTPUT);
+    
+    FileHeader header{};
+    header.sign = HEADER_SHADER_SIGN;
+    header.version = HEADER_ASSET_VERSION;
 
-        if (!stream.write(&header, sizeof(FileHeader)))
-            return 2;
+    if (!stream.write(&header, sizeof(FileHeader)))
+        return 2;
 
-        if (!asset.serialize(&stream))
-            return 3;
+    if (!asset.serialize(&stream))
+        return 3;
 
-        m_shaderVariants.emplace_back(asset.GetName(), m_file);
+    m_shaderVariants.emplace_back(asset.GetName(), m_file);
 
-        stream.close();
-    }
-
-    {
-        ShaderAsset asset = onStartParceShader(true);
-        asset.SetName(asset.GetName() + "_instanced");
-
-        FileStream stream(m_file + "_instanced", StreamType::OUTPUT);
-        
-        FileHeader header{};
-        header.sign = HEADER_SHADER_SIGN;
-        header.version = HEADER_ASSET_VERSION;
-
-        if (!stream.write(&header, sizeof(FileHeader)))
-            return 2;
-
-        if (!asset.serialize(&stream))
-            return 3;
-
-        m_shaderVariants.emplace_back(asset.GetName(), m_file + "_instanced");
-
-        stream.close();
-    }
+    stream.close();
 
     return 0;
 }
@@ -88,17 +65,19 @@ void ShaderBuildTask::onPostExecute(int result)
 }
 
 
-ShaderAsset ShaderBuildTask::onStartParceShader(bool instanced)
+ShaderAsset ShaderBuildTask::onStartParceShader()
 {
     std::vector<ShaderUniformRaw> s_shader_uniform_list;
     std::array<std::string, 3> resultShaderSource;
 
-    resultShaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))] += "#version 330 core\n";
-    resultShaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::VERTEX))]   += "#version 330 core\n";
+    // resultShaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))] += "#version 330 core\n";
+    // resultShaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::VERTEX))]   += "#version 330 core\n";
 
+    ShaderAsset asset;
     try
     {
         auto&& [fragment, vertex, definations, shaderType] = ReadingSourceFileShader();
+        asset.SetFlags(shaderType == ShaderType::SHADER2D ? ShaderAssetFlags_Shader2D : ShaderAssetFlags_Shader3D);
 
         auto baseShaderSource = LoadShaderBase(shaderType);
         for (auto defination : definations)
@@ -124,11 +103,12 @@ ShaderAsset ShaderBuildTask::onStartParceShader(bool instanced)
         {
             macro_map.emplace("ENABLE_SKYBOX");
         }
+        /*
         else
         {
             // if (!(m_shaderParams.flags & ShaderOptimize_static))
             {
-                if (instanced)
+                if (false)
                 {
                     macro_map.emplace("USE_INSTANCED");
                 } else
@@ -144,10 +124,11 @@ ShaderAsset ShaderBuildTask::onStartParceShader(bool instanced)
                 }
             }
         }
+        */
 
 
-        resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)], macro_map);
-        resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)], macro_map);
+        resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = (resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
+        resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = (resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
 
         // fragment
         {
@@ -184,7 +165,6 @@ ShaderAsset ShaderBuildTask::onStartParceShader(bool instanced)
 
     auto name = gfile::get_file_name(m_file.c_str());
 
-    ShaderAsset asset;
     asset.SetName(name);
     asset.SetFragment(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
     asset.SetVertex(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);

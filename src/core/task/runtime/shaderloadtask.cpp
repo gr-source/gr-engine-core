@@ -68,6 +68,7 @@ void ShaderLoadTask::onPostExecute(int result)
 
     std::cout << name << std::endl;
 
+    /*
     auto shader = AssetsManager::CreateShader(name);
     if (!buildShader(name, shader))
     {
@@ -77,6 +78,7 @@ void ShaderLoadTask::onPostExecute(int result)
 
         return AssetsManager::RemoveTask(m_path);
     }
+    */
 
     Console::LogInfo("[ ShaderLoadTask ] Shader loaded sucessfully %s.", name.c_str());
 
@@ -86,8 +88,8 @@ void ShaderLoadTask::onPostExecute(int result)
         funclist = std::move(m_func_list);
     }
 
-    for (auto &func : funclist)
-        func(shader);
+    // for (auto &func : funclist)
+    //     func(shader);
 
     AssetsManager::RemoveTask(m_path);
 }

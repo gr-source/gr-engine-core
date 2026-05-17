@@ -9,7 +9,7 @@
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/task/texturemanager.hpp"
 
-#include "gr-base/managers/shadermanager.hpp"
+// #include "gr-base/managers/shadermanager.hpp"
 
 #include "gr-base/managers/default.hpp"
 
@@ -17,6 +17,8 @@
 
 #include "gr-base/asset/default.hpp"
 #include "gr-base/asset/asset.hpp"
+
+#include "gr-base/prefab/default.hpp"
 
 class AssetsManager
 {
@@ -30,16 +32,16 @@ public:
 
     static std::string GetRefTextureName(gr::gTexture *texture);
 
-    template <typename ...Args>
-    static std::shared_ptr<TaskInfo> LoadShaderAsync(ShaderParams shaderParams, Args &&...args);
+    // template <typename ...Args>
+    // static std::shared_ptr<TaskInfo> LoadShaderAsync(ShaderParams shaderParams, Args &&...args);
 
-    static gr::Shader *CreateShader(const std::string& name);
+    // static gr::Shader *CreateShader(const std::string& name);
 
-    static gr::Shader *FindShader(const std::string &name);
+    // static gr::Shader *FindShader(const std::string &name);
 
-    static std::string GetShaderName(gr::Shader *shader);
+    // static std::string GetShaderName(gr::Shader *shader);
 
-    static void RemoveShader(gr::Shader *shader);
+    // static void RemoveShader(gr::Shader *shader);
 
     template <typename ...Args>
     static void LoadGameObject(const std::string &name, Args &&...args);
@@ -85,7 +87,7 @@ public:
 
     static MaterialID GetMaterialCount();
 
-    static std::vector<gr::Shader *> GetShaderList(ShaderType type);
+    static const std::vector<ShaderPrefab*>& GetAllShader3D();
 
     static MaterialID CreateMaterial(const std::string &name);
 
@@ -101,9 +103,9 @@ public:
 
     static MaterialID LoadMaterialFromFile(const std::string& file);
 
-    static gr::Shader* LoadShader2(const std::string& name);
+    static ShaderPrefab* LoadShader2(const std::string& name);
 
-    static gr::Shader* LoadShaderFromFile(const std::string& file);
+    static ShaderPrefab* LoadShaderFromFile(const std::string& file);
 
     static MeshID LoadMesh(const std::string& name);
 
@@ -112,6 +114,8 @@ public:
 private:
     static AssetsManager* s_AssetsManager;
 
+    ShaderPrefabManager *mShaderPrefabManager;
+
     // fields
     SceneTaskManager mSceneTaskManager;
 
@@ -119,7 +123,7 @@ private:
 
     TextureManager mTextureManager;
 
-    ShaderManager mShaderManager;
+    // ShaderManager mShaderManager;
 
     MeshManager* mMeshManager;
 
@@ -185,6 +189,7 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
     return s_AssetsManager->mTextureManager.load(path, func);
 }
 
+/*
 // ***** Shader ***** //
 template <typename ...Args>
 inline std::shared_ptr<TaskInfo> AssetsManager::LoadShaderAsync(ShaderParams shaderParams, Args &&...args)
@@ -195,6 +200,7 @@ inline std::shared_ptr<TaskInfo> AssetsManager::LoadShaderAsync(ShaderParams sha
     
     return s_AssetsManager->mShaderManager.load(shaderParams, func);
 }
+*/
 
 /*
 template <typename ...Args>

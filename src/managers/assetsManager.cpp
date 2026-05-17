@@ -18,8 +18,10 @@
 #include "gr-base/core/thread/taskmanager.hpp"
 
 #include "gr-base/managers/meshmanager.hpp"
+#include "gr-base/managers/shaderprefabmanager.hpp"
 #include "gr-base/task/modelloadtask.hpp"
 #include <exception>
+#include <stdexcept>
 
 #include "gr-base/managers/materialmanager.hpp"
 
@@ -51,6 +53,7 @@ std::string AssetsManager::GetRefTextureName(gr::gTexture *texture)
     return name;
 }
 
+/*
 gr::Shader *AssetsManager::CreateShader(const std::string& name)
 {
     return s_AssetsManager->mShaderManager.create(name);
@@ -73,6 +76,7 @@ void AssetsManager::RemoveShader(gr::Shader *shader)
 {
     return s_AssetsManager->mShaderManager.destroy(shader);
 }
+*/
 
 gr::gTexture *AssetsManager::CreateTexture(const std::string &name)
 {
@@ -168,10 +172,12 @@ std::vector<gr::gShader *> AssetsManager::GetShaderList(AssetShader_ type, Shade
 }
 */
 
+/*
 std::vector<gr::Shader *> AssetsManager::GetShaderList(ShaderType type)
 {
     return s_AssetsManager->mShaderManager.get_shader(type);
 }
+*/
 
 MaterialID AssetsManager::CreateMaterial(const std::string &name)
 {
@@ -198,6 +204,11 @@ MaterialID AssetsManager::GetMaterialCount()
     return s_AssetsManager->mMaterialManager->GetCount();
 }
 
+const std::vector<ShaderPrefab*>& AssetsManager::GetAllShader3D()
+{
+    return s_AssetsManager->mShaderPrefabManager->GetAllShader3d();
+}
+
 MaterialID AssetsManager::FindMaterial(const std::string &name)
 {
     return s_AssetsManager->mMaterialManager->find(name);
@@ -218,8 +229,10 @@ void AssetsManager::RemoveTask(const std::string &name)
     if (s_AssetsManager->mTextureManager.remove_task(name))
         return;
 
+    /*
     if (s_AssetsManager->mShaderManager.remove_task(name))
         return;
+    */
 }
 
 // public, static
@@ -242,79 +255,39 @@ MaterialID AssetsManager::LoadMaterialFromFile(const std::string& file)
     if (!LoadFromFile(file, &asset))
         return ID_INVALID;
 
-    auto shader = FindShader(asset.GetShader());
-    if (shader == nullptr)
-        shader = LoadShader2(asset.GetShader());
+    ShaderPrefab* prefab = s_AssetsManager->mShaderPrefabManager->find(asset.GetShader());
+    if (prefab == nullptr)
+        prefab = LoadShader2(asset.GetShader());
 
     MaterialID materialID = CreateMaterial(asset.GetName());
 
     auto material = GetMaterial(materialID);
-    material->SetShader(shader);
+    material->SetShaderPrefab(prefab);
 
     for (auto&& [name, buffer] : asset.GetOverrides())
-        material->Set(name.c_str(), 1, (const void*)buffer.data());
+        material->Set(name, buffer.data(), buffer.size());
 
     return materialID;
 }
 
-gr::Shader* AssetsManager::LoadShader2(const std::string& name)
+ShaderPrefab* AssetsManager::LoadShader2(const std::string& name)
 {
     try
     {
         return LoadShaderFromFile(AssetReference::GetFile(name));
     } catch (const std::exception& e)
     {
-        throw e;
+        throw std::runtime_error(e.what());
     }
 }
 
-static std::unordered_map<std::string, UniformType> mTypeMapping =
-{
-    {"float",       UniformType::FLOAT},
-    {"int",         UniformType::INT},
-    {"bool",        UniformType::BOOL},
-    {"samplerCube", UniformType::SAMPLERCUBE},
-    {"sampler2D",   UniformType::SAMPLER2D},
-    {"mat3",        UniformType::MAT3},
-    {"mat4",        UniformType::MAT4},
-    {"vec2",        UniformType::VEC2},
-    {"vec3",        UniformType::VEC3},
-    {"vec4",        UniformType::VEC4},
-};
-
-gr::Shader* AssetsManager::LoadShaderFromFile(const std::string& file)
+ShaderPrefab* AssetsManager::LoadShaderFromFile(const std::string& file)
 {
     ShaderAsset asset;
     if (!LoadFromFile(file, &asset))
         return nullptr;
 
-    auto fragment_source = asset.GetFragment().c_str();
-    auto vertex_source = asset.GetVertex().c_str();
-
-    auto shader = AssetsManager::CreateShader(asset.GetName());
-
-    if (shader->build(&fragment_source, 1, &vertex_source, 1) == -1)
-    {
-        Console::LogError("[ AssetsManager::LoadShaderFromFile ] Shader.Build Fail to build shader, %s, %s", asset.GetName().c_str(), "null");
-        return nullptr;
-    }
-
-    for (auto&& [name, info] : asset.GetUnifoms())
-    {
-        auto &&[typesname, count] = info;
-
-        auto it = mTypeMapping.find(typesname);
-        if (it == mTypeMapping.end())
-        {
-            Console::LogWarning("[ ShaderLoadTask ] Vertex Shader uniform type do not is valid: %s, %s", name.c_str(), typesname.c_str());
-            continue;
-        }
-
-        if (shader->registry(name.c_str(), count, it->second) == GR_INVALID_ID)
-            Console::LogWarning("[ShaderLoadTask] fail in to registry: %s", name.c_str());
-    }
-
-    return shader;
+    return s_AssetsManager->mShaderPrefabManager->create(&asset);
 }
 
 MeshID AssetsManager::LoadMesh(const std::string& name)
@@ -340,7 +313,7 @@ MeshID AssetsManager::LoadMeshFromFile(const std::string& file)
 }
 
 // private
-AssetsManager::AssetsManager() : mMaterialManager(new MaterialManager()), mMeshManager(new MeshManager())
+AssetsManager::AssetsManager() : mMaterialManager(new MaterialManager()), mMeshManager(new MeshManager()), mShaderPrefabManager(new ShaderPrefabManager())
 {}
 
 AssetsManager::~AssetsManager()
@@ -348,6 +321,8 @@ AssetsManager::~AssetsManager()
     delete mMaterialManager;
 
     delete mMeshManager;
+
+    delete mShaderPrefabManager;
 }
 
 bool AssetsManager::LoadFromFile(const std::string& file, Asset* asset)

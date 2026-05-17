@@ -30,6 +30,7 @@ set(thread
 
 set(core
     src/core/mainthreaddispatcher.cpp
+    src/core/materialInstance.cpp
     src/core/assetReference.cpp
     src/core/renderSystem.cpp
     src/core/rendertarget.cpp
@@ -103,6 +104,7 @@ set(managers_src
     src/managers/octreemanager.cpp
     src/managers/assetsManager.cpp
     src/managers/shadermanager.cpp
+    src/managers/shaderprefabmanager.cpp
     src/managers/sceneManager.cpp
     src/managers/meshmanager.cpp
 )
@@ -139,19 +141,21 @@ set(SYSTEM_SRC
     src/system/worldsystem.cpp
 )
 
+set(PREFAB_SRC
+    src/prefab/shaderprefab.cpp
+)
+
 find_package(Bullet QUIET)
 if(NOT Bullet_FOUND)
     message(FATAL_ERROR "Please install libbullet-dev")
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${SCRIPT_SRC} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNAL_SRC} ${ECS_SRC} ${ASSET_SRC} ${TASK_SRC} ${SYSTEM_SRC})
+add_library(${PROJECT_NAME} SHARED ${SCRIPT_SRC} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNAL_SRC} ${ECS_SRC} ${ASSET_SRC} ${TASK_SRC} ${SYSTEM_SRC} ${PREFAB_SRC})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     ${BULLET_INCLUDE_DIRS}
-    imgui/src/backends
-    imgui/src
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${BULLET_LIBRARIES})

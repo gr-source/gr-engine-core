@@ -2,6 +2,7 @@
 
 #include "gr-base/core/default.hpp"
 
+#include "gr-base/core/materialInstance.hpp"
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/script/default.hpp"
@@ -10,15 +11,21 @@
 
 #include <gr-math/types.hpp>
 #include <gr-render/shader.hpp>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
-struct RenderCommand
+class RenderBatch
 {
-    MaterialID materialID;
-    MeshID meshID;
-    ComponentHandle transformID;
+public:
+    std::vector<ComponentHandle> instances;
+    std::vector<Matrix4x4> matrices;
+
+    std::shared_ptr<MaterialInstance> materialInstance;
+
+    Mesh* mesh;
+    int submeshID;
 };
 
 class RenderSystem
@@ -43,13 +50,9 @@ private:
 
     std::unordered_set<GameObjectHandle> m_markToRender;
 
-    std::unordered_map<MaterialID, std::unordered_map<uint64_t, std::vector<Matrix4x4>>> m_queueFirstCmd;
+    std::unordered_map<uint64_t, size_t> m_batchIndex;
 
-    // std::unordered_map<GameObjectHandle, std::vector<RenderCommand>> m_renderable;
-
-    std::unordered_map<uint64_t, std::tuple<int, std::vector<ComponentHandle>>> m_renderable;
-
-    std::unordered_map<GameObjectHandle, std::vector<uint64_t>> m_objectsToRenderKey;
+    std::vector<RenderBatch> m_batches;
 
     void insert(GameObjectHandle handle);
 

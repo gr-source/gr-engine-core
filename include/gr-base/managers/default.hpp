@@ -12,4 +12,6 @@ typedef uint32_t MeshID;
 class MaterialManager;
 class MeshManager;
 
+class ShaderPrefabManager;
+
 

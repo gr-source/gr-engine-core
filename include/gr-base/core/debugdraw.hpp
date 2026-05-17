@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gr-base/prefab/default.hpp"
+
 #include "gr-base/script/default.hpp"
 #include <gr-math/color.hpp>
 #include <gr-math/gmath.hpp>
@@ -44,9 +46,13 @@ private:
 
         std::shared_ptr<gr::vertex_buffer> m_buffer;
 
-        gr::Shader *m_shader;
+        ShaderPrefab* m_shaderPrefab;
+
+        gr::Shader* m_shader;
 
         LineRender();
+
+        void init();
 
         void render(const Camera *camera, const Line3D *data, std::size_t size);
     };

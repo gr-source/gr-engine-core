@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gr-base/prefab/default.hpp"
+
 #include <cstdint>
 #include <string>
 #include <array>
@@ -12,64 +14,42 @@ public:
     Material();
     ~Material();
     
-    void setTexture(int idx, gr::gTexture *texture);
-
-    gr::gTexture *getTexture(int idx) const;
-
-    std::array<gr::gTexture *, 10> getTextures() const;
-
-    inline gr::Shader *GetShader() const
-    {
-        return bEnableInstancing ? m_shader_instanced : m_shader;
-    }
-
-    inline void SetShader(gr::Shader* shader)
-    {
-        m_shader = shader;
-    }
-
-    void SetEnableInstancing();
-
-    void SetDisableInstancing();
-
-    bool supportsInstancing() const;
-
-    template <typename T>
-    T *Get(const std::string &name);
-
     template <typename T>
     void Set(const std::string &name, const T &value);
 
-    void Set(const char *name, u8 count, const void *data);
+    void Set(const std::string &name, const void *data, size_t size);
 
-    void flush(gr::Shader* shader) const;
+    template <typename T>
+    const T* Get(const std::string& name);
+
+    const void* GetInternal(const std::string &name) const;
+
+    inline void SetShaderPrefab(ShaderPrefab *prefab)
+    {
+        m_prefab = prefab;
+    }
+
+    inline ShaderPrefab* GetShaderPrefab() const
+    {
+        return m_prefab;
+    }
 
 private:
-    std::array<gr::gTexture *, 10> m_textures;
+    std::unordered_map<std::string, std::vector<uint8_t>> m_overrides;
 
-    std::vector<uint8_t> m_buffer;
-
-    gr::Shader *m_shader_instanced;
-
-    gr::Shader *m_shader;
-
-    bool bEnableInstancing;
-
-    bool setupTexture(int id, gr::gTexture *texture);
-
-    void* Get(const char* name);
+    ShaderPrefab *m_prefab;
 };
 
 template <typename T>
-inline T *Material::Get(const std::string &name)
+inline const T *Material::Get(const std::string &name)
 {
-    return reinterpret_cast<T*>(Get(name.c_str()));
+    return reinterpret_cast<const T*>(GetInternal(name.c_str()));
 }
 
 template <typename T>
 inline void Material::Set(const std::string &name, const T &value)
 {
-    Set(name.c_str(), 1, (const void*)&value);
+    Set(name.c_str(), &value, sizeof(T));
 }
 
 

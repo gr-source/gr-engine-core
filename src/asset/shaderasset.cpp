@@ -3,6 +3,9 @@
 #include "gr-base/core/file/stream.hpp"
 #include <cstdint>
 
+ShaderAsset::ShaderAsset() : m_flags(0)
+{}
+
 void ShaderAsset::AddUniform(const std::string& name, const std::string& typesname, int count)
 {
     m_parameters.emplace(name, std::make_tuple(typesname, count));
@@ -17,6 +20,9 @@ bool ShaderAsset::serialize(Stream* stream) const
         return false;
 
     if (!stream->write(m_vertex))
+        return false;
+
+    if (!stream->write(m_flags))
         return false;
 
     uint64_t length = static_cast<uint64_t>(m_parameters.size());
@@ -48,6 +54,9 @@ bool ShaderAsset::deserialize(Stream* stream)
         return false;
 
     if (!stream->read(m_vertex))
+        return false;
+
+    if (!stream->read(m_flags))
         return false;
 
     uint64_t length = 0;

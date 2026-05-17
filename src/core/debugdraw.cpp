@@ -1,5 +1,6 @@
 #include "gr-base/core/debugdraw.hpp"
 
+#include "gr-base/core/console.hpp"
 #include "gr-base/core/logger.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
@@ -8,6 +9,9 @@
 #include "gr-base/core/geometry/shaderData.hpp"
 
 #include "gr-base/script/camera.hpp"
+
+#include "gr-base/prefab/shaderprefab.hpp"
+#include <exception>
 
 DebugDraw* DebugDraw::s_DebugDraw = nullptr;
 
@@ -56,7 +60,8 @@ void DebugDraw::Clear()
 
 // private
 DebugDraw::DebugDraw()
-{}
+{
+}
 
 DebugDraw::~DebugDraw()
 {}
@@ -69,8 +74,10 @@ void DebugDraw::drawLine(const Vector3 &start, const Vector3 &end, const Color &
 
 void DebugDraw::render(const Camera *camera)
 {
-    if (m_linerender.m_shader != nullptr)
-        m_linerender.render(camera, m_lines.data(), m_lines.size());
+    if (m_linerender.m_shaderPrefab == nullptr)
+        return m_linerender.init();
+
+    m_linerender.render(camera, m_lines.data(), m_lines.size());
 }
 
 void DebugDraw::clear()
@@ -81,18 +88,28 @@ void DebugDraw::clear()
 #include <gr-render/vertex_array.hpp>
 
 // LineRender
-DebugDraw::LineRender::LineRender() : m_shader(nullptr)
+DebugDraw::LineRender::LineRender() : m_shaderPrefab(nullptr), m_shader(nullptr)
 {
-    ShaderParams params;
-    params.base = gfile::get_data_directory() + "/assets/shader/line.glsl";
-    params.flags = 0;
-    params.type = ShaderType::LINE;
-    params.name = "debug_line";
+}
 
+void DebugDraw::LineRender::init()
+{
+    try
+    {
+        m_shaderPrefab = AssetsManager::LoadShader2("line.gshd");
+    } catch (const std::exception& e)
+    {
+        return Console::LogError("[DebugDraw] Fail in to load shader to line '%s'!!!", e.what());
+    }
+
+    m_shader = m_shaderPrefab->Get(ShaderPrefabFlags_none);
+
+    /*
     AssetsManager::LoadShaderAsync(params, [&](gr::Shader *shader)
             {
                 m_shader = shader;
             });
+    */
 
     gr::buffer_layout layout = {
         {gr::shader_data_type::Float3, "in_pos"},

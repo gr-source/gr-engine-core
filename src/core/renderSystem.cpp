@@ -16,6 +16,8 @@
 #include "gr-base/script/camera.hpp"
 #include "gr-base/script/light.hpp"
 
+#include "gr-base/prefab/shaderprefab.hpp"
+
 #include <GL/glew.h>
 #include <algorithm>
 
@@ -65,27 +67,6 @@ void RenderSystem::insert(GameObjectHandle handle)
 void RenderSystem::remove(GameObjectHandle gameObjectID)
 {
     m_markToRender.erase(gameObjectID);
-
-    auto it = m_objectsToRenderKey.find(gameObjectID);
-    if (it != m_objectsToRenderKey.end())
-    {
-        auto myTransformID = GameObject::Get(gameObjectID)->GetID<Transform>();
-
-        for (auto& key : it->second)
-        {
-            auto&& [submeshID, vec] = m_renderable[key];
-
-            vec.erase(
-                std::remove(vec.begin(), vec.end(), myTransformID),
-                vec.end()
-            );
-
-            if (vec.empty())
-                m_renderable.erase(key);
-        }
-
-        m_objectsToRenderKey.erase(it);
-    }
 }
 
 void RenderSystem::update()
@@ -97,6 +78,7 @@ void RenderSystem::update()
         m_markToRender.clear();
     }
 
+    /*
     for (auto&& [handle, tuple] : m_renderable)
     {
         auto&& [submeshID, transforms] = tuple;
@@ -116,6 +98,7 @@ void RenderSystem::update()
             vec[i] = transform->getGlobalMatrix();
         }
     }
+    */
 }
 
 // sort by
@@ -128,19 +111,18 @@ void RenderSystem::begin(const Camera* camera)
     auto view = camera->getViewmatrix();
     auto position = camera->getPosition();
 
-    auto list = AssetsManager::GetShaderList(ShaderType::SHADER3D);
-    for (auto &shader : list)
+    for (auto prefab : AssetsManager::GetAllShader3D())
     {
-        if (!shader)
-            continue;
+        for (auto shader : prefab->GetShaders())
+        {
+            shader->bind();
+            shader->setUniform("u_mat_projection", &projection);
+            shader->setUniform("u_mat_view",       &view);
+            shader->setUniform("u_mat_eye",        &position);
 
-        shader->bind();
-        shader->setUniform("u_mat_projection", &projection);
-        shader->setUniform("u_mat_view",       &view);
-        shader->setUniform("u_mat_eye",        &position);
-
-        setuplight(scene, shader);
-        shader->unbind();
+            setuplight(scene, shader);
+            shader->unbind();
+        }
     }
 
     Frustum::CalculateFrustum(projection * view);
@@ -151,74 +133,65 @@ void RenderSystem::end()
 
 void RenderSystem::renderer()
 {
-    const gr::vertex_array* lastVertexArray = nullptr;
-    gr::Shader* lastShader = nullptr;
-    Material* lastMaterial = nullptr;
-
-    for (auto&& [materialID, sortByMesh] : m_queueFirstCmd)
+    for (auto& batch : m_batches)
     {
-        Material* material = AssetsManager::GetMaterial(materialID);
+        bool bInstancing = batch.instances.size() > 1;
 
-        auto shader = material->GetShader();
+        auto materialInstance = batch.materialInstance;
 
-        if (shader != lastShader)
+        auto material = materialInstance->GetMaterial();
+
+        auto shader = material->GetShaderPrefab()->Get(bInstancing ? ShaderPrefabFlags_Instancing : ShaderPrefabFlags_none);
+        materialInstance->SetShader(shader);
+
+        materialInstance->sync();
+
+        auto mesh = batch.mesh;
+
+        auto vertexarray = mesh->GetGpuMesh();
+
+        bool enable[10] = {false};
+        int textureID[10] = {0};
+
+        shader->bind();
+        shader->setUniform("u_mat_texture", textureID);
+        shader->setUniform("u_mat_enable", enable);
+
+        materialInstance->flush();
+
+        vertexarray->Bind();
+
+        auto &submesh = mesh->GetSubMesh(batch.submeshID);
+
+        if (bInstancing)
         {
-            lastShader = shader;
+            batch.matrices.resize(batch.instances.size());
 
-            bool enable[10] = {false};
-            int textureID[10] = {0};
+            for (size_t i=0;i<batch.instances.size();i++)
+                batch.matrices[i] = ComponentStorage::GetComponent<Transform>(batch.instances[i])->getGlobalMatrix();
 
-            shader->bind();
-            shader->setUniform("u_mat_texture", textureID);
-            shader->setUniform("u_mat_enable", enable);
+            auto pbo = mesh->GetIntancingBuffer();
+
+            pbo->Bind();
+            pbo->SetData(batch.matrices.data(), batch.matrices.size() * sizeof(Matrix4x4));
+            pbo->Unbind();
+
+            glDrawElementsInstanced(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexOffset * sizeof(uint32_t)), batch.instances.size());
+        } else
+        {
+            shader->set_uniform("u_mat_model", ComponentStorage::GetComponent<Transform>(batch.instances[0])->getGlobalMatrix());
+
+            glDrawElements(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexOffset * sizeof(uint32_t)));
         }
 
-        if (lastMaterial != material)
-        {
-            lastMaterial = material;
-
-            material->flush(shader);
-        }
-
-        ShaderID u_model = shader->findUniform("u_mat_model");
-
-        for (auto&& [handle, transforms] : sortByMesh)
-        {
-            uint32_t meshID = handle_get_first(handle);
-
-            Mesh* mesh = AssetsManager::GetMesh(meshID);
-
-            auto vertexarray = mesh->GetGpuMesh();
-            if (lastVertexArray != vertexarray)
-            {
-                lastVertexArray = vertexarray;
-                vertexarray->Bind();
-            }
-
-            auto &submesh = mesh->GetSubMesh(handle_get_second(handle));
-
-            if (material->supportsInstancing())
-            {
-                auto pbo = mesh->GetIntancingBuffer();
-
-                pbo->Bind();
-                pbo->SetData(transforms.data(), transforms.size() * sizeof(Matrix4x4));
-                pbo->Unbind();
-
-                glDrawElementsInstanced(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexOffset * sizeof(uint32_t)), transforms.size());
-            } else
-            {
-                for (auto& matrix : transforms)
-                {
-                    shader->SetUniform(u_model, &matrix);
-
-                    glDrawElements(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexOffset * sizeof(uint32_t)));
-                }
-            }
-        }
     }
+}
 
-    m_queueFirstCmd.clear();
+uint64_t make_handle(MaterialID materialID, MeshID meshID, uint32_t submeshIndex)
+{
+    return ((uint64_t)materialID << 32) |
+           ((uint64_t)meshID << 16) |
+           (uint64_t)submeshIndex;
 }
 
 void RenderSystem::setup(GameObjectHandle gameObjectID)
@@ -244,31 +217,36 @@ void RenderSystem::setup(GameObjectHandle gameObjectID)
     if (materialIDs.size() != mesh->GetSubMeshCount())
         return Console::LogError("[RenderSystem] Erro de configuracao no objeto '%s': Quantidade de materiais (%ld) nao condiz com a quantidade de sub-meshes (%ld).", gameobject->GetName().c_str(), materialIDs.size(), mesh->GetSubMeshCount());
 
-    std::vector<uint64_t> handles;
+    auto vertexarray = mesh->GetGpuMesh();
+
+    if (vertexarray == nullptr)
+        mesh->Build();
+
+    std::hash<MaterialID> hash;
 
     size_t submeshcount = mesh->GetSubMeshCount();
     for (size_t i=0;i<submeshcount;i++)
     {
         MaterialID materialID = materialIDs[i];
 
-        Mesh* mesh = AssetsManager::GetMesh(meshID);
+        for (size_t j=0;j<mesh->GetSubMeshCount();j++)
+        {
+            uint64_t key = make_handle(materialID, meshID, j);
 
-        auto vertexarray = mesh->GetGpuMesh();
+            auto it = m_batchIndex.find(key);
+            if (it == m_batchIndex.end())
+            {
+                auto& batch = m_batches.emplace_back();
+                batch.materialInstance = std::make_shared<MaterialInstance>(AssetsManager::GetMaterial(materialID));
+                batch.mesh = mesh;
+                batch.submeshID = j;
 
-        if (vertexarray == nullptr)
-            mesh->Build();
+                m_batchIndex[key] = m_batches.size() - 1;
+            }
 
-        uint64_t handle = handle_create(materialID, meshID);
-
-        auto&& [submeshID, vec] = m_renderable[handle];
-        submeshID = i;
-
-        vec.push_back(transformID);
-
-        handles.push_back(handle);
+            m_batches[m_batchIndex[key]].instances.push_back(transformID);
+        }
     }
-
-    m_objectsToRenderKey.emplace(gameObjectID, handles);
 }
 
 void RenderSystem::setuplight(const Scene* scene, gr::Shader *shader)

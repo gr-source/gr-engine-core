@@ -358,6 +358,7 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
             auto material_name = AssetsManager::GetMaterialName(materialID);
             auto material = AssetsManager::GetMaterial(materialID);
 
+            /*
             auto shader_name = AssetsManager::GetShaderName(material->GetShader());
 
             {
@@ -371,6 +372,7 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
                 if (it == m_materialmap.end())
                     m_materialmap.emplace(material_name, materialID);
             }
+            */
         }
     }
 

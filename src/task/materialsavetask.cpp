@@ -13,7 +13,7 @@ MaterialSaveTask::MaterialSaveTask(const std::string& file, const MaterialAsset&
 // private
 void MaterialSaveTask::onPreExecute()
 {
-    auto name = gfile::get_file_name(m_file.c_str());
+    auto name = m_asset.GetName();
 
     Console::LogInfo("[Task] Saving material '%s'...", name.c_str());
 }
@@ -38,7 +38,7 @@ int MaterialSaveTask::doInBackground()
 
 void MaterialSaveTask::onPostExecute(int result)
 {
-    auto name = gfile::get_file_name(m_file.c_str());
+    auto name = m_asset.GetName();
 
     if (result != 0)
     {

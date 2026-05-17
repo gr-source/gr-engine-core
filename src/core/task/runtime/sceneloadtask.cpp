@@ -235,6 +235,7 @@ int SceneLoadTask::read_shader(Stream *stream)
         {
             return 2;
         }
+        /*
         auto shader = AssetsManager::FindShader(shadername);
         if (shader == nullptr)
         {
@@ -243,6 +244,7 @@ int SceneLoadTask::read_shader(Stream *stream)
         }
         if (shader != nullptr)
             m_shadermap.emplace(shadername, shader);
+        */
     }
     return 0;
 }

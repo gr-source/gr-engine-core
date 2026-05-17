@@ -29,7 +29,7 @@ private:
 
     void onPostExecute(int result) override;
 
-    ShaderAsset onStartParceShader(bool instanced);
+    ShaderAsset onStartParceShader();
 
     std::tuple<std::string, std::string, std::vector<std::string>, ShaderType> ReadingSourceFileShader();
 
