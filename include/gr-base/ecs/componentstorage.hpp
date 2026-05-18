@@ -35,6 +35,9 @@ public:
 
     static Component* GetComponent(ComponentHash hash, ComponentHandle id);
 
+    template <typename T>
+    static ComponentSparseSet *GetSparset();
+
     static void NotifyUpdate(ComponentHash hash, TypeInfo* src);
 
     static void Start();
@@ -65,6 +68,8 @@ private:
 
     Component* getComponent(ComponentHash hash, ComponentHandle handle);
 
+    ComponentSparseSet* getSparset(ComponentHash hash);
+
     bool reinstance(ComponentHash hash, Component* dest, const Component* src);
 
     void start();
@@ -78,6 +83,11 @@ inline T* ComponentStorage::GetComponent(ComponentHandle handle)
     return static_cast<T*>(s_ComponentStorage->getComponent(GetHashByType<T>(), handle));
 }
 
+template <typename T>
+inline ComponentSparseSet *ComponentStorage::GetSparset()
+{
+    return s_ComponentStorage->getSparset(GetHashByType<T>());
+}
 
 
 

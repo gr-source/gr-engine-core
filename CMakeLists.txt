@@ -138,6 +138,7 @@ set(TASK_SRC
 )
 
 set(SYSTEM_SRC
+    src/system/transformsystem.cpp
     src/system/worldsystem.cpp
 )
 

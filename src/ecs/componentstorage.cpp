@@ -259,6 +259,14 @@ Component* ComponentStorage::getComponent(ComponentHash hash, ComponentHandle ha
     return (Component *)(wrapper + (slot->denseIndex * info->stride + info->offset));
 }
 
+
+ComponentSparseSet* ComponentStorage::getSparset(ComponentHash hash)
+{
+    size_t storageID = hash & (COMPONENT_TABLE_SIZE - 1);
+
+    return (ComponentSparseSet*)m_storage->vector + storageID;
+}
+
 bool ComponentStorage::reinstance(ComponentHash hash, Component* dest, const Component* src)
 {
     TypeInfo* info = ComponentRegistry::Get(hash);

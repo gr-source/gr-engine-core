@@ -15,9 +15,9 @@ typedef void (*MethodPointer)();
 
 typedef struct ComponentSparseSet
 {
-    array* dense;
-    ComponentID count;
     ComponentID capacity;
+    ComponentID count;
+    array* dense;
 } ComponentSparseSet;
 
 typedef struct MethodInfo
