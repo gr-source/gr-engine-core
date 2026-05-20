@@ -31,6 +31,11 @@ public:
         return m_shaders;
     }
 
+    inline const ShaderAsset& GetAsset() const
+    {
+        return m_asset;
+    }
+
 private:
     std::unordered_map<ShaderPrefabFlags_, std::unique_ptr<gr::Shader>> m_shadervariant;
 

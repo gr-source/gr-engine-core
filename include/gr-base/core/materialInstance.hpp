@@ -22,6 +22,11 @@ public:
         }
     }
 
+    inline gr::Shader* GetShader() const
+    {
+        return m_shader;
+    }
+
     void sync();
 
     void flush();

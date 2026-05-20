@@ -14,6 +14,9 @@ struct RenderCommand
     MeshID meshID;
     int subMeshID;
     Matrix4x4 matrix;
+
+    const SubMesh* cacheSubMesh;
+    Mesh* mesh;
 };
 
 #include <vector>
@@ -24,8 +27,9 @@ class RenderBatch
 public:
     std::vector<Matrix4x4> matrices;
 
-    std::shared_ptr<MaterialInstance> materialInstance;
+    MaterialInstance* materialInstance;
 
+    const SubMesh* cacheSubMesh;
     Mesh* mesh;
     int submeshID;
 };
@@ -43,7 +47,7 @@ public:
 
     static void SetRenderTarget(RenderTarget* rt);
 
-    static void AddCommand(const RenderCommand& cmd, MaterialID &batchID);
+    static void AddCommand(const RenderCommand& cmd);
 
 private:
     static Renderer& GetInstance();
@@ -60,6 +64,6 @@ private:
 
     void renderCmd();
 
-    void addCommand(const RenderCommand& cmd, MaterialID &batchID);
+    void addCommand(const RenderCommand& cmd);
 };
 

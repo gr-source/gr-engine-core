@@ -67,50 +67,106 @@ Renderer& Renderer::GetInstance()
 
 void Renderer::renderCmd()
 {
+    bool enable[10] = {false};
+    int textureID[10] = {0};
+
+    gr::Shader* currentShader = nullptr;
+    gr::vertex_array* currentVAO = nullptr;
+    MaterialInstance* currentMaterial = nullptr;
+    gr::vertex_buffer* currentInstanceBuffer = nullptr;
+
     for (auto& batch : m_batches)
     {
-        bool bInstancing = batch.matrices.size() > 1;
+        if (batch.matrices.empty())
+            continue;
 
-        auto materialInstance = batch.materialInstance;
+        bool instancing = batch.matrices.size() > 1;
 
-        auto material = materialInstance->GetMaterial();
+        MaterialInstance* materialInstance = batch.materialInstance;
+        const Material* material = materialInstance->GetMaterial();
 
-        auto shader = material->GetShaderPrefab()->Get(bInstancing ? ShaderPrefabFlags_Instancing : ShaderPrefabFlags_none);
-        materialInstance->SetShader(shader);
+        gr::Shader* shader =
+            material->GetShaderPrefab()->Get(
+                instancing
+                    ? ShaderPrefabFlags_Instancing
+                    : ShaderPrefabFlags_none);
 
-        materialInstance->sync();
+        // =========================
+        // SHADER BIND CACHE
+        // =========================
 
-        auto mesh = batch.mesh;
-
-        auto vertexarray = mesh->GetGpuMesh();
-
-        bool enable[10] = {false};
-        int textureID[10] = {0};
-
-        shader->bind();
-        shader->setUniform("u_mat_texture", textureID);
-        shader->setUniform("u_mat_enable", enable);
-
-        materialInstance->flush();
-
-        vertexarray->Bind();
-
-        auto &submesh = mesh->GetSubMesh(batch.submeshID);
-
-        if (bInstancing)
+        if (shader != currentShader)
         {
-            auto pbo = mesh->GetIntancingBuffer();
+            currentShader = shader;
 
-            pbo->Bind();
-            pbo->SetData(batch.matrices.data(), batch.matrices.size() * sizeof(Matrix4x4));
-            pbo->Unbind();
+            shader->bind();
 
-            glDrawElementsInstanced(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexOffset * sizeof(uint32_t)), batch.matrices.size());
-        } else
+            shader->setUniform("u_mat_texture", textureID);
+            shader->setUniform("u_mat_enable", enable);
+        }
+
+        // =========================
+        // MATERIAL CACHE
+        // =========================
+
+        if (materialInstance != currentMaterial)
         {
-            shader->set_uniform("u_mat_model", batch.matrices[0]);
+            currentMaterial = materialInstance;
 
-            glDrawElements(GL_TRIANGLES, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexOffset * sizeof(uint32_t)));
+            materialInstance->SetShader(shader);
+
+            materialInstance->sync();
+            materialInstance->flush();
+        }
+
+        // =========================
+        // VAO CACHE
+        // =========================
+
+        auto vao = batch.mesh->GetGpuMesh();
+
+        if (vao != currentVAO)
+        {
+            currentVAO = vao;
+            vao->Bind();
+        }
+
+        // =========================
+        // DRAW
+        // =========================
+
+        if (instancing)
+        {
+            auto pbo = batch.mesh->GetIntancingBuffer();
+
+            if (pbo != currentInstanceBuffer)
+            {
+                currentInstanceBuffer = pbo;
+                pbo->Bind();
+            }
+
+            pbo->SetData(
+                batch.matrices.data(),
+                batch.matrices.size() * sizeof(Matrix4x4));
+
+            glDrawElementsInstanced(
+                GL_TRIANGLES,
+                batch.cacheSubMesh->indexCount,
+                GL_UNSIGNED_INT,
+                (void*)(batch.cacheSubMesh->indexOffset * sizeof(uint32_t)),
+                (GLsizei)batch.matrices.size());
+        }
+        else
+        {
+            shader->set_uniform(
+                "u_mat_model",
+                batch.matrices[0]);
+
+            glDrawElements(
+                GL_TRIANGLES,
+                batch.cacheSubMesh->indexCount,
+                GL_UNSIGNED_INT,
+                (void*)(batch.cacheSubMesh->indexOffset * sizeof(uint32_t)));
         }
 
         batch.matrices.clear();
@@ -129,38 +185,13 @@ uint64_t make_handle(MaterialID materialID, MeshID meshID, uint32_t submeshIndex
            (uint64_t)submeshIndex;
 }
 
-void Renderer::AddCommand(const RenderCommand& cmd, MaterialID &batchID)
+void Renderer::AddCommand(const RenderCommand& cmd)
 {
-    GetInstance().addCommand(cmd, batchID);
+    GetInstance().addCommand(cmd);
 }
 
-void Renderer::addCommand(const RenderCommand& cmd, MaterialID &batchID)
+void Renderer::addCommand(const RenderCommand& cmd)
 {
-    if (batchID == InvalidNode)
-    {
-        uint64_t key = make_handle(cmd.materialID, cmd.meshID, cmd.subMeshID);
-
-        if (m_batchMap.find(key) != m_batchMap.end())
-        {
-            batchID = m_batchMap[key];
-        } else
-        {
-            auto& batch = m_batches.emplace_back();
-            batch.submeshID = cmd.subMeshID;
-            batch.mesh = AssetsManager::GetMesh(cmd.meshID);
-            batch.materialInstance = std::make_shared<MaterialInstance>(AssetsManager::GetMaterial(cmd.materialID));
-            batch.matrices.push_back(cmd.matrix);
-
-            m_batchMap.emplace(key, m_batches.size() - 1);
-
-            batchID = m_batches.size() - 1;
-        }
-        return;
-    }
-
-    m_batches[batchID].matrices.push_back(cmd.matrix);
-
-    /*
     uint64_t key = make_handle(cmd.materialID, cmd.meshID, cmd.subMeshID);
 
     if (m_batchMap.find(key) != m_batchMap.end())
@@ -170,13 +201,14 @@ void Renderer::addCommand(const RenderCommand& cmd, MaterialID &batchID)
     {
         auto& batch = m_batches.emplace_back();
         batch.submeshID = cmd.subMeshID;
-        batch.mesh = AssetsManager::GetMesh(cmd.meshID);
-        batch.materialInstance = std::make_shared<MaterialInstance>(AssetsManager::GetMaterial(cmd.materialID));
+        batch.mesh = cmd.mesh;
+        batch.materialInstance = new MaterialInstance(AssetsManager::GetMaterial(cmd.materialID));
         batch.matrices.push_back(cmd.matrix);
+        batch.mesh = cmd.mesh;
+        batch.cacheSubMesh = cmd.cacheSubMesh;
 
         m_batchMap.emplace(key, m_batches.size() - 1);
     }
-    */
 }
 
 

@@ -85,23 +85,21 @@ class View
 public:
     std::vector<ArcheTypeID> m_matching;
 
-    Signature requiredMask;
-
     ECS* m_world;
 
     ComponentID m_count;
 public:
 
     View(ECS* world)
-        : m_world(world), m_count(0), requiredMask(0)
+        : m_world(world), m_count(0)
     {
-        requiredMask = (0ull | ... | (1ull << Type::GetTypeID<Components>()));
+        Signature requiredMask = Type::GetMask<Components...>();
 
         ArchetypeStorage* array = world->GetRawArcheType();
 
         for (ArcheTypeID i=0;i<world->GetArcheTypeCount();i++)
         {
-            if ((array[i].GetMask() & requiredMask) == requiredMask)
+            if ((array[i].m_mask & requiredMask) == requiredMask)
             {
                 m_matching.push_back(i);
                 m_count += array[i].Count();

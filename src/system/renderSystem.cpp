@@ -51,132 +51,75 @@ void RenderSystem::Update(Scene* scene)
         }
     }
 
-    Signature requiredMask = Type::GetMask<Transform, MeshRender, MeshFilter>();
-
-    static std::vector<MaterialID> m_batchlookup;
+    Signature requiredMask =
+        Type::GetMask<Transform, MeshRender, MeshFilter>();
 
     auto array = scene->GetECS()->GetRawArcheType();
 
-    for (size_t i=0;i<scene->GetECS()->GetArcheTypeCount();i++)
+    const SubMesh* cacheSubMesh = nullptr;
+
+    Mesh* cacheMesh = nullptr;
+    int submeshIndex = (int)-1;
+
+    MeshID cacheMeshID = InvalidNode;
+
+    RenderCommand cmd;
+
+    for (size_t a = 0; a < scene->GetECS()->GetArcheTypeCount(); a++)
     {
-        ArchetypeStorage& archetype = array[i];
+        ArchetypeStorage& archetype = array[a];
 
-        if ((archetype.GetMask() & requiredMask) == requiredMask)
+        if ((archetype.GetMask() & requiredMask) != requiredMask)
+            continue;
+
+        auto transforms  = archetype.GetRaw<Transform>();
+        auto meshRenders = archetype.GetRaw<MeshRender>();
+        auto meshFilters = archetype.GetRaw<MeshFilter>();
+
+        ComponentID count = archetype.Count();
+
+        for (ComponentID i = 0; i < count; i++)
         {
-            auto transforms = archetype.GetRaw<Transform>();
-            auto meshRenders = archetype.GetRaw<MeshRender>();
-            auto meshFilters = archetype.GetRaw<MeshFilter>();
+            const Matrix4x4& model = transforms[i].worldMatrix;
 
-            if (archetype.Count() >= m_batchlookup.size())
-                m_batchlookup.resize(archetype.Count() + 1, InvalidNode);
-            
-            for (ComponentID i=0;i<archetype.Count();i++)
+            MeshID meshID = meshFilters[i].meshID;
+
+            if (cacheMeshID != meshID)
             {
-                EntityID entityID = handle_get_first(archetype.GetEntity(i));
+                cacheMesh = AssetsManager::GetMesh(meshID);
 
-                Matrix4x4 model = transforms[i].worldMatrix;
+                if (cacheMesh->GetGpuMesh() == nullptr)
+                    cacheMesh->Build();
 
-                if (m_batchlookup[entityID] == InvalidNode)
+                cacheMeshID = meshID;
+            }
+
+            auto& materials = meshRenders[i].materials;
+
+            int subMeshCount = cacheMesh->GetSubMeshCount();
+
+            if (materials.size() != subMeshCount)
+                continue;
+
+            for (int j = 0; j < subMeshCount; j++)
+            {
+                if (submeshIndex != j)
                 {
-                    auto& materials = meshRenders[i].materials;
-                    MeshID meshID = meshFilters[i].meshID;
-
-                    auto mesh = AssetsManager::GetMesh(meshID);
-                    if (mesh->GetGpuMesh() == nullptr)
-                        mesh->Build();
-
-                    int subMeshCount = mesh->GetSubMeshCount();
-                    if (materials.size() == subMeshCount)
-                    {
-                        RenderCommand cmd;
-                        for (int i=0;i<subMeshCount;i++)
-                        {
-
-                            auto materialID = materials[i];
-                            auto& subMesh = mesh->GetSubMesh(i);
-
-                            cmd.materialID = materialID;
-                            cmd.meshID = meshID;
-                            cmd.subMeshID = i;
-                            cmd.matrix = model;
-
-                            MaterialID batchID = InvalidNode;
-
-                            Renderer::AddCommand(cmd, batchID);
-
-                            m_batchlookup[entityID] = batchID;
-                        }
-                    }
-
-                } else
-                {
-                    RenderCommand cmd;
-                    cmd.matrix = model;
-
-                    Renderer::AddCommand(cmd, m_batchlookup[entityID]);
+                    cacheSubMesh = &cacheMesh->GetSubMesh(j);
+                    submeshIndex = j;
                 }
+                cmd.materialID = materials[j];
+                cmd.meshID = meshID;
+                cmd.subMeshID = j;
+                cmd.matrix = model;
+                cmd.mesh = cacheMesh;
+                cmd.cacheSubMesh = cacheSubMesh;
+
+                Renderer::AddCommand(cmd);
             }
         }
     }
 
-    // static std::vector<MaterialID> m_batchlookup;
-
-    // for (auto&& [e, transform, meshRender, meshFilter] : world->Query<Transform, MeshRender, MeshFilter>())
-    {
-        /*
-        EntityID entityID = handle_get_first(e);
-        if (entityID >= m_batchlookup.size())
-            m_batchlookup.resize(entityID + 1, InvalidNode);
-
-        Matrix4x4 model = transform->worldMatrix;
-
-        if (m_batchlookup[entityID] == InvalidNode)
-        {
-            auto& materials = meshRender->materials;
-            MeshID meshID = meshFilter->meshID;
-
-            auto mesh = AssetsManager::GetMesh(meshID);
-            if (mesh->GetGpuMesh() == nullptr)
-                mesh->Build();
-
-            int subMeshCount = mesh->GetSubMeshCount();
-            if (materials.size() == subMeshCount)
-            {
-                RenderCommand cmd;
-                for (int i=0;i<subMeshCount;i++)
-                {
-                    auto materialID = materials[i];
-                    auto& subMesh = mesh->GetSubMesh(i);
-
-                    cmd.materialID = materialID;
-                    cmd.meshID = meshID;
-                    cmd.subMeshID = i;
-                    cmd.matrix = model;
-
-                    MaterialID batchID = InvalidNode;
-
-                    Renderer::AddCommand(cmd, batchID);
-
-                    m_batchlookup[entityID] = batchID;
-                }
-            }
-        } else
-        {
-            RenderCommand cmd;
-            cmd.matrix = model;
-
-            Renderer::AddCommand(cmd, m_batchlookup[entityID]);
-        }
-        */
-
-        // Matrix4x4 mvp =
-        //     cameraData->viewProjection *
-        //     model;
-    }
-
-    // Graphics::Present(
-    //     camera->renderTarget
-    // );
 }
 
 
