@@ -92,6 +92,16 @@ public:
 
     ArchetypeStorage* GetArchetypeByID(ArcheTypeID id) const;
 
+    inline ArchetypeStorage* GetRawArcheType() const
+    {
+        return m_archetypePool;
+    }
+
+    inline ArcheTypeID GetArcheTypeCount() const
+    {
+        return m_count;
+    }
+
 private:
     std::unordered_map<Signature, ArcheTypeID> m_signArcheTypeMap;
 

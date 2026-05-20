@@ -17,12 +17,6 @@
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
-template <typename... Components>
-inline Signature GetRequiredMask()
-{
-    return (0ull | ... | (1ull << Type::GetTypeID<Components>()));
-}
-
 void RenderSystem::Update(Scene* scene)
 {
     auto world = scene->GetECS();
@@ -57,29 +51,28 @@ void RenderSystem::Update(Scene* scene)
         }
     }
 
-    Signature requiredMask = GetRequiredMask<Transform, MeshRender, MeshFilter>();
+    Signature requiredMask = Type::GetMask<Transform, MeshRender, MeshFilter>();
 
     static std::vector<MaterialID> m_batchlookup;
 
-    /*
-    ArchetypeStorage* archetypeStorageArray = scene->GetECS()->GetArchetypeArray();
+    auto array = scene->GetECS()->GetRawArcheType();
 
-    for (size_t i=0;i<scene->GetECS()->GetArchetypeCount();i++)
+    for (size_t i=0;i<scene->GetECS()->GetArcheTypeCount();i++)
     {
-        ArchetypeStorage* archetype = archetypeStorageArray + i;
+        ArchetypeStorage& archetype = array[i];
 
-        if ((archetype->GetMask() & requiredMask) == requiredMask)
+        if ((archetype.GetMask() & requiredMask) == requiredMask)
         {
-            auto transforms = archetype->GetRaw<Transform>();
-            auto meshRenders = archetype->GetRaw<MeshRender>();
-            auto meshFilters = archetype->GetRaw<MeshFilter>();
+            auto transforms = archetype.GetRaw<Transform>();
+            auto meshRenders = archetype.GetRaw<MeshRender>();
+            auto meshFilters = archetype.GetRaw<MeshFilter>();
 
-            if (archetype->Count() >= m_batchlookup.size())
-                m_batchlookup.resize(archetype->Count() + 1, InvalidNode);
+            if (archetype.Count() >= m_batchlookup.size())
+                m_batchlookup.resize(archetype.Count() + 1, InvalidNode);
             
-            for (ComponentID i=0;i<archetype->Count();i++)
+            for (ComponentID i=0;i<archetype.Count();i++)
             {
-                EntityID entityID = handle_get_first(archetype->GetEntity(i));
+                EntityID entityID = handle_get_first(archetype.GetEntity(i));
 
                 Matrix4x4 model = transforms[i].worldMatrix;
 
@@ -179,7 +172,7 @@ void RenderSystem::Update(Scene* scene)
         // Matrix4x4 mvp =
         //     cameraData->viewProjection *
         //     model;
-    // }
+    }
 
     // Graphics::Present(
     //     camera->renderTarget

@@ -160,6 +160,11 @@ Entity ArchetypeStorage::GetEntity(ComponentID id) const
     return m_denseEntities[id];
 }
 
+const Entity* ArchetypeStorage::GetEntities() const
+{
+    return m_denseEntities.data();
+}
+
 void* ArchetypeStorage::Get(Entity entity, TypeID typeID)
 {
     ComponentID id = GetIndexOf(entity);

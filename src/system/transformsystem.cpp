@@ -8,24 +8,42 @@
 
 void TransformSystem::Update(ECS* world)
 {
-    for (auto&& [e, transform] : world->Query<Transform>())
+    Signature requiredMask = Type::GetMask<Transform>();
+
+    auto array = world->GetRawArcheType();
+
+    for (size_t i=0;i<world->GetArcheTypeCount();i++)
     {
-        if (!transform->dirty)
-            continue;
+        ArchetypeStorage& archetype = array[i];
 
-        transform->localMatrix = Math::CreateTRS(transform->position, transform->rotation, transform->scale);
-
-        transform->worldMatrix = transform->localMatrix;
-
-        auto rel = world->GetComponent<Relationship>(e);
-        if (rel != nullptr && rel->parent != INVALID_ENTITY)
+        if ((archetype.m_mask & requiredMask) == requiredMask)
         {
-            Transform* parentTransform = world->GetComponent<Transform>(rel->parent);
+            auto transforms = archetype.GetRaw<Transform>();
+            auto entities = archetype.GetEntities();
 
-            transform->worldMatrix = parentTransform->worldMatrix * transform->localMatrix;
+            for (ComponentID i=0;i<archetype.Count();i++)
+            {
+                auto& transform = transforms[i];
+                auto& entity = entities[i];
+
+                if (!transform.dirty)
+                    continue;
+
+                transform.localMatrix = Math::CreateTRS(transform.position, transform.rotation, transform.scale);
+
+                transform.worldMatrix = transform.localMatrix;
+
+                auto rel = world->GetComponent<Relationship>(entity);
+                if (rel != nullptr && rel->parent != INVALID_ENTITY)
+                {
+                    Transform* parentTransform = world->GetComponent<Transform>(rel->parent);
+
+                    transform.worldMatrix = parentTransform->worldMatrix * transform.localMatrix;
+                }
+
+                transform.dirty = false;
+            }
         }
-
-        transform->dirty = false;
     }
 }
 

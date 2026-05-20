@@ -17,8 +17,6 @@ class ArchetypeStorage
     std::vector<ChunkInfo> m_chunkInfoMap;
     std::vector<ChunkID> m_typeToChunk;
 
-    Signature m_mask;
-
     size_t m_capacity;
 
     size_t m_stride;
@@ -36,15 +34,17 @@ public:
     ArchetypeStorage(ArchetypeStorage&& other) noexcept;
     ~ArchetypeStorage();
 
+    Signature m_mask;
+
     std::vector<ArcheTypeID> m_removeEdges;
     std::vector<ArcheTypeID> m_addEdges;
-
-    ArcheTypeID addEdges(TypeID typeID);
 
     inline Signature GetMask() const
     {
         return m_mask;
     }
+
+    ArcheTypeID addEdges(TypeID typeID);
 
     // void LinkAdd(TypeID type, ArcheTypeID dstID);
 
@@ -55,6 +55,8 @@ public:
     ComponentID GetIndexOf(Entity e) const;
 
     Entity GetEntity(ComponentID id) const;
+
+    const Entity* GetEntities() const;
 
     void* Get(Entity entity, TypeID typeID);
 

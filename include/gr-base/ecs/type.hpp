@@ -46,6 +46,13 @@ public:
         return GetInstance().getTypeInfoByID(id);
     }
 
+    template <typename... Components>
+    inline static Signature GetMask()
+    {
+        static Signature mask = (0ull | ... | (1ull << GetTypeID<Components>()));
+        return mask;
+    }
+
 private:
     static Type& GetInstance();
 

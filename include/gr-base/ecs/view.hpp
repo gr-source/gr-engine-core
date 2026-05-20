@@ -97,12 +97,14 @@ public:
     {
         requiredMask = (0ull | ... | (1ull << Type::GetTypeID<Components>()));
 
-        for (auto& [mask, archetypeID] : world->m_signArcheTypeMap)
+        ArchetypeStorage* array = world->GetRawArcheType();
+
+        for (ArcheTypeID i=0;i<world->GetArcheTypeCount();i++)
         {
-            if ((mask & requiredMask) == requiredMask)
+            if ((array[i].GetMask() & requiredMask) == requiredMask)
             {
-                m_matching.push_back(archetypeID);
-                m_count += world->GetCount(archetypeID);
+                m_matching.push_back(i);
+                m_count += array[i].Count();
             }
         }
     }
