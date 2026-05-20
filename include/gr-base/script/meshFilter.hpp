@@ -1,10 +1,16 @@
 #pragma once
 
+#include "gr-base/core/file/default.hpp"
+
 #include "gr-base/managers/default.hpp"
 
-typedef struct MeshFilter
+struct MeshFilter
 {
     MeshID meshID;
-} MeshFilter;
+
+    static void Serialize(Stream* stream, const MeshFilter* meshFilter);
+
+    static void Deserialize(Stream* stream, MeshFilter* meshFilter);
+};
 
 

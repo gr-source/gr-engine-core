@@ -37,6 +37,14 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
             buffer.resize(type->stride, 0);
 
             memcpy(buffer.data(), component, type->stride);
+        } else if (type->serialize != nullptr)
+        {
+            MemoryStream stream;
+            ((void (*)(Stream*, const void*))(type->serialize))(&stream, component);
+
+            buffer.resize(stream.tellg(), 0);
+
+            memcpy(buffer.data(), stream.data(), stream.tellg());
         }
 
         asset.componentBuffer.emplace(type->hash, buffer);

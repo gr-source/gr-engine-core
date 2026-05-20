@@ -10,6 +10,7 @@
 
 #include "gr-base/prefab/shaderprefab.hpp"
 
+#include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
@@ -47,12 +48,7 @@ void RenderSystem::Update(Scene* scene)
         }
     }
 
-    // Graphics::Clear(
-    //     Color(0, 0, 0, 1)
-    // );
-    //
-
-    for (auto&& [e, transform, renderer] : world->Query<Transform, MeshRender>())
+    for (auto&& [e, transform, meshRender, meshFilter] : world->Query<Transform, MeshRender, MeshFilter>())
     {
         Matrix4x4 model =
             transform->worldMatrix;
@@ -60,6 +56,8 @@ void RenderSystem::Update(Scene* scene)
         Matrix4x4 mvp =
             cameraData->viewProjection *
             model;
+
+        std::cout << e << std::endl;
 
         /*
         renderer->material->SetMatrix(

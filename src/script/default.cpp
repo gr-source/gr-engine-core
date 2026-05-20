@@ -4,6 +4,7 @@
 
 #include "gr-base/ecs/type.hpp"
 
+#include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/relationship.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
@@ -19,6 +20,7 @@ void RegistryDefaultComponent()
 
     REGISTRY(Relationship, false);
     REGISTRY(MeshRender, false);
+    REGISTRY(MeshFilter, false);
     REGISTRY(CameraData, false);
     REGISTRY(Transform, true);
     REGISTRY(Camera, true);

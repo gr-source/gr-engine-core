@@ -53,6 +53,8 @@ set(binary
 )
 
 set(SCRIPT_SRC
+    src/script/meshRender.cpp
+    src/script/meshFilter.cpp
     src/script/default.cpp
 )
 

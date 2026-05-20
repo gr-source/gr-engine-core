@@ -1,6 +1,7 @@
 #include "gr-base/ecs/type.hpp"
 #include "gr-base/core/logger.hpp"
 #include <cstdlib>
+#include <iostream>
 
 // private
 Type& Type::GetInstance()

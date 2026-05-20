@@ -2,15 +2,14 @@
 #include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/core/console.hpp"
+
+#include "gr-base/core/file/memoryStream.hpp"
+#include "gr-base/core/file/fileStream.hpp"
+
+#include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/core/file/fileStream.hpp"
-#include "gr-base/core/file/memoryStream.hpp"
-
 #include "gr-base/ecs/type.hpp"
-#include "gr-base/script/name.hpp"
-#include "gr-base/script/relationship.hpp"
-#include "gr-base/script/transform.hpp"
 
 void ModelLoadTask::onPreExecute()
 {
@@ -64,9 +63,15 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset, Entity parent)
             continue;
 
         auto component = go.GetOrAddComponent(type->index);
-        if (type->globalCpy && type->serializable)
+        if (type->serializable)
         {
-            memcpy(component, buffer.data(), type->stride);
+            if (type->globalCpy)
+                memcpy(component, buffer.data(), type->stride);
+        } else if (type->deserialize != nullptr)
+        {
+            MemoryStream stream((uint8_t*)buffer.data(), buffer.size());
+
+            ((void (*)(Stream*, void*))(type->deserialize))(&stream, component);
         }
     }
 

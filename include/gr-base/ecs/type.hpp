@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gr-base/ecs/typeinfo.hpp"
+
 #include "gr-base/externals/hash.hpp"
 
 #include <cstring>
@@ -86,8 +87,6 @@ private:
 template <typename T>
 inline void Type::Registry(const char* name, bool serializable)
 {
-    static_assert(std::is_trivially_copyable_v<T>);
-
     TypeInfo info;
     info.name = name;
     info.hash = GetHash64ByType<T>(name);
@@ -103,6 +102,22 @@ inline void Type::Registry(const char* name, bool serializable)
     info.destructor = (MethodPointer)Type::Destructor<T>;
     info.copy = (MethodPointer)Type::Copy<T>;
     info.move = (MethodPointer)Type::Move<T>;
+
+    if constexpr (HasSerialize<T>::value)
+    {
+        info.serialize = (MethodPointer)T::Serialize;
+    } else
+    {
+        info.serialize = nullptr;
+    }
+
+    if constexpr (HasDeserialize<T>::value)
+    {
+        info.deserialize = (MethodPointer)T::Deserialize;
+    } else
+    {
+        info.deserialize = nullptr;
+    }
 
     GetInstance().registry(&info);
 }
