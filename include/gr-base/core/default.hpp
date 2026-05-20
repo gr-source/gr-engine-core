@@ -1,6 +1,7 @@
 #pragma once
 
-class GameObject;
+#include <cstdint>
+
 class Scene;
 
 

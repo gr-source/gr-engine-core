@@ -4,9 +4,6 @@
 #include "gr-base/core/gameObject.hpp"
 
 #include "gr-base/core/scene.hpp"
-#include "gr-base/ecs/componentstorage.hpp"
-
-#include "gr-base/externals/handle.h"
 
 #include "gr-base/managers/assetsManager.hpp"
 
@@ -19,7 +16,6 @@
 #include "gr-base/prefab/shaderprefab.hpp"
 
 #include <GL/glew.h>
-#include <algorithm>
 
 RenderSystem* RenderSystem::s_RenderSystem = nullptr;
 
@@ -28,12 +24,12 @@ void RenderSystem::SetInstance(RenderSystem *renderSystem)
     s_RenderSystem = renderSystem;
 }
 
-void RenderSystem::Insert(GameObjectHandle handle)
+void RenderSystem::Insert(Entity handle)
 {
     s_RenderSystem->insert(handle);
 }
 
-void RenderSystem::Remove(GameObjectHandle handle)
+void RenderSystem::Remove(Entity handle)
 {
     s_RenderSystem->remove(handle);
 }
@@ -59,18 +55,19 @@ void RenderSystem::Renderer()
 }
 
 // private
-void RenderSystem::insert(GameObjectHandle handle)
+void RenderSystem::insert(Entity handle)
 {
-    m_markToRender.emplace(handle);
+    // m_markToRender.emplace(handle);
 }
 
-void RenderSystem::remove(GameObjectHandle gameObjectID)
+void RenderSystem::remove(Entity gameObjectID)
 {
-    m_markToRender.erase(gameObjectID);
+    // m_markToRender.erase(gameObjectID);
 }
 
 void RenderSystem::update()
 {
+    /*
     if (!m_markToRender.empty())
     {
         for (auto& handle : m_markToRender)
@@ -105,6 +102,7 @@ void RenderSystem::update()
 // [shaderID][materialID][meshID]
 void RenderSystem::begin(const Camera* camera)
 {
+    /*
     auto scene = Scene::GetCurrent();
 
     auto projection = camera->getPerspesctive();
@@ -126,6 +124,7 @@ void RenderSystem::begin(const Camera* camera)
     }
 
     Frustum::CalculateFrustum(projection * view);
+    */
 }
 
 void RenderSystem::end()
@@ -133,6 +132,7 @@ void RenderSystem::end()
 
 void RenderSystem::renderer()
 {
+    /*
     for (auto& batch : m_batches)
     {
         bool bInstancing = batch.instances.size() > 1;
@@ -185,6 +185,7 @@ void RenderSystem::renderer()
         }
 
     }
+    */
 }
 
 uint64_t make_handle(MaterialID materialID, MeshID meshID, uint32_t submeshIndex)
@@ -194,8 +195,9 @@ uint64_t make_handle(MaterialID materialID, MeshID meshID, uint32_t submeshIndex
            (uint64_t)submeshIndex;
 }
 
-void RenderSystem::setup(GameObjectHandle gameObjectID)
+void RenderSystem::setup(Entity gameObjectID)
 {
+    /*
     auto gameobject = GameObject::Get(gameObjectID);
 
     auto meshFilter = gameobject->getComponent<MeshFilter>();
@@ -247,10 +249,12 @@ void RenderSystem::setup(GameObjectHandle gameObjectID)
             m_batches[m_batchIndex[key]].instances.push_back(transformID);
         }
     }
+    */
 }
 
 void RenderSystem::setuplight(const Scene* scene, gr::Shader *shader)
 {
+    /*
     auto lights = scene->GetLights();
 
     int numLight = static_cast<int>(lights.size());
@@ -282,6 +286,7 @@ void RenderSystem::setuplight(const Scene* scene, gr::Shader *shader)
         // shader->setUniform(("lights[" + std::to_string(i) + "].params").c_str(),      &params);
         shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].type").c_str(),       &type);
     }
+    */
 }
 
 

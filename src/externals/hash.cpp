@@ -1,6 +1,5 @@
-#include "gr-base/externals/utils.h"
+#include "gr-base/externals/hash.hpp"
 
-// FONT: https://wiki.osdev.org/CRC32
 static const uint32_t crc32_table[256] = {
     0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
     0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
@@ -68,7 +67,32 @@ static const uint32_t crc32_table[256] = {
     0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
 };
 
-uint32_t crc32_str(const char* str)
+Hash64 hash::fnv1_str(const char* str)
+{
+    uint64_t hash = 14695981039346656037UL;
+
+    char c = '\0';
+    while ((c = *str++))
+    {
+        hash ^= (uint64_t)(uint8_t)(c);
+        hash *= 1099511628211UL;
+    }
+    return hash;
+}
+
+Hash64 hash::fnv1_buff(const uint8_t* buff, size_t length)
+{
+    uint64_t hash = 14695981039346656037UL;
+
+    for (uint32_t i=0;i<length;i++)
+    {
+        hash ^= (uint64_t)(buff[i]);
+        hash *= 1099511628211UL;
+    }
+    return hash;
+}
+
+uint32_t hash::crc32_str(const char* str)
 {
     uint32_t crc = 0xFFFFFFFF;
 
@@ -82,7 +106,7 @@ uint32_t crc32_str(const char* str)
     return ~crc;
 }
 
-uint32_t crc32_data(const uint8_t* data, size_t length)
+uint32_t hash::crc32_buff(const uint8_t* data, size_t length)
 {
     uint32_t crc = 0xFFFFFFFF;
     for (size_t i = 0; i < length; i++)
@@ -92,8 +116,5 @@ uint32_t crc32_data(const uint8_t* data, size_t length)
     }
     return ~crc;
 }
-
-
-
 
 

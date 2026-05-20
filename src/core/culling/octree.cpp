@@ -11,14 +11,12 @@ Octree::Octree(const Vector3 &position, float radius, std::size_t capacity) : m_
 
 bool Octree::insert(Transform *transform)
 {
-    if (!contains(transform->getPosition()))
-    {
+    if (!contains(transform->position))
         return false;
-    }
 
     if (m_data.size() < m_capacity)
     {
-        m_pointmap.emplace(transform, transform->getPosition());
+        m_pointmap.emplace(transform, transform->position);
         m_data.emplace_back(transform);
         return true;
     } else

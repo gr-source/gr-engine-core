@@ -77,6 +77,7 @@ StreamChunk* WorldSystem::get(ChunkID id)
 
 void WorldSystem::update()
 {
+    /*
     auto scene = Scene::GetCurrent();
     if (scene == nullptr)
         return;
@@ -135,6 +136,7 @@ void WorldSystem::update()
 
     for (auto& chunkID : m_chunkLoaded)
         render(get(chunkID));
+    */
 }
 
 void WorldSystem::unloadChunk(ChunkID id)
@@ -145,9 +147,9 @@ void WorldSystem::unloadChunk(ChunkID id)
     {
         for (size_t i=0;i<vector_length(chunk->objects);i++)
         {
-            GameObjectHandle& handle = chunk->objects[i];
+            // GameObjectHandle& handle = chunk->objects[i];
 
-            GameObject::Destroy(handle);
+            // GameObject::Destroy(handle);
         }
 
         vector_free(chunk->objects);

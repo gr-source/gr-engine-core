@@ -1,26 +1,9 @@
 #pragma once
 
-#include "gr-base/core/geometry/default.hpp"
-
-#include "gr-base/script/baserender.hpp"
-#include <vector>
-
-class MeshRender : public BaseRender
+typedef struct MeshRender
 {
-public:
-    MeshRender();
-    ~MeshRender() override;
+} MeshRender;
 
-    void Init() override;
-
-    void Destroy() override;
-
-    bool Serialize(Stream *stream) const override;
-
-    bool Deserialize(Stream *stream) override;
-};
-
-// REGISTER_COMPONENT(MeshRender, CLASS_TO_HASH(BaseRender))
 
 
 

@@ -10,17 +10,17 @@
 
 #include "gr-base/core/gameObject.hpp"
 
-#include "gr-base/ecs/componentstorage.hpp"
 #include "gr-base/script/transform.hpp"
 
-ModelAsset ModelSaveTask::ConvertToAssetModel(GameObjectHandle handle)
+ModelAsset ModelSaveTask::ConvertToAssetModel(Handle handle)
 {
-    auto gameObject = GameObject::Get(handle);
+    // auto gameObject = GameObject::Get(handle);
+    //
+    // ModelAsset asset;
+    // asset.name = gameObject->GetName();
+    // asset.isStatic = gameObject->GetIsStatic();
 
-    ModelAsset asset;
-    asset.name = gameObject->GetName();
-    asset.isStatic = gameObject->GetIsStatic();
-
+    /*
     for (auto& hash : gameObject->GetHashes())
     {
         Component* behavior = gameObject->getComponent(hash);
@@ -33,23 +33,26 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(GameObjectHandle handle)
 
         asset.componentBuffer.emplace(hash, buffer);
     }
+    */
 
-    auto transform = gameObject->GetTransform();
+    // auto transform = gameObject->GetTransform();
+    /*
     for (auto& childID : transform->getChildren())
     {
         auto childTransform = ComponentStorage::GetComponent<Transform>(childID);
 
         asset.childrent.push_back(ConvertToAssetModel(childTransform->GetGameObject()->GetCacheID()));
     }
+    */
 
-    return asset;
+    // return asset;
 }
 
 ModelSaveTask::ModelSaveTask(const std::string& file, const ModelAsset& asset) : m_file(file), m_asset(asset)
 {}
 
 
-ModelSaveTask::ModelSaveTask(const std::string& file, GameObjectHandle handle) : m_file(file), m_asset(ConvertToAssetModel(handle))
+ModelSaveTask::ModelSaveTask(const std::string& file, Handle handle) : m_file(file), m_asset(ConvertToAssetModel(handle))
 {}
 
 void ModelSaveTask::onPreExecute()

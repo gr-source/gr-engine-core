@@ -11,9 +11,13 @@ class BoxCollider;
 class MeshFilter;
 class MeshRender;
 class Rigidbody;
-class Transform;
 class Animator;
-class Camera;
 class Light;
 
+struct Relationship;
+struct Transform;
+struct Camera;
+struct Name;
+
+void RegistryDefaultComponent();
 

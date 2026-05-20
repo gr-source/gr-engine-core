@@ -1,33 +1,10 @@
 #pragma once
 
-#include "gr-base/core/geometry/default.hpp"
-
-#include "gr-base/ecs/component.hpp"
-
 #include "gr-base/managers/default.hpp"
 
-class MeshFilter : public ComponentImpl<MeshFilter>
+typedef struct MeshFilter
 {
-public:
-    MeshFilter();
+    MeshID meshID;
+} MeshFilter;
 
-    inline void SetMesh(MeshID id)
-    {
-        m_meshID = id;
-    }
-
-    inline MeshID getMeshID() const
-    {
-        return m_meshID;
-    }
-
-    bool Serialize(Stream *stream) const override;
-
-    bool Deserialize(Stream *stream) override;
-    
-private:
-    MeshID m_meshID;
-};
-
-// REGISTER_COMPONENT(MeshFilter, (uint64_t)-1)
 

@@ -76,7 +76,7 @@ private:
 
     void CreateMeshFromCache();
 
-    GameObjectHandle CreateFromCache(GameObjectCache* cache);
+    // Entity CreateFromCache(GameObjectCache* cache);
 
     int read_metadata(Stream *stream);
 
@@ -92,7 +92,7 @@ private:
 
     int read_script(Stream *stream);
 
-    int read_script_from_cache(GameObject* gameObject, Stream* stream);
+    // int read_script_from_cache(GameObject* gameObject, Stream* stream);
 
     std::unique_ptr<GameObjectCache> deserialize(Stream *stream);
 };

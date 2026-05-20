@@ -54,20 +54,6 @@ set(binary
 )
 
 set(SCRIPT_SRC
-    src/script/characterController.cpp
-    src/script/skinnedMeshRender.cpp
-    src/script/LODComponent.cpp
-    src/script/meshCollider.cpp
-    src/script/boxCollider.cpp
-    src/script/meshFilter.cpp
-    src/script/baserender.cpp
-    src/script/meshRender.cpp
-    src/script/transform.cpp
-    src/script/rigidbody.cpp
-    src/script/collider.cpp
-    src/script/camera.cpp
-    src/script/light.cpp
-
     src/script/default.cpp
 )
 
@@ -97,7 +83,6 @@ set(task
 )
 
 set(managers_src
-    src/managers/gameobjectmanager.cpp
     src/managers/materialmanager.cpp
     src/managers/eventManager.cpp
     src/managers/bvhtreemanager.cpp
@@ -110,14 +95,14 @@ set(managers_src
 )
 
 set(ECS_SRC
-    src/ecs/componentregistry.cpp
-    src/ecs/componentstorage.cpp
-    src/ecs/component.cpp
-    src/ecs/typeinfo.cpp
-    src/ecs/entity.cpp
+    src/ecs/entityLocationMap.cpp
+    src/ecs/archetypeStorage.cpp
+    src/ecs/type.cpp
+    src/ecs/ecs.cpp
 )
 
 set(EXTERNAL_SRC
+    src/externals/hash.cpp
     src/externals/array.c
 )
 

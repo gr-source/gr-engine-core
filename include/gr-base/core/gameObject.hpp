@@ -1,74 +1,53 @@
 #pragma once
 
-#include "default.hpp"
+#include "gr-base/core/default.hpp"
 
-#include "gr-base/ecs/entity.hpp"
+#include "gr-base/ecs/default.hpp"
+#include "gr-base/ecs/type.hpp"
 
-#include "gr-base/script/default.hpp"
-
-class GameObject : public Entity
+struct GameObject
 {
-public:
-    static GameObjectHandle Instantiate(GameObjectHandle other);
+    Scene* scene;
 
-    static GameObjectHandle Create(const std::string& name);
+    Entity entity;
 
-    static GameObject* Get(GameObjectHandle handle);
+    void* AddComponent(TypeID typeID, const void* src = nullptr);
 
-    static void DestroyImediate(GameObjectHandle gameObjectID);
-
-    static void Destroy(GameObjectHandle gameObjectID);
-
-    GameObject() = delete;
-
-    GameObject(GameObjectHandle id);
-    GameObject(GameObject&& other) noexcept;
-    ~GameObject();
-
-    Transform* GetTransform() const;
-
-    void Copy(GameObjectHandle other);
-
-    inline std::string GetName() const
+    inline void* AddComponent(const char* name)
     {
-        return m_name;
+        return AddComponent(Type::GetTypeIDByName(name));
     }
 
-    inline void SetName(const std::string& name)
+    template <typename T>
+    inline T* AddComponent()
     {
-        m_name = name;
+        return static_cast<T*>(AddComponent(Type::GetTypeID<T>()));
     }
 
-    inline void SetScene(Scene* scene)
+    void* GetComponent(TypeID typeID) const;
+
+    inline void* GetComponent(const char* name) const
     {
-        m_scene = scene;
+        return GetComponent(Type::GetTypeIDByName(name));
     }
 
-    inline Scene* GetScene() const
+    template <typename T>
+    inline T* GetComponent() const
     {
-        return m_scene;
+        return static_cast<T*>(GetComponent(Type::GetTypeID<T>()));
     }
 
-    inline void SetIsStatic(bool value)
+    void* GetOrAddComponent(TypeID typeID);
+
+    inline void* GetOrAddComponent(const char* name)
     {
-        m_isStatic = value;
+        return GetOrAddComponent(Type::GetTypeIDByName(name));
     }
 
-    inline bool GetIsStatic() const
+    template <typename T>
+    inline T* GetOrAddComponent()
     {
-        return m_isStatic;
+        return static_cast<T*>(GetOrAddComponent(Type::GetTypeID<T>()));
     }
-
-    GameObjectHandle FindChildByName(const std::string& name);
-
-private:
-    ComponentHandle m_transform;
-
-    std::string m_name;
-
-    Scene* m_scene;
-
-    bool m_isStatic;
 };
-
 

@@ -29,7 +29,7 @@ private:
 
     std::function<void ()> m_func;
 
-    std::vector<std::tuple<std::string, std::vector<std::tuple<uint64_t, const Component *>>>> m_componentdata;
+    // std::vector<std::tuple<std::string, std::vector<std::tuple<uint64_t, const Component *>>>> m_componentdata;
 
     std::unordered_map<std::string, MaterialID> m_materialmap;
 
@@ -59,11 +59,11 @@ private:
 
     int write_script(Stream *stream);
 
-    bool serialize(Stream *stream, const GameObject *go);
+    // bool serialize(Stream *stream, const GameObject *go);
 
     void read_gameobject();
 
-    void read_data(const GameObject *gameObject);
+    // void read_data(const GameObject *gameObject);
 };
 
 

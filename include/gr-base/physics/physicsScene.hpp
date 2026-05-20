@@ -13,12 +13,14 @@
 
 #include "default.hpp"
 
+#include "gr-base/ecs/default.hpp"
+
 #define VEC3_TO_BTVEC3(vec) btVector3(vec.x, vec.y, vec.z)
 #define QUAT_TO_BTQUAT(q) btQuaternion(q.x, q.y, q.z, q.w)
 
 class Hit {
 public:
-    GameObject *collisionObject;
+    Entity collisionObject;
 
     Vector3 hitNormal;
 

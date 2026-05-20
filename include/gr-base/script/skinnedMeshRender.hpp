@@ -4,7 +4,7 @@
 
 #include "gr-base/core/animation/bone.hpp"
 
-class SkinnedMeshRender : public BaseRender
+struct SkinnedMeshRender
 {
 };
 

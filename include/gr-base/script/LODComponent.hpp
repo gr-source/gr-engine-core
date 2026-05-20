@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 #include "gr-base/core/geometry/default.hpp"
 
 #include "gr-base/ecs/component.hpp"
@@ -22,6 +23,7 @@ public:
 
     bool Deserialize(Stream* stream) override;
 };
+*/
 
 
 

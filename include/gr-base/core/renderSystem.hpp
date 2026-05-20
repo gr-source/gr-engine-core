@@ -16,6 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
+/*
 class RenderBatch
 {
 public:
@@ -27,15 +28,16 @@ public:
     Mesh* mesh;
     int submeshID;
 };
+*/
 
 class RenderSystem
 {
 public:
     static void SetInstance(RenderSystem* renderSystem);
 
-    static void Insert(GameObjectHandle handle);
+    static void Insert(Entity entity);
 
-    static void Remove(GameObjectHandle handle);
+    static void Remove(Entity entity);
 
     static void Update();
 
@@ -48,15 +50,15 @@ public:
 private:
     static RenderSystem* s_RenderSystem;
 
-    std::unordered_set<GameObjectHandle> m_markToRender;
+    // std::unordered_set<GameObjectHandle> m_markToRender;
 
     std::unordered_map<uint64_t, size_t> m_batchIndex;
 
-    std::vector<RenderBatch> m_batches;
+    // std::vector<RenderBatch> m_batches;
 
-    void insert(GameObjectHandle handle);
+    void insert(Entity e);
 
-    void remove(GameObjectHandle gameObjectID);
+    void remove(Entity e);
 
     void update();
 
@@ -66,7 +68,7 @@ private:
 
     void renderer();
 
-    void setup(GameObjectHandle handle);
+    void setup(Entity e);
 
     void setuplight(const Scene* scene, gr::Shader *shader);
 };

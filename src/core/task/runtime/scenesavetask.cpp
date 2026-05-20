@@ -3,8 +3,6 @@
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/memoryStream.hpp"
 
-#include "gr-base/ecs/componentstorage.hpp"
-
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 
@@ -226,6 +224,7 @@ int SceneSaveTask::write_mesh(Stream *stream)
 
 int SceneSaveTask::write_gameobject(Stream *stream)
 {
+    /*
     auto objectList = m_scene->getObjectList();
 
     auto gocount = objectList.size();
@@ -238,12 +237,14 @@ int SceneSaveTask::write_gameobject(Stream *stream)
         if (!serialize(stream, gameObject))
             return 2;
     }
+    */
 
     return 0;
 }
 
 int SceneSaveTask::write_script(Stream *stream)
 {
+    /*
     {
         auto count = m_componentdata.size();
         if (!stream->write(count))
@@ -295,11 +296,13 @@ int SceneSaveTask::write_script(Stream *stream)
 
         stream->seekp(current);
     }
+    */
     return 0;
 }
 
-bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
-{
+// bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
+// {
+    /*
     if (!stream->write(go->GetName()))
         return false;
 
@@ -323,22 +326,26 @@ bool SceneSaveTask::serialize(Stream *stream, const GameObject *go)
             return false;
         }
     }
+    */
     
-    return true;
-}
+//     return true;
+// }
 
 void SceneSaveTask::read_gameobject()
 {
+    /*
     for (auto& gameObjectID : m_scene->getObjectList())
     {
         auto gameObject = GameObject::Get(gameObjectID);
 
         read_data(gameObject);
     }
+    */
 }
 
-void SceneSaveTask::read_data(const GameObject *gameObject)
-{
+// void SceneSaveTask::read_data(const GameObject *gameObject)
+// {
+    /*
     std::vector<std::tuple<uint64_t, const Component*>> behaviorList;
     for (uint64_t hash : gameObject->GetHashes())
         behaviorList.emplace_back(hash, gameObject->getComponent(hash));
@@ -357,29 +364,14 @@ void SceneSaveTask::read_data(const GameObject *gameObject)
         {
             auto material_name = AssetsManager::GetMaterialName(materialID);
             auto material = AssetsManager::GetMaterial(materialID);
-
-            /*
-            auto shader_name = AssetsManager::GetShaderName(material->GetShader());
-
-            {
-                auto it = m_shadermap.find(shader_name);
-                if (it == m_shadermap.end())
-                    m_shadermap.emplace(shader_name);
-            }
-
-            {
-                auto it = m_materialmap.find(material_name);
-                if (it == m_materialmap.end())
-                    m_materialmap.emplace(material_name, materialID);
-            }
-            */
         }
     }
 
     auto transform = gameObject->GetTransform();
     for (auto &child : transform->getChildren())
         read_data(ComponentStorage::GetComponent<Transform>(child)->GetGameObject());
-}
+    */
+// }
 
 
 

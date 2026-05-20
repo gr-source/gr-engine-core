@@ -1,20 +1,16 @@
 #pragma once
 
-#include "gr-base/core/file/default.hpp"
-
-#include "gr-base/core/geometry/default.hpp"
-
-#include "gr-base/managers/default.hpp"
-
-#include "gr-base/script/default.hpp"
+#include "gr-base/core/gameObject.hpp"
+#include "gr-base/core/default.hpp"
 
 #include "gr-base/ecs/default.hpp"
 
-#include "default.hpp"
+#include "gr-base/managers/default.hpp"
 
 #include <unordered_set>
-#include <functional>
+#include <vector>
 #include <string>
+#include <memory>
 
 class Scene
 {
@@ -24,45 +20,34 @@ public:
     bool bRunning;
 
     Scene();
-    ~Scene();
 
-    std::vector<GameObjectHandle> getObjectList() const;
+    inline const std::vector<Entity>& GetRoot() const
+    {
+        return m_entities;
+    }
 
-    void insert(GameObjectHandle gameObjectID);
+    Entity create(const char* name);
 
-    void remove(GameObjectHandle gameObjectID);
+    inline GameObject Wrap(Entity e)
+    {
+        return {this, e};
+    }
 
-    void Clear();
+    void destroy(Entity e);
 
-    void SetCamera(ComponentHandle id);
+    void delFromRoot(Entity e);
 
-    Camera *getCamera() const;
+    void select(Handle id);
 
-    void select(GameObjectHandle id);
-
-    void deselect(GameObjectHandle id);
+    void deselect(Handle id);
 
     void deselect_all();
 
     bool has_object_selected() const;
 
-    bool object_has_been_selected(GameObjectHandle id) const;
+    bool object_has_been_selected(Entity id) const;
 
-    std::vector<GameObjectHandle> get_object_selected() const;
-
-    bool destroy(GameObjectHandle gameObjectID);
-
-    void AddLight(ComponentHandle id);
-
-    void RemoveLight(ComponentHandle id);
-
-    std::vector<ComponentHandle> GetLights() const;
-
-    void AddCamera(ComponentHandle id);
-
-    void RemoveCamera(ComponentHandle id);
-
-    std::vector<ComponentHandle> GetCameras() const;
+    std::vector<Handle> get_object_selected() const;
 
     void SetName(const std::string& name);
 
@@ -70,28 +55,33 @@ public:
 
     void AddMesh(MeshID meshID);
 
+    inline ECS* GetECS() const
+    {
+        return m_ecs.get();
+    }
+
+    size_t GetEntityCount() const;
+
+    void Unlink(Entity child);
+
+    void SetParent(Entity parent, Entity child);
+
 private:
     std::unordered_set<std::string> m_chunksLoaded;
 
-    std::vector<ComponentHandle> m_cameras;
+    std::vector<Entity> m_entities;
 
-    std::vector<ComponentHandle> m_lights;
+    std::unordered_set<Handle> u_object_has_been_selected;
 
-    std::vector<GameObjectHandle> m_objects;
-
-    std::unordered_set<GameObjectHandle> u_object_has_been_selected;
-
-    std::vector<GameObjectHandle> v_object_selected_list;
+    std::vector<Handle> v_object_selected_list;
 
     std::vector<MeshID> m_meshes;
 
+    std::shared_ptr<ECS> m_ecs;
+
     std::string m_name;
 
-    ComponentHandle m_cameraID;
-
     void loadChunk(std::string name);
-
-    static GameObjectHandle CreateEngineCamera();
 };
 
 

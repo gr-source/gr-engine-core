@@ -20,35 +20,4 @@ inline uint16_t get_major(uint32_t version)
     return (version >> 16) & 0xFFFF;
 }
 
-// https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV-1a_hash
-inline uint64_t fnv1_hash(const char* str)
-{
-    uint64_t hash = 14695981039346656037UL;
-
-    char c = '\0';
-    while ((c = *str++))
-    {
-        hash ^= (uint64_t)(uint8_t)(c);
-        hash *= 1099511628211UL;
-    }
-    return hash;
-}
-
-inline uint64_t fnv1_hash_buff(const uint8_t* buff, size_t length)
-{
-    uint64_t hash = 14695981039346656037UL;
-
-    for (uint32_t i=0;i<length;i++)
-    {
-        hash ^= (uint64_t)(buff[i]);
-        hash *= 1099511628211UL;
-    }
-    return hash;
-}
-
-
-uint32_t crc32_str(const char* str);
-
-uint32_t crc32_data(const uint8_t* data, size_t length);
-
 #endif // !UTILS_H

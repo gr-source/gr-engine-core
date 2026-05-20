@@ -46,14 +46,15 @@ void ModelLoadTask::onPostExecute(int result)
         m_func(handle);
 }
 
-GameObjectHandle ModelLoadTask::CreateFromAsset(const ModelAsset* asset, GameObjectHandle parent)
+Handle ModelLoadTask::CreateFromAsset(const ModelAsset* asset, Handle parent)
 {
-    GameObjectHandle handle = GameObject::Create(asset->name);
+    // Handle handle = GameObject::Create(asset->name);
+    //
+    // auto gameObject = GameObject::Get(handle);
+    //
+    // auto transform = gameObject->GetTransform();
 
-    auto gameObject = GameObject::Get(handle);
-
-    auto transform = gameObject->GetTransform();
-
+    /*
     for (auto &&[hash, buffer] : asset->componentBuffer)
     {
         Component* behavior = gameObject->getComponent(hash);
@@ -66,19 +67,20 @@ GameObjectHandle ModelLoadTask::CreateFromAsset(const ModelAsset* asset, GameObj
             behavior->Deserialize(&stream);
         }
     }
+    */
 
     if (parent != HANDLE_INVALID)
     {
-        auto gameObjectParent = GameObject::Get(parent);
-
-        auto transformParent = gameObjectParent->GetTransform();
-        transformParent->addChildren(transform);
+        // auto gameObjectParent = GameObject::Get(parent);
+        //
+        // auto transformParent = gameObjectParent->GetTransform();
+        // transformParent->addChildren(transform);
     }
 
-    for (auto& child : asset->childrent)
-        CreateFromAsset(&child, handle);
+    // for (auto& child : asset->childrent)
+    //     CreateFromAsset(&child, handle);
 
-    return handle;
+    return 0;
 }
 
 

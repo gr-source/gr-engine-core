@@ -134,15 +134,15 @@ private:
 
     static bool LoadFromFile(const std::string& file, Asset* asset);
 
-    void loadGameObject(const std::string &name, std::function<void(GameObjectHandle)> func);
+    void loadGameObject(const std::string &name, std::function<void(Entity)> func);
 
-    void loadGameObjectFromFile(const std::string &file, std::function<void(GameObjectHandle)> func);
+    void loadGameObjectFromFile(const std::string &file, std::function<void(Entity)> func);
 };
 
 template <typename... Args>
 inline void AssetsManager::LoadGameObject(const std::string &name, Args &&...args)
 {
-    std::function<void(GameObjectHandle)> func = nullptr;
+    std::function<void(Entity)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
 
@@ -152,7 +152,7 @@ inline void AssetsManager::LoadGameObject(const std::string &name, Args &&...arg
 template <typename... Args>
 inline void AssetsManager::LoadGameObjectFromFile(const std::string &file, Args &&...args)
 {
-    std::function<void(GameObjectHandle)> func = nullptr;
+    std::function<void(Entity)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
 

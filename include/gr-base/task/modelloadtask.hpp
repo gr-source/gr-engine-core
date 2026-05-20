@@ -14,7 +14,7 @@ public:
     ModelLoadTask(const std::string& file, Args&&... args);
 
 private:
-    std::function<void (GameObjectHandle)> m_func;
+    std::function<void (Handle)> m_func;
 
     std::string m_file;
 
@@ -26,7 +26,7 @@ private:
 
     void onPostExecute(int result) override;
 
-    GameObjectHandle CreateFromAsset(const ModelAsset* asset, GameObjectHandle parent = HANDLE_INVALID);
+    Handle CreateFromAsset(const ModelAsset* asset, Handle parent = HANDLE_INVALID);
 };
 
 template <typename ...Args>

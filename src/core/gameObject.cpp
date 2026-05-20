@@ -1,131 +1,25 @@
 #include "gr-base/core/gameObject.hpp"
 
-#include "gr-base/core/console.hpp"
-#include "gr-base/core/default.hpp"
-#include "gr-base/core/file/stream.hpp"
+#include "gr-base/core/scene.hpp"
 
-#include "gr-base/ecs/componentstorage.hpp"
-#include "gr-base/ecs/default.hpp"
+#include "gr-base/ecs/ecs.hpp"
 
-#include "gr-base/managers/gameobjectmanager.hpp"
-
-#include "gr-base/script/transform.hpp"
-
-GameObjectHandle GameObject::Instantiate(GameObjectHandle other)
+void* GameObject::AddComponent(TypeID typeID, const void* src)
 {
-    return GameObjectManager::Instantiate(other);
+    scene->GetECS()->AddComponent(entity, typeID, src);
+
+    return GetComponent(typeID);
 }
 
-GameObjectHandle GameObject::Create(const std::string &name)
+void* GameObject::GetComponent(TypeID typeID) const
 {
-    return GameObjectManager::Create(name);
+    return scene->GetECS()->GetComponent(entity, typeID);
 }
 
-GameObject* GameObject::Get(GameObjectHandle handle)
+void* GameObject::GetOrAddComponent(TypeID typeID)
 {
-    return GameObjectManager::Get(handle);
+    return scene->GetECS()->GetOrAddComponent(entity, typeID);
 }
-
-void GameObject::DestroyImediate(GameObjectHandle gameObjectID)
-{
-    GameObjectManager::DestroyImediate(gameObjectID);
-}
-
-void GameObject::Destroy(GameObjectHandle gameObjectID)
-{
-    GameObjectManager::Destroy(gameObjectID);
-}
-
-// public
-GameObject::GameObject(GameObjectHandle id) : Entity(id), m_name("noname"), m_scene(nullptr), m_isStatic(false), m_transform(HANDLE_INVALID)
-{
-    addComponent<Transform>();
-
-    m_transform = GetID<Transform>();
-}
-
-GameObject::GameObject(GameObject&& other) noexcept : Entity(std::move(other))
-{
-    // GameObject
-    m_name = other.m_name;
-    m_scene = other.m_scene;
-    m_isStatic = other.m_isStatic;
-
-    m_transform = other.m_transform;
-}
-
-GameObject::~GameObject()
-{
-    for (auto &hash : GetHashes())
-        ComponentStorage::Deallocate(hash, GetID(hash));
-}
-
-Transform* GameObject::GetTransform() const
-{
-    return ComponentStorage::GetComponent<Transform>(m_transform);
-}
-
-void GameObject::Copy(GameObjectHandle otherID)
-{
-    auto otherGO = GameObject::Get(otherID);
-    if (otherGO == nullptr)
-        return;
-
-    m_isStatic = otherGO->m_isStatic;
-
-    auto otherTrans = otherGO->GetTransform();
-
-    ComponentHandle myTransformID = m_transform;
-
-    auto myTrans = GetTransform();
-    myTrans->setLocalPosition(otherTrans->getLocalPosition());
-    myTrans->setLocalRotation(otherTrans->getLocalRotation());
-    myTrans->setLocalScale(otherTrans->getLocalScale());
-
-    for (auto& transformID : otherTrans->getChildren())
-    {
-        auto childTransform = ComponentStorage::GetComponent<Transform>(transformID);
-
-        auto childGO = childTransform->GetGameObject();
-        GameObjectHandle childID = childGO->GetCacheID();
-
-        GameObjectHandle newChildID = GameObject::Create(childGO->GetName());
-
-        auto newChildGO = GameObject::Get(newChildID);
-        newChildGO->GetTransform()->setParent(ComponentStorage::GetComponent<Transform>(myTransformID));
-
-        newChildGO->Copy(childID);
-    }
-
-    otherGO = GameObject::Get(otherID);
-    for (auto& hash : otherGO->GetHashes())
-    {
-        if (hash == GetHashByType<Transform>(nullptr))
-            continue;
-
-        Component* myComp = getComponent(hash);
-        if (myComp == nullptr)
-            myComp = addComponent(hash, otherGO->GetID(hash));
-    }
-}
-
-GameObjectHandle GameObject::FindChildByName(const std::string& name)
-{
-    if (m_name == name)
-        return GetCacheID();
-
-    for (auto &transformID : GetTransform()->getChildren())
-    {
-        auto transform = ComponentStorage::GetComponent<Transform>(transformID);
-
-        GameObjectHandle found = transform->GetGameObject()->FindChildByName(name);
-        if (found != HANDLE_INVALID)
-            return found;
-    }
-
-    return HANDLE_INVALID;
-}
-
 
 
 

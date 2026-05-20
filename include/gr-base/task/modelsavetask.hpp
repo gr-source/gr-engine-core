@@ -7,10 +7,10 @@
 class ModelSaveTask : public IAsyncTask<int>
 {
 public:
-    static ModelAsset ConvertToAssetModel(GameObjectHandle handle);
+    static ModelAsset ConvertToAssetModel(Handle handle);
 
     ModelSaveTask(const std::string& file, const ModelAsset& asset);
-    ModelSaveTask(const std::string& file, GameObjectHandle handle);
+    ModelSaveTask(const std::string& file, Handle handle);
 
 private:
     std::string m_file;

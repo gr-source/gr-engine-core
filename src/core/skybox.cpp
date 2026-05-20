@@ -89,6 +89,7 @@ void Skybox::build(gr::gTexture *texture)
 
 void Skybox::render(const Camera *camera) const
 {
+    /*
     if (m_skyshader == nullptr)
         return;
 
@@ -110,6 +111,7 @@ void Skybox::render(const Camera *camera) const
     m_vertexarray->unbind();
     m_skyshader->unbind();
     m_cubemapTexture->unbind();
+    */
 }
 
 bool Skybox::serialize(Stream *stream) const

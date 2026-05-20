@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 #include "gr-base/managers/default.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
@@ -30,6 +31,7 @@ public:
 private:
     std::vector<MaterialID> m_materials;
 };
+*/
 
 // REGISTER_COMPONENT(BaseRender, (uint64_t)-1)
 

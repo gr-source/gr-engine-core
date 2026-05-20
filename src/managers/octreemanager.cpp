@@ -29,15 +29,15 @@ bool OctreeManager::Insert(NodeID id, NodeData data)
     return s_OctreeManager->insert(id, data);
 }
 
-bool OctreeManager::Remove(NodeID id, GameObjectHandle handle)
-{
-    return s_OctreeManager->remove(id, handle);
-}
-
-NodeID OctreeManager::Get(GameObjectHandle handle, const Vector3& position)
-{
-    return s_OctreeManager->get(s_OctreeManager->m_root, handle, position);
-}
+// bool OctreeManager::Remove(NodeID id, GameObjectHandle handle)
+// {
+//     return s_OctreeManager->remove(id, handle);
+// }
+//
+// NodeID OctreeManager::Get(GameObjectHandle handle, const Vector3& position)
+// {
+//     return s_OctreeManager->get(s_OctreeManager->m_root, handle, position);
+// }
 
 void OctreeManager::Foreach(std::function<bool (OctreeNode *)> func)
 {
@@ -204,38 +204,38 @@ NodeID OctreeManager::insert(NodeID id, NodeData data)
     return InvalidNode;
 }
 
-bool OctreeManager::remove(NodeID id, GameObjectHandle handle)
-{
-    OctreeNode* nodes = (OctreeNode*)m_nodes->vector;
-    OctreeNode& node = nodes[id];
-
-    /*
-     * WTF bro ?
-    if (!node.divided)
-        return false;
-    */
-
-    for (uint8_t i = 0; i < node.count; ++i)
-    {
-        if (node.data[i].gameObjectID == handle)
-        {
-            node.data[i] = node.data[node.count - 1];
-            node.count--;
-
-            NodeID p = node.parent;
-            while (p != InvalidNode)
-            {
-                if (!tryCollapse(p))
-                    break;
-                p = nodes[p].parent;
-            }
-
-            return true;
-        }
-    }
-
-    return false;
-}
+// bool OctreeManager::remove(NodeID id, GameObjectHandle handle)
+// {
+//     OctreeNode* nodes = (OctreeNode*)m_nodes->vector;
+//     OctreeNode& node = nodes[id];
+//
+//     /*
+//      * WTF bro ?
+//     if (!node.divided)
+//         return false;
+//     */
+//
+//     for (uint8_t i = 0; i < node.count; ++i)
+//     {
+//         if (node.data[i].gameObjectID == handle)
+//         {
+//             node.data[i] = node.data[node.count - 1];
+//             node.count--;
+//
+//             NodeID p = node.parent;
+//             while (p != InvalidNode)
+//             {
+//                 if (!tryCollapse(p))
+//                     break;
+//                 p = nodes[p].parent;
+//             }
+//
+//             return true;
+//         }
+//     }
+//
+//     return false;
+// }
 
 bool OctreeManager::tryCollapse(NodeID id)
 {
@@ -280,34 +280,34 @@ bool OctreeManager::tryCollapse(NodeID id)
     return true;
 }
 
-NodeID OctreeManager::get(NodeID id, GameObjectHandle handle, const Vector3& position)
-{
-    if (!contains(id, position))
-        return InvalidNode;
-
-    OctreeNode* nodes = (OctreeNode*)m_nodes->vector;
-
-    OctreeNode& node = nodes[id];
-
-    for (uint8_t i=0;i<node.count;i++)
-    {
-        NodeData& data = node.data[i];
-        if (data.gameObjectID == handle)
-            return id;
-    }
-
-    if (node.divided)
-    {
-        for (NodeID sibling=node.first;sibling!=InvalidNode;sibling=nodes[sibling].next)
-        {
-            NodeID childID = get(sibling, handle, position);
-            if (childID != InvalidNode)
-                return childID;
-        }
-    }
-
-    return InvalidNode;
-}
+// NodeID OctreeManager::get(NodeID id, GameObjectHandle handle, const Vector3& position)
+// {
+//     if (!contains(id, position))
+//         return InvalidNode;
+//
+//     OctreeNode* nodes = (OctreeNode*)m_nodes->vector;
+//
+//     OctreeNode& node = nodes[id];
+//
+//     for (uint8_t i=0;i<node.count;i++)
+//     {
+//         NodeData& data = node.data[i];
+//         if (data.gameObjectID == handle)
+//             return id;
+//     }
+//
+//     if (node.divided)
+//     {
+//         for (NodeID sibling=node.first;sibling!=InvalidNode;sibling=nodes[sibling].next)
+//         {
+//             NodeID childID = get(sibling, handle, position);
+//             if (childID != InvalidNode)
+//                 return childID;
+//         }
+//     }
+//
+//     return InvalidNode;
+// }
 
 void OctreeManager::for_each(NodeID id, std::function<bool (OctreeNode *)> &func)
 {

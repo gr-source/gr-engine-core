@@ -1,26 +1,42 @@
 #pragma once
 
+#include <cassert>
+#include <cstdint>
+#include <cstddef>
+
+#include "gr-base/externals/hash.hpp"
+
 #include "gr-base/externals/handle.h"
 
-#include <stdint.h>
+#define INVALID_COMPONENT (ComponentID)-1
+#define INVALID_SIGNATURE (Signature)-1
+#define INVALID_HASH64 (Hash64)-1
+#define INVALID_ENTITY (Entity)-1
+#define INVALID_TYPE (TypeID)-1
 
-#define COMPONENT_TABLE_SIZE 1024
-#define COMPONENT_CHUNK_SIZE 512
+typedef Handle Entity;
 
-#define INVALID_COMPONENT_ID (ComponentID)-1
-
-typedef Handle GameObjectHandle;
-
-typedef Handle ComponentHandle;
 typedef uint32_t ComponentID;
+typedef uint32_t EntityID;
+typedef uint32_t ChunkID;
+typedef uint32_t TypeID;
 
-typedef uint64_t ComponentHash;
+typedef uint64_t Signature;
 
-class GameObject;
-class Component;
-class Entity;
+class EntityLocationMap;
+class ArchetypeStorage;
+class Type;
+class ECS;
 
-void RegistryDefaultComponent();
+template<typename... Components>
+class View;
 
+struct TypeInfo;
 
+template <typename T>
+inline Hash64 GetHash64ByType(const char* key = nullptr) noexcept
+{
+    static Hash64 hash = hash::fnv1_str(key);
+    return hash;
+}
 

@@ -1,85 +1,22 @@
 #pragma once
 
-#include "gr-base/ecs/component.hpp"
-
 #include <gr-math/gmath.hpp>
 
-#include <vector>
-
-class Transform : public ComponentImpl<Transform>
+struct Transform
 {
-public:
-    Transform();
+    Vector3 position = Vector3::zero;
 
-    void setLocalScale(const Vector3 &value);
+    Quaternion rotation = Quaternion::identity;
 
-    const Vector3 &getLocalScale() const;
+    Vector3 scale = Vector3::one;
 
-    void setLocalRotation(const Quaternion &value);
+    Matrix4x4 localMatrix = Matrix4x4::identityMatrix;
 
-    const Quaternion &getLocalRotation() const;
+    Matrix4x4 globalMatrix = Matrix4x4::identityMatrix;
 
-    Quaternion getRotation() const;
-
-    void setLocalPosition(const Vector3 &value);
-
-    Vector3 getPosition();
-
-    const Vector3 &getLocalPosition() const;
-
-    Vector3 getRight() const;
-
-    Vector3 getUp() const;
-
-    Vector3 getLocalForward() const;
-
-    Vector3 getForward() const;
-
-    void setGlobalMatrix(const Matrix4x4 &matrix);
-
-    Matrix4x4 &getGlobalMatrix();
-
-    const Matrix4x4 &getLocalMatrix() const;
-
-    bool hasParent() const;
-
-    void setParent(Transform* transform, bool remove = true);
-
-    Transform *getParent() const;
-
-    void addChildren(Transform *transform);
-
-    std::vector<ComponentHandle> getChildren() const;
-
-    bool hasChildren() const;
-
-    bool Serialize(Stream *stream) const override;
-    
-    bool Deserialize(Stream *stream) override;
-
-private:
-    Vector3 m_scale;
-
-    Quaternion m_rotation;
-
-    Vector3 m_position;
-
-    std::vector<ComponentHandle> m_children;
-
-    ComponentHandle m_parent;
-
-    Matrix4x4 m_localMatrix;
-
-    Matrix4x4 m_globalMatrix;
-
-    bool isDirty;
-
-    void updateLocalMatrix();
-
-    void updateGlobalMatrix();
+    bool dirty = true;
 };
 
-// REGISTER_COMPONENT(Transform, (uint64_t)-1)
 
 
 

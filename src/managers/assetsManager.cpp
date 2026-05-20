@@ -342,12 +342,12 @@ bool AssetsManager::LoadFromFile(const std::string& file, Asset* asset)
     return result;
 }
 
-void AssetsManager::loadGameObject(const std::string &name, std::function<void(GameObjectHandle)> func)
+void AssetsManager::loadGameObject(const std::string &name, std::function<void(Entity)> func)
 {
     loadGameObjectFromFile(AssetReference::GetFile(name), func);
 }
 
-void AssetsManager::loadGameObjectFromFile(const std::string &file, std::function<void(GameObjectHandle)> func)
+void AssetsManager::loadGameObjectFromFile(const std::string &file, std::function<void(Entity)> func)
 {
     TaskManager::Add<ModelLoadTask>(file, func);
 }

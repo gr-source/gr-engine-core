@@ -19,6 +19,6 @@ typedef struct StreamChunk
     Vector2 position;
     bool dirty;
 
-    GameObjectHandle* objects;
+    Handle* objects;
 } StreamChunk;
 

@@ -136,11 +136,11 @@ void SceneLoadTask::onPostExecute(int result)
 
         for (auto &root : m_rootList)
         {
-            auto gameObjectID = CreateFromCache(root.get());
+            // auto gameObjectID = CreateFromCache(root.get());
 
-            GameObject::Instantiate(gameObjectID);
+            // GameObject::Instantiate(gameObjectID);
             
-            GameObject::DestroyImediate(gameObjectID);
+            // GameObject::DestroyImediate(gameObjectID);
         }
 
         SceneManager::SetActive(current);
@@ -182,12 +182,13 @@ void SceneLoadTask::CreateMeshFromCache()
     }
 }
 
+/*
 GameObjectHandle SceneLoadTask::CreateFromCache(GameObjectCache* cache)
 {
     auto gameObjectID = GameObject::Create(cache->name);
 
     auto gameObject = GameObject::Get(gameObjectID);
-    gameObject->SetIsStatic(cache->IsStatic);
+    // gameObject->SetIsStatic(cache->IsStatic);
 
     MemoryStream stream(cache->buffer.data(), cache->buffer.size());
     if (read_script_from_cache(gameObject, &stream) != 0)
@@ -203,11 +204,12 @@ GameObjectHandle SceneLoadTask::CreateFromCache(GameObjectCache* cache)
 
         auto goChild = GameObject::Get(childID);
 
-        transform->addChildren(goChild->GetTransform());
+        // transform->addChildren(goChild->GetTransform());
     }
 
     return gameObjectID;
 }
+*/
 
 int SceneLoadTask::read_metadata(Stream *stream)
 {
@@ -367,6 +369,7 @@ int SceneLoadTask::read_script(Stream *stream)
     return 0;
 }
 
+/*
 int SceneLoadTask::read_script_from_cache(GameObject* gameObject, Stream* stream)
 {
     uint32_t behaviorCount;
@@ -389,15 +392,15 @@ int SceneLoadTask::read_script_from_cache(GameObject* gameObject, Stream* stream
         if (component == nullptr)
             component = gameObject->addComponent(componentHash);
 
-        if (component != nullptr && bufferlength > 0)
-            component->Deserialize(stream);
+        // if (component != nullptr && bufferlength > 0)
+            // component->Deserialize(stream);
 
         if (stream->tellg() != next)
             stream->seekg(next);
     }
     return 0;
 }
-
+*/
 
 std::unique_ptr<SceneLoadTask::GameObjectCache> SceneLoadTask::deserialize(Stream *stream)
 {

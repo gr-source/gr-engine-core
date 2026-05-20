@@ -1,65 +1,23 @@
 #pragma once
 
-#include "default.hpp"
-
 #include "gr-base/core/rendertarget.hpp"
 
-#include <gr-render/gRender.h>
+#include <gr-math/gmath.hpp>
 
-#include "gr-base/ecs/component.hpp"
-
-class Camera : public ComponentImpl<Camera>
+struct Camera
 {
-public:
-    static Camera *Current();
-
-    Camera();
-    ~Camera() override;
-
-    void Init() override;
-
-    bool Serialize(Stream *stream) const override;
-
-    bool Deserialize(Stream *stream) override;
-
-    inline const Matrix4x4& getPerspesctive() const
-    {
-        return m_projection;
-    }
-
-    Matrix4x4 getViewmatrix() const;
-
-    Vector3 getPosition() const;
-
-    void lookIt(const Vector3 &direction);
-    
-    void setRect(const Rect &rect);
-
-    Rect getRect() const;
-
-    RenderTarget* getRenderTarget();
-
-    Color background;
-
-private:
     RenderTarget* rendertarget;
 
-    Matrix4x4 m_projection;
+    Matrix4x4 projection;
 
-    float m_nearPlane;
-    
-    float m_farPlane;
-    
-    float m_aspect;
+    float nearPlane;
+    float farPlane;
+    float aspect;
+    float fov;
 
-    float m_fov;
-
-    Rect m_rect;
-
-    void updateProjection();
+    Rect rect;
 };
 
-// REGISTER_COMPONENT(Camera, (uint64_t)-1)
 
 
 

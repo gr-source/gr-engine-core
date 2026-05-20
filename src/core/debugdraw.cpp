@@ -125,6 +125,7 @@ void DebugDraw::LineRender::init()
 
 void DebugDraw::LineRender::render(const Camera *camera, const Line3D *data, std::size_t size)
 {
+    /*
     m_buffer->Bind();
     m_buffer->SetData(data, size * sizeof(Line3D));
     m_buffer->Unbind();
@@ -139,6 +140,7 @@ void DebugDraw::LineRender::render(const Camera *camera, const Line3D *data, std
 
     m_shader->unbind();
     m_vertex_array->Unbind();
+    */
 }
 
 
