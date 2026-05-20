@@ -51,5 +51,18 @@ struct GameObject
     {
         return static_cast<T*>(GetOrAddComponent(Type::GetTypeID<T>()));
     }
+
+    void DelComponent(TypeID typeID);
+
+    inline void DelComponent(const char* name)
+    {
+        DelComponent(Type::GetTypeIDByName(name));
+    }
+
+    template <typename T>
+    inline void DelComponent()
+    {
+        return static_cast<T*>(DelComponent(Type::GetTypeID<T>()));
+    }
 };
 

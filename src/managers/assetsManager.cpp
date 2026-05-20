@@ -14,6 +14,7 @@
 #include "gr-base/core/geometry/default.hpp"
 
 #include "gr-base/core/logger.hpp"
+#include "gr-base/core/scene.hpp"
 #include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
@@ -349,7 +350,9 @@ void AssetsManager::loadGameObject(const std::string &name, std::function<void(E
 
 void AssetsManager::loadGameObjectFromFile(const std::string &file, std::function<void(Entity)> func)
 {
-    TaskManager::Add<ModelLoadTask>(file, func);
+    auto scene = Scene::GetCurrent();
+    if (scene != nullptr)
+        TaskManager::Add<ModelLoadTask>(file, scene, func);
 }
 
 

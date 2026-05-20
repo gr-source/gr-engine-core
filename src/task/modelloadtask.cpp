@@ -1,15 +1,20 @@
 #include "gr-base/task/modelloadtask.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
+
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/scene.hpp"
+
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/memoryStream.hpp"
-#include "gr-base/core/gameObject.hpp"
 
+#include "gr-base/ecs/type.hpp"
+#include "gr-base/script/name.hpp"
+#include "gr-base/script/relationship.hpp"
 #include "gr-base/script/transform.hpp"
 
 void ModelLoadTask::onPreExecute()
 {
-    Console::LogInfo("[Task] Loading model '%s'...", m_file.c_str());
+    Console::LogInfo("[ModelLoadTask] Loading model '%s'...", m_file.c_str());
 }
 
 int ModelLoadTask::doInBackground()
@@ -36,51 +41,42 @@ int ModelLoadTask::doInBackground()
 void ModelLoadTask::onPostExecute(int result)
 {
     if (result != 0)
-        return Console::LogError("[Task] Failed to load '%s' error=%d!!!", m_file.c_str(), result);
+        return Console::LogError("[ModelLoadTask] Failed to load '%s' error=%d!!!", m_file.c_str(), result);
 
-    auto handle = CreateFromAsset(&m_asset);
+    auto entity = CreateFromAsset(&m_asset);
 
-    Console::LogInfo("[Task] Model '%s' loaded.", m_asset.name.c_str());
+    Console::LogInfo("[ModelLoadTask] Model '%s' loaded.", m_asset.name.c_str());
 
     if (m_func != nullptr)
-        m_func(handle);
+        m_func(entity);
 }
 
-Handle ModelLoadTask::CreateFromAsset(const ModelAsset* asset, Handle parent)
+Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset, Entity parent)
 {
-    // Handle handle = GameObject::Create(asset->name);
-    //
-    // auto gameObject = GameObject::Get(handle);
-    //
-    // auto transform = gameObject->GetTransform();
+    auto go = m_scene->Wrap(m_scene->create(asset->name.c_str()));
 
-    /*
+    std::cout << asset->name << std::endl;
+
     for (auto &&[hash, buffer] : asset->componentBuffer)
     {
-        Component* behavior = gameObject->getComponent(hash);
-        if (behavior == nullptr)
-            behavior = gameObject->addComponent(hash);
+        auto type = Type::GetTypeInfoByHash(hash);
+        if (type == nullptr)
+            continue;
 
-        if (behavior != nullptr)
+        auto component = go.GetOrAddComponent(type->index);
+        if (type->globalCpy && type->serializable)
         {
-            MemoryStream stream((uint8_t*)buffer.data(), buffer.size());
-            behavior->Deserialize(&stream);
+            memcpy(component, buffer.data(), type->stride);
         }
     }
-    */
 
-    if (parent != HANDLE_INVALID)
-    {
-        // auto gameObjectParent = GameObject::Get(parent);
-        //
-        // auto transformParent = gameObjectParent->GetTransform();
-        // transformParent->addChildren(transform);
-    }
+    if (parent != INVALID_ENTITY)
+        m_scene->SetParent(parent, go.entity);
 
-    // for (auto& child : asset->childrent)
-    //     CreateFromAsset(&child, handle);
+    for (auto& child : asset->childrent)
+        CreateFromAsset(&child, go.entity);
 
-    return 0;
+    return go.entity;
 }
 
 

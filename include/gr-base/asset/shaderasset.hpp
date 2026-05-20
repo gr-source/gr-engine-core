@@ -8,8 +8,9 @@ typedef uint32_t ShaderAssetFlags_;
 
 enum : uint32_t
 {
-    ShaderAssetFlags_Shader3D = 1 << 1,
-    ShaderAssetFlags_Shader2D = 1 << 2
+    ShaderAssetFlags_Shader3D   = 1 << 1,
+    ShaderAssetFlags_Shader2D   = 1 << 2,
+    ShaderAssetFlags_Line       = 1 << 3
 };
 
 class ShaderAsset : public Asset

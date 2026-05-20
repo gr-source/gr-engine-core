@@ -29,6 +29,7 @@ class ArchetypeStorage
     std::vector<ComponentID> m_entityToIndex;
 
     std::vector<Entity> m_denseEntities;
+
 public:
     ArchetypeStorage(Signature mask, TypeID typeID);
 
@@ -63,6 +64,8 @@ public:
     {
         return m_count;
     }
+
+    std::vector<TypeID> GetTypes() const;
 
 private:
     void resize();

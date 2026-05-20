@@ -1,16 +1,20 @@
 #pragma once
 
 #include "gr-base/asset/modelasset.hpp"
+
 #include "gr-base/core/thread/asynctask.hpp"
+
+#include "gr-base/core/default.hpp"
+
 #include "gr-base/ecs/default.hpp"
 
 class ModelSaveTask : public IAsyncTask<int>
 {
 public:
-    static ModelAsset ConvertToAssetModel(Handle handle);
+    static ModelAsset ConvertToAssetModel(Scene* scene, Entity entity);
 
     ModelSaveTask(const std::string& file, const ModelAsset& asset);
-    ModelSaveTask(const std::string& file, Handle handle);
+    ModelSaveTask(const std::string& file, Scene* scene, Entity entity);
 
 private:
     std::string m_file;

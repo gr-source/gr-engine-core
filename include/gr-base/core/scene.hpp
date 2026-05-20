@@ -76,6 +76,8 @@ public:
         return m_camera;
     }
 
+    std::string GetEntityName(Entity entity);
+
 private:
     std::unordered_set<std::string> m_chunksLoaded;
 

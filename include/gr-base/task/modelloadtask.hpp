@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gr-base/asset/modelasset.hpp"
+#include "gr-base/core/default.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 #include "gr-base/ecs/default.hpp"
 
@@ -11,12 +12,14 @@ class ModelLoadTask : public IAsyncTask<int>
 {
 public:
     template <typename ...Args>
-    ModelLoadTask(const std::string& file, Args&&... args);
+    ModelLoadTask(const std::string& file, Scene* scene, Args&&... args);
 
 private:
     std::function<void (Handle)> m_func;
 
     std::string m_file;
+
+    Scene* m_scene;
 
     ModelAsset m_asset;
 
@@ -26,11 +29,11 @@ private:
 
     void onPostExecute(int result) override;
 
-    Handle CreateFromAsset(const ModelAsset* asset, Handle parent = HANDLE_INVALID);
+    Entity CreateFromAsset(const ModelAsset* asset, Entity parent = INVALID_ENTITY);
 };
 
 template <typename ...Args>
-inline ModelLoadTask::ModelLoadTask(const std::string& file, Args&&... args) : m_file(file), m_func(nullptr)
+inline ModelLoadTask::ModelLoadTask(const std::string& file, Scene* scene, Args&&... args) : m_file(file), m_func(nullptr), m_scene(scene)
 {
     if constexpr (sizeof...(Args) > 0)
         m_func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);

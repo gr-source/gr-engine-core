@@ -12,7 +12,7 @@ class Type
 {
 public:
     template <typename T>
-    static void Registry(const char* name);
+    static void Registry(const char* name, bool serializable = false);
 
     inline static const TypeInfo* GetTypeInfoByHash(Hash64 hash)
     {
@@ -84,7 +84,7 @@ private:
 };
 
 template <typename T>
-inline void Type::Registry(const char* name)
+inline void Type::Registry(const char* name, bool serializable)
 {
     static_assert(std::is_trivially_copyable_v<T>);
 
@@ -96,6 +96,7 @@ inline void Type::Registry(const char* name)
 
     // flags
     info.globalCpy = std::is_trivially_copyable_v<T>;
+    info.serializable = serializable;
 
     // Methods
     info.constructor = (MethodPointer)Type::Constructor<T>;

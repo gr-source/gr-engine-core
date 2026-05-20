@@ -69,7 +69,12 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
     try
     {
         auto&& [fragment, vertex, definations, shaderType] = ReadingSourceFileShader();
-        asset.SetFlags(shaderType == ShaderType::SHADER2D ? ShaderAssetFlags_Shader2D : ShaderAssetFlags_Shader3D);
+
+        ShaderAssetFlags_ flags = ShaderAssetFlags_Shader3D;
+        if (shaderType == ShaderType::LINE)
+            flags |= ShaderAssetFlags_Line;
+
+        asset.SetFlags(flags);
 
         auto baseShaderSource = LoadShaderBase(shaderType);
         for (auto defination : definations)
@@ -88,10 +93,7 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
         resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = remove_comment(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
 
         std::unordered_set<std::string> macro_map;
-        if (shaderType == ShaderType::LINE)
-        {
-            macro_map.emplace("ENABLE_LINE");
-        } else if (shaderType == ShaderType::SKY)
+        if (shaderType == ShaderType::SKY)
         {
             macro_map.emplace("ENABLE_SKYBOX");
         }
@@ -241,6 +243,8 @@ std::array<std::string, IShaderStage> ShaderBuildTask::LoadShaderBase(ShaderType
             break;
         case ShaderType::SHADER3D:
         case ShaderType::LINE:
+            path_to_base = "/assets/shader/model/shader3D_line.glsl";
+            break;
         case ShaderType::SKY:
             path_to_base = "/assets/shader/model/shader3D.glsl";
             break;

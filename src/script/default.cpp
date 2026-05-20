@@ -10,19 +10,19 @@
 #include "gr-base/script/camera.hpp"
 #include "gr-base/script/name.hpp"
 
-#define REGISTRY(K) \
-        Type::Registry<K>(#K) \
+#define REGISTRY(K, b) \
+        Type::Registry<K>(#K, b) \
 
 void RegistryDefaultComponent()
 {
     logger::debug("[Type::Registry] Carregando script padrões...");
 
-    REGISTRY(Relationship);
-    REGISTRY(MeshRender);
-    REGISTRY(CameraData);
-    REGISTRY(Transform);
-    REGISTRY(Camera);
-    REGISTRY(Name);
+    REGISTRY(Relationship, false);
+    REGISTRY(MeshRender, false);
+    REGISTRY(CameraData, false);
+    REGISTRY(Transform, true);
+    REGISTRY(Camera, true);
+    REGISTRY(Name, false);
 }
 
 #undef REGISTRY

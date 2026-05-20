@@ -202,9 +202,9 @@ void ECS::DelComponent(Entity e, const char* name)
     DelComponent(e, hash::fnv1_str(name));
 }
 
-ArchetypeStorage* ECS::GetArchetype(Signature sign) const
+ArchetypeStorage* ECS::GetArchetype(Signature mask) const
 {
-    auto it = m_signArcheTypeMap.find(sign);
+    auto it = m_signArcheTypeMap.find(mask);
     if (it == m_signArcheTypeMap.end())
         return nullptr;
     return it->second.get();

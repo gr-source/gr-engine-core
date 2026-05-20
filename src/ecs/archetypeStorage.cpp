@@ -138,6 +138,21 @@ uint8_t* ArchetypeStorage::GetRaw(TypeID typeID) const
     return m_buffer + chunk.offset;
 }
 
+std::vector<TypeID> ArchetypeStorage::GetTypes() const
+{
+    std::vector<TypeID> vector;
+
+    uint64_t mask = m_mask;
+    while (mask)
+    {
+        vector.push_back(__builtin_ctzll(mask));
+
+        mask &= (mask - 1);
+    }
+
+    return vector;
+}
+
 template <typename T>
 T* ArchetypeStorage::GetRaw() const
 {

@@ -31,14 +31,21 @@ gr::Shader* ShaderPrefab::Get(ShaderPrefabFlags_ flags)
 gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
 {
     std::string fragment = "#version 330 core\n";
-    if (flags & ShaderPrefabFlags_Instancing)
-        fragment += "#define USE_INSTANCED\n";
+    if ((m_asset.GetFlags() & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
+    {
+        if (flags & ShaderPrefabFlags_Instancing)
+            fragment += "#define USE_INSTANCED\n";
+    }
 
     fragment += m_asset.GetFragment();
 
     std::string vertex = "#version 330 core\n";
-    if (flags & ShaderPrefabFlags_Instancing)
-        vertex += "#define USE_INSTANCED\n";
+    if ((m_asset.GetFlags() & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
+    {
+        std::cout << "Is Line" << std::endl;
+        if (flags & ShaderPrefabFlags_Instancing)
+            vertex += "#define USE_INSTANCED\n";
+    }
 
     vertex += m_asset.GetVertex();
 
@@ -50,11 +57,11 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
     gr::Shader* shader = it->second.get();
     if (inserted)
     {
-        std::cout << "[ ===== " << m_asset.GetName() << " ===== ]" << std::endl;
-        std::cout << "============================ fragment ============================" << std::endl;
-        std::cout << fragment_src << std::endl;
-        std::cout << "============================ vertex ============================" << std::endl;
-        std::cout << vertex_src << std::endl;
+        // std::cout << "[ ===== " << m_asset.GetName() << " ===== ]" << std::endl;
+        // std::cout << "============================ fragment ============================" << std::endl;
+        // std::cout << fragment_src << std::endl;
+        // std::cout << "============================ vertex ============================" << std::endl;
+        // std::cout << vertex_src << std::endl;
 
         if (shader->build(&fragment_src, 1, &vertex_src, 1) == -1)
         {

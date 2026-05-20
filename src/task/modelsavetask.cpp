@@ -8,51 +8,61 @@
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/file.hpp"
 
-#include "gr-base/core/gameObject.hpp"
+#include "gr-base/core/scene.hpp"
 
+#include "gr-base/ecs/archetypeStorage.hpp"
+#include "gr-base/ecs/ecs.hpp"
+
+#include "gr-base/script/relationship.hpp"
 #include "gr-base/script/transform.hpp"
 
-ModelAsset ModelSaveTask::ConvertToAssetModel(Handle handle)
+ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
 {
-    // auto gameObject = GameObject::Get(handle);
-    //
-    // ModelAsset asset;
-    // asset.name = gameObject->GetName();
-    // asset.isStatic = gameObject->GetIsStatic();
+    auto gameObject = scene->Wrap(entity);
 
-    /*
-    for (auto& hash : gameObject->GetHashes())
+    ModelAsset asset;
+    asset.name = scene->GetEntityName(entity);
+    asset.isStatic = false/* gameObject->GetIsStatic() */;
+
+    Signature mask = scene->GetECS()->GetMask(entity);
+    for (auto& typeID : scene->GetECS()->GetArchetype(mask)->GetTypes())
     {
-        Component* behavior = gameObject->getComponent(hash);
+        auto type = Type::GetTypeInfoByID(typeID);
 
-        MemoryStream stream;
-        behavior->Serialize(&stream);
+        auto component = gameObject.GetComponent(typeID);
 
-        std::vector<uint8_t> buffer(stream.tellg(), 0);
-        memcpy(buffer.data(), stream.data(), stream.tellg());
+        std::vector<uint8_t> buffer;
+        if (type->serializable)
+        {
+            buffer.resize(type->stride, 0);
 
-        asset.componentBuffer.emplace(hash, buffer);
+            memcpy(buffer.data(), component, type->stride);
+        }
+
+        asset.componentBuffer.emplace(type->hash, buffer);
     }
-    */
 
-    // auto transform = gameObject->GetTransform();
-    /*
-    for (auto& childID : transform->getChildren())
+    auto rel = gameObject.GetComponent<Relationship>();
+    if (rel != nullptr)
     {
-        auto childTransform = ComponentStorage::GetComponent<Transform>(childID);
+        Entity sibling = rel->firstChild;
+        while (sibling != INVALID_ENTITY)
+        {
+            asset.childrent.push_back(ConvertToAssetModel(scene, sibling));
 
-        asset.childrent.push_back(ConvertToAssetModel(childTransform->GetGameObject()->GetCacheID()));
+            auto siblingRel = scene->GetECS()->GetComponent<Relationship>(sibling);
+            if (siblingRel == nullptr)
+                break;
+            sibling = siblingRel->nextSibling;
+        }
     }
-    */
-
-    // return asset;
+    return asset;
 }
 
 ModelSaveTask::ModelSaveTask(const std::string& file, const ModelAsset& asset) : m_file(file), m_asset(asset)
 {}
 
-
-ModelSaveTask::ModelSaveTask(const std::string& file, Handle handle) : m_file(file), m_asset(ConvertToAssetModel(handle))
+ModelSaveTask::ModelSaveTask(const std::string& file, Scene* scene, Entity entity) : m_file(file), m_asset(ConvertToAssetModel(scene, entity))
 {}
 
 void ModelSaveTask::onPreExecute()

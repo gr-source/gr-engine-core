@@ -79,7 +79,7 @@ public:
         DelComponent(e, GetHash64ByType<T>());
     }
 
-    ArchetypeStorage* GetArchetype(Signature sign) const;
+    ArchetypeStorage* GetArchetype(Signature mask) const;
 
     template<typename... Components>
     View<Components...> Query()

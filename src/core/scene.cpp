@@ -229,4 +229,21 @@ void Scene::SetParent(Entity parent, Entity child)
     }
 }
 
+std::string Scene::GetEntityName(Entity entity)
+{
+    GameObject go = Wrap(entity);
+
+    Name* name = go.GetComponent<Name>();
+    if (name != nullptr)
+    {
+        return name->value;
+    } else
+    {
+        EntityID entityID = handle_get_first(entity);
+
+        return "Entity " + std::to_string(entityID);
+    }
+}
+
+
 

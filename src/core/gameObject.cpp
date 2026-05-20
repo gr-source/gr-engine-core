@@ -27,4 +27,10 @@ void* GameObject::GetOrAddComponent(TypeID typeID)
 }
 
 
+void GameObject::DelComponent(TypeID typeID)
+{
+    scene->GetECS()->DelComponent(entity, typeID);
+}
+
+
 

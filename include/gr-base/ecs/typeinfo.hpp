@@ -12,6 +12,7 @@ typedef struct TypeInfo
     size_t stride;
 
     bool globalCpy;
+    bool serializable;
 
     MethodPointer constructor;
     MethodPointer destructor;
