@@ -2,6 +2,7 @@
 
 #include "gr-base/core/default.hpp"
 
+#include "gr-base/core/logger.hpp"
 #include "gr-base/ecs/archetypeStorage.hpp"
 #include "gr-base/ecs/ecs.hpp"
 
@@ -20,7 +21,19 @@ Scene* Scene::GetCurrent()
     return SceneManager::GetCurrent();
 }
 
-Scene::Scene() : bRunning(false), m_ecs(std::make_shared<ECS>()), m_camera(INVALID_ENTITY) {}
+Scene::Scene() : bRunning(false), m_ecs(nullptr), m_camera(INVALID_ENTITY)
+{
+    logger::info("[ Scene ] Create '0x%lX'.", this);
+
+    m_ecs = new ECS();
+}
+
+Scene::~Scene()
+{
+    delete m_ecs;
+
+    logger::info("[ Scene ] Destroy '0x%lX'.", this);
+}
 
 Entity Scene::create(const char* name)
 {
@@ -38,8 +51,6 @@ Entity Scene::create(Entity other)
 {
     if (other == INVALID_ENTITY)
         return create(nullptr);
-
-    Signature mask = m_ecs->GetMask(other);
 
     Entity entity = m_ecs->Create();
 
@@ -75,7 +86,7 @@ Entity Scene::create(Entity other)
     if (rel == nullptr || rel->parent == INVALID_ENTITY)
         m_entities.push_back(go.entity);
 
-    for (auto& typeID : m_ecs->GetArchetype(mask)->GetTypes())
+    for (auto& typeID : m_ecs->GetAllComponentType(other))
     {
         auto type = Type::GetTypeInfoByID(typeID);
 

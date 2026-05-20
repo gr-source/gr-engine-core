@@ -43,7 +43,7 @@ public:
 
     static void SetRenderTarget(RenderTarget* rt);
 
-    static void AddCommand(const RenderCommand& cmd);
+    static void AddCommand(const RenderCommand& cmd, MaterialID &batchID);
 
 private:
     static Renderer& GetInstance();
@@ -52,8 +52,14 @@ private:
 
     std::vector<RenderBatch> m_batches;
 
+    std::vector<MaterialID> m_materiallookup;
+
+    std::vector<MeshID> m_meshlookup;
+
+    std::vector<int> m_submeshlookup;
+
     void renderCmd();
 
-    void addCommand(const RenderCommand& cmd);
+    void addCommand(const RenderCommand& cmd, MaterialID &batchID);
 };
 

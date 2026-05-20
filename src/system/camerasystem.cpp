@@ -10,9 +10,7 @@
 
 void CameraSystem::Update(ECS* world)
 {
-    auto query = world->Query<Transform, Camera, CameraData>();
-
-    for (auto&& [e, transform, camera, data] : query)
+    for (auto&& [e, transform, camera, data] : world->Query<Transform, Camera, CameraData>())
     {
         float aspectRatio = static_cast<float>(camera->rendertarget->GetWidth()) / static_cast<float>(camera->rendertarget->GetHeight());
 

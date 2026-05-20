@@ -1,8 +1,8 @@
 #pragma once
 
 #include "gr-base/ecs/archetypeStorage.hpp"
-#include "gr-base/ecs/type.hpp"
 #include "gr-base/ecs/ecs.hpp"
+#include "gr-base/ecs/type.hpp"
 
 #include <tuple>
 
@@ -34,10 +34,7 @@ class View
         {
             while (m_archetypeIndex < m_view->m_matching.size())
             {
-                auto* arch =
-                    m_view->m_matching[m_archetypeIndex];
-
-                if (m_localIndex < arch->Count())
+                if (m_localIndex < m_view->m_world->GetCount(m_view->m_matching[m_archetypeIndex]))
                     return;
 
                 ++m_archetypeIndex;
@@ -62,7 +59,7 @@ class View
         auto operator*()
         {
             auto* arch =
-                m_view->m_matching[m_archetypeIndex];
+                m_view->m_world->GetArchetypeByID(m_view->m_matching[m_archetypeIndex]);
 
             Entity entity =
                 arch->GetEntity(m_localIndex);
@@ -86,7 +83,7 @@ class View
     };
 
 public:
-    std::vector<ArchetypeStorage*> m_matching;
+    std::vector<ArcheTypeID> m_matching;
 
     Signature requiredMask;
 
@@ -100,12 +97,12 @@ public:
     {
         requiredMask = (0ull | ... | (1ull << Type::GetTypeID<Components>()));
 
-        for (auto& [mask, archetype] : world->m_signArcheTypeMap)
+        for (auto& [mask, archetypeID] : world->m_signArcheTypeMap)
         {
             if ((mask & requiredMask) == requiredMask)
             {
-                m_matching.push_back(archetype.get());
-                m_count += archetype->Count();
+                m_matching.push_back(archetypeID);
+                m_count += world->GetCount(archetypeID);
             }
         }
     }

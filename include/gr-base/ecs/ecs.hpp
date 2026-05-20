@@ -10,9 +10,10 @@
 class ECS
 {
 public:
-    std::unordered_map<Signature, std::shared_ptr<ArchetypeStorage>> m_signArcheTypeMap;
+    std::unordered_map<Signature, ArcheTypeID> m_signArcheTypeMap;
 
     ECS();
+    ~ECS();
 
     Entity Create();
 
@@ -22,13 +23,13 @@ public:
 
     std::vector<TypeID> intersection(ArchetypeStorage* src, ArchetypeStorage* dst);
 
-    void MoveEntity(ArchetypeStorage* src, ArchetypeStorage* dst, Entity e);
+    void MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e);
 
-    ArchetypeStorage* GetOrCreateArcheType(Signature mask, TypeID typeID);
+    ArcheTypeID GetOrCreateArcheType(Signature mask, TypeID typeID);
 
     Signature GetMask(Entity e) const;
 
-    void* AddComponent(Entity e, TypeID typeID, const void* src);
+    void* AddComponent(Entity e, TypeID typeID, const void* component);
 
     inline void* AddComponent(Entity e, const char* name, const void* src)
     {
@@ -79,7 +80,7 @@ public:
         DelComponent(e, GetHash64ByType<T>());
     }
 
-    ArchetypeStorage* GetArchetype(Signature mask) const;
+    std::vector<TypeID> GetAllComponentType(Entity e) const;
 
     template<typename... Components>
     View<Components...> Query()
@@ -87,13 +88,29 @@ public:
         return View<Components...>(this);
     }
 
+    size_t GetCount(ArcheTypeID id) const;
+
     size_t GetCount() const;
+
+    ArchetypeStorage* GetArchetypeByID(ArcheTypeID id) const;
 
 private:
     std::shared_ptr<EntityLocationMap> m_entityLocationMap;
 
-    std::vector<ArchetypeStorage*> m_entitesInfo;
+    std::vector<ArcheTypeID> m_entitesInfo;
 
-    ArchetypeStorage* m_emptyArchetypeStorage;
+    ArcheTypeID m_emptyArchetypeStorage;
+
+    ArchetypeStorage* m_archetypePool;
+
+    ArcheTypeID m_capacity;
+
+    ArcheTypeID m_count;
+
+    ArchetypeStorage* GetArchetypeByMask(Signature mask) const;
+
+    void LinkAdd(TypeID typeID, ArcheTypeID srcID, ArcheTypeID dstID);
+
+    void resize();
 };
 

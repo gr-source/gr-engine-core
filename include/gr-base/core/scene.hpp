@@ -20,6 +20,7 @@ public:
     bool bRunning;
 
     Scene();
+    ~Scene();
 
     inline const std::vector<Entity>& GetRoot() const
     {
@@ -59,7 +60,7 @@ public:
 
     inline ECS* GetECS() const
     {
-        return m_ecs.get();
+        return m_ecs;
     }
 
     size_t GetEntityCount() const;
@@ -91,7 +92,7 @@ private:
 
     std::vector<MeshID> m_meshes;
 
-    std::shared_ptr<ECS> m_ecs;
+    ECS* m_ecs;
 
     std::string m_name;
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gr-base/ecs/default.hpp"
+#include "gr-base/ecs/type.hpp"
 
 #include <vector>
 
@@ -32,18 +33,20 @@ class ArchetypeStorage
 
 public:
     ArchetypeStorage(Signature mask, TypeID typeID);
+    ArchetypeStorage(ArchetypeStorage&& other) noexcept;
+    ~ArchetypeStorage();
 
-    std::vector<ArchetypeStorage*> m_removeEdges;
-    std::vector<ArchetypeStorage*> m_addEdges;
+    std::vector<ArcheTypeID> m_removeEdges;
+    std::vector<ArcheTypeID> m_addEdges;
 
-    ArchetypeStorage* addEdges(TypeID typeID);
+    ArcheTypeID addEdges(TypeID typeID);
 
     inline Signature GetMask() const
     {
         return m_mask;
     }
 
-    void LinkAdd(TypeID type, ArchetypeStorage* dst);
+    // void LinkAdd(TypeID type, ArcheTypeID dstID);
 
     ComponentID Allocate(Entity e);
 
@@ -58,7 +61,10 @@ public:
     uint8_t* GetRaw(TypeID typeID) const;
 
     template <typename T>
-    T* GetRaw() const;
+    inline T* GetRaw() const
+    {
+        return reinterpret_cast<T*>(GetRaw(Type::GetTypeID<T>()));
+    }
 
     inline ComponentID Count() const
     {

@@ -1,5 +1,6 @@
 #include "gr-base/managers/sceneManager.hpp"
 
+#include "gr-base/core/logger.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include <algorithm>
@@ -7,9 +8,23 @@
 SceneManager* SceneManager::s_SceneManager = nullptr;
 
 // ***** public ***** //
-void SceneManager::SetInstance(SceneManager *sceneManager)
+void SceneManager::Initialize()
 {
-    s_SceneManager = sceneManager;
+    if (s_SceneManager == nullptr)
+        s_SceneManager = new SceneManager();
+
+    logger::info("[ SceneManager ] Initialize '0x%lX'.", s_SceneManager);
+}
+
+void SceneManager::Shutdown()
+{
+    if (s_SceneManager != nullptr)
+    {
+        delete s_SceneManager;
+
+        logger::info("[ SceneManager ] Shutdown '0x%lX'.", s_SceneManager);
+    }
+    s_SceneManager = nullptr;
 }
 
 Scene *SceneManager::Create(const std::string &name)

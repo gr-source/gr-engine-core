@@ -24,8 +24,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
     asset.name = scene->GetEntityName(entity);
     asset.isStatic = false/* gameObject->GetIsStatic() */;
 
-    Signature mask = scene->GetECS()->GetMask(entity);
-    for (auto& typeID : scene->GetECS()->GetArchetype(mask)->GetTypes())
+    for (auto& typeID : scene->GetECS()->GetAllComponentType(entity))
     {
         auto type = Type::GetTypeInfoByID(typeID);
 

@@ -6,6 +6,7 @@
 #include "gr-base/ecs/view.hpp"
 #include "gr-base/ecs/ecs.hpp"
 
+#include "gr-base/externals/handle.h"
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/managers/default.hpp"
@@ -15,6 +16,12 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
+
+template <typename... Components>
+inline Signature GetRequiredMask()
+{
+    return (0ull | ... | (1ull << Type::GetTypeID<Components>()));
+}
 
 void RenderSystem::Update(Scene* scene)
 {
@@ -50,40 +57,129 @@ void RenderSystem::Update(Scene* scene)
         }
     }
 
-    for (auto&& [e, transform, meshRender, meshFilter] : world->Query<Transform, MeshRender, MeshFilter>())
+    Signature requiredMask = GetRequiredMask<Transform, MeshRender, MeshFilter>();
+
+    static std::vector<MaterialID> m_batchlookup;
+
+    /*
+    ArchetypeStorage* archetypeStorageArray = scene->GetECS()->GetArchetypeArray();
+
+    for (size_t i=0;i<scene->GetECS()->GetArchetypeCount();i++)
     {
-        Matrix4x4 model =
-            transform->worldMatrix;
+        ArchetypeStorage* archetype = archetypeStorageArray + i;
 
-        Matrix4x4 mvp =
-            cameraData->viewProjection *
-            model;
-
-        auto& materials = meshRender->materials;
-        MeshID meshID = meshFilter->meshID;
-
-        auto mesh = AssetsManager::GetMesh(meshID);
-        if (mesh->GetGpuMesh() == nullptr)
-            mesh->Build();
-
-        int subMeshCount = mesh->GetSubMeshCount();
-        if (materials.size() == subMeshCount)
+        if ((archetype->GetMask() & requiredMask) == requiredMask)
         {
-            for (int i=0;i<subMeshCount;i++)
+            auto transforms = archetype->GetRaw<Transform>();
+            auto meshRenders = archetype->GetRaw<MeshRender>();
+            auto meshFilters = archetype->GetRaw<MeshFilter>();
+
+            if (archetype->Count() >= m_batchlookup.size())
+                m_batchlookup.resize(archetype->Count() + 1, InvalidNode);
+            
+            for (ComponentID i=0;i<archetype->Count();i++)
             {
-                auto materialID = materials[i];
-                auto& subMesh = mesh->GetSubMesh(i);
+                EntityID entityID = handle_get_first(archetype->GetEntity(i));
 
-                RenderCommand cmd;
-                cmd.materialID = materialID;
-                cmd.meshID = meshID;
-                cmd.subMeshID = i;
-                cmd.matrix = model;
+                Matrix4x4 model = transforms[i].worldMatrix;
 
-                Renderer::AddCommand(cmd);
+                if (m_batchlookup[entityID] == InvalidNode)
+                {
+                    auto& materials = meshRenders[i].materials;
+                    MeshID meshID = meshFilters[i].meshID;
+
+                    auto mesh = AssetsManager::GetMesh(meshID);
+                    if (mesh->GetGpuMesh() == nullptr)
+                        mesh->Build();
+
+                    int subMeshCount = mesh->GetSubMeshCount();
+                    if (materials.size() == subMeshCount)
+                    {
+                        RenderCommand cmd;
+                        for (int i=0;i<subMeshCount;i++)
+                        {
+
+                            auto materialID = materials[i];
+                            auto& subMesh = mesh->GetSubMesh(i);
+
+                            cmd.materialID = materialID;
+                            cmd.meshID = meshID;
+                            cmd.subMeshID = i;
+                            cmd.matrix = model;
+
+                            MaterialID batchID = InvalidNode;
+
+                            Renderer::AddCommand(cmd, batchID);
+
+                            m_batchlookup[entityID] = batchID;
+                        }
+                    }
+
+                } else
+                {
+                    RenderCommand cmd;
+                    cmd.matrix = model;
+
+                    Renderer::AddCommand(cmd, m_batchlookup[entityID]);
+                }
             }
         }
     }
+
+    // static std::vector<MaterialID> m_batchlookup;
+
+    // for (auto&& [e, transform, meshRender, meshFilter] : world->Query<Transform, MeshRender, MeshFilter>())
+    {
+        /*
+        EntityID entityID = handle_get_first(e);
+        if (entityID >= m_batchlookup.size())
+            m_batchlookup.resize(entityID + 1, InvalidNode);
+
+        Matrix4x4 model = transform->worldMatrix;
+
+        if (m_batchlookup[entityID] == InvalidNode)
+        {
+            auto& materials = meshRender->materials;
+            MeshID meshID = meshFilter->meshID;
+
+            auto mesh = AssetsManager::GetMesh(meshID);
+            if (mesh->GetGpuMesh() == nullptr)
+                mesh->Build();
+
+            int subMeshCount = mesh->GetSubMeshCount();
+            if (materials.size() == subMeshCount)
+            {
+                RenderCommand cmd;
+                for (int i=0;i<subMeshCount;i++)
+                {
+                    auto materialID = materials[i];
+                    auto& subMesh = mesh->GetSubMesh(i);
+
+                    cmd.materialID = materialID;
+                    cmd.meshID = meshID;
+                    cmd.subMeshID = i;
+                    cmd.matrix = model;
+
+                    MaterialID batchID = InvalidNode;
+
+                    Renderer::AddCommand(cmd, batchID);
+
+                    m_batchlookup[entityID] = batchID;
+                }
+            }
+        } else
+        {
+            RenderCommand cmd;
+            cmd.matrix = model;
+
+            Renderer::AddCommand(cmd, m_batchlookup[entityID]);
+        }
+        */
+
+        // Matrix4x4 mvp =
+        //     cameraData->viewProjection *
+        //     model;
+    // }
 
     // Graphics::Present(
     //     camera->renderTarget

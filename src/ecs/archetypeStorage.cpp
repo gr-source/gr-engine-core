@@ -1,16 +1,22 @@
 #include "gr-base/ecs/archetypeStorage.hpp"
 
+#include "gr-base/core/logger.hpp"
 #include "gr-base/ecs/type.hpp"
 
+#include <iostream>
 #include <cstdlib>
 #include <cstring>
 
 ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask), m_buffer(nullptr), m_capacity(0), m_stride(0), m_count(0)
 {
+    m_buffer = (uint8_t*)malloc(sizeof(int));
+
+    logger::trace("[ ArchetypeStorage ] Create '0x%lX'", this);
+
     if (typeID != INVALID_TYPE)
     {
-        m_removeEdges.resize(typeID + 1, nullptr);
-        m_addEdges.resize(typeID + 1, nullptr);
+        m_removeEdges.resize(typeID + 1, INVALID_ARCHETYPE);
+        m_addEdges.resize(typeID + 1, INVALID_ARCHETYPE);
     }
 
     while (mask)
@@ -35,22 +41,60 @@ ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask)
     }
 }
 
-ArchetypeStorage* ArchetypeStorage::addEdges(TypeID typeID)
+ArchetypeStorage::ArchetypeStorage(ArchetypeStorage&& other) noexcept
+{
+    logger::trace("[ ArchetypeStorage ] Move '0x%lX' To '0x%lX'", &other, this);
+
+    m_chunkInfoMap = std::move(other.m_chunkInfoMap);
+    m_typeToChunk  = std::move(other.m_typeToChunk);
+
+    m_mask = other.m_mask;
+
+    m_capacity = other.m_capacity;
+
+    m_stride = other.m_stride;
+
+    m_buffer = other.m_buffer;
+    other.m_buffer = nullptr;
+
+    m_count = other.m_count;
+    
+    m_entityToIndex = std::move(other.m_entityToIndex);
+
+    m_denseEntities = std::move(other.m_denseEntities);
+
+    m_removeEdges = std::move(other.m_removeEdges);
+    m_addEdges = std::move(other.m_addEdges);
+}
+
+ArchetypeStorage::~ArchetypeStorage()
+{
+    logger::trace("[ ArchetypeStorage ] Destroy '0x%lX' free='0x%lX'", this, m_buffer);
+
+    if (m_buffer != nullptr)
+    {
+        free(m_buffer);
+    }
+}
+
+ArcheTypeID ArchetypeStorage::addEdges(TypeID typeID)
 {
     if (typeID >= m_addEdges.size())
-    {
-        m_addEdges.resize(typeID + 1, nullptr);
-        m_removeEdges.resize(typeID + 1, nullptr);
-    }
+        m_addEdges.resize(typeID + 1, INVALID_ARCHETYPE);
+
+    if (typeID >= m_removeEdges.size())
+        m_removeEdges.resize(typeID + 1, INVALID_ARCHETYPE);
 
     return m_addEdges[typeID];
 }
 
+/*
 void ArchetypeStorage::LinkAdd(TypeID type, ArchetypeStorage* dst)
 {
     m_addEdges[type] = dst;
     dst->m_removeEdges[type] = this;
 }
+*/
 
 ComponentID ArchetypeStorage::Allocate(Entity e)
 {
@@ -153,12 +197,6 @@ std::vector<TypeID> ArchetypeStorage::GetTypes() const
     return vector;
 }
 
-template <typename T>
-T* ArchetypeStorage::GetRaw() const
-{
-    return reinterpret_cast<T*>(GetRaw(Type::GetTypeID<T>()));
-}
-
 void ArchetypeStorage::resize()
 {
     ComponentID oldCapacity = m_capacity;
@@ -214,6 +252,8 @@ void ArchetypeStorage::resize()
 
         m_buffer = (uint8_t*)malloc(m_capacity * m_stride);
     }
+
+    logger::trace("[ ArchetypeStorage ] Buffer of '0x%lX' resized '%ld' to '%ld'.", this, oldCapacity, m_capacity);
 
     m_denseEntities.resize(m_capacity, INVALID_ENTITY);
 

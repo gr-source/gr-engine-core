@@ -129,13 +129,38 @@ uint64_t make_handle(MaterialID materialID, MeshID meshID, uint32_t submeshIndex
            (uint64_t)submeshIndex;
 }
 
-void Renderer::AddCommand(const RenderCommand& cmd)
+void Renderer::AddCommand(const RenderCommand& cmd, MaterialID &batchID)
 {
-    GetInstance().addCommand(cmd);
+    GetInstance().addCommand(cmd, batchID);
 }
 
-void Renderer::addCommand(const RenderCommand& cmd)
+void Renderer::addCommand(const RenderCommand& cmd, MaterialID &batchID)
 {
+    if (batchID == InvalidNode)
+    {
+        uint64_t key = make_handle(cmd.materialID, cmd.meshID, cmd.subMeshID);
+
+        if (m_batchMap.find(key) != m_batchMap.end())
+        {
+            batchID = m_batchMap[key];
+        } else
+        {
+            auto& batch = m_batches.emplace_back();
+            batch.submeshID = cmd.subMeshID;
+            batch.mesh = AssetsManager::GetMesh(cmd.meshID);
+            batch.materialInstance = std::make_shared<MaterialInstance>(AssetsManager::GetMaterial(cmd.materialID));
+            batch.matrices.push_back(cmd.matrix);
+
+            m_batchMap.emplace(key, m_batches.size() - 1);
+
+            batchID = m_batches.size() - 1;
+        }
+        return;
+    }
+
+    m_batches[batchID].matrices.push_back(cmd.matrix);
+
+    /*
     uint64_t key = make_handle(cmd.materialID, cmd.meshID, cmd.subMeshID);
 
     if (m_batchMap.find(key) != m_batchMap.end())
@@ -151,6 +176,7 @@ void Renderer::addCommand(const RenderCommand& cmd)
 
         m_batchMap.emplace(key, m_batches.size() - 1);
     }
+    */
 }
 
 

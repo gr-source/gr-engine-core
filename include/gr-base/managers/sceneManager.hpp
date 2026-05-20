@@ -11,7 +11,9 @@
 class SceneManager
 {
 public:
-    static void SetInstance(SceneManager* sceneManager);
+    static void Initialize();
+
+    static void Shutdown();
 
     static Scene *Create(const std::string &name);
 
