@@ -21,8 +21,6 @@ private:
 
     std::string m_source;
 
-    std::vector<std::tuple<std::string, std::string>> m_shaderVariants;
-
     void onPreExecute() override;
 
     int doInBackground() override;

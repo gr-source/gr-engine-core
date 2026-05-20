@@ -50,11 +50,11 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
     gr::Shader* shader = it->second.get();
     if (inserted)
     {
-        // std::cout << "[ ===== " << m_asset.GetName() << " ===== ]" << std::endl;
-        // std::cout << "============================ fragment ============================" << std::endl;
-        // std::cout << fragment_src << std::endl;
-        // std::cout << "============================ vertex ============================" << std::endl;
-        // std::cout << vertex_src << std::endl;
+        std::cout << "[ ===== " << m_asset.GetName() << " ===== ]" << std::endl;
+        std::cout << "============================ fragment ============================" << std::endl;
+        std::cout << fragment_src << std::endl;
+        std::cout << "============================ vertex ============================" << std::endl;
+        std::cout << vertex_src << std::endl;
 
         if (shader->build(&fragment_src, 1, &vertex_src, 1) == -1)
         {

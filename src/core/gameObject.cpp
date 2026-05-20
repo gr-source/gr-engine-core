@@ -4,6 +4,11 @@
 
 #include "gr-base/ecs/ecs.hpp"
 
+bool GameObject::IsAlive() const
+{
+    return scene->GetECS()->IsAlive(entity);
+}
+
 void* GameObject::AddComponent(TypeID typeID, const void* src)
 {
     scene->GetECS()->AddComponent(entity, typeID, src);

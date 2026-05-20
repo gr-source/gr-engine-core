@@ -5,6 +5,7 @@
 #include "gr-base/ecs/type.hpp"
 
 #include "gr-base/script/relationship.hpp"
+#include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 #include "gr-base/script/name.hpp"
@@ -17,6 +18,8 @@ void RegistryDefaultComponent()
     logger::debug("[Type::Registry] Carregando script padrões...");
 
     REGISTRY(Relationship);
+    REGISTRY(MeshRender);
+    REGISTRY(CameraData);
     REGISTRY(Transform);
     REGISTRY(Camera);
     REGISTRY(Name);

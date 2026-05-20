@@ -66,6 +66,16 @@ public:
 
     void SetParent(Entity parent, Entity child);
 
+    inline void SetCamera(Entity entity)
+    {
+        m_camera = entity;
+    }
+
+    inline Entity GetCamera() const
+    {
+        return m_camera;
+    }
+
 private:
     std::unordered_set<std::string> m_chunksLoaded;
 
@@ -81,7 +91,7 @@ private:
 
     std::string m_name;
 
-    void loadChunk(std::string name);
+    Entity m_camera;
 };
 
 

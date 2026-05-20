@@ -43,6 +43,11 @@ void ECS::Destroy(Entity e)
     m_entityLocationMap->destroy(e);
 }
 
+bool ECS::IsAlive(Entity entity) const
+{
+    return m_entityLocationMap->isAlive(entity);
+}
+
 std::vector<TypeID> ECS::intersection(ArchetypeStorage* src, ArchetypeStorage* dst)
 {
     std::vector<TypeID> typeIDs;

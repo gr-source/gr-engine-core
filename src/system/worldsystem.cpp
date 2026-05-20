@@ -4,11 +4,7 @@
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/core/thread/taskmanager.hpp"
-
-#include "gr-base/core/file/file.hpp"
-
-#include "gr-base/script/camera.hpp"
+#include "gr-base/script/transform.hpp"
 
 extern "C"
 {
@@ -30,9 +26,9 @@ StreamChunk* WorldSystem::Get(ChunkID id)
     return GetInstance().get(id);
 }
 
-void WorldSystem::Update()
+void WorldSystem::Update(Scene* scene)
 {
-    GetInstance().update();
+    GetInstance().update(scene);
 }
 
 // private
@@ -75,21 +71,16 @@ StreamChunk* WorldSystem::get(ChunkID id)
     return m_pool.get(id);
 }
 
-void WorldSystem::update()
+void WorldSystem::update(Scene* scene)
 {
-    /*
-    auto scene = Scene::GetCurrent();
-    if (scene == nullptr)
+    const auto camera = scene->Wrap(scene->GetCamera());
+    if (!camera.IsAlive())
         return;
 
-    auto camera = scene->getCamera();
-    if (camera == nullptr)
-        return;
+    const auto transform = camera.GetComponent<Transform>();
 
-    auto position = camera->getPosition();
-
-    int currentX = floor(position.x / CHUNK_SIZE);
-    int currentZ = floor(position.z / CHUNK_SIZE);
+    int currentX = floor(transform->position.x / CHUNK_SIZE);
+    int currentZ = floor(transform->position.z / CHUNK_SIZE);
 
     std::unordered_set<ChunkID> m_chunkAvailable;
 
@@ -136,7 +127,6 @@ void WorldSystem::update()
 
     for (auto& chunkID : m_chunkLoaded)
         render(get(chunkID));
-    */
 }
 
 void WorldSystem::unloadChunk(ChunkID id)

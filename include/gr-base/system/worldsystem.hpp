@@ -3,6 +3,8 @@
 #include "gr-base/pool/poolObject.hpp"
 #include "gr-base/system/world/chunk.hpp"
 
+#include "gr-base/core/default.hpp"
+
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -18,7 +20,7 @@ public:
 
     static StreamChunk* Get(ChunkID id);
 
-    static void Update();
+    static void Update(Scene* scene);
 
     int CunkSize;
 
@@ -41,7 +43,7 @@ private:
 
     StreamChunk* get(ChunkID id);
 
-    void update();
+    void update(Scene* scene);
 
     void unloadChunk(ChunkID id);
 

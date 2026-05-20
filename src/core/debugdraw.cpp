@@ -4,10 +4,6 @@
 #include "gr-base/core/logger.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
-#include "gr-base/core/file/file.hpp"
-
-#include "gr-base/core/geometry/shaderData.hpp"
-
 #include "gr-base/script/camera.hpp"
 
 #include "gr-base/prefab/shaderprefab.hpp"
@@ -48,9 +44,9 @@ void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end)
     return s_DebugDraw->drawLine(start, end, Color::white, Color::blue);
 }
 
-void DebugDraw::Render(const Camera *camera)
+void DebugDraw::Render()
 {
-    return s_DebugDraw->render(camera);
+    return s_DebugDraw->render();
 }
 
 void DebugDraw::Clear()
@@ -72,12 +68,12 @@ void DebugDraw::drawLine(const Vector3 &start, const Vector3 &end, const Color &
     m_lines.push_back({end, endColor});
 }
 
-void DebugDraw::render(const Camera *camera)
+void DebugDraw::render()
 {
     if (m_linerender.m_shaderPrefab == nullptr)
         return m_linerender.init();
 
-    m_linerender.render(camera, m_lines.data(), m_lines.size());
+    m_linerender.render(m_lines.data(), m_lines.size());
 }
 
 void DebugDraw::clear()
@@ -104,13 +100,6 @@ void DebugDraw::LineRender::init()
 
     m_shader = m_shaderPrefab->Get(ShaderPrefabFlags_none);
 
-    /*
-    AssetsManager::LoadShaderAsync(params, [&](gr::Shader *shader)
-            {
-                m_shader = shader;
-            });
-    */
-
     gr::buffer_layout layout = {
         {gr::shader_data_type::Float3, "in_pos"},
         {gr::shader_data_type::Float4, "in_color"}
@@ -123,24 +112,20 @@ void DebugDraw::LineRender::init()
     m_vertex_array->AddVertexBuffer(m_buffer);
 }
 
-void DebugDraw::LineRender::render(const Camera *camera, const Line3D *data, std::size_t size)
+void DebugDraw::LineRender::render(const Line3D *data, std::size_t size)
 {
-    /*
+    m_shader->bind();
+
+    m_vertex_array->Bind();
+
     m_buffer->Bind();
     m_buffer->SetData(data, size * sizeof(Line3D));
     m_buffer->Unbind();
-
-    m_shader->bind();
-    m_shader->set_uniform("u_mat_projection", camera->getPerspesctive());
-    m_shader->set_uniform("u_mat_view", camera->getViewmatrix());
-
-    m_vertex_array->Bind();
 
     gr::gVertexArray::DrawArrays(PrimitiveType::LINES, size);
 
     m_shader->unbind();
     m_vertex_array->Unbind();
-    */
 }
 
 

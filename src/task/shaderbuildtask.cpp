@@ -42,8 +42,6 @@ int ShaderBuildTask::doInBackground()
     if (!asset.serialize(&stream))
         return 3;
 
-    m_shaderVariants.emplace_back(asset.GetName(), m_file);
-
     stream.close();
 
     return 0;
@@ -56,10 +54,7 @@ void ShaderBuildTask::onPostExecute(int result)
     if (result != 0)
         return Console::LogError("[ShaderBuildTask] falied in to build shader '%s'!!!", name.c_str());
 
-    for (auto&& [name, file] : m_shaderVariants)
-    {
-        AssetReference::Registry(name, file);
-    }
+    AssetReference::Registry(name, m_file);
 
     Console::LogInfo("[ShaderBuildTask] Shader building sucessfully '%s'", name.c_str());
 }
@@ -69,9 +64,6 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
 {
     std::vector<ShaderUniformRaw> s_shader_uniform_list;
     std::array<std::string, 3> resultShaderSource;
-
-    // resultShaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))] += "#version 330 core\n";
-    // resultShaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::VERTEX))]   += "#version 330 core\n";
 
     ShaderAsset asset;
     try
@@ -127,8 +119,8 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
         */
 
 
-        resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = (resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
-        resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = (resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
+        resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)], macro_map);
+        resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)], macro_map);
 
         // fragment
         {

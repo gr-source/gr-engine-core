@@ -3,7 +3,9 @@
 #include <gr-render/gl.h>
 
 RenderTarget::RenderTarget(int width, int height) : textureColor(0), textureDepth(0), framebuffer(0), m_width(width), m_height(height), renderbufferDepth(0), bvalid(false)
-{}
+{
+    init();
+}
 
 void RenderTarget::init()
 {

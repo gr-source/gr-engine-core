@@ -18,6 +18,8 @@ public:
 
     void Destroy(Entity e);
 
+    bool IsAlive(Entity e) const;
+
     std::vector<TypeID> intersection(ArchetypeStorage* src, ArchetypeStorage* dst);
 
     void MoveEntity(ArchetypeStorage* src, ArchetypeStorage* dst, Entity e);
@@ -80,7 +82,7 @@ public:
     ArchetypeStorage* GetArchetype(Signature sign) const;
 
     template<typename... Components>
-    View<Components...> view()
+    View<Components...> Query()
     {
         return View<Components...>(this);
     }

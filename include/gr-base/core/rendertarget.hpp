@@ -22,6 +22,16 @@ public:
 
     uint32_t GetTextureID() const;
 
+    inline int GetWidth() const
+    {
+        return m_width;
+    }
+
+    inline int GetHeight() const
+    {
+        return m_height;
+    }
+
 private:
     uint32_t textureColor;
 

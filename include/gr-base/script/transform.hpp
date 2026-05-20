@@ -12,7 +12,7 @@ struct Transform
 
     Matrix4x4 localMatrix = Matrix4x4::identityMatrix;
 
-    Matrix4x4 globalMatrix = Matrix4x4::identityMatrix;
+    Matrix4x4 worldMatrix = Matrix4x4::identityMatrix;
 
     bool dirty = true;
 };

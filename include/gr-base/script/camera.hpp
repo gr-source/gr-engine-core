@@ -1,23 +1,28 @@
 #pragma once
 
-#include "gr-base/core/rendertarget.hpp"
+#include "gr-base/core/renderer.hpp"
 
 #include <gr-math/gmath.hpp>
 
 struct Camera
 {
-    RenderTarget* rendertarget;
+    RenderTarget* rendertarget = Renderer::backbuffer;
 
-    Matrix4x4 projection;
-
-    float nearPlane;
-    float farPlane;
-    float aspect;
-    float fov;
-
-    Rect rect;
+    float nearPlane = 0.001f;
+    float farPlane = 500.0f;
+    float fov = 45.0f;
 };
 
+struct CameraData
+{
+    Matrix4x4 projection = Matrix4x4::identityMatrix;
+    Matrix4x4 view = Matrix4x4::identityMatrix;
+    Matrix4x4 viewProjection = Matrix4x4::identityMatrix;
+
+    Vector3 forward;
+    Vector3 right;
+    Vector3 up;
+};
 
 
 

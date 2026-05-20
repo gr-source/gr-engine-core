@@ -19,7 +19,7 @@ Scene* Scene::GetCurrent()
     return SceneManager::GetCurrent();
 }
 
-Scene::Scene() : bRunning(false), m_ecs(std::make_shared<ECS>()) {}
+Scene::Scene() : bRunning(false), m_ecs(std::make_shared<ECS>()), m_camera(INVALID_ENTITY) {}
 
 Entity Scene::create(const char* name)
 {

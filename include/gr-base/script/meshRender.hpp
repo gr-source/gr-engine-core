@@ -1,8 +1,8 @@
 #pragma once
 
-typedef struct MeshRender
+struct MeshRender
 {
-} MeshRender;
+};
 
 
 

@@ -2,6 +2,7 @@
 
 #include "gr-base/prefab/default.hpp"
 
+#include "gr-base/script/camera.hpp"
 #include "gr-base/script/default.hpp"
 #include <gr-math/color.hpp>
 #include <gr-math/gmath.hpp>
@@ -25,7 +26,7 @@ public:
 
     static void DrawLine(const Vector3 &start, const Vector3 &end);
 
-    static void Render(const Camera *camera);
+    static void Render();
 
     static void Clear();
 
@@ -54,7 +55,7 @@ private:
 
         void init();
 
-        void render(const Camera *camera, const Line3D *data, std::size_t size);
+        void render(const Line3D *data, std::size_t size);
     };
     
     std::vector<Line3D> m_lines;
@@ -66,7 +67,7 @@ private:
 
     void drawLine(const Vector3 &start, const Vector3 &end, const Color &startColor, const Color &endColor);
 
-    void render(const Camera *camera);
+    void render();
 
     void clear();
 };

@@ -11,6 +11,8 @@ struct GameObject
 
     Entity entity;
 
+    bool IsAlive() const;
+
     void* AddComponent(TypeID typeID, const void* src = nullptr);
 
     inline void* AddComponent(const char* name)

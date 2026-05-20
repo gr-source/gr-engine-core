@@ -32,7 +32,6 @@ set(core
     src/core/mainthreaddispatcher.cpp
     src/core/materialInstance.cpp
     src/core/assetReference.cpp
-    src/core/renderSystem.cpp
     src/core/rendertarget.cpp
     src/core/renderer.cpp
     src/core/gameObject.cpp
@@ -124,6 +123,8 @@ set(TASK_SRC
 
 set(SYSTEM_SRC
     src/system/transformsystem.cpp
+    src/system/camerasystem.cpp
+    src/system/renderSystem.cpp
     src/system/worldsystem.cpp
 )
 
