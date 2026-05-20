@@ -10,8 +10,6 @@
 class ECS
 {
 public:
-    std::unordered_map<Signature, ArcheTypeID> m_signArcheTypeMap;
-
     ECS();
     ~ECS();
 
@@ -95,6 +93,8 @@ public:
     ArchetypeStorage* GetArchetypeByID(ArcheTypeID id) const;
 
 private:
+    std::unordered_map<Signature, ArcheTypeID> m_signArcheTypeMap;
+
     std::shared_ptr<EntityLocationMap> m_entityLocationMap;
 
     std::vector<ArcheTypeID> m_entitesInfo;

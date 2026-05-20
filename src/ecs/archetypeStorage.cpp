@@ -72,9 +72,7 @@ ArchetypeStorage::~ArchetypeStorage()
     logger::trace("[ ArchetypeStorage ] Destroy '0x%lX' free='0x%lX'", this, m_buffer);
 
     if (m_buffer != nullptr)
-    {
         free(m_buffer);
-    }
 }
 
 ArcheTypeID ArchetypeStorage::addEdges(TypeID typeID)
