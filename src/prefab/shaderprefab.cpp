@@ -42,7 +42,6 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
     std::string vertex = "#version 330 core\n";
     if ((m_asset.GetFlags() & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
     {
-        std::cout << "Is Line" << std::endl;
         if (flags & ShaderPrefabFlags_Instancing)
             vertex += "#define USE_INSTANCED\n";
     }

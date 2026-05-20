@@ -49,7 +49,7 @@ int ShaderBuildTask::doInBackground()
 
 void ShaderBuildTask::onPostExecute(int result)
 {
-    auto name = gfile::get_file_name(m_source.c_str());
+    auto name = gfile::get_file_name(m_file.c_str());
 
     if (result != 0)
         return Console::LogError("[ShaderBuildTask] falied in to build shader '%s'!!!", name.c_str());
@@ -97,6 +97,7 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
         {
             macro_map.emplace("ENABLE_SKYBOX");
         }
+
         /*
         else
         {
@@ -121,8 +122,8 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
         */
 
 
-        resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)], macro_map);
-        resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)], macro_map);
+        // resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)], macro_map);
+        // resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)], macro_map);
 
         // fragment
         {
@@ -241,10 +242,10 @@ std::array<std::string, IShaderStage> ShaderBuildTask::LoadShaderBase(ShaderType
         case ShaderType::SHADER2D:
             path_to_base = "/assets/shader/model/shader2D.glsl";
             break;
-        case ShaderType::SHADER3D:
         case ShaderType::LINE:
             path_to_base = "/assets/shader/model/shader3D_line.glsl";
             break;
+        case ShaderType::SHADER3D:
         case ShaderType::SKY:
             path_to_base = "/assets/shader/model/shader3D.glsl";
             break;

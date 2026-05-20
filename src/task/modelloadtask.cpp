@@ -54,8 +54,6 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset, Entity parent)
 {
     auto go = m_scene->Wrap(m_scene->create(asset->name.c_str()));
 
-    std::cout << asset->name << std::endl;
-
     for (auto &&[hash, buffer] : asset->componentBuffer)
     {
         auto type = Type::GetTypeInfoByHash(hash);

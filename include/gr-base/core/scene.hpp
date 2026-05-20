@@ -28,6 +28,8 @@ public:
 
     Entity create(const char* name);
 
+    Entity create(Entity other);
+
     inline GameObject Wrap(Entity e)
     {
         return {this, e};

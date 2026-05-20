@@ -2,6 +2,7 @@
 
 #include "gr-base/core/default.hpp"
 
+#include "gr-base/ecs/archetypeStorage.hpp"
 #include "gr-base/ecs/ecs.hpp"
 
 #include "gr-base/managers/sceneManager.hpp"
@@ -25,11 +26,75 @@ Entity Scene::create(const char* name)
 {
     Entity e = m_ecs->Create();
     m_ecs->AddComponent<Transform>(e);
-    m_ecs->AddComponent<Name>(e, strdup(name));
+    if (name != nullptr)
+        m_ecs->AddComponent<Name>(e, strdup(name));
 
     m_entities.push_back(e);
 
     return e;
+}
+
+Entity Scene::create(Entity other)
+{
+    if (other == INVALID_ENTITY)
+        return create(nullptr);
+
+    Signature mask = m_ecs->GetMask(other);
+
+    Entity entity = m_ecs->Create();
+
+    auto go = Wrap(entity);
+    const auto otherGO = Wrap(other);
+    // m_isStatic = otherGO->m_isStatic;
+
+    auto otherTrans = otherGO.GetComponent<Transform>();
+
+    auto myTrans = go.GetOrAddComponent<Transform>();
+    myTrans->position = otherTrans->position;
+    myTrans->rotation = otherTrans->rotation;
+    myTrans->scale = otherTrans->scale;
+    myTrans->dirty = true;
+
+    auto otherRel = otherGO.GetComponent<Relationship>();
+    if (otherRel != nullptr)
+    {
+        Entity sibling = otherRel->firstChild;
+        while (sibling != INVALID_ENTITY)
+        {
+            Entity newChild = create(sibling);
+            SetParent(entity, newChild);
+
+            auto siblingRel = m_ecs->GetComponent<Relationship>(sibling);
+            if (siblingRel == nullptr)
+                break;
+            sibling = siblingRel->nextSibling;
+        }
+    }
+
+    auto rel = go.GetComponent<Relationship>();
+    if (rel == nullptr || rel->parent == INVALID_ENTITY)
+        m_entities.push_back(go.entity);
+
+    for (auto& typeID : m_ecs->GetArchetype(mask)->GetTypes())
+    {
+        auto type = Type::GetTypeInfoByID(typeID);
+
+        if (go.GetComponent(typeID) != nullptr)
+            continue;
+
+        auto dst = go.AddComponent(typeID);
+        auto src = otherGO.GetComponent(typeID);
+
+        if (type->globalCpy)
+        {
+            memcpy(dst, src, type->stride);
+        } else
+        {
+            ((void(*)(void*, const void*))(type->copy))(dst, src);
+        }
+    }
+
+    return entity;
 }
 
 void Scene::destroy(Entity e)

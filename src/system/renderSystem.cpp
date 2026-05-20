@@ -8,6 +8,7 @@
 
 #include "gr-base/managers/assetsManager.hpp"
 
+#include "gr-base/managers/default.hpp"
 #include "gr-base/prefab/shaderprefab.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
@@ -43,7 +44,8 @@ void RenderSystem::Update(Scene* scene)
             shader->setUniform("u_mat_view",       &cameraData->view);
             shader->setUniform("u_mat_eye",        &cameraTransform->position);
 
-            // setuplight(scene, shader);
+            shader->set_uniform("u_mat_numLights", 0);
+            // Setuplight(scene, shader);
             shader->unbind();
         }
     }
@@ -57,34 +59,30 @@ void RenderSystem::Update(Scene* scene)
             cameraData->viewProjection *
             model;
 
-        std::cout << e << std::endl;
+        auto& materials = meshRender->materials;
+        MeshID meshID = meshFilter->meshID;
 
-        /*
-        renderer->material->SetMatrix(
-            "u_Model",
-            model
-        );
+        auto mesh = AssetsManager::GetMesh(meshID);
+        if (mesh->GetGpuMesh() == nullptr)
+            mesh->Build();
 
-        renderer->material->SetMatrix(
-            "u_View",
-            cameraData->view
-        );
+        int subMeshCount = mesh->GetSubMeshCount();
+        if (materials.size() == subMeshCount)
+        {
+            for (int i=0;i<subMeshCount;i++)
+            {
+                auto materialID = materials[i];
+                auto& subMesh = mesh->GetSubMesh(i);
 
-        renderer->material->SetMatrix(
-            "u_Projection",
-            cameraData->projection
-        );
+                RenderCommand cmd;
+                cmd.materialID = materialID;
+                cmd.meshID = meshID;
+                cmd.subMeshID = i;
+                cmd.matrix = model;
 
-        renderer->material->SetMatrix(
-            "u_MVP",
-            mvp
-        );
-
-        Graphics::DrawMesh(
-            renderer->mesh,
-            renderer->material
-        );
-        */
+                Renderer::AddCommand(cmd);
+            }
+        }
     }
 
     // Graphics::Present(
