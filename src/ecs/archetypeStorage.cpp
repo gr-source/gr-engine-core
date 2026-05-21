@@ -11,7 +11,7 @@ ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask)
 {
     m_buffer = (uint8_t*)malloc(sizeof(int));
 
-    logger::trace("[ ArchetypeStorage ] Create '0x%lX'", this);
+    // logger::trace("[ ArchetypeStorage ] Create '0x%lX'", this);
 
     if (typeID != INVALID_TYPE)
     {
@@ -43,7 +43,7 @@ ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask)
 
 ArchetypeStorage::ArchetypeStorage(ArchetypeStorage&& other) noexcept
 {
-    logger::trace("[ ArchetypeStorage ] Move '0x%lX' To '0x%lX'", &other, this);
+    // logger::trace("[ ArchetypeStorage ] Move '0x%lX' To '0x%lX'", &other, this);
 
     m_chunkInfoMap = std::move(other.m_chunkInfoMap);
     m_typeToChunk  = std::move(other.m_typeToChunk);
@@ -69,7 +69,7 @@ ArchetypeStorage::ArchetypeStorage(ArchetypeStorage&& other) noexcept
 
 ArchetypeStorage::~ArchetypeStorage()
 {
-    logger::trace("[ ArchetypeStorage ] Destroy '0x%lX' free='0x%lX'", this, m_buffer);
+    // logger::trace("[ ArchetypeStorage ] Destroy '0x%lX' free='0x%lX'", this, m_buffer);
 
     if (m_buffer != nullptr)
         free(m_buffer);
@@ -256,7 +256,7 @@ void ArchetypeStorage::resize()
         m_buffer = (uint8_t*)malloc(m_capacity * m_stride);
     }
 
-    logger::trace("[ ArchetypeStorage ] Buffer of '0x%lX' resized '%ld' to '%ld'.", this, oldCapacity, m_capacity);
+    // logger::trace("[ ArchetypeStorage ] Buffer of '0x%lX' resized '%ld' to '%ld'.", this, oldCapacity, m_capacity);
 
     m_denseEntities.resize(m_capacity, INVALID_ENTITY);
 

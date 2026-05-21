@@ -65,6 +65,8 @@ public:
 
     size_t GetEntityCount() const;
 
+    void MarkChildrenDirty(Entity entity);
+
     void Unlink(Entity child);
 
     void SetParent(Entity parent, Entity child);

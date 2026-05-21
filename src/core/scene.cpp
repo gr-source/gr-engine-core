@@ -109,7 +109,11 @@ Entity Scene::create(Entity other)
 }
 
 void Scene::destroy(Entity e)
-{}
+{
+    Unlink(e);
+
+    m_ecs->Destroy(e);
+}
 
 void Scene::delFromRoot(Entity e)
 {
@@ -219,6 +223,27 @@ size_t Scene::GetEntityCount() const
     return m_ecs->GetCount();
 }
 
+void Scene::MarkChildrenDirty(Entity entity)
+{
+    auto transform = m_ecs->GetComponent<Transform>(entity);
+    transform->dirty = true;
+
+    auto rel = m_ecs->GetComponent<Relationship>(entity);
+    if (rel != nullptr)
+    {
+        Entity sibling = rel->firstChild;
+        while (sibling != INVALID_ENTITY)
+        {
+            MarkChildrenDirty(sibling);
+
+            auto siblingRel = m_ecs->GetComponent<Relationship>(sibling);
+            if (siblingRel == nullptr)
+                break;
+            sibling = siblingRel->nextSibling;
+        }
+    }
+}
+
 void Scene::Unlink(Entity entity)
 {
     auto rel = m_ecs->GetComponent<Relationship>(entity);
@@ -293,16 +318,9 @@ void Scene::SetParent(Entity parent, Entity child)
 
             sibling = siblingRel->nextSibling;
         }
-
-        /*
-        Entity sibling = parentRel->firstChild;
-        while (m_ecs->GetOrAddComponent<Relationship>(sibling)->nextSibling != INVALID_ENTITY)
-            sibling = m_ecs->GetOrAddComponent<Relationship>(sibling)->nextSibling;
-
-        auto siblingRel = m_ecs->GetOrAddComponent<Relationship>(sibling);
-        siblingRel->nextSibling = child;
-        */
     }
+
+    MarkChildrenDirty(child);
 }
 
 std::string Scene::GetEntityName(Entity entity)

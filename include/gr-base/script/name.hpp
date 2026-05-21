@@ -2,6 +2,6 @@
 
 struct Name
 {
-    const char* value;
+    char* value;
 };
 

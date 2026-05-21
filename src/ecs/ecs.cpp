@@ -41,10 +41,8 @@ Entity ECS::Create()
     return e;
 }
 
-#include <iostream>
 void ECS::Destroy(Entity e)
 {
-    std::cout << "des" << std::endl;
     if (!m_entityLocationMap->isAlive(e))
         return;
 
@@ -104,6 +102,7 @@ void ECS::MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e)
                 src_component,
                 type->stride
             );
+
         } else
         {
             ((void(*)(void*, const void*))(type->move))(dst_component, src_component);
@@ -131,7 +130,7 @@ ArcheTypeID ECS::GetOrCreateArcheType(Signature mask, TypeID typeID)
     auto archeType = m_archetypePool + id;
     new (archeType) ArchetypeStorage(mask, typeID);
 
-    logger::debug("[ECS] Create new ArcheType 'id=%d mask=%d ptr=0x%lX'.", id, mask, archeType);
+    // logger::debug("[ECS] Create new ArcheType 'id=%d mask=%d ptr=0x%lX'.", id, mask, archeType);
 
     m_signArcheTypeMap.emplace(mask, id);
 
@@ -276,7 +275,7 @@ void ECS::LinkAdd(TypeID typeID, ArcheTypeID srcID, ArcheTypeID dstID)
     if (typeID >= dst->m_removeEdges.size())
         dst->m_removeEdges.resize(typeID + 1, INVALID_ARCHETYPE);
 
-    logger::trace("[ ECS ] LinkAdd typeID=%d src_edges=%ld dst_rem=%ld", typeID, src->m_addEdges.size(), dst->m_removeEdges.size());
+    // logger::trace("[ ECS ] LinkAdd typeID=%d src_edges=%ld dst_rem=%ld", typeID, src->m_addEdges.size(), dst->m_removeEdges.size());
 
     src->m_addEdges[typeID] = dstID;
     dst->m_removeEdges[typeID] = srcID;
@@ -287,9 +286,9 @@ void ECS::resize()
     ArcheTypeID oldCapacity = m_capacity;
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
-    logger::debug("[ ECS ] [ RESIZE ] 'm_archetypePool' of=0x%lX.", this);
+    // logger::debug("[ ECS ] [ RESIZE ] 'm_archetypePool' of=0x%lX.", this);
 
-    logger::trace("[ ECS ] oldSize='%ld' newSize='%ld' oldptr='0x%lX'.", oldCapacity, m_capacity, m_archetypePool);
+    // logger::trace("[ ECS ] oldSize='%ld' newSize='%ld' oldptr='0x%lX'.", oldCapacity, m_capacity, m_archetypePool);
 
     ArchetypeStorage* newPool = (ArchetypeStorage*)malloc(m_capacity * sizeof(ArchetypeStorage));
 
@@ -305,7 +304,7 @@ void ECS::resize()
     free(m_archetypePool);
     m_archetypePool = newPool;
 
-    logger::trace("[ ECS ] newptr='0x%lX'.", m_archetypePool);
+    // logger::trace("[ ECS ] newptr='0x%lX'.", m_archetypePool);
 }
 
 
