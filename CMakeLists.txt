@@ -96,10 +96,10 @@ set(managers_src
 )
 
 set(ECS_SRC
-    src/ecs/entityLocationMap.cpp
+    src/ecs/entityManager.cpp
     src/ecs/archetypeStorage.cpp
+    src/ecs/world.cpp
     src/ecs/type.cpp
-    src/ecs/ecs.cpp
 )
 
 set(EXTERNAL_SRC

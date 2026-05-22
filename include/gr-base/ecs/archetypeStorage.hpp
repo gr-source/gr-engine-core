@@ -5,6 +5,8 @@
 
 #include <vector>
 
+#define CHUNK_SIZE (16 * 1024)
+
 class ArchetypeStorage
 {
     typedef struct ChunkInfo

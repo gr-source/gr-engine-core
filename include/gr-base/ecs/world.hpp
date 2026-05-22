@@ -7,11 +7,11 @@
 #include <memory>
 #include <vector>
 
-class ECS
+class World
 {
 public:
-    ECS();
-    ~ECS();
+    World();
+    ~World();
 
     Entity Create();
 
@@ -105,7 +105,7 @@ public:
 private:
     std::unordered_map<Signature, ArcheTypeID> m_signArcheTypeMap;
 
-    std::shared_ptr<EntityLocationMap> m_entityLocationMap;
+    std::shared_ptr<EntityManager> m_entityLocationMap;
 
     std::vector<ArcheTypeID> m_entitesInfo;
 

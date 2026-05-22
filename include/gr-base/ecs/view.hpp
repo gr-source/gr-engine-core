@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gr-base/ecs/archetypeStorage.hpp"
-#include "gr-base/ecs/ecs.hpp"
+#include "gr-base/ecs/world.hpp"
 #include "gr-base/ecs/type.hpp"
 
 #include <tuple>
@@ -85,12 +85,12 @@ class View
 public:
     std::vector<ArcheTypeID> m_matching;
 
-    ECS* m_world;
+    World* m_world;
 
     ComponentID m_count;
 public:
 
-    View(ECS* world)
+    View(World* world)
         : m_world(world), m_count(0)
     {
         Signature requiredMask = Type::GetMask<Components...>();

@@ -11,7 +11,7 @@
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/ecs/archetypeStorage.hpp"
-#include "gr-base/ecs/ecs.hpp"
+#include "gr-base/ecs/world.hpp"
 
 #include "gr-base/script/relationship.hpp"
 #include "gr-base/script/transform.hpp"
@@ -24,7 +24,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
     asset.name = scene->GetEntityName(entity);
     asset.isStatic = false/* gameObject->GetIsStatic() */;
 
-    for (auto& typeID : scene->GetECS()->GetAllComponentType(entity))
+    for (auto& typeID : scene->GetWorld()->GetAllComponentType(entity))
     {
         auto type = Type::GetTypeInfoByID(typeID);
 
@@ -57,7 +57,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
         {
             asset.childrent.push_back(ConvertToAssetModel(scene, sibling));
 
-            auto siblingRel = scene->GetECS()->GetComponent<Relationship>(sibling);
+            auto siblingRel = scene->GetWorld()->GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;

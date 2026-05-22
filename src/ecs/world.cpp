@@ -1,25 +1,27 @@
-#include "gr-base/ecs/ecs.hpp"
+#include "gr-base/ecs/world.hpp"
 
 #include "gr-base/core/logger.hpp"
-#include "gr-base/ecs/entityLocationMap.hpp"
+
 #include "gr-base/ecs/archetypeStorage.hpp"
+#include "gr-base/ecs/entityManager.hpp"
 #include "gr-base/ecs/type.hpp"
+
 #include "gr-base/externals/handle.h"
 
 #include <assert.h>
 #include <cstdlib>
 #include <cstring>
 
-ECS::ECS() : m_emptyArchetypeStorage(INVALID_ARCHETYPE), m_entityLocationMap(std::make_shared<EntityLocationMap>()), m_archetypePool(nullptr), m_count(0), m_capacity(0)
+World::World() : m_emptyArchetypeStorage(INVALID_ARCHETYPE), m_entityLocationMap(std::make_shared<EntityManager>()), m_archetypePool(nullptr), m_count(0), m_capacity(0)
 {
-    logger::info("[ ECS ] Create '0x%lX'.", this);
+    logger::info("[ World ] Create '0x%lX'.", this);
 
     m_emptyArchetypeStorage = GetOrCreateArcheType(0, INVALID_TYPE);
 }
 
-ECS::~ECS()
+World::~World()
 {
-    logger::info("[ ECS ] Destroy '0x%lX'.", this);
+    logger::info("[ World ] Destroy '0x%lX'.", this);
 
     for (ArcheTypeID i=0;i<m_count;i++)
         m_archetypePool[i].~ArchetypeStorage();
@@ -28,7 +30,7 @@ ECS::~ECS()
         free(m_archetypePool);
 }
 
-Entity ECS::Create()
+Entity World::Create()
 {
     Entity e = m_entityLocationMap->create();
     
@@ -41,7 +43,7 @@ Entity ECS::Create()
     return e;
 }
 
-void ECS::Destroy(Entity e)
+void World::Destroy(Entity e)
 {
     if (!m_entityLocationMap->isAlive(e))
         return;
@@ -56,12 +58,12 @@ void ECS::Destroy(Entity e)
     m_entityLocationMap->destroy(e);
 }
 
-bool ECS::IsAlive(Entity entity) const
+bool World::IsAlive(Entity entity) const
 {
     return m_entityLocationMap->isAlive(entity);
 }
 
-std::vector<TypeID> ECS::intersection(ArchetypeStorage* src, ArchetypeStorage* dst)
+std::vector<TypeID> World::intersection(ArchetypeStorage* src, ArchetypeStorage* dst)
 {
     std::vector<TypeID> typeIDs;
 
@@ -78,7 +80,7 @@ std::vector<TypeID> ECS::intersection(ArchetypeStorage* src, ArchetypeStorage* d
     return typeIDs;
 }
 
-void ECS::MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e)
+void World::MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e)
 {
     ArchetypeStorage* src = GetArchetypeByID(srcID);
     ArchetypeStorage* dst = GetArchetypeByID(dstID);
@@ -116,7 +118,7 @@ void ECS::MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e)
     m_entitesInfo[entityID] = dstID;
 }
 
-ArcheTypeID ECS::GetOrCreateArcheType(Signature mask, TypeID typeID)
+ArcheTypeID World::GetOrCreateArcheType(Signature mask, TypeID typeID)
 {
     auto it = m_signArcheTypeMap.find(mask);
     if (it != m_signArcheTypeMap.end())
@@ -130,14 +132,14 @@ ArcheTypeID ECS::GetOrCreateArcheType(Signature mask, TypeID typeID)
     auto archeType = m_archetypePool + id;
     new (archeType) ArchetypeStorage(mask, typeID);
 
-    // logger::debug("[ECS] Create new ArcheType 'id=%d mask=%d ptr=0x%lX'.", id, mask, archeType);
+    // logger::debug("[World] Create new ArcheType 'id=%d mask=%d ptr=0x%lX'.", id, mask, archeType);
 
     m_signArcheTypeMap.emplace(mask, id);
 
     return id;
 }
 
-Signature ECS::GetMask(Entity e) const
+Signature World::GetMask(Entity e) const
 {
     if (!m_entityLocationMap->isAlive(e))
         return 0;
@@ -149,8 +151,11 @@ Signature ECS::GetMask(Entity e) const
     return archeType->GetMask();
 }
 
-void* ECS::AddComponent(Entity e, TypeID typeID, const void* component)
+void* World::AddComponent(Entity e, TypeID typeID, const void* component)
 {
+    if (!m_entityLocationMap->isAlive(e))
+        return nullptr;
+
     uint32_t entityID = handle_get_first(e);
 
     ArcheTypeID srcID = m_entitesInfo[entityID];
@@ -179,7 +184,7 @@ void* ECS::AddComponent(Entity e, TypeID typeID, const void* component)
     return ptr;
 }
 
-void* ECS::GetComponent(Entity e, TypeID typeID) const
+void* World::GetComponent(Entity e, TypeID typeID) const
 {
     if (!m_entityLocationMap->isAlive(e))
         return nullptr;
@@ -196,7 +201,7 @@ void* ECS::GetComponent(Entity e, TypeID typeID) const
 }
 
 
-void* ECS::GetOrAddComponent(Entity e, TypeID typeID)
+void* World::GetOrAddComponent(Entity e, TypeID typeID)
 {
     void* c = GetComponent(e, typeID);
     if (c != nullptr)
@@ -204,7 +209,7 @@ void* ECS::GetOrAddComponent(Entity e, TypeID typeID)
     return AddComponent(e, typeID, nullptr);
 }
 
-void ECS::DelComponent(Entity e, Hash64 hash)
+void World::DelComponent(Entity e, Hash64 hash)
 {
     if (!m_entityLocationMap->isAlive(e))
         return;
@@ -228,29 +233,29 @@ void ECS::DelComponent(Entity e, Hash64 hash)
     MoveEntity(srcID, dstID, e);
 }
 
-void ECS::DelComponent(Entity e, const char* name)
+void World::DelComponent(Entity e, const char* name)
 {
     DelComponent(e, hash::fnv1_str(name));
 }
 
-std::vector<TypeID> ECS::GetAllComponentType(Entity e) const
+std::vector<TypeID> World::GetAllComponentType(Entity e) const
 {
     Signature mask = GetMask(e);
 
     return GetArchetypeByMask(mask)->GetTypes();
 }
 
-size_t ECS::GetCount(ArcheTypeID id) const
+size_t World::GetCount(ArcheTypeID id) const
 {
     return GetArchetypeByID(id)->Count();
 }
 
-size_t ECS::GetCount() const
+size_t World::GetCount() const
 {
     return m_entityLocationMap->GetCount();
 }
 
-ArchetypeStorage* ECS::GetArchetypeByMask(Signature mask) const
+ArchetypeStorage* World::GetArchetypeByMask(Signature mask) const
 {
     auto it = m_signArcheTypeMap.find(mask);
     if (it == m_signArcheTypeMap.end())
@@ -258,13 +263,13 @@ ArchetypeStorage* ECS::GetArchetypeByMask(Signature mask) const
     return m_archetypePool + it->second;
 }
 
-ArchetypeStorage* ECS::GetArchetypeByID(ArcheTypeID id) const
+ArchetypeStorage* World::GetArchetypeByID(ArcheTypeID id) const
 {
     assert(id >= m_count);
     return m_archetypePool + id;
 }
 
-void ECS::LinkAdd(TypeID typeID, ArcheTypeID srcID, ArcheTypeID dstID)
+void World::LinkAdd(TypeID typeID, ArcheTypeID srcID, ArcheTypeID dstID)
 {
     auto src = GetArchetypeByID(srcID);
     auto dst = GetArchetypeByID(dstID);
@@ -275,20 +280,20 @@ void ECS::LinkAdd(TypeID typeID, ArcheTypeID srcID, ArcheTypeID dstID)
     if (typeID >= dst->m_removeEdges.size())
         dst->m_removeEdges.resize(typeID + 1, INVALID_ARCHETYPE);
 
-    // logger::trace("[ ECS ] LinkAdd typeID=%d src_edges=%ld dst_rem=%ld", typeID, src->m_addEdges.size(), dst->m_removeEdges.size());
+    // logger::trace("[ World ] LinkAdd typeID=%d src_edges=%ld dst_rem=%ld", typeID, src->m_addEdges.size(), dst->m_removeEdges.size());
 
     src->m_addEdges[typeID] = dstID;
     dst->m_removeEdges[typeID] = srcID;
 }
 
-void ECS::resize()
+void World::resize()
 {
     ArcheTypeID oldCapacity = m_capacity;
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
-    // logger::debug("[ ECS ] [ RESIZE ] 'm_archetypePool' of=0x%lX.", this);
+    // logger::debug("[ World ] [ RESIZE ] 'm_archetypePool' of=0x%lX.", this);
 
-    // logger::trace("[ ECS ] oldSize='%ld' newSize='%ld' oldptr='0x%lX'.", oldCapacity, m_capacity, m_archetypePool);
+    // logger::trace("[ World ] oldSize='%ld' newSize='%ld' oldptr='0x%lX'.", oldCapacity, m_capacity, m_archetypePool);
 
     ArchetypeStorage* newPool = (ArchetypeStorage*)malloc(m_capacity * sizeof(ArchetypeStorage));
 
@@ -304,7 +309,7 @@ void ECS::resize()
     free(m_archetypePool);
     m_archetypePool = newPool;
 
-    // logger::trace("[ ECS ] newptr='0x%lX'.", m_archetypePool);
+    // logger::trace("[ World ] newptr='0x%lX'.", m_archetypePool);
 }
 
 

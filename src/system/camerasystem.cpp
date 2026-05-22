@@ -3,12 +3,11 @@
 #include "gr-base/core/rendertarget.hpp"
 
 #include "gr-base/ecs/view.hpp"
-#include "gr-base/ecs/ecs.hpp"
 
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
-void CameraSystem::Update(ECS* world)
+void CameraSystem::Update(World* world)
 {
     for (auto&& [e, transform, camera, data] : world->Query<Transform, Camera, CameraData>())
     {

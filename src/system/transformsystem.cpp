@@ -4,9 +4,8 @@
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/ecs/view.hpp"
-#include "gr-base/ecs/ecs.hpp"
 
-void TransformSystem::Update(ECS* world)
+void TransformSystem::Update(World* world)
 {
     Signature requiredMask = Type::GetMask<Transform>();
 

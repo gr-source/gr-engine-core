@@ -5,6 +5,6 @@
 class TransformSystem
 {
 public:
-    static void Update(ECS* world);
+    static void Update(World* world);
 };
 

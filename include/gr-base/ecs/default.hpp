@@ -25,10 +25,10 @@ typedef uint32_t TypeID;
 
 typedef uint64_t Signature;
 
-class EntityLocationMap;
 class ArchetypeStorage;
+class EntityManager;
+class World;
 class Type;
-class ECS;
 
 template<typename... Components>
 class View;

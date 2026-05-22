@@ -79,8 +79,8 @@ void WorldSystem::update(Scene* scene)
 
     const auto transform = camera.GetComponent<Transform>();
 
-    int currentX = floor(transform->position.x / CHUNK_SIZE);
-    int currentZ = floor(transform->position.z / CHUNK_SIZE);
+    int currentX = floor(transform->position.x / CHUNK_SIZEI);
+    int currentZ = floor(transform->position.z / CHUNK_SIZEI);
 
     std::unordered_set<ChunkID> m_chunkAvailable;
 
@@ -99,7 +99,7 @@ void WorldSystem::update(Scene* scene)
                 chunkID = create(key);
 
                 StreamChunk* chunk = get(chunkID);
-                chunk->position = {(float)(chunkIdX * CHUNK_SIZE), (float)(chunkIdZ * CHUNK_SIZE)};
+                chunk->position = {(float)(chunkIdX * CHUNK_SIZEI), (float)(chunkIdZ * CHUNK_SIZEI)};
                 chunk->objects = nullptr;
                 chunk->dirty = false;
             }
@@ -155,9 +155,9 @@ void WorldSystem::render(StreamChunk* chunk)
     Vector2 position = chunk->position;
 
     Vector3 p1{position.x,              0, position.y};
-    Vector3 p2{position.x + CHUNK_SIZE, 0, position.y};
-    Vector3 p3{position.x + CHUNK_SIZE, 0, position.y + CHUNK_SIZE};
-    Vector3 p4{position.x,              0, position.y + CHUNK_SIZE};
+    Vector3 p2{position.x + CHUNK_SIZEI, 0, position.y};
+    Vector3 p3{position.x + CHUNK_SIZEI, 0, position.y + CHUNK_SIZEI};
+    Vector3 p4{position.x,              0, position.y + CHUNK_SIZEI};
 
     DebugDraw::DrawLine(p1, p2);
     DebugDraw::DrawLine(p2, p3);

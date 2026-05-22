@@ -3,8 +3,9 @@
 #include "gr-base/core/default.hpp"
 
 #include "gr-base/core/logger.hpp"
+
 #include "gr-base/ecs/archetypeStorage.hpp"
-#include "gr-base/ecs/ecs.hpp"
+#include "gr-base/ecs/world.hpp"
 
 #include "gr-base/managers/sceneManager.hpp"
 
@@ -25,7 +26,7 @@ Scene::Scene() : bRunning(false), m_ecs(nullptr), m_camera(INVALID_ENTITY)
 {
     logger::info("[ Scene ] Create '0x%lX'.", this);
 
-    m_ecs = new ECS();
+    m_ecs = new World();
 }
 
 Scene::~Scene()

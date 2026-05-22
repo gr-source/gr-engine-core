@@ -1,35 +1,35 @@
 #include "gr-base/core/gameObject.hpp"
 
-#include "gr-base/core/scene.hpp"
+#include "gr-base/ecs/world.hpp"
 
-#include "gr-base/ecs/ecs.hpp"
+#include "gr-base/core/scene.hpp"
 
 bool GameObject::IsAlive() const
 {
-    return scene->GetECS()->IsAlive(entity);
+    return scene->GetWorld()->IsAlive(entity);
 }
 
 void* GameObject::AddComponent(TypeID typeID, const void* src)
 {
-    scene->GetECS()->AddComponent(entity, typeID, src);
+    scene->GetWorld()->AddComponent(entity, typeID, src);
 
     return GetComponent(typeID);
 }
 
 void* GameObject::GetComponent(TypeID typeID) const
 {
-    return scene->GetECS()->GetComponent(entity, typeID);
+    return scene->GetWorld()->GetComponent(entity, typeID);
 }
 
 void* GameObject::GetOrAddComponent(TypeID typeID)
 {
-    return scene->GetECS()->GetOrAddComponent(entity, typeID);
+    return scene->GetWorld()->GetOrAddComponent(entity, typeID);
 }
 
 
 void GameObject::DelComponent(TypeID typeID)
 {
-    scene->GetECS()->DelComponent(entity, typeID);
+    scene->GetWorld()->DelComponent(entity, typeID);
 }
 
 

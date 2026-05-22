@@ -9,10 +9,6 @@
 
 ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask), m_buffer(nullptr), m_capacity(0), m_stride(0), m_count(0)
 {
-    m_buffer = (uint8_t*)malloc(sizeof(int));
-
-    // logger::trace("[ ArchetypeStorage ] Create '0x%lX'", this);
-
     if (typeID != INVALID_TYPE)
     {
         m_removeEdges.resize(typeID + 1, INVALID_ARCHETYPE);
@@ -39,12 +35,13 @@ ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask)
 
         mask &= (mask - 1);
     }
+
+    if (m_capacity)
+        std::cout << "Capacity Entities: " << (CHUNK_SIZE / m_capacity) << std::endl;
 }
 
 ArchetypeStorage::ArchetypeStorage(ArchetypeStorage&& other) noexcept
 {
-    // logger::trace("[ ArchetypeStorage ] Move '0x%lX' To '0x%lX'", &other, this);
-
     m_chunkInfoMap = std::move(other.m_chunkInfoMap);
     m_typeToChunk  = std::move(other.m_typeToChunk);
 

@@ -11,7 +11,7 @@ typedef uint32_t ChunkID;
 
 #define CHUNK_RENDER_DISTANCE 8
 
-#define CHUNK_SIZE 16
+#define CHUNK_SIZEI 16
 
 typedef struct StreamChunk
 {

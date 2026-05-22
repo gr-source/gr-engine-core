@@ -5,7 +5,7 @@
 class CameraSystem
 {
 public:
-    static void Update(ECS* world);
+    static void Update(World* world);
 };
 
 

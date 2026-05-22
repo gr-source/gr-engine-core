@@ -4,7 +4,6 @@
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/ecs/view.hpp"
-#include "gr-base/ecs/ecs.hpp"
 
 #include "gr-base/externals/handle.h"
 #include "gr-base/managers/assetsManager.hpp"
@@ -19,9 +18,11 @@
 
 void RenderSystem::Update(Scene* scene)
 {
-    auto world = scene->GetECS();
-
     Entity cameraEntity = scene->GetCamera();
+    if (cameraEntity == INVALID_ENTITY)
+        return;
+
+    auto world = scene->GetWorld();
 
     Transform* cameraTransform =
         world->GetComponent<Transform>(cameraEntity);
@@ -54,7 +55,7 @@ void RenderSystem::Update(Scene* scene)
     Signature requiredMask =
         Type::GetMask<Transform, MeshRender, MeshFilter>();
 
-    auto array = scene->GetECS()->GetRawArcheType();
+    auto array = scene->GetWorld()->GetRawArcheType();
 
     const SubMesh* cacheSubMesh = nullptr;
 
@@ -65,7 +66,7 @@ void RenderSystem::Update(Scene* scene)
 
     RenderCommand cmd;
 
-    for (size_t a = 0; a < scene->GetECS()->GetArcheTypeCount(); a++)
+    for (size_t a = 0; a < scene->GetWorld()->GetArcheTypeCount(); a++)
     {
         ArchetypeStorage& archetype = array[a];
 

@@ -58,7 +58,7 @@ public:
 
     void AddMesh(MeshID meshID);
 
-    inline ECS* GetECS() const
+    inline World* GetWorld() const
     {
         return m_ecs;
     }
@@ -94,7 +94,7 @@ private:
 
     std::vector<MeshID> m_meshes;
 
-    ECS* m_ecs;
+    World* m_ecs;
 
     std::string m_name;
 

@@ -5,7 +5,7 @@
 class DebugRenderSystem
 {
 public:
-    static void Update(ECS* ecs);
+    static void Update(World* ecs);
 };
 
 
