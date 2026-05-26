@@ -23,7 +23,7 @@ World::~World()
 {
     logger::info("[ World ] Destroy '0x%lX'.", this);
 
-    for (ArcheTypeID i=0;i<m_count;i++)
+    for (ArchetypeID i=0;i<m_count;i++)
         m_archetypePool[i].~ArchetypeStorage();
 
     if (m_archetypePool != nullptr)
@@ -63,7 +63,7 @@ bool World::IsAlive(Entity entity) const
     return m_entityLocationMap->isAlive(entity);
 }
 
-ArcheTypeID World::GetOrCreateArcheType(Signature mask, TypeID typeID)
+ArchetypeID World::GetOrCreateArcheType(Signature mask, TypeID typeID)
 {
     auto it = m_signArcheTypeMap.find(mask);
     if (it != m_signArcheTypeMap.end())
@@ -72,7 +72,7 @@ ArcheTypeID World::GetOrCreateArcheType(Signature mask, TypeID typeID)
     if (m_count >= m_capacity)
         resize();
 
-    ArcheTypeID id = m_count++;
+    ArchetypeID id = m_count++;
 
     ArchetypeStorage& arche = m_archetypePool[id];
     new (&arche) ArchetypeStorage(mask, typeID);
@@ -105,13 +105,13 @@ void* World::AddComponent(Entity e, TypeID typeID, const void* component)
 
     uint32_t entityID = handle_get_first(e);
 
-    ArcheTypeID srcID = m_entityToArchetype[entityID];
+    ArchetypeID srcID = m_entityToArchetype[entityID];
 
     ArchetypeStorage* lastArcheType = GetArchetypeByID(srcID);
 
     auto type = Type::GetTypeInfoByID(typeID);
 
-    ArcheTypeID dstID = lastArcheType->addEdges(typeID);
+    ArchetypeID dstID = lastArcheType->addEdges(typeID);
     if (dstID == INVALID_ARCHETYPE)
     {
         Signature newMask = lastArcheType->m_mask | (1ull << typeID);
@@ -192,7 +192,7 @@ std::vector<TypeID> World::GetAllComponentType(Entity e) const
     return GetArchetypeByMask(mask)->GetTypes();
 }
 
-size_t World::GetCount(ArcheTypeID id) const
+size_t World::GetCount(ArchetypeID id) const
 {
     return GetArchetypeByID(id)->Count();
 }
@@ -210,7 +210,7 @@ ArchetypeStorage* World::GetArchetypeByMask(Signature mask) const
     return m_archetypePool + it->second;
 }
 
-void World::MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e)
+void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
 {
     ArchetypeStorage* src = GetArchetypeByID(srcID);
     ArchetypeStorage* dst = GetArchetypeByID(dstID);
@@ -251,12 +251,12 @@ void World::MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e)
     m_entityToArchetype[entityID] = dstID;
 }
 
-ArchetypeStorage* World::GetArchetypeByID(ArcheTypeID id) const
+ArchetypeStorage* World::GetArchetypeByID(ArchetypeID id) const
 {
     return m_archetypePool + id;
 }
 
-void World::LinkAdd(TypeID typeID, ArcheTypeID srcID, ArcheTypeID dstID)
+void World::LinkAdd(TypeID typeID, ArchetypeID srcID, ArchetypeID dstID)
 {
     auto src = GetArchetypeByID(srcID);
     auto dst = GetArchetypeByID(dstID);
@@ -275,7 +275,7 @@ void World::LinkAdd(TypeID typeID, ArcheTypeID srcID, ArcheTypeID dstID)
 
 void World::resize()
 {
-    ArcheTypeID oldCapacity = m_capacity;
+    ArchetypeID oldCapacity = m_capacity;
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
     // logger::debug("[ World ] [ RESIZE ] 'm_archetypePool' of=0x%lX.", this);
@@ -284,7 +284,7 @@ void World::resize()
 
     ArchetypeStorage* newPool = (ArchetypeStorage*)malloc(m_capacity * sizeof(ArchetypeStorage));
 
-    for (ArcheTypeID i=0;i<m_count;i++)
+    for (ArchetypeID i=0;i<m_count;i++)
     {
         ArchetypeStorage* oldArcheType = m_archetypePool + i;
         ArchetypeStorage* newArcheType = newPool + i;

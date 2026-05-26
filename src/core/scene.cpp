@@ -22,28 +22,32 @@ Scene* Scene::GetCurrent()
     return SceneManager::GetCurrent();
 }
 
-Scene::Scene() : bRunning(false), m_ecs(nullptr), m_camera(INVALID_ENTITY)
+Scene::Scene() : bRunning(false), m_world(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_ENTITY)
 {
     logger::info("[ Scene ] Create '0x%lX'.", this);
 
-    m_ecs = new World();
+    m_world = new World();
+
+    m_root = m_world->Create();
+    m_world->AddComponent<Relationship>(m_root);
 }
 
 Scene::~Scene()
 {
-    delete m_ecs;
-
     logger::info("[ Scene ] Destroy '0x%lX'.", this);
+
+    delete m_world;
 }
 
 Entity Scene::create(const char* name)
 {
-    Entity e = m_ecs->Create();
-    m_ecs->AddComponent<Transform>(e);
+    Entity e = m_world->Create();
+    m_world->AddComponent<Transform>(e);
     if (name != nullptr)
-        m_ecs->AddComponent<Name>(e, strdup(name));
+        m_world->AddComponent<Name>(e, strdup(name));
 
-    m_entities.push_back(e);
+    m_world->AddComponent<Relationship>(e);
+    SetParent(m_root, e);
 
     return e;
 }
@@ -53,7 +57,7 @@ Entity Scene::create(Entity other)
     if (other == INVALID_ENTITY)
         return create(nullptr);
 
-    Entity entity = m_ecs->Create();
+    Entity entity = m_world->Create();
 
     auto go = Wrap(entity);
     const auto otherGO = Wrap(other);
@@ -76,7 +80,7 @@ Entity Scene::create(Entity other)
             Entity newChild = create(sibling);
             SetParent(entity, newChild);
 
-            auto siblingRel = m_ecs->GetComponent<Relationship>(sibling);
+            auto siblingRel = m_world->GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;
@@ -85,9 +89,9 @@ Entity Scene::create(Entity other)
 
     auto rel = go.GetComponent<Relationship>();
     if (rel == nullptr || rel->parent == INVALID_ENTITY)
-        m_entities.push_back(go.entity);
+        SetParent(m_root, go.entity);
 
-    for (auto& typeID : m_ecs->GetAllComponentType(other))
+    for (auto& typeID : m_world->GetAllComponentType(other))
     {
         auto type = Type::GetTypeInfoByID(typeID);
 
@@ -113,12 +117,7 @@ void Scene::destroy(Entity e)
 {
     Unlink(e);
 
-    m_ecs->Destroy(e);
-}
-
-void Scene::delFromRoot(Entity e)
-{
-    m_entities.erase(std::remove(m_entities.begin(), m_entities.end(), e), m_entities.end());
+    m_world->Destroy(e);
 }
 
 // ********** public ********** //
@@ -157,52 +156,6 @@ std::vector<Handle> Scene::get_object_selected() const
     return v_object_selected_list;
 }
 
-
-
-// void Scene::AddLight(ComponentHandle id)
-// {
-//     if (Threadpool::IsMainThread())
-//         m_lights.push_back(id);
-// }
-
-// void Scene::RemoveLight(ComponentHandle id)
-// {
-//     if (Threadpool::IsMainThread())
-//         m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), id), m_lights.end());
-// }
-
-// std::vector<ComponentHandle> Scene::GetLights() const
-// {
-//     return m_lights;
-// }
-//
-// void Scene::AddCamera(ComponentHandle id)
-// {
-//     if (Threadpool::IsMainThread())
-//     {
-//         m_cameras.push_back(id);
-//
-//         if (m_cameraID == INVALID_COMPONENT_ID)
-//             SetCamera(id);
-//     }
-// }
-//
-// void Scene::RemoveCamera(ComponentHandle id)
-// {
-//     if (Threadpool::IsMainThread())
-//     {
-//         m_cameras.erase(std::remove(m_cameras.begin(), m_cameras.end(), id), m_cameras.end());
-//
-//         if (m_cameraID == id)
-//             m_cameraID = m_cameras.empty() ? INVALID_COMPONENT_ID : m_cameras[m_cameras.size() - 1];
-//     }
-// }
-//
-// std::vector<ComponentHandle> Scene::GetCameras() const
-// {
-//     return m_cameras;
-// }
-
 void Scene::SetName(const std::string& name)
 {
     m_name = name;
@@ -221,15 +174,16 @@ void Scene::AddMesh(MeshID meshID)
 
 size_t Scene::GetEntityCount() const
 {
-    return m_ecs->GetCount();
+    return m_world->GetCount();
 }
 
 void Scene::MarkChildrenDirty(Entity entity)
 {
-    auto transform = m_ecs->GetComponent<Transform>(entity);
-    transform->dirty = true;
+    auto transform = m_world->GetComponent<Transform>(entity);
+    if (transform != nullptr)
+        transform->dirty = true;
 
-    auto rel = m_ecs->GetComponent<Relationship>(entity);
+    auto rel = m_world->GetComponent<Relationship>(entity);
     if (rel != nullptr)
     {
         Entity sibling = rel->firstChild;
@@ -237,7 +191,7 @@ void Scene::MarkChildrenDirty(Entity entity)
         {
             MarkChildrenDirty(sibling);
 
-            auto siblingRel = m_ecs->GetComponent<Relationship>(sibling);
+            auto siblingRel = m_world->GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;
@@ -247,7 +201,7 @@ void Scene::MarkChildrenDirty(Entity entity)
 
 void Scene::Unlink(Entity entity)
 {
-    auto rel = m_ecs->GetComponent<Relationship>(entity);
+    auto rel = m_world->GetComponent<Relationship>(entity);
     if (rel == nullptr)
         return;
 
@@ -255,7 +209,7 @@ void Scene::Unlink(Entity entity)
 
     if (parent != INVALID_ENTITY)
     {
-        auto parentRel = m_ecs->GetComponent<Relationship>(parent);
+        auto parentRel = m_world->GetComponent<Relationship>(parent);
 
         if (parentRel->firstChild == entity)
         {
@@ -267,7 +221,7 @@ void Scene::Unlink(Entity entity)
 
             while (sibling != INVALID_ENTITY)
             {
-                auto siblingRel = m_ecs->GetComponent<Relationship>(sibling);
+                auto siblingRel = m_world->GetComponent<Relationship>(sibling);
 
                 if (siblingRel->nextSibling == entity)
                 {
@@ -287,16 +241,11 @@ void Scene::Unlink(Entity entity)
 
 void Scene::SetParent(Entity parent, Entity child)
 {
-    m_ecs->GetOrAddComponent<Relationship>(child);
-    m_ecs->GetOrAddComponent<Relationship>(parent);
+    m_world->GetOrAddComponent<Relationship>(child);
+    m_world->GetOrAddComponent<Relationship>(parent);
 
-    auto childRel  = m_ecs->GetComponent<Relationship>(child);
-    auto parentRel = m_ecs->GetComponent<Relationship>(parent);
-
-    if (childRel->parent == INVALID_ENTITY)
-    {
-        delFromRoot(child);
-    }
+    auto childRel  = m_world->GetComponent<Relationship>(child);
+    auto parentRel = m_world->GetComponent<Relationship>(parent);
 
     childRel->parent = parent;
 
@@ -309,7 +258,9 @@ void Scene::SetParent(Entity parent, Entity child)
 
         while (sibling != INVALID_ENTITY)
         {
-            auto siblingRel = m_ecs->GetOrAddComponent<Relationship>(sibling);
+            auto siblingRel = m_world->GetComponent<Relationship>(sibling);
+            if (siblingRel == nullptr)
+                break;
 
             if (siblingRel->nextSibling == INVALID_ENTITY)
             {

@@ -83,7 +83,7 @@ class View
     };
 
 public:
-    std::vector<ArcheTypeID> m_matching;
+    std::vector<ArchetypeID> m_matching;
 
     World* m_world;
 
@@ -95,9 +95,9 @@ public:
     {
         Signature requiredMask = Type::GetMask<Components...>();
 
-        ArchetypeStorage* array = world->GetRawArcheType();
+        ArchetypeStorage* array = world->GetRawArchetype();
 
-        for (ArcheTypeID i=0;i<world->GetArcheTypeCount();i++)
+        for (ArchetypeID i=0;i<world->GetArcheTypeCount();i++)
         {
             if ((array[i].m_mask & requiredMask) == requiredMask)
             {

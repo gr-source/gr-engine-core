@@ -22,9 +22,9 @@ public:
     Scene();
     ~Scene();
 
-    inline const std::vector<Entity>& GetRoot() const
+    inline Entity GetRoot() const
     {
-        return m_entities;
+        return m_root;
     }
 
     Entity create(const char* name);
@@ -37,8 +37,6 @@ public:
     }
 
     void destroy(Entity e);
-
-    void delFromRoot(Entity e);
 
     void select(Handle id);
 
@@ -60,7 +58,7 @@ public:
 
     inline World* GetWorld() const
     {
-        return m_ecs;
+        return m_world;
     }
 
     size_t GetEntityCount() const;
@@ -86,17 +84,17 @@ public:
 private:
     std::unordered_set<std::string> m_chunksLoaded;
 
-    std::vector<Entity> m_entities;
-
     std::unordered_set<Handle> u_object_has_been_selected;
 
     std::vector<Handle> v_object_selected_list;
 
     std::vector<MeshID> m_meshes;
 
-    World* m_ecs;
+    World* m_world;
 
     std::string m_name;
+
+    Entity m_root;
 
     Entity m_camera;
 };

@@ -38,12 +38,12 @@ public:
 
     Signature m_mask;
 
-    std::vector<ArcheTypeID> m_removeEdges;
-    std::vector<ArcheTypeID> m_addEdges;
+    std::vector<ArchetypeID> m_removeEdges;
+    std::vector<ArchetypeID> m_addEdges;
 
-    ArcheTypeID addEdges(TypeID typeID);
+    ArchetypeID addEdges(TypeID typeID);
 
-    // void LinkAdd(TypeID type, ArcheTypeID dstID);
+    // void LinkAdd(TypeID type, ArchetypeID dstID);
 
     ComponentID Allocate(Entity e);
 

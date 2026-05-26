@@ -8,7 +8,7 @@
 
 #include "gr-base/externals/handle.h"
 
-#define INVALID_ARCHETYPE (ArcheTypeID)-1
+#define INVALID_ARCHETYPE (ArchetypeID)-1
 #define INVALID_COMPONENT (ComponentID)-1
 #define INVALID_SIGNATURE (Signature)-1
 #define INVALID_HASH64 (Hash64)-1
@@ -18,7 +18,7 @@
 typedef Handle Entity;
 
 typedef uint32_t ComponentID;
-typedef uint32_t ArcheTypeID;
+typedef uint32_t ArchetypeID;
 typedef uint32_t EntityID;
 typedef uint32_t ChunkID;
 typedef uint32_t TypeID;

@@ -9,18 +9,18 @@ void TransformSystem::Update(World* world)
 {
     Signature requiredMask = Type::GetMask<Transform>();
 
-    auto array = world->GetRawArcheType();
+    auto array = world->GetRawArchetype();
 
     for (size_t i=0;i<world->GetArcheTypeCount();i++)
     {
-        ArchetypeStorage& archetype = array[i];
+        ArchetypeStorage& arche = array[i];
 
-        if ((archetype.m_mask & requiredMask) == requiredMask)
+        if ((arche.m_mask & requiredMask) == requiredMask)
         {
-            auto transforms = archetype.GetRaw<Transform>();
-            auto entities = archetype.GetEntities();
+            auto transforms = arche.GetRaw<Transform>();
+            auto entities = arche.GetEntities();
 
-            for (ComponentID i=0;i<archetype.Count();i++)
+            for (ComponentID i=0;i<arche.Count();i++)
             {
                 auto& transform = transforms[i];
                 auto& entity = entities[i];
@@ -36,8 +36,8 @@ void TransformSystem::Update(World* world)
                 if (rel != nullptr && rel->parent != INVALID_ENTITY)
                 {
                     Transform* parentTransform = world->GetComponent<Transform>(rel->parent);
-
-                    transform.worldMatrix = parentTransform->worldMatrix * transform.localMatrix;
+                    if (parentTransform != nullptr)
+                        transform.worldMatrix = parentTransform->worldMatrix * transform.localMatrix;
                 }
 
                 transform.dirty = false;

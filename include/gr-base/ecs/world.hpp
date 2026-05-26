@@ -19,7 +19,7 @@ public:
 
     bool IsAlive(Entity e) const;
 
-    ArcheTypeID GetOrCreateArcheType(Signature mask, TypeID typeID);
+    ArchetypeID GetOrCreateArcheType(Signature mask, TypeID typeID);
 
     Signature GetMask(Entity e) const;
 
@@ -82,42 +82,42 @@ public:
         return View<Components...>(this);
     }
 
-    size_t GetCount(ArcheTypeID id) const;
+    size_t GetCount(ArchetypeID id) const;
 
     size_t GetCount() const;
 
-    ArchetypeStorage* GetArchetypeByID(ArcheTypeID id) const;
+    ArchetypeStorage* GetArchetypeByID(ArchetypeID id) const;
 
-    inline ArchetypeStorage* GetRawArcheType() const
+    inline ArchetypeStorage* GetRawArchetype() const
     {
         return m_archetypePool;
     }
 
-    inline ArcheTypeID GetArcheTypeCount() const
+    inline ArchetypeID GetArcheTypeCount() const
     {
         return m_count;
     }
 
 private:
-    std::unordered_map<Signature, ArcheTypeID> m_signArcheTypeMap;
+    std::unordered_map<Signature, ArchetypeID> m_signArcheTypeMap;
 
     std::shared_ptr<EntityManager> m_entityLocationMap;
 
-    std::vector<ArcheTypeID> m_entityToArchetype;
+    std::vector<ArchetypeID> m_entityToArchetype;
 
-    ArcheTypeID m_emptyArchetypeStorage;
+    ArchetypeID m_emptyArchetypeStorage;
 
     ArchetypeStorage* m_archetypePool;
 
-    ArcheTypeID m_capacity;
+    ArchetypeID m_capacity;
 
-    ArcheTypeID m_count;
+    ArchetypeID m_count;
 
     ArchetypeStorage* GetArchetypeByMask(Signature mask) const;
 
-    void MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e);
+    void MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e);
 
-    void LinkAdd(TypeID typeID, ArcheTypeID srcID, ArcheTypeID dstID);
+    void LinkAdd(TypeID typeID, ArchetypeID srcID, ArchetypeID dstID);
 
     void resize();
 };

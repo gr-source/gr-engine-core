@@ -68,7 +68,7 @@ ArchetypeStorage::~ArchetypeStorage()
         free(m_buffer);
 }
 
-ArcheTypeID ArchetypeStorage::addEdges(TypeID typeID)
+ArchetypeID ArchetypeStorage::addEdges(TypeID typeID)
 {
     if (typeID >= m_addEdges.size())
         m_addEdges.resize(typeID + 1, INVALID_ARCHETYPE);

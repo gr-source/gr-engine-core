@@ -55,7 +55,7 @@ void RenderSystem::Update(Scene* scene)
     Signature requiredMask =
         Type::GetMask<Transform, MeshRender, MeshFilter>();
 
-    auto array = scene->GetWorld()->GetRawArcheType();
+    auto array = scene->GetWorld()->GetRawArchetype();
 
     const SubMesh* cacheSubMesh = nullptr;
 
