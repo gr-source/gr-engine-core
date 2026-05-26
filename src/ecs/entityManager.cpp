@@ -61,14 +61,14 @@ void EntityManager::resize()
     addFreeID(oldCapacity);
 }
 
-void EntityManager::addFreeID(EntityID start)
+void EntityManager::addFreeID(EntityID oldCapacity)
 {
     EntityID lastEntity = m_capacity - 1;
-    for (EntityID i=start;i<lastEntity;i++)
+    for (EntityID i=oldCapacity;i<lastEntity;i++)
         m_entities[i] = { i + 1, 1 };
 
     m_entities[lastEntity] = { m_freeID, 1 };
-    m_freeID = start;
+    m_freeID = oldCapacity;
 }
 
 

@@ -19,10 +19,6 @@ public:
 
     bool IsAlive(Entity e) const;
 
-    std::vector<TypeID> intersection(ArchetypeStorage* src, ArchetypeStorage* dst);
-
-    void MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e);
-
     ArcheTypeID GetOrCreateArcheType(Signature mask, TypeID typeID);
 
     Signature GetMask(Entity e) const;
@@ -107,7 +103,7 @@ private:
 
     std::shared_ptr<EntityManager> m_entityLocationMap;
 
-    std::vector<ArcheTypeID> m_entitesInfo;
+    std::vector<ArcheTypeID> m_entityToArchetype;
 
     ArcheTypeID m_emptyArchetypeStorage;
 
@@ -118,6 +114,8 @@ private:
     ArcheTypeID m_count;
 
     ArchetypeStorage* GetArchetypeByMask(Signature mask) const;
+
+    void MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e);
 
     void LinkAdd(TypeID typeID, ArcheTypeID srcID, ArcheTypeID dstID);
 

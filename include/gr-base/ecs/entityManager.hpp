@@ -29,7 +29,7 @@ public:
 
     void resize();
 
-    void addFreeID(EntityID start);
+    void addFreeID(EntityID oldCapacity);
 
     inline EntityID GetCount() const
     {

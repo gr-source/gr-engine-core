@@ -62,7 +62,7 @@ struct GameObject
     template <typename T>
     inline void DelComponent()
     {
-        return static_cast<T*>(DelComponent(Type::GetTypeID<T>()));
+        DelComponent(Type::GetTypeID<T>());
     }
 };
 

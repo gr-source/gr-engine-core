@@ -18,14 +18,6 @@ class ArchetypeStorage
 
     std::vector<ChunkInfo> m_chunkInfoMap;
     std::vector<ChunkID> m_typeToChunk;
-
-    size_t m_capacity;
-
-    size_t m_stride;
-
-    uint8_t* m_buffer;
-
-    ComponentID m_count;
     
     std::vector<ComponentID> m_entityToIndex;
 
@@ -36,15 +28,18 @@ public:
     ArchetypeStorage(ArchetypeStorage&& other) noexcept;
     ~ArchetypeStorage();
 
+    size_t m_capacity;
+
+    size_t m_stride;
+
+    uint8_t* m_buffer;
+
+    ComponentID m_count;
+
     Signature m_mask;
 
     std::vector<ArcheTypeID> m_removeEdges;
     std::vector<ArcheTypeID> m_addEdges;
-
-    inline Signature GetMask() const
-    {
-        return m_mask;
-    }
 
     ArcheTypeID addEdges(TypeID typeID);
 
@@ -52,7 +47,7 @@ public:
 
     ComponentID Allocate(Entity e);
 
-    void Deallocate(Entity e);
+    bool Deallocate(Entity e);
 
     ComponentID GetIndexOf(Entity e) const;
 

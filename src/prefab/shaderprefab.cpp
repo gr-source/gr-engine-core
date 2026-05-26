@@ -65,6 +65,8 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
         if (shader->build(&fragment_src, 1, &vertex_src, 1) == -1)
         {
             Console::LogError("[ AssetsManager::LoadShaderFromFile ] Shader.Build Fail to build shader, %s, %s", m_asset.GetName().c_str(), "null");
+
+            m_shadervariant.erase(flags);
             return nullptr;
         }
 

@@ -35,10 +35,10 @@ Entity World::Create()
     Entity e = m_entityLocationMap->create();
     
     EntityID entityID = handle_get_first(e);
-    if (entityID >= m_entitesInfo.size())
-        m_entitesInfo.resize(entityID + 1, m_emptyArchetypeStorage);
+    if (entityID >= m_entityToArchetype.size())
+        m_entityToArchetype.resize(entityID + 1, m_emptyArchetypeStorage);
 
-    m_entitesInfo[entityID] = m_emptyArchetypeStorage;
+    m_entityToArchetype[entityID] = m_emptyArchetypeStorage;
 
     return e;
 }
@@ -50,10 +50,10 @@ void World::Destroy(Entity e)
 
     EntityID entityID = handle_get_first(e);
 
-    ArchetypeStorage* archeType = m_archetypePool + m_entitesInfo[entityID];
-    archeType->Deallocate(e);
+    auto& arche = m_archetypePool[m_entityToArchetype[entityID]];
+    arche.Deallocate(e);
 
-    m_entitesInfo[entityID] = m_emptyArchetypeStorage;
+    m_entityToArchetype[entityID] = m_emptyArchetypeStorage;
 
     m_entityLocationMap->destroy(e);
 }
@@ -61,61 +61,6 @@ void World::Destroy(Entity e)
 bool World::IsAlive(Entity entity) const
 {
     return m_entityLocationMap->isAlive(entity);
-}
-
-std::vector<TypeID> World::intersection(ArchetypeStorage* src, ArchetypeStorage* dst)
-{
-    std::vector<TypeID> typeIDs;
-
-    Signature common = src->GetMask() & dst->GetMask();
-
-    while (common)
-    {
-        TypeID typeID = __builtin_ctzll(common);
-        typeIDs.push_back(typeID);
-
-        common &= (common - 1);
-    }
-
-    return typeIDs;
-}
-
-void World::MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e)
-{
-    ArchetypeStorage* src = GetArchetypeByID(srcID);
-    ArchetypeStorage* dst = GetArchetypeByID(dstID);
-
-    ComponentID srcIndex = src->GetIndexOf(e);
-    ComponentID dstIndex = dst->Allocate(e);
-
-    assert(srcIndex != INVALID_COMPONENT || dstIndex != INVALID_COMPONENT);
-
-    for (TypeID t : intersection(src, dst))
-    {
-        auto type = Type::GetTypeInfoByID(t);
-
-        void* dst_component = dst->GetRaw(t) + dstIndex * type->stride;
-        void* src_component = src->GetRaw(t) + srcIndex * type->stride;
-
-        if (type->globalCpy)
-        {
-            memcpy(
-                dst_component,
-                src_component,
-                type->stride
-            );
-
-        } else
-        {
-            ((void(*)(void*, const void*))(type->move))(dst_component, src_component);
-        }
-    }
-
-    src->Deallocate(e);
-
-    EntityID entityID = handle_get_first(e);
-
-    m_entitesInfo[entityID] = dstID;
 }
 
 ArcheTypeID World::GetOrCreateArcheType(Signature mask, TypeID typeID)
@@ -129,8 +74,8 @@ ArcheTypeID World::GetOrCreateArcheType(Signature mask, TypeID typeID)
 
     ArcheTypeID id = m_count++;
 
-    auto archeType = m_archetypePool + id;
-    new (archeType) ArchetypeStorage(mask, typeID);
+    ArchetypeStorage& arche = m_archetypePool[id];
+    new (&arche) ArchetypeStorage(mask, typeID);
 
     // logger::debug("[World] Create new ArcheType 'id=%d mask=%d ptr=0x%lX'.", id, mask, archeType);
 
@@ -145,10 +90,12 @@ Signature World::GetMask(Entity e) const
         return 0;
 
     EntityID entityID = handle_get_first(e);
+    if (entityID >= m_entityToArchetype.size())
+        return 0;
 
-    auto archeType = GetArchetypeByID(m_entitesInfo[entityID]);
+    auto& arche = m_archetypePool[m_entityToArchetype[entityID]];
 
-    return archeType->GetMask();
+    return arche.m_mask;
 }
 
 void* World::AddComponent(Entity e, TypeID typeID, const void* component)
@@ -158,7 +105,7 @@ void* World::AddComponent(Entity e, TypeID typeID, const void* component)
 
     uint32_t entityID = handle_get_first(e);
 
-    ArcheTypeID srcID = m_entitesInfo[entityID];
+    ArcheTypeID srcID = m_entityToArchetype[entityID];
 
     ArchetypeStorage* lastArcheType = GetArchetypeByID(srcID);
 
@@ -167,7 +114,7 @@ void* World::AddComponent(Entity e, TypeID typeID, const void* component)
     ArcheTypeID dstID = lastArcheType->addEdges(typeID);
     if (dstID == INVALID_ARCHETYPE)
     {
-        Signature newMask = lastArcheType->GetMask() | (1ull << typeID);
+        Signature newMask = lastArcheType->m_mask | (1ull << typeID);
 
         dstID = GetOrCreateArcheType(newMask, typeID);
 
@@ -190,11 +137,11 @@ void* World::GetComponent(Entity e, TypeID typeID) const
         return nullptr;
 
     EntityID entityID = handle_get_first(e);
-    if (entityID >= m_entitesInfo.size())
+    if (entityID >= m_entityToArchetype.size())
         return nullptr;
 
-    ArchetypeStorage* archeType = GetArchetypeByID(m_entitesInfo[entityID]);
-    if ((archeType->GetMask() & (1ull << typeID)) != (1ull << typeID))
+    ArchetypeStorage* archeType = GetArchetypeByID(m_entityToArchetype[entityID]);
+    if ((archeType->m_mask & (1ull << typeID)) != (1ull << typeID))
         return nullptr;
 
     return archeType->Get(e, typeID);
@@ -220,10 +167,10 @@ void World::DelComponent(Entity e, Hash64 hash)
 
     uint32_t entityID = handle_get_first(e);
 
-    auto srcID = m_entitesInfo[entityID];
+    auto srcID = m_entityToArchetype[entityID];
     ArchetypeStorage* src = GetArchetypeByID(srcID);
 
-    Signature oldMask = src->GetMask();
+    Signature oldMask = src->m_mask;
     Signature newMask = oldMask & ~(1ull << type->index);
 
     auto dstID = GetOrCreateArcheType(newMask, type->index);
@@ -263,9 +210,49 @@ ArchetypeStorage* World::GetArchetypeByMask(Signature mask) const
     return m_archetypePool + it->second;
 }
 
+void World::MoveEntity(ArcheTypeID srcID, ArcheTypeID dstID, Entity e)
+{
+    ArchetypeStorage* src = GetArchetypeByID(srcID);
+    ArchetypeStorage* dst = GetArchetypeByID(dstID);
+
+    ComponentID srcIndex = src->GetIndexOf(e);
+    ComponentID dstIndex = dst->Allocate(e);
+
+    Signature common = src->m_mask & dst->m_mask;
+    while (common)
+    {
+        TypeID typeID = __builtin_ctzll(common);
+
+        auto type = Type::GetTypeInfoByID(typeID);
+
+        void* dst_component = dst->GetRaw(typeID) + dstIndex * type->stride;
+        void* src_component = src->GetRaw(typeID) + srcIndex * type->stride;
+
+        if (type->globalCpy)
+        {
+            memcpy(
+                dst_component,
+                src_component,
+                type->stride
+            );
+
+        } else
+        {
+            ((void(*)(void*, const void*))(type->move))(dst_component, src_component);
+        }
+
+        common &= (common - 1);
+    }
+
+    src->Deallocate(e);
+
+    EntityID entityID = handle_get_first(e);
+
+    m_entityToArchetype[entityID] = dstID;
+}
+
 ArchetypeStorage* World::GetArchetypeByID(ArcheTypeID id) const
 {
-    assert(id >= m_count);
     return m_archetypePool + id;
 }
 

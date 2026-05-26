@@ -3,7 +3,6 @@
 #include "gr-base/core/logger.hpp"
 #include "gr-base/ecs/type.hpp"
 
-#include <iostream>
 #include <cstdlib>
 #include <cstring>
 
@@ -35,9 +34,6 @@ ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask)
 
         mask &= (mask - 1);
     }
-
-    if (m_capacity)
-        std::cout << "Capacity Entities: " << (CHUNK_SIZE / m_capacity) << std::endl;
 }
 
 ArchetypeStorage::ArchetypeStorage(ArchetypeStorage&& other) noexcept
@@ -109,7 +105,7 @@ ComponentID ArchetypeStorage::Allocate(Entity e)
     return id;
 }
 
-void ArchetypeStorage::Deallocate(Entity e)
+bool ArchetypeStorage::Deallocate(Entity e)
 {
     EntityID entityID = handle_get_first(e);
 
@@ -117,7 +113,7 @@ void ArchetypeStorage::Deallocate(Entity e)
         m_entityToIndex.resize(entityID + 1, INVALID_COMPONENT);
 
     if (m_entityToIndex[entityID] == INVALID_COMPONENT)
-        return;
+        return false;
 
     ComponentID removeComponentID = m_entityToIndex[entityID];
     ComponentID lastComponentID = --m_count;
@@ -139,7 +135,11 @@ void ArchetypeStorage::Deallocate(Entity e)
         m_entityToIndex[handle_get_first(m_denseEntities[lastComponentID])] = removeComponentID;
 
         m_denseEntities[removeComponentID] = m_denseEntities[lastComponentID];
+
+        return true;
     }
+
+    return false;
 }
 
 ComponentID ArchetypeStorage::GetIndexOf(Entity e) const

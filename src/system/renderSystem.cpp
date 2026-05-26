@@ -70,7 +70,7 @@ void RenderSystem::Update(Scene* scene)
     {
         ArchetypeStorage& archetype = array[a];
 
-        if ((archetype.GetMask() & requiredMask) != requiredMask)
+        if ((archetype.m_mask & requiredMask) != requiredMask)
             continue;
 
         auto transforms  = archetype.GetRaw<Transform>();

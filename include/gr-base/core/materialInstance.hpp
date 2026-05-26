@@ -15,7 +15,7 @@ public:
 
     void SetShader(gr::Shader* shader)
     {
-        if (m_shader != shader)
+        if (m_shader != shader && shader != nullptr)
         {
             m_shader = shader;
             isDirty = true;
