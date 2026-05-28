@@ -1,7 +1,8 @@
 #pragma once
 
+#include "gr-base/system/world/cell.hpp"
+
 #include "gr-base/pool/poolObject.hpp"
-#include "gr-base/system/world/chunk.hpp"
 
 #include "gr-base/core/default.hpp"
 
@@ -12,14 +13,6 @@
 class WorldSystem
 {
 public:
-    static WorldSystem& GetInstance();
-
-    static ChunkID Create(const std::string& name);
-
-    static ChunkID Find(const std::string& name);
-
-    static StreamChunk* Get(ChunkID id);
-
     static void Update(Scene* scene);
 
     int CunkSize;
@@ -27,25 +20,26 @@ public:
     int RenderDistance;
 
 private:
+    static WorldSystem& GetInstance();
 
-    std::unordered_map<std::string, ChunkID> m_chunkNameMap;
+    std::unordered_map<std::string, CellID> m_chunkNameMap;
 
-    std::vector<ChunkID> m_chunkLoaded;
+    std::vector<CellID> m_chunkLoaded;
 
     ObjectPool<StreamChunk> m_pool;
 
     WorldSystem();
     ~WorldSystem();
 
-    ChunkID create(const std::string& name);
+    CellID create(const std::string& name);
 
-    ChunkID find(const std::string& name);
+    CellID find(const std::string& name);
 
-    StreamChunk* get(ChunkID id);
+    StreamChunk* get(CellID id);
 
     void update(Scene* scene);
 
-    void unloadChunk(ChunkID id);
+    void unloadChunk(CellID id);
 
     void render(StreamChunk* chunk);
 };

@@ -11,21 +11,6 @@ extern "C"
 #include "gr-base/externals/vector.h"
 }
 
-ChunkID WorldSystem::Create(const std::string &name)
-{
-    return GetInstance().create(name);
-}
-
-ChunkID WorldSystem::Find(const std::string &name)
-{
-    return GetInstance().find(name);
-}
-
-StreamChunk* WorldSystem::Get(ChunkID id)
-{
-    return GetInstance().get(id);
-}
-
 void WorldSystem::Update(Scene* scene)
 {
     GetInstance().update(scene);
@@ -44,9 +29,9 @@ WorldSystem::WorldSystem()
 WorldSystem::~WorldSystem()
 {}
 
-ChunkID WorldSystem::create(const std::string &name)
+CellID WorldSystem::create(const std::string &name)
 {
-    ChunkID id = m_pool.allocate();
+    CellID id = m_pool.allocate();
 
     StreamChunk* chunk = m_pool.get(id);
     chunk->name = strdup(name.c_str());
@@ -58,15 +43,15 @@ ChunkID WorldSystem::create(const std::string &name)
     return id;
 }
 
-ChunkID WorldSystem::find(const std::string &name)
+CellID WorldSystem::find(const std::string &name)
 {
     auto it = m_chunkNameMap.find(name);
     if (it == m_chunkNameMap.end())
-        return INVALID_CHUNK;
+        return INVALID_CELL;
     return it->second;
 }
 
-StreamChunk* WorldSystem::get(ChunkID id)
+StreamChunk* WorldSystem::get(CellID id)
 {
     return m_pool.get(id);
 }
@@ -79,29 +64,28 @@ void WorldSystem::update(Scene* scene)
 
     const auto transform = camera.GetComponent<Transform>();
 
-    int currentX = floor(transform->position.x / CHUNK_SIZEI);
-    int currentZ = floor(transform->position.z / CHUNK_SIZEI);
+    int currentX = floor(transform->position.x / CELL_SIZE);
+    int currentZ = floor(transform->position.z / CELL_SIZE);
 
-    std::unordered_set<ChunkID> m_chunkAvailable;
+    std::unordered_set<CellID> m_chunkAvailable;
 
-    for (int x=-CHUNK_RENDER_DISTANCE;x<CHUNK_RENDER_DISTANCE;x++)
+    for (int x=-CELL_RENDER_DISTANCE;x<CELL_RENDER_DISTANCE;x++)
     {
-        for (int z=-CHUNK_RENDER_DISTANCE;z<CHUNK_RENDER_DISTANCE;z++)
+        for (int z=-CELL_RENDER_DISTANCE;z<CELL_RENDER_DISTANCE;z++)
         {
             int chunkIdX = currentX + x;
             int chunkIdZ = currentZ + z;
 
             std::string key = std::to_string(chunkIdX) + "_" + std::to_string(chunkIdZ);
 
-            ChunkID chunkID = find(key);
-            if (chunkID == INVALID_CHUNK)
+            CellID chunkID = find(key);
+            if (chunkID == INVALID_CELL)
             {
                 chunkID = create(key);
 
                 StreamChunk* chunk = get(chunkID);
-                chunk->position = {(float)(chunkIdX * CHUNK_SIZEI), (float)(chunkIdZ * CHUNK_SIZEI)};
-                chunk->objects = nullptr;
-                chunk->dirty = false;
+                chunk->position = {(float)(chunkIdX * CELL_SIZE), (float)(chunkIdZ * CELL_SIZE)};
+                chunk->entities = nullptr;
             }
 
             m_chunkAvailable.emplace(chunkID);
@@ -129,20 +113,20 @@ void WorldSystem::update(Scene* scene)
         render(get(chunkID));
 }
 
-void WorldSystem::unloadChunk(ChunkID id)
+void WorldSystem::unloadChunk(CellID id)
 {
     StreamChunk* chunk = get(id);
 
-    if (chunk->objects != nullptr)
+    if (chunk->entities != nullptr)
     {
-        for (size_t i=0;i<vector_length(chunk->objects);i++)
+        for (size_t i=0;i<vector_length(chunk->entities);i++)
         {
             // GameObjectHandle& handle = chunk->objects[i];
 
             // GameObject::Destroy(handle);
         }
 
-        vector_free(chunk->objects);
+        vector_free(chunk->entities);
     }
 
     free(chunk->name);
@@ -155,9 +139,9 @@ void WorldSystem::render(StreamChunk* chunk)
     Vector2 position = chunk->position;
 
     Vector3 p1{position.x,              0, position.y};
-    Vector3 p2{position.x + CHUNK_SIZEI, 0, position.y};
-    Vector3 p3{position.x + CHUNK_SIZEI, 0, position.y + CHUNK_SIZEI};
-    Vector3 p4{position.x,              0, position.y + CHUNK_SIZEI};
+    Vector3 p2{position.x + CELL_SIZE, 0, position.y};
+    Vector3 p3{position.x + CELL_SIZE, 0, position.y + CELL_SIZE};
+    Vector3 p4{position.x,              0, position.y + CELL_SIZE};
 
     DebugDraw::DrawLine(p1, p2);
     DebugDraw::DrawLine(p2, p3);

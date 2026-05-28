@@ -5,20 +5,18 @@
 
 #include <gr-math/vector2.hpp>
 
-typedef uint32_t ChunkID;
+typedef uint32_t CellID;
 
-#define INVALID_CHUNK (ChunkID)-1
+#define INVALID_CELL (CellID)-1
 
-#define CHUNK_RENDER_DISTANCE 8
+#define CELL_RENDER_DISTANCE 8
 
-#define CHUNK_SIZEI 16
+#define CELL_SIZE 16
 
 typedef struct StreamChunk
 {
     char* name;
+    Entity* entities;
     Vector2 position;
-    bool dirty;
-
-    Handle* objects;
 } StreamChunk;
 
