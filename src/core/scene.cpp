@@ -5,6 +5,7 @@
 #include "gr-base/core/logger.hpp"
 
 #include "gr-base/ecs/archetypeStorage.hpp"
+#include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/world.hpp"
 
 #include "gr-base/managers/sceneManager.hpp"
@@ -22,7 +23,7 @@ Scene* Scene::GetCurrent()
     return SceneManager::GetCurrent();
 }
 
-Scene::Scene() : bRunning(false), m_world(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_ENTITY)
+Scene::Scene() : m_world(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_ENTITY), hierarchyDirty(false)
 {
     logger::info("[ Scene ] Create '0x%lX'.", this);
 
@@ -202,7 +203,8 @@ void Scene::MarkChildrenDirty(Entity entity)
 void Scene::Unlink(Entity entity)
 {
     auto rel = m_world->GetComponent<Relationship>(entity);
-    if (rel == nullptr)
+
+    if (!rel)
         return;
 
     Entity parent = rel->parent;
@@ -211,36 +213,53 @@ void Scene::Unlink(Entity entity)
     {
         auto parentRel = m_world->GetComponent<Relationship>(parent);
 
+        // se era o primeiro filho
         if (parentRel->firstChild == entity)
-        {
             parentRel->firstChild = rel->nextSibling;
-        }
-        else
+
+        // conecta anterior -> próximo
+        if (rel->prevSibling != INVALID_ENTITY)
         {
-            Entity sibling = parentRel->firstChild;
+            auto prevRel = m_world->GetComponent<Relationship>(rel->prevSibling);
 
-            while (sibling != INVALID_ENTITY)
-            {
-                auto siblingRel = m_world->GetComponent<Relationship>(sibling);
+            prevRel->nextSibling = rel->nextSibling;
+        }
 
-                if (siblingRel->nextSibling == entity)
-                {
-                    siblingRel->nextSibling = rel->nextSibling;
-                    break;
-                }
+        // conecta próximo -> anterior
+        if (rel->nextSibling != INVALID_ENTITY)
+        {
+            auto nextRel = m_world->GetComponent<Relationship>(rel->nextSibling);
 
-                sibling = siblingRel->nextSibling;
-            }
+            nextRel->prevSibling = rel->prevSibling;
         }
     }
 
-    rel->parent = INVALID_ENTITY;
-    rel->firstChild = INVALID_ENTITY;
-    rel->nextSibling = INVALID_ENTITY;
+    rel->parent       = INVALID_ENTITY;
+    rel->prevSibling  = INVALID_ENTITY;
+    rel->nextSibling  = INVALID_ENTITY;
+
+    hierarchyDirty = true;
 }
+/*
+void Scene::SetParent(Entity parent, Entity child)
+{
+    auto childRel  = m_world->GetOrAddComponent<Relationship>(child);
+    auto parentRel = m_world->GetOrAddComponent<Relationship>(parent);
+
+    childRel->parent = parent;
+
+    childRel->nextSibling = parentRel->firstChild;
+    parentRel->firstChild = child;
+
+    MarkChildrenDirty(child);
+}
+*/
 
 void Scene::SetParent(Entity parent, Entity child)
 {
+    if (parent == child)
+        return;
+
     m_world->GetOrAddComponent<Relationship>(child);
     m_world->GetOrAddComponent<Relationship>(parent);
 
@@ -248,12 +267,29 @@ void Scene::SetParent(Entity parent, Entity child)
     auto parentRel = m_world->GetComponent<Relationship>(parent);
 
     childRel->parent = parent;
+    childRel->nextSibling = INVALID_ENTITY;
+    childRel->prevSibling = INVALID_ENTITY;
 
+    // Caso seja o primeiro filho
     if (parentRel->firstChild == INVALID_ENTITY)
     {
         parentRel->firstChild = child;
     } else
     {
+        Entity oldFirst = parentRel->firstChild;
+
+        auto oldFirstRel = m_world->GetComponent<Relationship>(oldFirst);
+
+        // novo filho aponta pro antigo primeiro
+        childRel->nextSibling = oldFirst;
+
+        // antigo primeiro aponta de volta
+        oldFirstRel->prevSibling = child;
+
+        // parent agora aponta pro novo
+        parentRel->firstChild = child;
+
+        /*
         Entity sibling = parentRel->firstChild;
 
         while (sibling != INVALID_ENTITY)
@@ -270,7 +306,10 @@ void Scene::SetParent(Entity parent, Entity child)
 
             sibling = siblingRel->nextSibling;
         }
+        */
     }
+
+    hierarchyDirty = true;
 
     MarkChildrenDirty(child);
 }

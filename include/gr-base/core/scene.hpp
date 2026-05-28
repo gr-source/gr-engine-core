@@ -17,7 +17,7 @@ class Scene
 public:
     static Scene* GetCurrent();
 
-    bool bRunning;
+    bool hierarchyDirty;
 
     Scene();
     ~Scene();
