@@ -35,10 +35,10 @@ Entity World::Create()
     Entity e = m_entityLocationMap->create();
     
     EntityID entityID = handle_get_first(e);
-    if (entityID >= m_entityToArchetype.size())
-        m_entityToArchetype.resize(entityID + 1, m_emptyArchetypeStorage);
+    if (entityID >= entityToLocation.size())
+        entityToLocation.resize(entityID + 1, { m_emptyArchetypeStorage, INVALID_COMPONENT });
 
-    m_entityToArchetype[entityID] = m_emptyArchetypeStorage;
+    entityToLocation[entityID] = { m_emptyArchetypeStorage, INVALID_COMPONENT };
 
     return e;
 }
@@ -50,10 +50,17 @@ void World::Destroy(Entity e)
 
     EntityID entityID = handle_get_first(e);
 
-    auto& arche = m_archetypePool[m_entityToArchetype[entityID]];
-    arche.Deallocate(e);
+    auto& rec = entityToLocation[entityID];
 
-    m_entityToArchetype[entityID] = m_emptyArchetypeStorage;
+    auto& arche = m_archetypePool[rec.archetype];
+
+    uint32_t lastGlobal = arche.entityCount > 0 ? arche.entityCount - 1 : 0;
+    if (arche.Deallocate(rec.slot) && rec.slot != lastGlobal)
+    {
+        entityToLocation[handle_get_first(arche.slotToEntity[lastGlobal])].slot = rec.slot;
+    }
+
+    entityToLocation[entityID] = { m_emptyArchetypeStorage, INVALID_COMPONENT };
 
     m_entityLocationMap->destroy(e);
 }
@@ -90,10 +97,10 @@ Signature World::GetMask(Entity e) const
         return 0;
 
     EntityID entityID = handle_get_first(e);
-    if (entityID >= m_entityToArchetype.size())
+    if (entityID >= entityToLocation.size())
         return 0;
 
-    auto& arche = m_archetypePool[m_entityToArchetype[entityID]];
+    auto& arche = m_archetypePool[entityToLocation[entityID].archetype];
 
     return arche.m_mask;
 }
@@ -105,7 +112,7 @@ void* World::AddComponent(Entity e, TypeID typeID, const void* component)
 
     uint32_t entityID = handle_get_first(e);
 
-    ArchetypeID srcID = m_entityToArchetype[entityID];
+    ArchetypeID srcID = entityToLocation[entityID].archetype;
 
     ArchetypeStorage* lastArcheType = GetArchetypeByID(srcID);
 
@@ -124,7 +131,7 @@ void* World::AddComponent(Entity e, TypeID typeID, const void* component)
     MoveEntity(srcID, dstID, e);
 
     auto dst = GetArchetypeByID(dstID);
-    void* ptr = dst->Get(e, type->index);
+    void* ptr = dst->Get(entityToLocation[entityID].slot, type);
 
     ((void(*)(void*, const void*))(type->constructor))(ptr, component);
 
@@ -136,17 +143,20 @@ void* World::GetComponent(Entity e, TypeID typeID) const
     if (!m_entityLocationMap->isAlive(e))
         return nullptr;
 
+    auto type = Type::GetTypeInfoByID(typeID);
+
     EntityID entityID = handle_get_first(e);
-    if (entityID >= m_entityToArchetype.size())
+    if (entityID >= entityToLocation.size())
         return nullptr;
 
-    ArchetypeStorage* archeType = GetArchetypeByID(m_entityToArchetype[entityID]);
+    auto& rec = entityToLocation[entityID];
+
+    ArchetypeStorage* archeType = GetArchetypeByID(rec.archetype);
     if ((archeType->m_mask & (1ull << typeID)) != (1ull << typeID))
         return nullptr;
 
-    return archeType->Get(e, typeID);
+    return archeType->Get(rec.slot, type);
 }
-
 
 void* World::GetOrAddComponent(Entity e, TypeID typeID)
 {
@@ -167,7 +177,7 @@ void World::DelComponent(Entity e, Hash64 hash)
 
     uint32_t entityID = handle_get_first(e);
 
-    auto srcID = m_entityToArchetype[entityID];
+    auto srcID = entityToLocation[entityID].archetype;
     ArchetypeStorage* src = GetArchetypeByID(srcID);
 
     Signature oldMask = src->m_mask;
@@ -180,11 +190,6 @@ void World::DelComponent(Entity e, Hash64 hash)
     MoveEntity(srcID, dstID, e);
 }
 
-void World::DelComponent(Entity e, const char* name)
-{
-    DelComponent(e, hash::fnv1_str(name));
-}
-
 std::vector<TypeID> World::GetAllComponentType(Entity e) const
 {
     Signature mask = GetMask(e);
@@ -194,7 +199,7 @@ std::vector<TypeID> World::GetAllComponentType(Entity e) const
 
 size_t World::GetCount(ArchetypeID id) const
 {
-    return GetArchetypeByID(id)->Count();
+    return GetArchetypeByID(id)->entityCount;
 }
 
 size_t World::GetCount() const
@@ -212,11 +217,13 @@ ArchetypeStorage* World::GetArchetypeByMask(Signature mask) const
 
 void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
 {
+    EntityID entityID = handle_get_first(e);
+
     ArchetypeStorage* src = GetArchetypeByID(srcID);
     ArchetypeStorage* dst = GetArchetypeByID(dstID);
 
-    ComponentID srcIndex = src->GetIndexOf(e);
-    ComponentID dstIndex = dst->Allocate(e);
+    ComponentID srcSlotIndex = entityToLocation[entityID].slot;
+    ComponentID dstSlotIndex = dst->Allocate(e);
 
     Signature common = src->m_mask & dst->m_mask;
     while (common)
@@ -225,8 +232,8 @@ void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
 
         auto type = Type::GetTypeInfoByID(typeID);
 
-        void* dst_component = dst->GetRaw(typeID) + dstIndex * type->stride;
-        void* src_component = src->GetRaw(typeID) + srcIndex * type->stride;
+        void* dst_component = dst->GetRaw(typeID) + dstSlotIndex * type->stride;
+        void* src_component = src->GetRaw(typeID) + srcSlotIndex * type->stride;
 
         if (type->globalCpy)
         {
@@ -244,15 +251,22 @@ void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
         common &= (common - 1);
     }
 
-    src->Deallocate(e);
+    if (srcSlotIndex != INVALID_COMPONENT)
+    {
+        uint32_t lastGlobal = src->entityCount > 0 ? src->entityCount - 1 : 0;
+        if (src->Deallocate(srcSlotIndex) && srcSlotIndex != lastGlobal)
+        {
+            entityToLocation[handle_get_first(src->slotToEntity[lastGlobal])].slot = srcSlotIndex;
+        }
+        // src->Deallocate(srcIndex);
+    }
 
-    EntityID entityID = handle_get_first(e);
-
-    m_entityToArchetype[entityID] = dstID;
+    entityToLocation[entityID] = { dstID, dstSlotIndex };
 }
 
 ArchetypeStorage* World::GetArchetypeByID(ArchetypeID id) const
 {
+    assert(id < m_count);
     return m_archetypePool + id;
 }
 

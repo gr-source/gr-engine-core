@@ -3,10 +3,11 @@
 #include "gr-base/core/logger.hpp"
 #include "gr-base/ecs/type.hpp"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
-ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask), m_buffer(nullptr), m_capacity(0), m_stride(0), m_count(0)
+ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask), m_buffer(nullptr), m_capacity(0), m_stride(0), entityCount(0)
 {
     if (typeID != INVALID_TYPE)
     {
@@ -20,15 +21,8 @@ ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask)
 
         auto info = Type::GetTypeInfoByID(typeID);
         
-        if (typeID >= m_typeToChunk.size())
-            m_typeToChunk.resize(typeID + 1, INVALID_TYPE);
-
-        auto& chunk = m_chunkInfoMap.emplace_back();
-        chunk.stride = info->stride;
-        chunk.offset = static_cast<uint32_t>(m_stride);
-        chunk.typeID = typeID;
-
-        m_typeToChunk[typeID] = static_cast<ChunkID>(m_chunkInfoMap.size() - 1);
+        if (typeID >= m_typeidtoarrayoffset.size())
+            m_typeidtoarrayoffset.resize(typeID + 1, 0);
 
         m_stride += info->stride;
 
@@ -38,8 +32,7 @@ ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask)
 
 ArchetypeStorage::ArchetypeStorage(ArchetypeStorage&& other) noexcept
 {
-    m_chunkInfoMap = std::move(other.m_chunkInfoMap);
-    m_typeToChunk  = std::move(other.m_typeToChunk);
+    m_typeidtoarrayoffset = std::move(other.m_typeidtoarrayoffset);
 
     m_mask = other.m_mask;
 
@@ -50,12 +43,10 @@ ArchetypeStorage::ArchetypeStorage(ArchetypeStorage&& other) noexcept
     m_buffer = other.m_buffer;
     other.m_buffer = nullptr;
 
-    m_count = other.m_count;
+    entityCount = other.entityCount;
+
+    slotToEntity = std::move(other.slotToEntity);
     
-    m_entityToIndex = std::move(other.m_entityToIndex);
-
-    m_denseEntities = std::move(other.m_denseEntities);
-
     m_removeEdges = std::move(other.m_removeEdges);
     m_addEdges = std::move(other.m_addEdges);
 }
@@ -79,62 +70,49 @@ ArchetypeID ArchetypeStorage::addEdges(TypeID typeID)
     return m_addEdges[typeID];
 }
 
-/*
-void ArchetypeStorage::LinkAdd(TypeID type, ArchetypeStorage* dst)
+ComponentID ArchetypeStorage::Allocate(Entity entity)
 {
-    m_addEdges[type] = dst;
-    dst->m_removeEdges[type] = this;
-}
-*/
-
-ComponentID ArchetypeStorage::Allocate(Entity e)
-{
-    if (m_count >= m_capacity)
+    if (entityCount >= m_capacity)
         resize();
 
-    EntityID entityID = handle_get_first(e);
+    ComponentID id = entityCount++;
+    assert(id < m_capacity);
 
-    if (entityID >= m_entityToIndex.size())
-        m_entityToIndex.resize(entityID + 1, INVALID_COMPONENT);
-
-    ComponentID id = m_count++;
-
-    m_entityToIndex[entityID] = id;
-    m_denseEntities[id] = e;
+    slotToEntity[id] = entity;
 
     return id;
 }
 
-bool ArchetypeStorage::Deallocate(Entity e)
+bool ArchetypeStorage::Deallocate(ComponentID removeComponentID)
 {
-    EntityID entityID = handle_get_first(e);
+    assert(removeComponentID < entityCount);
 
-    if (entityID >= m_entityToIndex.size())
-        m_entityToIndex.resize(entityID + 1, INVALID_COMPONENT);
-
-    if (m_entityToIndex[entityID] == INVALID_COMPONENT)
-        return false;
-
-    ComponentID removeComponentID = m_entityToIndex[entityID];
-    ComponentID lastComponentID = --m_count;
+    ComponentID lastComponentID = --entityCount;
     if (removeComponentID != lastComponentID)
     {
-        for (auto& chunk : m_chunkInfoMap)
+        Signature mask = m_mask;
+        while (mask)
         {
-            auto type = Type::GetTypeInfoByID(chunk.typeID);
+            TypeID typeID = __builtin_ctzll(mask);
 
-            uint8_t* array = m_buffer + chunk.offset;
+            auto type = Type::GetTypeInfoByID(typeID);
 
-            void* lastComponent = (void*)(array + (lastComponentID * chunk.stride));
-            void* currentComponent = (void*)(array + (removeComponentID * chunk.stride));
+            auto offset = m_typeidtoarrayoffset[typeID];
+
+            uint8_t* array = m_buffer + offset;
+
+            void* lastComponent = (void*)(array + (lastComponentID * type->stride));
+            void* currentComponent = (void*)(array + (removeComponentID * type->stride));
 
             ((void(*)(void*, const void*))(type->move))(currentComponent, lastComponent);
             // memcpy(currentComponent, lastComponent, chunk.stride);
+
+            mask &= (mask - 1);
         }
 
-        m_entityToIndex[handle_get_first(m_denseEntities[lastComponentID])] = removeComponentID;
+        // m_entityToIndex[handle_get_first(m_denseEntities[lastComponentID])] = removeComponentID;
 
-        m_denseEntities[removeComponentID] = m_denseEntities[lastComponentID];
+        slotToEntity[removeComponentID] = slotToEntity[lastComponentID];
 
         return true;
     }
@@ -142,44 +120,19 @@ bool ArchetypeStorage::Deallocate(Entity e)
     return false;
 }
 
-ComponentID ArchetypeStorage::GetIndexOf(Entity e) const
+void* ArchetypeStorage::Get(ComponentID id, const TypeInfo* type)
 {
-    uint32_t entityID = handle_get_first(e);
-    if (entityID >= m_entityToIndex.size())
-        return INVALID_COMPONENT;
-    return m_entityToIndex[entityID];
-}
-
-Entity ArchetypeStorage::GetEntity(ComponentID id) const
-{
-    if (id >= m_denseEntities.size())
-        return INVALID_ENTITY;
-    return m_denseEntities[id];
-}
-
-const Entity* ArchetypeStorage::GetEntities() const
-{
-    return m_denseEntities.data();
-}
-
-void* ArchetypeStorage::Get(Entity entity, TypeID typeID)
-{
-    ComponentID id = GetIndexOf(entity);
     if (id == INVALID_COMPONENT)
         return nullptr;
 
-    ChunkInfo& info = m_chunkInfoMap[m_typeToChunk[typeID]];
+    uint8_t* array = m_buffer + m_typeidtoarrayoffset[type->index];
 
-    uint8_t* array = m_buffer + info.offset;
-
-    return array + (id * info.stride);
+    return array + (id * type->stride);
 }
 
 uint8_t* ArchetypeStorage::GetRaw(TypeID typeID) const
 {
-    auto& chunk = m_chunkInfoMap[m_typeToChunk[typeID]];
-
-    return m_buffer + chunk.offset;
+    return m_buffer + m_typeidtoarrayoffset[typeID];
 }
 
 std::vector<TypeID> ArchetypeStorage::GetTypes() const
@@ -213,22 +166,20 @@ void ArchetypeStorage::resize()
         {
             auto type = Type::GetTypeInfoByID(__builtin_ctzll(mask));
 
-            auto& chunk = m_chunkInfoMap[m_typeToChunk[type->index]];
-
-            size_t oldOffset = chunk.offset;
+            auto oldOffset = m_typeidtoarrayoffset[type->index];
 
             uint8_t* lastArray = m_buffer + oldOffset;
             uint8_t* newArray = newBuffer + newOffset;
 
             if (type->globalCpy)
             {
-                memcpy(newArray, lastArray, oldCapacity * chunk.stride);
+                memcpy(newArray, lastArray, oldCapacity * type->stride);
             } else
             {
                 uint8_t* oldComponent = lastArray;
                 uint8_t* newComponent = newArray;
 
-                for (ComponentID i=0;i<m_count;i++)
+                for (ComponentID i=0;i<entityCount;i++)
                 {
                     ((void (*)(void*, const void*))(type->move))(newComponent, oldComponent);
 
@@ -241,7 +192,7 @@ void ArchetypeStorage::resize()
 
             // chunk.offset = newOffset;
 
-            newOffset += chunk.stride * m_capacity;
+            newOffset += type->stride * m_capacity;
         }
 
         free(m_buffer);
@@ -255,18 +206,17 @@ void ArchetypeStorage::resize()
 
     // logger::trace("[ ArchetypeStorage ] Buffer of '0x%lX' resized '%ld' to '%ld'.", this, oldCapacity, m_capacity);
 
-    m_denseEntities.resize(m_capacity, INVALID_ENTITY);
+    slotToEntity.resize(m_capacity, INVALID_ENTITY);
 
     size_t offset = 0;
     uint64_t mask = m_mask;
     while (mask)
     {
-        TypeID typeID = __builtin_ctzll(mask);
+        auto type = Type::GetTypeInfoByID(__builtin_ctzll(mask));
 
-        auto& chunk = m_chunkInfoMap[m_typeToChunk[typeID]];
-        chunk.offset = offset;
+        m_typeidtoarrayoffset[type->index] = offset;
 
-        offset += chunk.stride * m_capacity;
+        offset += type->stride * m_capacity;
 
         mask &= (mask - 1);
     }

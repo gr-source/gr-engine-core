@@ -66,7 +66,7 @@ void RenderSystem::Update(Scene* scene)
 
     RenderCommand cmd;
 
-    for (size_t a = 0; a < scene->GetWorld()->GetArcheTypeCount(); a++)
+    for (size_t a = 0; a < scene->GetWorld()->GetArchetypeCount(); a++)
     {
         ArchetypeStorage& archetype = array[a];
 
@@ -77,9 +77,7 @@ void RenderSystem::Update(Scene* scene)
         auto meshRenders = archetype.GetRaw<MeshRender>();
         auto meshFilters = archetype.GetRaw<MeshFilter>();
 
-        ComponentID count = archetype.Count();
-
-        for (ComponentID i = 0; i < count; i++)
+        for (ComponentID i = 0; i < archetype.entityCount; i++)
         {
             const Matrix4x4& model = transforms[i].worldMatrix;
 

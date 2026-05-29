@@ -11,16 +11,16 @@ void TransformSystem::Update(World* world)
 
     auto array = world->GetRawArchetype();
 
-    for (size_t i=0;i<world->GetArcheTypeCount();i++)
+    for (size_t i=0;i<world->GetArchetypeCount();i++)
     {
         ArchetypeStorage& arche = array[i];
 
         if ((arche.m_mask & requiredMask) == requiredMask)
         {
             auto transforms = arche.GetRaw<Transform>();
-            auto entities = arche.GetEntities();
+            auto entities = arche.slotToEntity.data();
 
-            for (ComponentID i=0;i<arche.Count();i++)
+            for (ComponentID i=0;i<arche.entityCount;i++)
             {
                 auto& transform = transforms[i];
                 auto& entity = entities[i];

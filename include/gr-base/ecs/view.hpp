@@ -62,7 +62,7 @@ class View
                 m_view->m_world->GetArchetypeByID(m_view->m_matching[m_archetypeIndex]);
 
             Entity entity =
-                arch->GetEntity(m_localIndex);
+                arch->slotToEntity[m_localIndex];
 
             return std::tuple<
                 Entity,
@@ -97,12 +97,12 @@ public:
 
         ArchetypeStorage* array = world->GetRawArchetype();
 
-        for (ArchetypeID i=0;i<world->GetArcheTypeCount();i++)
+        for (ArchetypeID i=0;i<world->GetArchetypeCount();i++)
         {
             if ((array[i].m_mask & requiredMask) == requiredMask)
             {
                 m_matching.push_back(i);
-                m_count += array[i].Count();
+                m_count += array[i].entityCount;
             }
         }
     }

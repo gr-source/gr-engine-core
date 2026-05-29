@@ -1,5 +1,6 @@
 #include "gr-base/ecs/type.hpp"
 #include "gr-base/core/logger.hpp"
+#include <cassert>
 #include <cstdlib>
 #include <iostream>
 
@@ -64,6 +65,8 @@ TypeID Type::getTypeIDByHash(Hash64 hash) const
 
 const TypeInfo* Type::getTypeInfoByID(TypeID id)
 {
+    assert(id < m_count);
+
     return m_typeInfoPool + id;
 }
 

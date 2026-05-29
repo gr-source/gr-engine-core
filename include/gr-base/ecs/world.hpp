@@ -66,7 +66,10 @@ public:
 
     void DelComponent(Entity e, Hash64 hash);
 
-    void DelComponent(Entity e, const char* name);
+    void DelComponent(Entity e, const char* name)
+    {
+        DelComponent(e, hash::fnv1_str(name));
+    }
 
     template <typename T>
     void DelComponent(Entity e)
@@ -93,17 +96,23 @@ public:
         return m_archetypePool;
     }
 
-    inline ArchetypeID GetArcheTypeCount() const
+    inline ArchetypeID GetArchetypeCount() const
     {
         return m_count;
     }
 
 private:
+    struct Location
+    {
+        uint32_t archetype;
+        uint32_t slot;
+    };
+
     std::unordered_map<Signature, ArchetypeID> m_signArcheTypeMap;
 
     std::shared_ptr<EntityManager> m_entityLocationMap;
 
-    std::vector<ArchetypeID> m_entityToArchetype;
+    std::vector<Location> entityToLocation;
 
     ArchetypeID m_emptyArchetypeStorage;
 
