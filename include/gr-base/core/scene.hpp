@@ -3,6 +3,7 @@
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/default.hpp"
 
+#include "gr-base/core/system.hpp"
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/managers/default.hpp"
@@ -11,6 +12,14 @@
 #include <vector>
 #include <string>
 #include <memory>
+
+enum class StageType
+{
+    INPUT,
+    SIMULATION,
+    RENDER,
+    COUNT
+};
 
 class Scene
 {
@@ -54,8 +63,6 @@ public:
 
     std::string GetName() const;
 
-    void AddMesh(MeshID meshID);
-
     inline World* GetWorld() const
     {
         return m_world;
@@ -81,14 +88,17 @@ public:
 
     std::string GetEntityName(Entity entity);
 
-private:
-    std::unordered_set<std::string> m_chunksLoaded;
+    template <typename T, typename... Args>
+    void RegistrySystem(StageType stage, Args&&... args);
 
+    void Update();
+
+private:
     std::unordered_set<Handle> u_object_has_been_selected;
 
-    std::vector<Handle> v_object_selected_list;
+    std::vector<Entity> v_object_selected_list;
 
-    std::vector<MeshID> m_meshes;
+    std::vector<std::unique_ptr<System>> m_systems[static_cast<int>(StageType::COUNT)];
 
     World* m_world;
 
@@ -98,6 +108,13 @@ private:
 
     Entity m_camera;
 };
+
+
+template <typename T, typename... Args>
+void Scene::RegistrySystem(StageType stage, Args&&... args)
+{
+    m_systems[static_cast<int>(stage)].push_back(std::make_unique<T>(std::forward<Args>(args)...));
+}
 
 
 

@@ -2,7 +2,7 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-Mesh::Mesh() : m_boundbox{Vector3::zero, Vector3::zero}, m_vertexarray(nullptr), m_pbo(nullptr)
+Mesh::Mesh() : m_boundsSphere({Vector3::zero, 0.0f}), m_vertexarray(nullptr), m_pbo(nullptr)
 {}
 
 // addTriangle
@@ -18,19 +18,46 @@ std::vector<BoneWeight> Mesh::getBoneWeight() const
 
 void Mesh::CalculateLocalBounds()
 {
-    m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-    m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
-    
-    for (auto &vertice : m_vertices)
+    if (m_vertices.empty())
+        return;
+
+    Vector3 min = m_vertices[0].position;
+    Vector3 max = m_vertices[0].position;
+
+    // Calcula AABB
+    for (const auto& vertex : m_vertices)
     {
-        m_boundbox.min = Math::min(m_boundbox.min, vertice.position);
-        m_boundbox.max = Math::max(m_boundbox.max, vertice.position);
+        min.x = std::min(min.x, vertex.position.x);
+        min.y = std::min(min.y, vertex.position.y);
+        min.z = std::min(min.z, vertex.position.z);
+
+        max.x = std::max(max.x, vertex.position.x);
+        max.y = std::max(max.y, vertex.position.y);
+        max.z = std::max(max.z, vertex.position.z);
     }
+
+    m_boundsSphere.center = (min + max) * 0.5f;
+
+    float maxDistSq = 0.0f;
+
+    for (const auto& vertex : m_vertices)
+    {
+        Vector3 delta = vertex.position - m_boundsSphere.center;
+
+        float distSq =
+            delta.x * delta.x +
+            delta.y * delta.y +
+            delta.z * delta.z;
+
+        maxDistSq = std::max(maxDistSq, distSq);
+    }
+
+    m_boundsSphere.radius = std::sqrt(maxDistSq);
 }
 
-const Boundbox &Mesh::getBoundbox() const
+const BoundingSphere &Mesh::getBounds() const
 {
-    return m_boundbox;
+    return m_boundsSphere;
 }
 
 void Mesh::SetName(const std::string& name)
@@ -83,6 +110,8 @@ void Mesh::Build()
     m_vertexarray->AddVertexBuffer(vbo);
     m_vertexarray->AddVertexBuffer(m_pbo);
     m_vertexarray->SetIndexBuffer(ibo);
+
+    CalculateLocalBounds();
 }
 
 

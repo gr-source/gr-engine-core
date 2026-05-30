@@ -1,10 +1,12 @@
 #pragma once
 
+#include "gr-base/core/system.hpp"
+
 #include "gr-base/ecs/default.hpp"
 
-class TransformSystem
+class TransformSystem : public System
 {
 public:
-    static void Update(World* world);
+    void Update(Scene* scene) override;
 };
 

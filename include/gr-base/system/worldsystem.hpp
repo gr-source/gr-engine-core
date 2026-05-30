@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gr-base/core/system.hpp"
+
 #include "gr-base/system/world/cell.hpp"
 
 #include "gr-base/pool/poolObject.hpp"
@@ -10,34 +12,30 @@
 #include <vector>
 #include <string>
 
-class WorldSystem
+class WorldSystem : public System
 {
 public:
-    static void Update(Scene* scene);
+    WorldSystem();
+    ~WorldSystem() override;
+
+    void Update(Scene* scene) override;
 
     int CunkSize;
 
     int RenderDistance;
 
 private:
-    static WorldSystem& GetInstance();
-
     std::unordered_map<std::string, CellID> m_chunkNameMap;
 
     std::vector<CellID> m_chunkLoaded;
 
     ObjectPool<StreamChunk> m_pool;
 
-    WorldSystem();
-    ~WorldSystem();
-
     CellID create(const std::string& name);
 
     CellID find(const std::string& name);
 
     StreamChunk* get(CellID id);
-
-    void update(Scene* scene);
 
     void unloadChunk(CellID id);
 

@@ -1,11 +1,13 @@
 #pragma once
 
+#include "gr-base/core/system.hpp"
+
 #include "gr-base/ecs/default.hpp"
 
-class CameraSystem
+class CameraSystem : public System
 {
 public:
-    static void Update(World* world);
+    void Update(Scene* scene) override;
 };
 
 

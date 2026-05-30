@@ -1,5 +1,6 @@
 #include "gr-base/system/renderSystem.hpp"
 
+#include "gr-base/core/culling/frustum.hpp"
 #include "gr-base/core/renderer.hpp"
 #include "gr-base/core/scene.hpp"
 
@@ -15,6 +16,7 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
+#include <algorithm>
 
 void RenderSystem::Update(Scene* scene)
 {
@@ -37,6 +39,8 @@ void RenderSystem::Update(Scene* scene)
         camera->rendertarget
     );
 
+    Frustum::CalculateFrustum(cameraData->viewProjection);
+
     for (auto prefab : AssetsManager::GetAllShader3D())
     {
         for (auto shader : prefab->GetShaders())
@@ -57,15 +61,6 @@ void RenderSystem::Update(Scene* scene)
 
     auto array = scene->GetWorld()->GetRawArchetype();
 
-    const SubMesh* cacheSubMesh = nullptr;
-
-    Mesh* cacheMesh = nullptr;
-    int submeshIndex = (int)-1;
-
-    MeshID cacheMeshID = InvalidNode;
-
-    RenderCommand cmd;
-
     for (size_t a = 0; a < scene->GetWorld()->GetArchetypeCount(); a++)
     {
         ArchetypeStorage& archetype = array[a];
@@ -73,52 +68,103 @@ void RenderSystem::Update(Scene* scene)
         if ((archetype.m_mask & requiredMask) != requiredMask)
             continue;
 
-        auto transforms  = archetype.GetRaw<Transform>();
-        auto meshRenders = archetype.GetRaw<MeshRender>();
-        auto meshFilters = archetype.GetRaw<MeshFilter>();
+        const auto transforms  = archetype.GetRaw<Transform>();
+        const auto meshRenders = archetype.GetRaw<MeshRender>();
+        const auto meshFilters = archetype.GetRaw<MeshFilter>();
 
         for (ComponentID i = 0; i < archetype.entityCount; i++)
         {
-            const Matrix4x4& model = transforms[i].worldMatrix;
+            auto& transform = transforms[i];
+            auto& meshFilter = meshFilters[i];
 
-            MeshID meshID = meshFilters[i].meshID;
+            // const Matrix4x4& worldMatrix = transforms[i].worldMatrix;
 
-            if (cacheMeshID != meshID)
+            auto mesh = AssetsManager::GetMesh(meshFilter.meshID);
+            if (mesh->GetGpuMesh() == nullptr)
+                mesh->Build();
+
+            auto& sphere = mesh->getBounds();
+
+            Vector4 worldCenter =
+                transform.worldMatrix * 
+                    Vector4{sphere.center.x, sphere.center.y, sphere.center.z, 1.0f};
+
+            float scale =
+                std::max({
+                    transform.scale.x,
+                    transform.scale.y,
+                    transform.scale.z
+                });
+
+            float radius =
+                sphere.radius * scale;
+
+            if (!Frustum::IsSphereInFrustum(
+                    *reinterpret_cast<Vector3*>(worldCenter.data),
+                    radius))
             {
-                cacheMesh = AssetsManager::GetMesh(meshID);
-
-                if (cacheMesh->GetGpuMesh() == nullptr)
-                    cacheMesh->Build();
-
-                cacheMeshID = meshID;
+                continue;
             }
 
             auto& materials = meshRenders[i].materials;
-
-            int subMeshCount = cacheMesh->GetSubMeshCount();
-
-            if (materials.size() != subMeshCount)
+            if (materials.size() != mesh->GetSubMeshCount())
                 continue;
 
-            for (int j = 0; j < subMeshCount; j++)
+            for (uint32_t j=0;j<materials.size();j++)
             {
-                if (submeshIndex != j)
-                {
-                    cacheSubMesh = &cacheMesh->GetSubMesh(j);
-                    submeshIndex = j;
-                }
-                cmd.materialID = materials[j];
-                cmd.meshID = meshID;
-                cmd.subMeshID = j;
-                cmd.matrix = model;
-                cmd.mesh = cacheMesh;
-                cmd.cacheSubMesh = cacheSubMesh;
-
-                Renderer::AddCommand(cmd);
+                m_renderables.push_back({
+                            meshFilters[i].meshID,
+                            mesh,
+                            j,
+                            materials[j],
+                            transform.worldMatrix
+                        });
             }
         }
     }
 
+    std::sort(m_renderables.begin(), m_renderables.end(),
+    [](const Renderable& a, const Renderable& b)
+    {
+        if (a.materialID != b.materialID)
+            return a.materialID < b.materialID;
+
+        if (a.meshID != b.meshID)
+            return a.meshID < b.meshID;
+
+        return a.subMeshID < b.subMeshID;
+    });
+
+    size_t i = 0;
+
+    while (i < m_renderables.size())
+    {
+        const auto& first = m_renderables[i];
+
+        std::vector<Matrix4x4> instanceMatrices;
+
+        size_t j = i;
+
+        while (j < m_renderables.size())
+        {
+            const auto& current = m_renderables[j];
+
+            bool sameBatch =
+                current.materialID == first.materialID &&
+                current.meshID   == first.meshID &&
+                current.subMeshID  == first.subMeshID;
+
+            if (!sameBatch)
+                break;
+
+            instanceMatrices.push_back(current.world);
+            ++j;
+        }
+
+        i = j;
+    }
+
+    m_renderables.clear();
 }
 
 

@@ -8,6 +8,12 @@
 
 #include "gr-base/core/file/default.hpp"
 
+struct BoundingSphere
+{
+    Vector3 center;
+    float radius;
+};
+
 class SubMesh
 {
 public:
@@ -54,7 +60,7 @@ public:
 
     void CalculateLocalBounds();
 
-    const Boundbox &getBoundbox() const;
+    const BoundingSphere &getBounds() const;
 
     void SetName(const std::string& name);
 
@@ -79,7 +85,7 @@ private:
 
     std::vector<SubMesh> m_submeshes;
 
-    Boundbox m_boundbox;
+    BoundingSphere m_boundsSphere;
 
     std::shared_ptr<gr::vertex_array> m_vertexarray;
 

@@ -1,14 +1,31 @@
 #pragma once
 
 #include "gr-base/core/default.hpp"
+
+#include "gr-base/core/geometry/default.hpp"
+#include "gr-base/core/system.hpp"
+#include "gr-base/managers/default.hpp"
+
 #include <gr-render/shader.hpp>
 
-class RenderSystem
+struct Renderable
+{
+    MeshID meshID;
+    Mesh* mesh;
+    uint32_t subMeshID;
+    MaterialID materialID;
+
+    Matrix4x4 world;
+};
+
+class RenderSystem : public System
 {
 public:
-    static void Update(Scene* scene);
+    void Update(Scene* scene) override;
 
 private:
+    std::vector<Renderable> m_renderables;
+
     static void Setuplight(gr::Shader* shader);
 };
 

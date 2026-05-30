@@ -3,10 +3,14 @@
 #include "gr-base/script/relationship.hpp"
 #include "gr-base/script/transform.hpp"
 
+#include "gr-base/core/scene.hpp"
+
 #include "gr-base/ecs/view.hpp"
 
-void TransformSystem::Update(World* world)
+void TransformSystem::Update(Scene* scene)
 {
+    World* world = scene->GetWorld();
+
     Signature requiredMask = Type::GetMask<Transform>();
 
     auto array = world->GetRawArchetype();
@@ -23,10 +27,11 @@ void TransformSystem::Update(World* world)
             for (ComponentID i=0;i<arche.entityCount;i++)
             {
                 auto& transform = transforms[i];
-                auto& entity = entities[i];
 
                 if (!transform.dirty)
                     continue;
+
+                auto& entity = entities[i];
 
                 transform.localMatrix = Math::CreateTRS(transform.position, transform.rotation, transform.scale);
 

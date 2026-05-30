@@ -1,14 +1,17 @@
 #include "gr-base/system/camerasystem.hpp"
 
 #include "gr-base/core/rendertarget.hpp"
+#include "gr-base/core/scene.hpp"
 
 #include "gr-base/ecs/view.hpp"
 
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
-void CameraSystem::Update(World* world)
+void CameraSystem::Update(Scene* scene)
 {
+    auto world = scene->GetWorld();
+
     for (auto&& [e, transform, camera, data] : world->Query<Transform, Camera, CameraData>())
     {
         float aspectRatio = static_cast<float>(camera->rendertarget->GetWidth()) / static_cast<float>(camera->rendertarget->GetHeight());

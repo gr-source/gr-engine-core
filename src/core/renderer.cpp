@@ -4,6 +4,7 @@
 #include "gr-base/core/materialInstance.hpp"
 #include "gr-base/core/rendertarget.hpp"
 #include "gr-base/managers/assetsManager.hpp"
+#include <algorithm>
 #include <gr-render/gRender.h>
 #include <gr-render/gl.h>
 
@@ -67,6 +68,8 @@ Renderer& Renderer::GetInstance()
 
 void Renderer::renderCmd()
 {
+    sorting();
+
     bool enable[10] = {false};
     int textureID[10] = {0};
 
@@ -168,9 +171,75 @@ void Renderer::renderCmd()
                 GL_UNSIGNED_INT,
                 (void*)(batch.cacheSubMesh->indexOffset * sizeof(uint32_t)));
         }
-
-        batch.matrices.clear();
     }
+
+    m_batches.clear();
+}
+
+void Renderer::sorting()
+{
+    std::sort(m_commands.begin(), m_commands.end(),
+    [](const RenderCommand& a, const RenderCommand& b)
+    {
+        if (a.materialID != b.materialID)
+            return a.materialID < b.materialID;
+
+        if (a.meshID != b.meshID)
+            return a.meshID < b.meshID;
+
+        return a.subMeshID < b.subMeshID;
+    });
+
+    size_t i = 0;
+
+    while (i < m_commands.size())
+    {
+        const auto& first = m_commands[i];
+
+        std::vector<Matrix4x4> instanceMatrices;
+
+        size_t j = i;
+
+        while (j < m_commands.size())
+        {
+            const auto& current = m_commands[j];
+
+            bool sameBatch =
+                current.materialID == first.materialID &&
+                current.meshID   == first.meshID &&
+                current.subMeshID  == first.subMeshID;
+
+            if (!sameBatch)
+                break;
+
+            instanceMatrices.push_back(current.matrix);
+            ++j;
+        }
+
+        // if (instanceMatrices.size() > 1)
+        // {
+            /*
+            auto& batch = m_batches.emplace_back();
+            batch.submeshID = first.subMeshID;
+            batch.mesh = first.mesh;
+            batch.materialInstance = new MaterialInstance(AssetsManager::GetMaterial(first.materialID));
+            batch.matrices = instanceMatrices;
+            batch.mesh = first.mesh;
+            batch.cacheSubMesh = first.cacheSubMesh;
+            Renderer::DrawInstanced(
+                first.mesh,
+                first.subMesh,
+                first.material,
+                instanceMatrices
+            );
+            */
+        // } else
+        // {}
+
+        i = j;
+    }
+
+    m_commands.clear();
 }
 
 void Renderer::SetRenderTarget(RenderTarget* rt)
@@ -192,6 +261,8 @@ void Renderer::AddCommand(const RenderCommand& cmd)
 
 void Renderer::addCommand(const RenderCommand& cmd)
 {
+    m_commands.push_back(cmd);
+    /*
     uint64_t key = make_handle(cmd.materialID, cmd.meshID, cmd.subMeshID);
 
     if (m_batchMap.find(key) != m_batchMap.end())
@@ -209,6 +280,7 @@ void Renderer::addCommand(const RenderCommand& cmd)
 
         m_batchMap.emplace(key, m_batches.size() - 1);
     }
+    */
 }
 
 

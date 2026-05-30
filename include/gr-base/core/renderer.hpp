@@ -54,6 +54,8 @@ private:
 
     std::unordered_map<uint64_t, size_t> m_batchMap;
 
+    std::vector<RenderCommand> m_commands;
+
     std::vector<RenderBatch> m_batches;
 
     std::vector<MaterialID> m_materiallookup;
@@ -63,6 +65,8 @@ private:
     std::vector<int> m_submeshlookup;
 
     void renderCmd();
+
+    void sorting();
 
     void addCommand(const RenderCommand& cmd);
 };

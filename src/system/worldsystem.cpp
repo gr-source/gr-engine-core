@@ -11,52 +11,13 @@ extern "C"
 #include "gr-base/externals/vector.h"
 }
 
-void WorldSystem::Update(Scene* scene)
-{
-    GetInstance().update(scene);
-}
-
-// private
-WorldSystem& WorldSystem::GetInstance()
-{
-    static WorldSystem s_WorldSystem;
-    return s_WorldSystem;
-}
-
 WorldSystem::WorldSystem()
 {}
 
 WorldSystem::~WorldSystem()
 {}
 
-CellID WorldSystem::create(const std::string &name)
-{
-    CellID id = m_pool.allocate();
-
-    StreamChunk* chunk = m_pool.get(id);
-    chunk->name = strdup(name.c_str());
-
-    m_chunkNameMap.emplace(name, id);
-
-    m_chunkLoaded.push_back(id);
-
-    return id;
-}
-
-CellID WorldSystem::find(const std::string &name)
-{
-    auto it = m_chunkNameMap.find(name);
-    if (it == m_chunkNameMap.end())
-        return INVALID_CELL;
-    return it->second;
-}
-
-StreamChunk* WorldSystem::get(CellID id)
-{
-    return m_pool.get(id);
-}
-
-void WorldSystem::update(Scene* scene)
+void WorldSystem::Update(Scene* scene)
 {
     const auto camera = scene->Wrap(scene->GetCamera());
     if (!camera.IsAlive())
@@ -111,6 +72,33 @@ void WorldSystem::update(Scene* scene)
 
     for (auto& chunkID : m_chunkLoaded)
         render(get(chunkID));
+}
+
+CellID WorldSystem::create(const std::string &name)
+{
+    CellID id = m_pool.allocate();
+
+    StreamChunk* chunk = m_pool.get(id);
+    chunk->name = strdup(name.c_str());
+
+    m_chunkNameMap.emplace(name, id);
+
+    m_chunkLoaded.push_back(id);
+
+    return id;
+}
+
+CellID WorldSystem::find(const std::string &name)
+{
+    auto it = m_chunkNameMap.find(name);
+    if (it == m_chunkNameMap.end())
+        return INVALID_CELL;
+    return it->second;
+}
+
+StreamChunk* WorldSystem::get(CellID id)
+{
+    return m_pool.get(id);
 }
 
 void WorldSystem::unloadChunk(CellID id)

@@ -167,12 +167,6 @@ std::string Scene::GetName() const
     return m_name;
 }
 
-void Scene::AddMesh(MeshID meshID)
-{
-    m_meshes.push_back(meshID);
-}
-
-
 size_t Scene::GetEntityCount() const
 {
     return m_world->GetCount();
@@ -327,6 +321,15 @@ std::string Scene::GetEntityName(Entity entity)
         EntityID entityID = handle_get_first(entity);
 
         return "Entity " + std::to_string(entityID);
+    }
+}
+
+void Scene::Update()
+{
+    for (int i=0;i<static_cast<int>(StageType::COUNT);i++)
+    {
+        for (auto& sys : m_systems[i])
+            sys->Update(this);
     }
 }
 
