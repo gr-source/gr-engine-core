@@ -70,12 +70,12 @@ void Renderer::renderCmd()
     bool enable[10] = {false};
     int textureID[10] = {0};
 
-    for (auto &&[material, mesh, submeshID, instances] : m_commands)
+    for (auto &&[material, mesh, submeshID, instances, instanceCount] : m_commands)
     {
-        if (instances.empty())
+        if (!instanceCount)
             continue;
 
-        bool instancing = instances.size() > 1;
+        bool instancing = instanceCount > 1;
 
         auto shader =
             material->prefab->Get(
@@ -112,15 +112,15 @@ void Renderer::renderCmd()
             pbo->Bind();
 
             pbo->SetData(
-                instances.data(),
-                instances.size() * sizeof(Matrix4x4));
+                instances,
+                instanceCount * sizeof(Matrix4x4));
 
             glDrawElementsInstanced(
                 GL_TRIANGLES,
                 submesh.indexCount,
                 GL_UNSIGNED_INT,
                 (void*)(submesh.indexOffset * sizeof(uint32_t)),
-                (GLsizei)instances.size());
+                (GLsizei)instanceCount);
         }
         else
         {

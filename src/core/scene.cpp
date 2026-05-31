@@ -8,6 +8,7 @@
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/world.hpp"
 
+#include "gr-base/externals/handle.h"
 #include "gr-base/managers/sceneManager.hpp"
 
 #include "gr-base/script/relationship.hpp"
@@ -70,7 +71,7 @@ Entity Scene::create(Entity other)
     myTrans->position = otherTrans->position;
     myTrans->rotation = otherTrans->rotation;
     myTrans->scale = otherTrans->scale;
-    myTrans->dirty = true;
+    MarkChanged<Transform>(go.entity);
 
     auto otherRel = otherGO.GetComponent<Relationship>();
     if (otherRel != nullptr)
@@ -176,7 +177,7 @@ void Scene::MarkChildrenDirty(Entity entity)
 {
     auto transform = m_world->GetComponent<Transform>(entity);
     if (transform != nullptr)
-        transform->dirty = true;
+        MarkChanged<Transform>(entity);
 
     auto rel = m_world->GetComponent<Relationship>(entity);
     if (rel != nullptr)
@@ -303,4 +304,36 @@ void Scene::Update()
 }
 
 
+void Scene::MarkChanged(TypeID type, Entity e)
+{
+    if (!m_world->IsAlive(e))
+        return;
+
+    if (type >= changes.size())
+        changes.resize(type + 1);
+
+    uint32_t entityID = handle_get_first(e);
+
+    ChangeSet& change = changes[type];
+    if (entityID >= change.exists.size())
+        change.exists.resize(entityID + 1, false);
+
+    if (!change.exists[entityID])
+    {
+        change.entities.push_back(e);
+
+        change.exists[entityID] = true;
+    }
+}
+
+std::vector<Entity> Scene::Changed(TypeID type)
+{
+    if (type >= changes.size())
+        return std::vector<Entity>();
+
+    ChangeSet& change = changes[type];
+    change.exists.clear();
+
+    return std::move(change.entities);
+}
 

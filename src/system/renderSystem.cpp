@@ -18,6 +18,15 @@
 #include "gr-base/script/camera.hpp"
 #include <algorithm>
 
+static constexpr uint32_t BUCKET_COUNT = 1 << 16;
+
+struct Bucket
+{
+    std::vector<const Matrix4x4*> instances;
+};
+
+size_t buckets[BUCKET_COUNT] = {(size_t)-1};
+
 void RenderSystem::Update(Scene* scene)
 {
     Entity cameraEntity = scene->GetCamera();
@@ -78,64 +87,74 @@ void RenderSystem::Update(Scene* scene)
             auto& meshFilter = meshFilters[i];
             auto& meshRender = meshRenders[i];
 
-            // const Matrix4x4& worldMatrix = transforms[i].worldMatrix;
-
-            /*
-            auto& sphere = mesh->getBounds();
-
-            Vector4 worldCenter =
-                transform.worldMatrix * 
-                    Vector4{sphere.center.x, sphere.center.y, sphere.center.z, 1.0f};
-
-            float scale =
-                std::max({
-                    transform.scale.x,
-                    transform.scale.y,
-                    transform.scale.z
-                });
-
-            float radius =
-                sphere.radius * scale;
-
-            if (!Frustum::IsSphereInFrustum(
-                    *reinterpret_cast<Vector3*>(worldCenter.data),
-                    radius))
-            {
-                continue;
-            }
-            */
-
-            // auto mesh = AssetsManager::GetMesh(meshFilter.mesh);
-            //
-            // if (meshRender.numMaterials != mesh->numSubmeshes)
-            //     continue;
-
+            auto& mesh = meshFilter.mesh;
             for (size_t j=0;j<meshRender.numMaterials;j++)
             {
-                m_renderables.push_back({
-                    meshRender.materials[j],
-                    meshFilter.mesh,
-                    static_cast<uint32_t>(j),
-                    transform.worldMatrix
-                });
+                auto& material = meshRender.materials[j];
+
+                uint64_t key =
+                    ((uint64_t)material * 73856093u) ^
+                    ((uint64_t)mesh      * 19349663u) ^
+                    ((uint64_t)j   * 83492791u);
+
+                uint32_t index = key & (BUCKET_COUNT - 1);
+                
+                if (buckets[index] == (size_t)-1)
+                {
+
+                    Renderable r;
+                    r.material = material;
+                    r.mesh = mesh;
+                    r.submesh = j;
+
+                    m_renderables.push_back(r);
+
+                    buckets[index] = m_renderables.size() - 1;
+                }
+
+                m_renderables[buckets[index]].instances.push_back(&transform.worldMatrix);
+
+                // std::cout << "Index: << " << index << std::endl;
+
+                //.instances.push_back(&transform.worldMatrix);
             }
         }
     }
 
+    for (auto& r : m_renderables)
+    {
+        std::vector<Matrix4x4> instances(r.instances.size());
+        for (size_t i=0;i<r.instances.size();i++)
+            instances[i] = *r.instances[i];
+
+        r.instances.clear();
+
+        RenderCommand cmd;
+        cmd.material = AssetsManager::GetMaterial(r.material);
+        cmd.mesh = AssetsManager::GetMesh(r.mesh);
+        cmd.subMeshID = r.submesh;
+        cmd.instances = instances.data();
+        cmd.instanceCount = instances.size();
+
+        Renderer::AddCommand(cmd);
+    }
+
+    /*
     std::sort(m_renderables.begin(), m_renderables.end(),
     [](const Renderable& a, const Renderable& b)
     {
-        if (handle_get_first(a.material) != handle_get_first(b.material))
-            return handle_get_first(a.material) < handle_get_first(b.material);
+        if (a.material != b.material)
+            return a.material < b.material;
 
-        if (handle_get_first(a.mesh) != handle_get_first(b.mesh))
-            return handle_get_first(a.mesh) < handle_get_first(b.mesh);
+        if (a.mesh != b.mesh)
+            return a.mesh < b.mesh;
 
         return a.submeshID < b.submeshID;
     });
+    */
 
+    /*
     size_t i = 0;
-
     while (i < m_renderables.size())
     {
         const auto& first = m_renderables[i];
@@ -170,8 +189,9 @@ void RenderSystem::Update(Scene* scene)
 
         i = j;
     }
+    */
 
-    m_renderables.clear();
+    // m_renderables.clear();
 }
 
 

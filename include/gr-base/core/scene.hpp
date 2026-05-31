@@ -6,8 +6,6 @@
 #include "gr-base/core/system.hpp"
 #include "gr-base/ecs/default.hpp"
 
-#include "gr-base/managers/default.hpp"
-
 #include <unordered_set>
 #include <vector>
 #include <string>
@@ -19,6 +17,12 @@ enum class StageType
     SIMULATION,
     RENDER,
     COUNT
+};
+
+struct ChangeSet
+{
+    std::vector<Entity> entities;
+    std::vector<bool> exists;
 };
 
 class Scene
@@ -93,12 +97,31 @@ public:
 
     void Update();
 
+    template <typename T>
+    inline void MarkChanged(Entity e)
+    {
+        MarkChanged(Type::GetTypeID<T>(), e);
+    }
+
+    void MarkChanged(TypeID type, Entity e);
+
+    template <typename T>
+    std::vector<Entity> Changed()
+    {
+        return Changed(Type::GetTypeID<T>());
+    }
+
+    std::vector<Entity> Changed(TypeID type);
+
+
 private:
     std::unordered_set<Handle> u_object_has_been_selected;
 
     std::vector<Entity> v_object_selected_list;
 
     std::vector<std::unique_ptr<System>> m_systems[static_cast<int>(StageType::COUNT)];
+
+    std::vector<ChangeSet> changes;
 
     World* m_world;
 

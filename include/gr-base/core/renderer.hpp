@@ -16,7 +16,8 @@ struct RenderCommand
     Material* material;
     Mesh* mesh;
     int subMeshID;
-    std::vector<Matrix4x4> metrices;
+    const Matrix4x4* instances;
+    size_t instanceCount;
 };
 
 #include <vector>

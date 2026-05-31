@@ -5,17 +5,39 @@
 
 #include "gr-base/core/scene.hpp"
 
+#include "gr-base/ecs/world.hpp"
 #include "gr-base/ecs/view.hpp"
 
 void TransformSystem::Update(Scene* scene)
 {
     World* world = scene->GetWorld();
 
+    auto entities = scene->Changed<Transform>();
+    for (auto& entity : entities)
+    {
+        auto transform = world->GetComponent<Transform>(entity);
+        if (transform == nullptr)
+            continue;
+
+        transform->localMatrix = Math::CreateTRS(transform->position, transform->rotation, transform->scale);
+
+        transform->worldMatrix = transform->localMatrix;
+
+        auto rel = world->GetComponent<Relationship>(entity);
+        if (rel != nullptr && rel->parent != INVALID_ENTITY)
+        {
+            Transform* parentTransform = world->GetComponent<Transform>(rel->parent);
+            if (parentTransform != nullptr)
+                transform->worldMatrix = parentTransform->worldMatrix * transform->localMatrix;
+        }
+    }
+
+    /*
+    World* world = scene->GetWorld();
+
     Signature requiredMask = Type::GetMask<Transform>();
 
     auto array = world->GetRawArchetype();
-
-    return;
 
     for (size_t i=0;i<world->GetArchetypeCount();i++)
     {
@@ -51,5 +73,6 @@ void TransformSystem::Update(Scene* scene)
             }
         }
     }
+    */
 }
 

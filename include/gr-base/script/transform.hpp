@@ -4,8 +4,6 @@
 
 struct Transform
 {
-    bool dirty = true;
-
     Vector3 position = Vector3::zero;
     Quaternion rotation = Quaternion::identity;
     Vector3 scale = Vector3::one;

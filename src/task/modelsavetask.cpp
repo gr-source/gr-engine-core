@@ -127,6 +127,9 @@ void ModelSaveTask::onPostExecute(Result<std::string> result)
     AssetDB::Registry(hash, m_path);
 
     std::string dst = AssetDB::Resolve(hash) + HEADER_MODEL_EXTENSION;
+    if (gfile::exists(dst))
+        gfile::remove(dst);
+
     std::string src = result.value;
 
     if (!gfile::move(src.c_str(), dst.c_str()))
