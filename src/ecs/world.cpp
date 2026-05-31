@@ -110,13 +110,15 @@ void* World::AddComponent(Entity e, TypeID typeID, const void* component)
     if (!m_entityLocationMap->isAlive(e))
         return nullptr;
 
+    auto type = Type::GetTypeInfoByID(typeID);
+    if (type == nullptr)
+        return nullptr;
+
     uint32_t entityID = handle_get_first(e);
 
     ArchetypeID srcID = entityToLocation[entityID].archetype;
 
     ArchetypeStorage* lastArcheType = GetArchetypeByID(srcID);
-
-    auto type = Type::GetTypeInfoByID(typeID);
 
     ArchetypeID dstID = lastArcheType->addEdges(typeID);
     if (dstID == INVALID_ARCHETYPE)

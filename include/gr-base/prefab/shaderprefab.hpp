@@ -23,7 +23,7 @@ public:
 
     inline const std::string& GetName() const
     {
-        return m_asset.GetName();
+        return m_asset.name;
     }
 
     inline const std::vector<gr::Shader*>& GetShaders()

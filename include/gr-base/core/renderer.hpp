@@ -1,38 +1,38 @@
 #pragma once
 
 #include "gr-base/core/default.hpp"
-#include "gr-base/core/geometry/mesh.hpp"
-#include "gr-base/core/materialInstance.hpp"
+
+#include "gr-base/core/geometry/default.hpp"
+
 #include "gr-base/managers/default.hpp"
+
 #include <gr-math/types.hpp>
-#include <memory>
+
 #include <unordered_map>
+#include <vector>
 
 struct RenderCommand
 {
-    MaterialID materialID;
-    MeshID meshID;
-    int subMeshID;
-    Matrix4x4 matrix;
-
-    const SubMesh* cacheSubMesh;
+    Material* material;
     Mesh* mesh;
+    int subMeshID;
+    std::vector<Matrix4x4> metrices;
 };
 
 #include <vector>
 
 
-class RenderBatch
-{
-public:
-    std::vector<Matrix4x4> matrices;
-
-    MaterialInstance* materialInstance;
-
-    const SubMesh* cacheSubMesh;
-    Mesh* mesh;
-    int submeshID;
-};
+// class RenderBatch
+// {
+// public:
+//     std::vector<Matrix4x4> matrices;
+//
+//     MaterialInstance* materialInstance;
+//
+//     const SubMesh* cacheSubMesh;
+//     Mesh* mesh;
+//     int submeshID;
+// };
 
 class Renderer
 {
@@ -52,21 +52,19 @@ public:
 private:
     static Renderer& GetInstance();
 
-    std::unordered_map<uint64_t, size_t> m_batchMap;
-
     std::vector<RenderCommand> m_commands;
 
-    std::vector<RenderBatch> m_batches;
-
-    std::vector<MaterialID> m_materiallookup;
-
-    std::vector<MeshID> m_meshlookup;
-
-    std::vector<int> m_submeshlookup;
+    // std::vector<RenderBatch> m_batches;
+    //
+    // std::vector<MaterialID> m_materiallookup;
+    //
+    // std::vector<MeshID> m_meshlookup;
+    //
+    // std::vector<int> m_submeshlookup;
 
     void renderCmd();
 
-    void sorting();
+    // void sorting();
 
     void addCommand(const RenderCommand& cmd);
 };

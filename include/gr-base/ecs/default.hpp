@@ -11,7 +11,6 @@
 #define INVALID_ARCHETYPE (ArchetypeID)-1
 #define INVALID_COMPONENT (ComponentID)-1
 #define INVALID_SIGNATURE (Signature)-1
-#define INVALID_HASH64 (Hash64)-1
 #define INVALID_ENTITY (Entity)-1
 #define INVALID_TYPE (TypeID)-1
 
@@ -41,4 +40,17 @@ inline Hash64 GetHash64ByType(const char* key = nullptr) noexcept
     static Hash64 hash = hash::fnv1_str(key);
     return hash;
 }
+
+enum class StorageKind
+{
+    Archetype,
+    Sparse
+};
+
+template <typename T>
+struct type_traits
+{
+    static constexpr StorageKind storage = StorageKind::Archetype;
+};
+
 

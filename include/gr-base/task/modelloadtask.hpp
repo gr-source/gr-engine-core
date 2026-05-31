@@ -8,7 +8,7 @@
 #include <functional>
 #include <string>
 
-class ModelLoadTask : public IAsyncTask<int>
+class ModelLoadTask : public IAsyncTask<ModelAsset>
 {
 public:
     template <typename ...Args>
@@ -21,15 +21,13 @@ private:
 
     Scene* m_scene;
 
-    ModelAsset m_asset;
-
     void onPreExecute() override;
 
-    int doInBackground() override;
+    ModelAsset doInBackground() override;
 
-    void onPostExecute(int result) override;
+    void onPostExecute(Result<ModelAsset> result) override;
 
-    Entity CreateFromAsset(const ModelAsset* asset, Entity parent = INVALID_ENTITY);
+    Entity CreateFromAsset(const ModelAsset* asset);
 };
 
 template <typename ...Args>

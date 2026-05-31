@@ -1,128 +1,105 @@
 #include "gr-base/managers/materialmanager.hpp"
 
-#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/material.hpp"
-#include "gr-base/externals/array.h"
-#include <stdexcept>
 
-typedef struct MaterialWrapper
+#include "gr-base/externals/handle.h"
+
+#include <cstdlib>
+
+MaterialManager::MaterialManager() : m_count(0), m_capacity(0), m_slots(nullptr), m_freeID(0)
+{}
+
+MaterialHandle MaterialManager::create(Hash64 hash)
 {
-    MaterialID next;
+    if (m_count >= m_capacity)
+        resize();
 
-    Material material;
-} MaterialWrapper;
+    uint32_t id = m_freeID;
 
-// public
-MaterialManager::MaterialManager() : m_pool(nullptr), m_count(0), m_freeID(ID_INVALID)
-{
-}
-
-MaterialID MaterialManager::create(const std::string &name)
-{
-    auto id = allocate();
-
-    MaterialWrapper* wrapper = (MaterialWrapper*)m_pool->vector;
-
-    Material *material = &wrapper[id].material;
-
-    new (material) Material();
-
-    m_materialnamemap[name] = id;
-    m_materialmap[id] = name;
+    Slot& slot = m_slots[id];
+    m_freeID = slot.next;
 
     m_count++;
-    
-    return id;
+
+    MaterialHandle h = handle_create(id, slot.version);
+
+    Material* material = &m_materialPool[id];
+    new (material) Material();
+
+    m_materialMap.emplace(hash, h);
+
+    return h;
 }
 
-Material *MaterialManager::get(MaterialID id)
+Material *MaterialManager::get(MaterialHandle h)
 {
-    MaterialWrapper* wrapper = (MaterialWrapper*)m_pool->vector;
+    uint32_t index = handle_get_first(h);
+    uint32_t version = handle_get_second(h);
 
-    return &wrapper[id].material;
+    Slot& slot = m_slots[index];
+    if (slot.version != version)
+        return nullptr;
+
+    return &m_materialPool[index];
 }
 
-MaterialID MaterialManager::find(const std::string &name)
+void MaterialManager::destroy(MaterialHandle h)
 {
-    auto it = m_materialnamemap.find(name);
-    if (it == m_materialnamemap.end())
-        return ID_INVALID;
+    uint32_t index = handle_get_first(h);
+    uint32_t version = handle_get_second(h);
+
+    Slot& slot = m_slots[index];
+    if (slot.version != version)
+        return;
+
+    Material& material = m_materialPool[index];
+    material.~Material();
+
+    m_freeID = index;
+
+    slot.next = m_freeID;
+    slot.version++;
+
+    m_count--;
+}
+
+MaterialHandle MaterialManager::find(Hash64 hash) const
+{
+    auto it = m_materialMap.find(hash);
+    if (it == m_materialMap.end())
+        return HANDLE_INVALID;
     return it->second;
 }
 
-const char *MaterialManager::getname(MaterialID id)
-{
-    auto it = m_materialmap.find(id);
-    if (it == m_materialmap.end())
-        return nullptr;
-    return it->second.c_str();
-}
-
-void MaterialManager::destroy(MaterialID id)
-{
-    throw std::runtime_error("void MaterialManager::remove(MaterialID id)");
-}
-
-MaterialID MaterialManager::GetCount() const
+size_t MaterialManager::GetCount() const
 {
     return m_count;
 }
 
-MaterialID MaterialManager::allocate()
+// private
+void MaterialManager::resize()
 {
-    if (m_freeID == ID_INVALID)
-        realloc(64);
+    size_t oldCapacity = m_capacity;
 
-    MaterialWrapper* wrapper = (MaterialWrapper*)m_pool->vector;
+    m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
-    MaterialID id = m_freeID;
-    m_freeID = wrapper[id].next;
+    m_materialPool.resize(m_capacity);
 
-    return id;
+    // m_materialPool = (Material*)realloc(m_materialPool, m_capacity * sizeof(Material));
+    m_slots = (Slot*)realloc(m_slots, m_capacity * sizeof(Slot));
+
+    addFreeID(oldCapacity);
 }
 
-void MaterialManager::realloc(MaterialID size)
+void MaterialManager::addFreeID(size_t oldCapacity)
 {
-    size_t lastsize = m_pool != nullptr ? m_pool->length : 0;
-    size_t newsize = lastsize + size;
+    size_t lastElement = m_capacity - 1;
+    for (size_t i=oldCapacity;i<lastElement;i++)
+        m_slots[i] = { static_cast<uint32_t>(i) + 1, 1 };
 
-    if (m_pool == nullptr)
-    {
-        m_pool = array_create(newsize, sizeof(MaterialWrapper));
-    } else
-    {
-        array* newPool = array_create(newsize, sizeof(MaterialWrapper));
-
-        MaterialWrapper* lastWrapperPool = (MaterialWrapper*)m_pool->vector;
-        MaterialWrapper* newWrapperPool = (MaterialWrapper*)newPool->vector;
-
-        for (size_t i=0;i<lastsize;i++)
-        {
-            MaterialWrapper& lastWrapper = lastWrapperPool[i];
-            MaterialWrapper& newWrapper = newWrapperPool[i];
-
-            newWrapper.next = lastWrapper.next;
-
-            new (&newWrapper.material) Material(lastWrapper.material);
-        }
-
-        array_free(m_pool);
-        m_pool = newPool;
-    }
-
-    addFreeID(lastsize);
+    m_slots[lastElement] = { m_freeID, 1 };
+    m_freeID = static_cast<uint32_t>(oldCapacity);
 }
 
-void MaterialManager::addFreeID(MeshID start)
-{
-    MaterialWrapper* wrapper = (MaterialWrapper*)m_pool->vector;
-
-    MeshID lastID = m_pool->length - 1;
-    for (MeshID id=start;id<lastID;id++)
-        wrapper[id].next = id + 1;
-
-    wrapper[lastID].next = m_freeID;
-    m_freeID = start;
-}
 
 

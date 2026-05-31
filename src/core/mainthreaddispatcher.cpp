@@ -63,7 +63,7 @@ void MainThreadDispatcher::process()
                 event();
             } catch (const std::exception& e)
             {
-                logger::error("[MainThreadDispatcher] Exception detected '%s'.", e.what());
+                Console::LogError("[MainThreadDispatcher] Exception detected '%s'.", e.what());
             }
         }
 

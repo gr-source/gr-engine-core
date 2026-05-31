@@ -7,6 +7,7 @@ class FileStream : public Stream
 {
 public:
     FileStream(const std::string& path, StreamType type);
+    ~FileStream() override;
 
     bool write(const void* buffer, size_t size) override;
     

@@ -1,44 +1,32 @@
 #pragma once
 
-
-#include "gr-base/asset/asset.hpp"
+#include "gr-base/core/default.hpp"
 #include "gr-base/core/geometry/vertex3D.hpp"
 
 #include "gr-base/core/file/default.hpp"
 
 #include <vector>
 
-class SubMeshAsset
+struct SubMeshAsset
 {
-public:
     std::vector<uint32_t> indices;
 
     std::string materialName;
 };
 
-class MeshAsset : public Asset
+struct MeshAsset
 {
-public:
-    std::vector<Vertex3D> vertices;
-
     std::vector<SubMeshAsset> submeshes;
 
-    inline void SetName(const std::string& name)
-    {
-        m_name = name;
-    }
+    std::vector<Vertex3D> vertices;
 
-    inline const std::string& GetName() const
-    {
-        return m_name;
-    }
+    std::string name;
 
-    bool serialize(Stream* stream) const override;
+    AssetHash hash = INVALID_HASH64;
 
-    bool deserialize(Stream* stream) override;
+    bool serialize(Stream* stream) const;
 
-private:
-    std::string m_name;
+    bool deserialize(Stream* stream);
 };
 
 

@@ -1,22 +1,37 @@
 #pragma once
 
+#include "gr-base/core/assetDB.hpp"
 #include "gr-base/core/file/default.hpp"
+
+#include "gr-base/ecs/default.hpp"
+#include "gr-base/externals/hash.hpp"
 
 #include <unordered_map>
 #include <cstdint>
 #include <vector>
 #include <string>
 
-class ModelAsset
+struct ModelAsset
 {
-public:
-    std::string name;
-
-    bool isStatic;
+    std::unordered_map<Hash64, std::vector<uint8_t>> componentBuffer;
 
     std::vector<ModelAsset> childrent;
 
-    std::unordered_map<uint64_t, std::vector<uint8_t>> componentBuffer;
+    std::vector<AssetHash> materials;
+    
+    std::string name;
+
+    AssetHash mesh = INVALID_HASH64;
+
+    bool isStatic = false;
+
+    template <typename T>
+    inline void AddComponent(const T& pref)
+    {
+        AddComponent(GetHash64ByType<T>(), &pref, sizeof(T));
+    }
+
+    void AddComponent(Hash64 hash, const void* data, size_t size);
 
     bool serialize(Stream* stream) const;
 

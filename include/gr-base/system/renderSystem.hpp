@@ -10,10 +10,9 @@
 
 struct Renderable
 {
-    MeshID meshID;
-    Mesh* mesh;
-    uint32_t subMeshID;
-    MaterialID materialID;
+    MaterialHandle material;
+    MeshHandle mesh;
+    uint32_t submeshID;
 
     Matrix4x4 world;
 };

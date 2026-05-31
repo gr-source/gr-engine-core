@@ -10,47 +10,51 @@
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/ecs/type.hpp"
+#include "gr-base/managers/assetsManager.hpp"
+#include "gr-base/script/meshFilter.hpp"
+#include "gr-base/script/meshRender.hpp"
 
 void ModelLoadTask::onPreExecute()
 {
     Console::LogInfo("[ModelLoadTask] Loading model '%s'...", m_file.c_str());
 }
 
-int ModelLoadTask::doInBackground()
+ModelAsset ModelLoadTask::doInBackground()
 {
     FileStream stream(m_file, StreamType::INPUT);
     
     FileHeader header;
     if (!stream.read(&header, sizeof(header)))
-        return 1;
+        throw std::runtime_error("Falied to read header");
 
     if (header.sign != HEADER_MODEL_SIGN)
-        return 2;
+        throw std::runtime_error("Invalid asset signature");
 
     if (header.version != HEADER_ASSET_VERSION)
-        return 3;
+        throw std::runtime_error("Asset version is'n compatible");
 
-    if (!m_asset.deserialize(&stream))
-        return 4;
+    ModelAsset asset;
+    if (!asset.deserialize(&stream))
+        throw std::runtime_error("Falied to deserialize asset");
 
     stream.close();
-    return 0;
+    return asset;
 }
 
-void ModelLoadTask::onPostExecute(int result)
+void ModelLoadTask::onPostExecute(Result<ModelAsset> result)
 {
-    if (result != 0)
-        return Console::LogError("[ModelLoadTask] Failed to load '%s' error=%d!!!", m_file.c_str(), result);
+    if (!result.success)
+        return Console::LogError("[ModelLoadTask] Failed to load '%s' error=%s!!!", m_file.c_str(), result.error.c_str());
 
-    auto entity = CreateFromAsset(&m_asset);
+    auto entity = CreateFromAsset(&result.value);
 
-    Console::LogInfo("[ModelLoadTask] Model '%s' loaded.", m_asset.name.c_str());
+    Console::LogInfo("[ModelLoadTask] Model '%s' loaded.", result.value.name.c_str());
 
     if (m_func != nullptr)
         m_func(entity);
 }
 
-Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset, Entity parent)
+Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
 {
     auto go = m_scene->Wrap(m_scene->create(asset->name.c_str()));
 
@@ -73,11 +77,54 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset, Entity parent)
         }
     }
 
-    if (parent != INVALID_ENTITY)
-        m_scene->SetParent(parent, go.entity);
+    if (asset->mesh != INVALID_HASH64)
+    {
+        MeshHandle mesh = AssetsManager::FindMesh(asset->mesh);
+        if (mesh == HANDLE_INVALID)
+            mesh = AssetsManager::LoadMesh(asset->mesh);
 
-    for (auto& child : asset->childrent)
-        CreateFromAsset(&child, go.entity);
+        {
+            auto meshFilter = go.GetOrAddComponent<MeshFilter>();
+            meshFilter->mesh = mesh;
+        }
+
+        {
+            auto meshRef = go.GetOrAddComponent<MeshRef>();
+            meshRef->hash = asset->mesh;
+        }
+
+        std::vector<MaterialHandle> materials;
+        for (auto& key : asset->materials)
+        {
+            MaterialHandle material = AssetsManager::FindMaterial(key);
+            if (material == HANDLE_INVALID)
+                material = AssetsManager::LoadMaterial(key);
+
+            materials.push_back(material);
+        }
+
+        auto meshRender = go.GetOrAddComponent<MeshRender>();
+        meshRender->materials = (MaterialHandle*)malloc(materials.size() * sizeof(MaterialHandle));
+        meshRender->numMaterials = materials.size();
+
+        memcpy(meshRender->materials, materials.data(), materials.size() * sizeof(MaterialHandle));
+
+        auto materialRef = go.GetOrAddComponent<MaterialRef>();
+        if (materialRef != nullptr)
+        {
+            materialRef->materials = (MaterialHandle*)malloc(asset->materials.size() * sizeof(MaterialHandle));
+            materialRef->numMaterials = asset->materials.size();
+
+            memcpy(materialRef->materials, asset->materials.data(), asset->materials.size() * sizeof(MaterialHandle));
+        }
+    }
+
+    for (auto& assetChild : asset->childrent)
+    {
+        Entity child = CreateFromAsset(&assetChild);
+
+        m_scene->SetParent(go.entity, child);
+    }
 
     return go.entity;
 }

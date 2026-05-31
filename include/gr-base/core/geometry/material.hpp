@@ -8,11 +8,15 @@
 
 #include <gr-render/gRender.h>
 
-class Material
+struct Material
 {
-public:
-    Material();
-    ~Material();
+    std::unordered_map<std::string, std::vector<uint8_t>> overrides;
+
+    std::vector<uint8_t> buffer;
+
+    ShaderPrefab *prefab;
+
+    gr::Shader* shader = nullptr;
     
     template <typename T>
     void Set(const std::string &name, const T &value);
@@ -24,20 +28,9 @@ public:
 
     const void* GetInternal(const std::string &name) const;
 
-    inline void SetShaderPrefab(ShaderPrefab *prefab)
-    {
-        m_prefab = prefab;
-    }
+    void Build();
 
-    inline ShaderPrefab* GetShaderPrefab() const
-    {
-        return m_prefab;
-    }
-
-private:
-    std::unordered_map<std::string, std::vector<uint8_t>> m_overrides;
-
-    ShaderPrefab *m_prefab;
+    void Flush();
 };
 
 template <typename T>

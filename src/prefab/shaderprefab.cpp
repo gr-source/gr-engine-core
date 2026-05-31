@@ -31,22 +31,22 @@ gr::Shader* ShaderPrefab::Get(ShaderPrefabFlags_ flags)
 gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
 {
     std::string fragment = "#version 330 core\n";
-    if ((m_asset.GetFlags() & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
+    if ((m_asset.flags & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
     {
         if (flags & ShaderPrefabFlags_Instancing)
             fragment += "#define USE_INSTANCED\n";
     }
 
-    fragment += m_asset.GetFragment();
+    fragment += m_asset.fragment;
 
     std::string vertex = "#version 330 core\n";
-    if ((m_asset.GetFlags() & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
+    if ((m_asset.flags & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
     {
         if (flags & ShaderPrefabFlags_Instancing)
             vertex += "#define USE_INSTANCED\n";
     }
 
-    vertex += m_asset.GetVertex();
+    vertex += m_asset.vertex;
 
     const char* fragment_src = fragment.c_str();
     const char* vertex_src = vertex.c_str();
@@ -64,13 +64,13 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
 
         if (shader->build(&fragment_src, 1, &vertex_src, 1) == -1)
         {
-            Console::LogError("[ AssetsManager::LoadShaderFromFile ] Shader.Build Fail to build shader, %s, %s", m_asset.GetName().c_str(), "null");
+            Console::LogError("[ AssetsManager::LoadShaderFromFile ] Shader.Build Fail to build shader, %s, %s", m_asset.name.c_str(), "null");
 
             m_shadervariant.erase(flags);
             return nullptr;
         }
 
-        for (auto&& [name, info] : m_asset.GetUnifoms())
+        for (auto&& [name, info] : m_asset.parameters)
         {
             auto &&[typesname, count] = info;
 

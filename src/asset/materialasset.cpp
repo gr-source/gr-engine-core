@@ -6,7 +6,10 @@
 
 bool MaterialAsset::serialize(Stream* stream) const
 {
-    if (!stream->write(m_name))
+    if (!stream->write(name))
+        return false;
+
+    if (!stream->write(hash))
         return false;
 
     if (!stream->write(m_shader))
@@ -34,7 +37,10 @@ bool MaterialAsset::serialize(Stream* stream) const
 
 bool MaterialAsset::deserialize(Stream* stream)
 {
-    if (!stream->read(m_name))
+    if (!stream->read(name))
+        return false;
+
+    if (!stream->read(hash))
         return false;
 
     if (!stream->read(m_shader))

@@ -15,6 +15,8 @@ void TransformSystem::Update(Scene* scene)
 
     auto array = world->GetRawArchetype();
 
+    return;
+
     for (size_t i=0;i<world->GetArchetypeCount();i++)
     {
         ArchetypeStorage& arche = array[i];

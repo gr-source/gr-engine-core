@@ -99,6 +99,8 @@ inline void Type::Registry(const char* name, bool serializable)
     info.hash = GetHash64ByType<T>(name);
     info.index = INVALID_TYPE;
     info.stride = sizeof(T);
+    info.alignment = alignof(T);
+    info.storage = type_traits<T>::storage;
 
     // flags
     info.globalCpy = std::is_trivially_copyable_v<T>;

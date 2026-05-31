@@ -53,5 +53,7 @@ public:
 
 private:
     void resize();
+
+    uint8_t* allocate(const TypeInfo* info, size_t capacity);
 };
 

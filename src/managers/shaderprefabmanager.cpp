@@ -2,10 +2,10 @@
 
 ShaderPrefab* ShaderPrefabManager::create(const ShaderAsset* src)
 {
-    auto&& [it, inserted] = m_prefabmap.emplace(src->GetName(), std::make_unique<ShaderPrefab>(*src));
+    auto&& [it, inserted] = m_prefabmap.emplace(src->name, std::make_unique<ShaderPrefab>(*src));
     if (inserted)
     {
-        if (src->GetFlags() & ShaderAssetFlags_Shader3D)
+        if (src->flags & ShaderAssetFlags_Shader3D)
             m_shaders3d.push_back(it->second.get());
     }
 

@@ -92,7 +92,7 @@ void DebugDraw::LineRender::init()
 {
     try
     {
-        m_shaderPrefab = AssetsManager::LoadShader2("line.gshd");
+        m_shaderPrefab = AssetsManager::LoadShader("shader/line.glsl");
     } catch (const std::exception& e)
     {
         return Console::LogError("[DebugDraw] Fail in to load shader to line '%s'!!!", e.what());
@@ -101,15 +101,15 @@ void DebugDraw::LineRender::init()
     m_shader = m_shaderPrefab->Get(ShaderPrefabFlags_none);
 
     gr::buffer_layout layout = {
-        {gr::shader_data_type::Float3, "in_pos"},
+        {gr::shader_data_type::Float4, "in_pos"},
         {gr::shader_data_type::Float4, "in_color"}
     };
 
-    m_buffer = gr::vertex_buffer::create(nullptr, 256 * sizeof(Line3D), gr::buffer_usage::dynamic_draw);
+    m_buffer = std::shared_ptr<gr::vertex_buffer>(gr::vertex_buffer::create(nullptr, 256 * sizeof(Line3D), gr::buffer_usage::dynamic_draw));
     m_buffer->SetLayout(layout);
 
-    m_vertex_array = gr::vertex_array::create();
-    m_vertex_array->AddVertexBuffer(m_buffer);
+    m_vertex_array = std::shared_ptr<gr::vertex_array>(gr::vertex_array::create());
+    m_vertex_array->AddVertexBuffer(m_buffer.get());
 }
 
 void DebugDraw::LineRender::render(const Line3D *data, std::size_t size)

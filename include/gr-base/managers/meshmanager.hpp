@@ -1,10 +1,8 @@
 #pragma once
 
-#include "gr-base/asset/meshasset.hpp"
-
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
-#include "gr-base/pool/poolObject.hpp"
+#include "gr-base/externals/hash.hpp"
 
 #include "gr-base/managers/default.hpp"
 
@@ -15,30 +13,37 @@ class MeshManager
 public:
     MeshManager();
 
-    MeshID create(const std::string& name, const MeshAsset* src);
+    MeshHandle create(Hash64 hash);
 
-    Mesh *get(MeshID id);
+    Mesh *get(MeshHandle h) const;
 
-    void destroy(MeshID id);
+    void destroy(MeshHandle h);
 
-    MeshID find(const std::string &name);
+    MeshHandle find(Hash64 hash) const;
 
-    const char *getname(MeshID id);
-
-    size_t getCount() const;
+    size_t GetCount() const;
 
 private:
-    std::unordered_map<MeshID, std::string> m_meshnamemap;
+    struct Slot
+    {
+        uint32_t next;
+        uint32_t version;
+    };
 
-    std::unordered_map<std::string, MeshID> m_meshidmap;
+    std::unordered_map<Hash64, MeshHandle> m_meshMap;
 
-    ObjectPool<Mesh> m_pool;
+    Mesh* m_meshPool;
 
-    MeshID m_count;
+    size_t m_capacity;
 
-    void SetupMesh(Mesh* mesh, const MeshAsset* asset);
+    size_t m_count;
 
-    void addFreeID(MeshID first);
+    Slot *m_slots;
+    uint32_t m_freeID;
+
+    void resize();
+
+    void addFreeID(size_t oldCapacity);
 };
 
 

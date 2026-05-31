@@ -36,7 +36,7 @@ protected:
 
     gr::gTexture* doInBackground() override;
 
-    void onPostExecute(gr::gTexture* texture) override;
+    void onPostExecute(Result<gr::gTexture*> result) override;
 };
 
 

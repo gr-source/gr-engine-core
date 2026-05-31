@@ -38,8 +38,8 @@ void Type::registry(TypeInfo* src)
 
     m_hashToTypeIDMap.emplace(dest->hash, id);
 
-    logger::debug("[Type::registry] registered: name=%s, hash=%llu, index=%d, stride=%ld", \
-        dest->name, dest->hash, dest->index, dest->stride); \
+    logger::debug("[Type::registry] registered: name=%s, hash=%llu, index=%d, stride=%ld alignment=%ld", \
+        dest->name, dest->hash, dest->index, dest->stride, dest->alignment); \
 }
 
 void Type::resize()

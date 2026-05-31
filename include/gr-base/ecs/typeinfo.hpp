@@ -14,9 +14,12 @@ typedef struct TypeInfo
     Hash64 hash;
     TypeID index;
     size_t stride;
+    size_t alignment;
 
     bool globalCpy;
     bool serializable;
+
+    StorageKind storage;
 
     MethodPointer constructor;
     MethodPointer destructor;

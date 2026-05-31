@@ -30,8 +30,7 @@ set(thread
 
 set(core
     src/core/mainthreaddispatcher.cpp
-    src/core/materialInstance.cpp
-    src/core/assetReference.cpp
+    src/core/assetDB.cpp
     src/core/rendertarget.cpp
     src/core/renderer.cpp
     src/core/gameObject.cpp
@@ -69,17 +68,8 @@ set(culling
 )
 
 set(task
-    src/core/task/runtime/animationloadtask.cpp
-    src/core/task/runtime/animationsavetask.cpp
-    src/core/task/animationmanager.cpp
-    
-    src/core/task/runtime/scenesavetask.cpp
-    src/core/task/runtime/sceneloadtask.cpp
     src/core/task/runtime/textureloadtask.cpp
 
-    src/core/task/runtime/shaderloadtask.cpp
-
-    src/core/task/scenetaskmanager.cpp
     src/core/task/texturemanager.cpp
 )
 
@@ -116,6 +106,8 @@ set(ASSET_SRC
 
 set(TASK_SRC
     src/task/shaderbuildtask.cpp
+    src/task/shadersavetask.cpp
+
     src/task/modelloadtask.cpp
     src/task/modelsavetask.cpp
 

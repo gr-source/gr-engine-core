@@ -1,10 +1,20 @@
 #pragma once
 
 #include <condition_variable>
+#include <exception>
+#include <string>
 #include <atomic>
 #include <mutex>
 
 #include "default.hpp"
+
+template<typename T>
+struct Result
+{
+    T value;
+    bool success = true;
+    std::string error;
+};
 
 class ITask
 {
@@ -32,7 +42,7 @@ template <typename R>
 class IAsyncTask : public ITask
 {
 public:
-    R result;
+    Result<R> result;
 
     IAsyncTask(TaskPriority taskPriority = TaskPriority::LOW) : ITask(taskPriority) {}
 
@@ -42,7 +52,7 @@ public:
 
     virtual R doInBackground() = 0;
 
-    virtual void onPostExecute(R result) {}
+    virtual void onPostExecute(Result<R> result) {}
 
 private:
     void run() override;
@@ -53,13 +63,27 @@ private:
 template <typename R>
 inline void IAsyncTask<R>::run()
 {
-    result = doInBackground();
+    try
+    {
+        result.value = std::move(doInBackground());
+        result.success = true;
+    } 
+    catch (const std::exception& e)
+    {
+        result.success = false;
+        result.error = e.what();
+    }
+    catch (...)
+    {
+        result.success = false;
+        result.error = "Unknown exception";
+    }
 }
 
 template <typename R>
 inline void IAsyncTask<R>::finish()
 {
-    return onPostExecute(result);
+    onPostExecute(std::move(result));
 }
 
 struct TaskInfo

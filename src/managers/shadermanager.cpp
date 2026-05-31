@@ -73,69 +73,6 @@ std::vector<gr::Shader *> ShaderManager::get_shader(ShaderType type)
     return s_ShaderTypeList;
 }
 
-std::shared_ptr<TaskInfo> ShaderManager::load(ShaderParams shaderParams, std::function<void(gr::Shader *)> onLoaded)
-{
-    auto taskname = GetShaderParamsName(shaderParams);
-
-    std::unique_lock<std::mutex> lock(s_Mutex);
-
-    // Verifica se já existe uma task de caregamento, se houver adiciona a func em func list
-    {
-        auto it = s_ShaderTaskMap.find(taskname);
-        if (it != s_ShaderTaskMap.end())
-        {
-            if (onLoaded == nullptr)
-                return it->second;
-
-            auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(it->second->task.get());
-
-            lock.unlock();
-            shaderLoadTask->addFunction(onLoaded);
-
-            return it->second;
-        }
-    }
-
-    { // Verifica se já foi carregado e está na lista principal
-        auto it = s_ShaderMap.find(taskname);
-        if (it != s_ShaderMap.end())
-        {
-            if (onLoaded == nullptr)
-                return nullptr;
-
-            auto shader = it->second.get();
-
-            lock.unlock();
-            
-            onLoaded(shader);
-
-            return nullptr;
-        }
-    }
-
-    // cria uma nova task
-    auto taskInfo = TaskManager::Add<ShaderLoadTask>(shaderParams);
-    s_ShaderTaskMap.emplace(taskname, taskInfo);
-
-    auto shaderLoadTask = dynamic_cast<ShaderLoadTask *>(taskInfo->task.get());
-    if (onLoaded != nullptr)
-        shaderLoadTask->addFunction(onLoaded);
-
-    return taskInfo;
-}
-
-bool ShaderManager::remove_task(const std::string &name)
-{
-    std::lock_guard<std::mutex> lock(s_Mutex);
-    auto it = s_ShaderTaskMap.find(name);
-    if (it == s_ShaderTaskMap.end())
-    {
-        return false;
-    }
-    s_ShaderTaskMap.erase(it);
-
-    return true;
-}
 
 
 

@@ -1,73 +1,97 @@
 #include "gr-base/managers/meshmanager.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
+#include "gr-base/externals/handle.h"
+#include <cstdlib>
 
-MeshManager::MeshManager() : m_count(0)
+MeshManager::MeshManager() : m_meshPool(nullptr), m_count(0), m_capacity(0), m_slots(nullptr), m_freeID(0)
 {}
 
-MeshID MeshManager::create(const std::string &name, const MeshAsset* src)
+MeshHandle MeshManager::create(Hash64 hash)
 {
-    MeshID id = m_pool.create();
+    if (m_count >= m_capacity)
+        resize();
 
-    Mesh* mesh = m_pool.get(id);
-    if (src != nullptr)
-        SetupMesh(mesh, src);
+    uint32_t id = m_freeID;
 
-    m_meshnamemap[id] = name;
-    m_meshidmap[name] = id;
+    Slot& slot = m_slots[id];
+    m_freeID = slot.next;
 
     m_count++;
 
-    return id;
+    MeshHandle h = handle_create(id, slot.version);
+
+    Mesh* mesh = m_meshPool + id;
+    new (mesh) Mesh();
+
+    m_meshMap.emplace(hash, h);
+
+    return h;
 }
 
-Mesh *MeshManager::get(MeshID id)
+Mesh *MeshManager::get(MeshHandle h) const
 {
-    return m_pool.get(id);
+    uint32_t index = handle_get_first(h);
+    uint32_t version = handle_get_second(h);
+
+    Slot& slot = m_slots[index];
+    if (slot.version != version)
+        return nullptr;
+
+    return &m_meshPool[index];
 }
 
-void MeshManager::destroy(MeshID id)
+void MeshManager::destroy(MeshHandle h)
 {
-    Mesh* mesh = get(id);
-    if (mesh == nullptr)
+    uint32_t index = handle_get_first(h);
+    uint32_t version = handle_get_second(h);
+
+    Slot& slot = m_slots[index];
+    if (slot.version != version)
         return;
 
-    mesh->~Mesh();
+    m_freeID = index;
 
-    m_meshidmap.erase(m_meshnamemap[id]);
-    m_meshnamemap.erase(id);
+    slot.next = m_freeID;
+    slot.version++;
 
     m_count--;
 }
 
-MeshID MeshManager::find(const std::string &name)
+MeshHandle MeshManager::find(Hash64 hash) const
 {
-    auto it = m_meshidmap.find(name);
-    if (it == m_meshidmap.end())
-        return ID_INVALID;
+    auto it = m_meshMap.find(hash);
+    if (it == m_meshMap.end())
+        return HANDLE_INVALID;
     return it->second;
 }
 
-const char *MeshManager::getname(MeshID id)
-{
-    auto it = m_meshnamemap.find(id);
-    if (it == m_meshnamemap.end())
-        return nullptr;
-    return it->second.c_str();
-}
-
-size_t MeshManager::getCount() const
+size_t MeshManager::GetCount() const
 {
     return m_count;
 }
 
 // private
-void MeshManager::SetupMesh(Mesh* mesh, const MeshAsset* asset)
+void MeshManager::resize()
 {
-    mesh->SetVertices(asset->vertices);
+    size_t oldCapacity = m_capacity;
 
-    for (auto& sub : asset->submeshes)
-        mesh->addTriangles(sub.indices);
+    m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
+
+    m_meshPool = (Mesh*)realloc(m_meshPool, m_capacity * sizeof(Mesh));
+    m_slots = (Slot*)realloc(m_slots, m_capacity * sizeof(Slot));
+
+    addFreeID(oldCapacity);
+}
+
+void MeshManager::addFreeID(size_t oldCapacity)
+{
+    size_t lastElement = m_capacity - 1;
+    for (size_t i=oldCapacity;i<lastElement;i++)
+        m_slots[i] = { static_cast<uint32_t>(i) + 1, 1 };
+
+    m_slots[lastElement] = { m_freeID, 1 };
+    m_freeID = static_cast<uint32_t>(oldCapacity);
 }
 
 

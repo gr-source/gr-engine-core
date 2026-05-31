@@ -8,24 +8,24 @@
 
 #include "gr-base/ecs/default.hpp"
 
-class ModelSaveTask : public IAsyncTask<int>
+class ModelSaveTask : public IAsyncTask<std::string>
 {
 public:
     static ModelAsset ConvertToAssetModel(Scene* scene, Entity entity);
 
-    ModelSaveTask(const std::string& file, const ModelAsset& asset);
-    ModelSaveTask(const std::string& file, Scene* scene, Entity entity);
+    ModelSaveTask(const std::string& path, const ModelAsset& asset);
+    ModelSaveTask(const std::string& path, Scene* scene, Entity entity);
 
 private:
-    std::string m_file;
+    const ModelAsset m_asset;
 
-    ModelAsset m_asset;
+    const std::string m_path;
 
     void onPreExecute() override;
 
-    int doInBackground() override;
+    std::string doInBackground() override;
 
-    void onPostExecute(int result) override;
+    void onPostExecute(Result<std::string> result) override;
 };
 
 

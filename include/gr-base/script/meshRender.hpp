@@ -1,18 +1,18 @@
 #pragma once
 
-#include "gr-base/core/file/default.hpp"
-
+#include "gr-base/core/default.hpp"
 #include "gr-base/managers/default.hpp"
-
-#include <vector>
 
 struct MeshRender
 {
-    std::vector<MaterialID> materials;
+    MaterialHandle* materials = nullptr;
+    size_t numMaterials = 0;
+};
 
-    static void Serialize(Stream *stream, const MeshRender* meshRender);
-
-    static void Deserialize(Stream* stream, MeshRender* meshRender);
+struct MaterialRef
+{
+    AssetHash* materials = nullptr;
+    size_t numMaterials = 0;
 };
 
 

@@ -2,13 +2,17 @@
 
 #include "gr-base/asset/shaderasset.hpp"
 
-#include "gr-base/core/assetReference.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
+
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/assetDB.hpp"
+
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/geometry/shaderData.hpp"
 
 #include "gr-base/core/file/file.hpp"
+#include "gr-base/core/thread/taskmanager.hpp"
+#include "gr-base/task/shadersavetask.hpp"
 
 #include <exception>
 #include <stdexcept>
@@ -16,7 +20,7 @@
 #include <fstream>
 #include <array>
 
-ShaderBuildTask::ShaderBuildTask(const std::string& file, const std::string& source) : m_file(file), m_source(source)
+ShaderBuildTask::ShaderBuildTask(const std::string& source) : m_source(source)
 {}
 
 void ShaderBuildTask::onPreExecute()
@@ -26,37 +30,23 @@ void ShaderBuildTask::onPreExecute()
     Console::LogInfo("[ShaderBuildTask] Building shader file '%s'", name.c_str());
 }
 
-int ShaderBuildTask::doInBackground()
+ShaderAsset ShaderBuildTask::doInBackground()
 {
-    ShaderAsset asset = onStartParceShader();
-
-    FileStream stream(m_file, StreamType::OUTPUT);
-    
-    FileHeader header{};
-    header.sign = HEADER_SHADER_SIGN;
-    header.version = HEADER_ASSET_VERSION;
-
-    if (!stream.write(&header, sizeof(FileHeader)))
-        return 2;
-
-    if (!asset.serialize(&stream))
-        return 3;
-
-    stream.close();
-
-    return 0;
+    return onStartParceShader();
 }
 
-void ShaderBuildTask::onPostExecute(int result)
+void ShaderBuildTask::onPostExecute(Result<ShaderAsset> result)
 {
-    auto name = gfile::get_file_name(m_file.c_str());
+    auto name = gfile::get_file_name(m_source.c_str());
 
-    if (result != 0)
+    if (!result.success)
         return Console::LogError("[ShaderBuildTask] falied in to build shader '%s'!!!", name.c_str());
 
-    AssetReference::Registry(name, m_file);
-
     Console::LogInfo("[ShaderBuildTask] Shader building sucessfully '%s'", name.c_str());
+
+    std::string path = "shader/" + name;
+
+    TaskManager::Add<ShaderSaveTask>(path, result.value);
 }
 
 
@@ -74,7 +64,7 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
         if (shaderType == ShaderType::LINE)
             flags |= ShaderAssetFlags_Line;
 
-        asset.SetFlags(flags);
+        asset.flags = flags;
 
         auto baseShaderSource = LoadShaderBase(shaderType);
         for (auto defination : definations)
@@ -158,11 +148,11 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
         throw e;
     }
 
-    auto name = gfile::get_file_name(m_file.c_str());
+    auto name = gfile::get_file_name(m_source.c_str());
 
-    asset.SetName(name);
-    asset.SetFragment(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
-    asset.SetVertex(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
+    asset.name = name;
+    asset.fragment = resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)];
+    asset.vertex = resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)];
 
     for (auto& uniform : s_shader_uniform_list)
         asset.AddUniform(uniform.name, uniform.variable, uniform.count);
@@ -494,7 +484,7 @@ std::unordered_map<std::string, std::tuple<std::string, bool>> ShaderBuildTask::
     return uniformMap;
 }
 
-std::vector<ShaderUniformRaw> ShaderBuildTask::GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, std::unordered_map<std::string, std::tuple<std::string, bool>> &uniformMap)
+std::vector<ShaderBuildTask::ShaderUniformRaw> ShaderBuildTask::GetRegistryField(std::unordered_map<std::string, std::vector<std::tuple<std::string, std::string, bool>>> &structMap, std::unordered_map<std::string, std::tuple<std::string, bool>> &uniformMap)
 {
     std::vector<ShaderUniformRaw> uniformFromRegister;
     for (auto &&[name, tuple] : uniformMap)

@@ -1,6 +1,15 @@
 #include "gr-base/asset/modelasset.hpp"
 
 #include "gr-base/core/file/stream.hpp"
+#include <cstring>
+
+void ModelAsset::AddComponent(Hash64 hash, const void* data, size_t size)
+{
+    std::vector<uint8_t> buffer(size, 0);
+    memcpy(buffer.data(), data, size);
+
+    componentBuffer.emplace(hash, buffer);
+}
 
 bool ModelAsset::serialize(Stream* stream) const
 {
@@ -8,6 +17,16 @@ bool ModelAsset::serialize(Stream* stream) const
         return false;
 
     if (!stream->write(isStatic))
+        return false;
+
+    if (!stream->write(mesh))
+        return false;
+
+    uint64_t materialCount = static_cast<uint64_t>(materials.size());
+    if (!stream->write(materialCount))
+        return false;
+
+    if (!stream->write(materials.data(), materialCount * sizeof(AssetHash)))
         return false;
 
     uint64_t componentCount = static_cast<uint64_t>(componentBuffer.size());
@@ -46,6 +65,17 @@ bool ModelAsset::deserialize(Stream* stream)
         return false;
 
     if (!stream->read(isStatic))
+        return false;
+
+    if (!stream->read(mesh))
+        return false;
+
+    uint64_t materialCount = 0;
+    if (!stream->read(materialCount))
+        return false;
+
+    materials.resize(materialCount, 0);
+    if (!stream->read(materials.data(), materialCount * sizeof(AssetHash)))
         return false;
 
     uint64_t componentCount = 0;

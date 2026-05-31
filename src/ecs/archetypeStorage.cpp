@@ -216,10 +216,36 @@ void ArchetypeStorage::resize()
 
         m_typeidtoarrayoffset[type->index] = offset;
 
+        // allocate(type, m_capacity);
+
         offset += type->stride * m_capacity;
 
         mask &= (mask - 1);
     }
+}
+
+
+#include <iostream>
+uint8_t* ArchetypeStorage::allocate(const TypeInfo* info, size_t capacity)
+{
+    std::cout << "[ ========== " << info->name << " ========== ]"<< std::endl;
+
+    size_t bufferlen = info->stride * capacity;
+
+    std::cout << "stride: " << bufferlen << std::endl;
+
+    uint8_t* buffer = nullptr;
+    if (info->alignment > alignof(std::max_align_t))
+    {
+        size_t aligned_size = (bufferlen + info->alignment - 1) & ~(info->alignment - 1);
+
+        std::cout << "stride aligned: " << aligned_size << std::endl;
+
+        // buffer = aligned_alloc(buf, size_t size)
+    } else
+    {}
+
+    return buffer;
 }
 
 

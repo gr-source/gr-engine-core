@@ -3,7 +3,6 @@
 #include "gr-base/asset/shaderasset.hpp"
 #include "gr-base/core/geometry/shaderData.hpp"
 
-#include "gr-base/core/task/runtime/shaderloadtask.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 
 #include <memory>
@@ -11,21 +10,28 @@
 #include <tuple>
 #include <unordered_set>
 
-class ShaderBuildTask : public IAsyncTask<int>
+class ShaderBuildTask : public IAsyncTask<ShaderAsset>
 {
 public:
-    ShaderBuildTask(const std::string& file, const std::string& source);
+    ShaderBuildTask(const std::string& source);
 
 private:
-    std::string m_file;
+    typedef struct
+    {
+        std::string name;
+
+        std::string variable;
+
+        u32 count;
+    } ShaderUniformRaw;
 
     std::string m_source;
 
     void onPreExecute() override;
 
-    int doInBackground() override;
+    ShaderAsset doInBackground() override;
 
-    void onPostExecute(int result) override;
+    void onPostExecute(Result<ShaderAsset> result) override;
 
     ShaderAsset onStartParceShader();
 

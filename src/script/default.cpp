@@ -11,6 +11,12 @@
 #include "gr-base/script/camera.hpp"
 #include "gr-base/script/name.hpp"
 
+template <>
+struct type_traits<Name>
+{
+    static constexpr StorageKind storage = StorageKind::Sparse;
+};
+
 #define REGISTRY(K, b) \
         Type::Registry<K>(#K, b) \
 
@@ -19,8 +25,13 @@ void RegistryDefaultComponent()
     logger::debug("[Type::Registry] Carregando script padrões...");
 
     REGISTRY(Relationship, false);
+
     REGISTRY(MeshRender, false);
+    REGISTRY(MaterialRef, false);
+
     REGISTRY(MeshFilter, false);
+    REGISTRY(MeshRef, false);
+    
     REGISTRY(CameraData, false);
     REGISTRY(Transform, true);
     REGISTRY(Camera, true);

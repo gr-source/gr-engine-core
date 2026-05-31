@@ -1,22 +1,19 @@
 #pragma once
 
 #include <gr-render/gRender.h>
-#include <memory>
 
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
-#include "gr-base/core/task/scenetaskmanager.hpp"
-#include "gr-base/core/task/texturemanager.hpp"
+#include "gr-base/core/file/stream.hpp"
 
-// #include "gr-base/managers/shadermanager.hpp"
+#include "gr-base/core/default.hpp"
+
+#include "gr-base/core/task/texturemanager.hpp"
 
 #include "gr-base/managers/default.hpp"
 
 #include "gr-base/ecs/default.hpp"
-
-#include "gr-base/asset/default.hpp"
-#include "gr-base/asset/asset.hpp"
 
 #include "gr-base/prefab/default.hpp"
 
@@ -49,67 +46,50 @@ public:
     template <typename ...Args>
     static void LoadGameObjectFromFile(const std::string &file, Args &&...args);
 
-    template <typename ...Args>
-    static std::shared_ptr<TaskInfo> LoadScene(const std::string &path, Args &&...args);
-
-    template <typename ...Args>
-    static std::shared_ptr<TaskInfo> SceneSaveAsync(const std::string &path, const Scene* scene, Args &&...args);
-
-    /*
-    template <typename ...Args>
-    static void LoadAnimation(const std::string &path, Args &&...args);
-
-    static Animation *CreateAnimation(const std::string &name);
-
-    static Animation *FindAnimation(const std::string &name);
-
-    static std::string GetAnimationName(const Animation *animation);
-    */
-
     // ********** Texture ********** //
     static gr::gTexture *CreateTexture(const std::string &name);
 
     // ********** Mesh ********** //
-    static MeshID CreateMesh(const std::string &name, const MeshAsset* src = nullptr);
+    static MeshHandle CreateMesh(Hash64 hash);
 
-    static Mesh *GetMesh(MeshID id);
+    static Mesh *GetMesh(MeshHandle h);
 
-    static MeshID FindMesh(const std::string &name);
+    static MeshHandle FindMesh(Hash64 hash);
 
-    static std::string GetMeshName(MeshID id);
-
-    static void RemoveMesh(MeshID id);
-    
     // shader property
     static usize GetTextureCount();
 
     static size_t GetMeshCount();
 
-    static MaterialID GetMaterialCount();
-
     static const std::vector<ShaderPrefab*>& GetAllShader3D();
 
-    static MaterialID CreateMaterial(const std::string &name);
+    static MaterialHandle CreateMaterial(AssetHash hash);
 
-    static Material *GetMaterial(MaterialID id);
+    static MaterialHandle FindMaterial(AssetHash hash);
 
-    static MaterialID FindMaterial(const std::string &name);
+    static Material *GetMaterial(MaterialHandle h);
 
-    static std::string GetMaterialName(MaterialID id);
+    static size_t GetMaterialCount();
 
     static void RemoveTask(const std::string &name);
 
-    static MaterialID LoadMaterial(const std::string& name);
+    static MaterialHandle LoadMaterial(const std::string& name);
 
-    static MaterialID LoadMaterialFromFile(const std::string& file);
+    static MaterialHandle LoadMaterial(Hash64 hash);
 
-    static ShaderPrefab* LoadShader2(const std::string& name);
+    static MaterialHandle LoadMaterialFromFile(const std::string& file);
+
+    static ShaderPrefab* LoadShader(const std::string& name);
+
+    static ShaderPrefab* LoadShader(Hash64 hash);
 
     static ShaderPrefab* LoadShaderFromFile(const std::string& file);
 
-    static MeshID LoadMesh(const std::string& name);
+    static MeshHandle LoadMesh(const std::string& name);
 
-    static MeshID LoadMeshFromFile(const std::string& file);
+    static MeshHandle LoadMesh(Hash64 hash);
+
+    static MeshHandle LoadMeshFromFile(const std::string& file);
 
 private:
     static AssetsManager* s_AssetsManager;
@@ -117,8 +97,6 @@ private:
     ShaderPrefabManager *mShaderPrefabManager;
 
     // fields
-    SceneTaskManager mSceneTaskManager;
-
     MaterialManager* mMaterialManager;
 
     TextureManager mTextureManager;
@@ -132,7 +110,7 @@ private:
     AssetsManager();
     ~AssetsManager();
 
-    static bool LoadFromFile(const std::string& file, Asset* asset);
+    static bool LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func);
 
     void loadGameObject(const std::string &name, std::function<void(Entity)> func);
 
@@ -159,26 +137,6 @@ inline void AssetsManager::LoadGameObjectFromFile(const std::string &file, Args 
     s_AssetsManager->loadGameObjectFromFile(file, func);
 }
 
-template <typename... Args>
-inline std::shared_ptr<TaskInfo> AssetsManager::LoadScene(const std::string &path, Args &&...args)
-{
-    std::function<void (Scene *)> func = nullptr;
-    if constexpr (sizeof...(Args) > 0)
-        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
-
-    return s_AssetsManager->mSceneTaskManager.create_task(path, func);
-}
-
-template <typename... Args>
-inline std::shared_ptr<TaskInfo> AssetsManager::SceneSaveAsync(const std::string &path, const Scene* scene, Args &&...args)
-{
-    std::function<void ()> func = nullptr;
-    if constexpr (sizeof...(Args) > 0)
-        func = std::bind(std::forward<Args>(args)...);
-
-    return s_AssetsManager->mSceneTaskManager.create_save_task(path, scene, func);
-}
-
 template <typename ...Args>
 inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) {
     std::function<void(gr::gTexture *)> func = nullptr;
@@ -189,26 +147,6 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
     return s_AssetsManager->mTextureManager.load(path, func);
 }
 
-/*
-// ***** Shader ***** //
-template <typename ...Args>
-inline std::shared_ptr<TaskInfo> AssetsManager::LoadShaderAsync(ShaderParams shaderParams, Args &&...args)
-{
-    std::function<void(gr::Shader *)> func = nullptr;
-    if constexpr (sizeof...(Args) > 0)
-        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
-    
-    return s_AssetsManager->mShaderManager.load(shaderParams, func);
-}
-*/
-
-/*
-template <typename ...Args>
-void AssetsManager::LoadAnimation(const std::string &path, Args &&...args)
-{
-    return mAnimationManager.load(path, std::forward<Args>(args)...);
-}
-*/
 
 
 

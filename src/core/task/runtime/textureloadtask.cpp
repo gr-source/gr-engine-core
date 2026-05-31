@@ -65,8 +65,9 @@ gr::gTexture* TextureLoadTask::doInBackground()
     return AssetsManager::CreateTexture(m_path);
 }
 
-void TextureLoadTask::onPostExecute(gr::gTexture* texture)
+void TextureLoadTask::onPostExecute(Result<gr::gTexture*> result)
 {
+    auto texture = result.value;
     if (texture == nullptr)
     {
         Console::LogError("[!] The texture '%s' could not be loaded.", m_path.c_str());

@@ -1,8 +1,9 @@
 #include "gr-base/task/modelsavetask.hpp"
 
-#include "gr-base/core/assetReference.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
+
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/assetDB.hpp"
 
 #include "gr-base/core/file/memoryStream.hpp"
 #include "gr-base/core/file/fileStream.hpp"
@@ -13,6 +14,8 @@
 #include "gr-base/ecs/archetypeStorage.hpp"
 #include "gr-base/ecs/world.hpp"
 
+#include "gr-base/script/meshFilter.hpp"
+#include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/relationship.hpp"
 #include "gr-base/script/transform.hpp"
 
@@ -22,7 +25,18 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
 
     ModelAsset asset;
     asset.name = scene->GetEntityName(entity);
-    asset.isStatic = false/* gameObject->GetIsStatic() */;
+    asset.isStatic = false;
+
+    auto meshRef = gameObject.GetComponent<MeshRef>();
+    if (meshRef != nullptr)
+        asset.mesh = meshRef->hash;
+
+    auto materialRef = gameObject.GetComponent<MaterialRef>();
+    if (materialRef != nullptr)
+    {
+        for (size_t i=0;i<materialRef->numMaterials;i++)
+            asset.materials.push_back(materialRef->materials[i]);
+    }
 
     for (auto& typeID : scene->GetWorld()->GetAllComponentType(entity))
     {
@@ -66,10 +80,10 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
     return asset;
 }
 
-ModelSaveTask::ModelSaveTask(const std::string& file, const ModelAsset& asset) : m_file(file), m_asset(asset)
+ModelSaveTask::ModelSaveTask(const std::string& path, const ModelAsset& asset) : m_path(path), m_asset(asset)
 {}
 
-ModelSaveTask::ModelSaveTask(const std::string& file, Scene* scene, Entity entity) : m_file(file), m_asset(ConvertToAssetModel(scene, entity))
+ModelSaveTask::ModelSaveTask(const std::string& path, Scene* scene, Entity entity) : m_path(path), m_asset(ConvertToAssetModel(scene, entity))
 {}
 
 void ModelSaveTask::onPreExecute()
@@ -80,34 +94,49 @@ void ModelSaveTask::onPreExecute()
 }
 
 // private
-int ModelSaveTask::doInBackground()
+std::string ModelSaveTask::doInBackground()
 {
-    FileStream stream(m_file, StreamType::OUTPUT);
+    std::string file = gfile::create_temp_file(std::to_string(hash::fnv1_str(m_path.c_str())));
+
+    FileStream stream(file, StreamType::OUTPUT);
 
     FileHeader header{};
     header.sign = HEADER_MODEL_SIGN;
     header.version = HEADER_ASSET_VERSION;
 
     if (!stream.write(&header, sizeof(FileHeader)))
-        return 1;
+        throw std::runtime_error("Falied to write header");
 
     if (!m_asset.serialize(&stream))
-        return 2;
+        throw std::runtime_error("Falied to serialize asset");
 
     stream.close();
-    return 0;
+
+    return file;
 }
 
-void ModelSaveTask::onPostExecute(int result)
+void ModelSaveTask::onPostExecute(Result<std::string> result)
 {
-    auto& name = m_asset.name;
+    auto name = m_asset.name;
 
-    if (result != 0)
-        return Console::LogError("[Task] Falied in to save '%s'!!!", name.c_str());
+    if (!result.success)
+        return Console::LogError("[ModelSaveTask] falied in to save asset '%s'!!!", name.c_str());
 
-    Console::LogInfo("[Taks] Model '%s' saved in '%s'.", name.c_str(), m_file.c_str());
+    AssetHash hash = hash::fnv1_str(m_path.c_str());
 
-    AssetReference::Registry(name, m_file);
+    AssetDB::Registry(hash, m_path);
+
+    std::string dst = AssetDB::Resolve(hash) + HEADER_MODEL_EXTENSION;
+    std::string src = result.value;
+
+    if (!gfile::move(src.c_str(), dst.c_str()))
+    {
+        Console::LogError("[ModelSaveTask] Failed to move file 'asset=%s from=%s to=%s'", name.c_str(), src.c_str(), dst.c_str());
+
+        return AssetDB::Unregistry(hash);
+    }
+
+    Console::LogInfo("[ModelSaveTask] Asset saved sucessfully '%s'", name.c_str());
 }
 
 

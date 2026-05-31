@@ -4,21 +4,21 @@
 
 #include "gr-base/core/thread/asynctask.hpp"
 
-class MaterialSaveTask : public IAsyncTask<int>
+class MaterialSaveTask : public IAsyncTask<std::string>
 {
 public:
-    MaterialSaveTask(const std::string& file, const MaterialAsset& asset);
+    MaterialSaveTask(const std::string& path, const MaterialAsset& asset);
 
 private:
-    MaterialAsset m_asset;
+    const MaterialAsset m_asset;
 
-    std::string m_file;
+    const std::string m_path;
 
     void onPreExecute() override;
 
-    int doInBackground() override;
+    std::string doInBackground() override;
 
-    void onPostExecute(int result) override;
+    void onPostExecute(Result<std::string> result) override;
 };
 
 

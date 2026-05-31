@@ -1,16 +1,17 @@
 #pragma once
 
-#include "gr-base/core/file/default.hpp"
-
+#include "gr-base/core/default.hpp"
 #include "gr-base/managers/default.hpp"
 
 struct MeshFilter
 {
-    MeshID meshID;
+    MeshHandle mesh;
+};
 
-    static void Serialize(Stream* stream, const MeshFilter* meshFilter);
 
-    static void Deserialize(Stream* stream, MeshFilter* meshFilter);
+struct MeshRef
+{
+    AssetHash hash = INVALID_HASH64;
 };
 
 

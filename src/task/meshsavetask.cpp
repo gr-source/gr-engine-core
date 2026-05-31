@@ -1,51 +1,69 @@
 #include "gr-base/task/meshsavetask.hpp"
 
-#include "gr-base/core/assetReference.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
-#include "gr-base/core/console.hpp"
-#include "gr-base/core/file/file.hpp"
-#include "gr-base/core/file/fileStream.hpp"
 
-MeshSaveTask::MeshSaveTask(const std::string& file, const MeshAsset& asset) : m_file(file), m_asset(asset)
+#include "gr-base/core/assetDB.hpp"
+#include "gr-base/core/console.hpp"
+
+#include "gr-base/core/file/fileStream.hpp"
+#include "gr-base/core/file/file.hpp"
+#include "gr-base/externals/hash.hpp"
+#include <string>
+
+MeshSaveTask::MeshSaveTask(const std::string& path, const MeshAsset& asset) : m_path(path), m_asset(asset)
 {}
 
 // private
 void MeshSaveTask::onPreExecute()
 {
-    auto name = gfile::get_file_name(m_file.c_str());
+    auto name = m_asset.name;
 
-    Console::LogError("[Task] Saving mesh '%s'", name.c_str());
+    Console::LogInfo("[MeshSaveTask] Saving asset '%s' in '%s'", name.c_str(), m_path.c_str());
 }
 
-int MeshSaveTask::doInBackground()
+std::string MeshSaveTask::doInBackground()
 {
-    FileStream stream(m_file, StreamType::OUTPUT);
+    std::string file = gfile::create_temp_file(std::to_string(hash::fnv1_str(m_path.c_str())));
+
+    FileStream stream(file, StreamType::OUTPUT);
 
     FileHeader header{};
     header.sign = HEADER_MESH_SIGN;
     header.version = HEADER_ASSET_VERSION;
 
     if (!stream.write(&header, sizeof(FileHeader)))
-        return 1;
+        throw std::runtime_error("Falied to write header");
 
     if (!m_asset.serialize(&stream))
-        return 2;
+        throw std::runtime_error("Falied to serialize asset");
 
     stream.close();
 
-    return 0;
+    return file;
 }
 
-void MeshSaveTask::onPostExecute(int result)
+void MeshSaveTask::onPostExecute(Result<std::string> result)
 {
-    auto name = gfile::get_file_name(m_file.c_str());
+    auto name = m_asset.name;
 
-    if (result != 0)
-        return Console::LogError("[Task] falied in to save mesh '%s'!!!", name.c_str());
+    if (!result.success)
+        return Console::LogError("[MeshSaveTask] falied in to save asset '%s'!!!", name.c_str());
 
-    Console::LogInfo("[Task] Mesh saved sucessfully '%s'", name.c_str());
+    AssetHash hash = hash::fnv1_str(m_path.c_str());
 
-    AssetReference::Registry(m_asset.GetName(), m_file);
+    AssetDB::Registry(hash, m_path);
+
+    std::string dst = AssetDB::Resolve(hash) + HEADER_MESH_EXTENSION;
+    std::string src = result.value;
+
+    if (!gfile::move(src.c_str(), dst.c_str()))
+    {
+        Console::LogError("[MeshSaveTask] Failed to move file 'asset=%s from=%s to=%s'", name.c_str(), src.c_str(), dst.c_str());
+
+        return AssetDB::Unregistry(hash);
+    }
+
+    Console::LogInfo("[MeshSaveTask] Asset saved sucessfully '%s'", name.c_str());
 }
 
 

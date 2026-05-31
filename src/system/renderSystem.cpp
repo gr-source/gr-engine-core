@@ -76,13 +76,11 @@ void RenderSystem::Update(Scene* scene)
         {
             auto& transform = transforms[i];
             auto& meshFilter = meshFilters[i];
+            auto& meshRender = meshRenders[i];
 
             // const Matrix4x4& worldMatrix = transforms[i].worldMatrix;
 
-            auto mesh = AssetsManager::GetMesh(meshFilter.meshID);
-            if (mesh->GetGpuMesh() == nullptr)
-                mesh->Build();
-
+            /*
             auto& sphere = mesh->getBounds();
 
             Vector4 worldCenter =
@@ -105,20 +103,21 @@ void RenderSystem::Update(Scene* scene)
             {
                 continue;
             }
+            */
 
-            auto& materials = meshRenders[i].materials;
-            if (materials.size() != mesh->GetSubMeshCount())
-                continue;
+            // auto mesh = AssetsManager::GetMesh(meshFilter.mesh);
+            //
+            // if (meshRender.numMaterials != mesh->numSubmeshes)
+            //     continue;
 
-            for (uint32_t j=0;j<materials.size();j++)
+            for (size_t j=0;j<meshRender.numMaterials;j++)
             {
                 m_renderables.push_back({
-                            meshFilters[i].meshID,
-                            mesh,
-                            j,
-                            materials[j],
-                            transform.worldMatrix
-                        });
+                    meshRender.materials[j],
+                    meshFilter.mesh,
+                    static_cast<uint32_t>(j),
+                    transform.worldMatrix
+                });
             }
         }
     }
@@ -126,13 +125,13 @@ void RenderSystem::Update(Scene* scene)
     std::sort(m_renderables.begin(), m_renderables.end(),
     [](const Renderable& a, const Renderable& b)
     {
-        if (a.materialID != b.materialID)
-            return a.materialID < b.materialID;
+        if (handle_get_first(a.material) != handle_get_first(b.material))
+            return handle_get_first(a.material) < handle_get_first(b.material);
 
-        if (a.meshID != b.meshID)
-            return a.meshID < b.meshID;
+        if (handle_get_first(a.mesh) != handle_get_first(b.mesh))
+            return handle_get_first(a.mesh) < handle_get_first(b.mesh);
 
-        return a.subMeshID < b.subMeshID;
+        return a.submeshID < b.submeshID;
     });
 
     size_t i = 0;
@@ -150,9 +149,9 @@ void RenderSystem::Update(Scene* scene)
             const auto& current = m_renderables[j];
 
             bool sameBatch =
-                current.materialID == first.materialID &&
-                current.meshID   == first.meshID &&
-                current.subMeshID  == first.subMeshID;
+                handle_get_first(current.material) == handle_get_first(first.material) &&
+                handle_get_first(current.mesh)   == handle_get_first(first.mesh) &&
+                current.submeshID  == first.submeshID;
 
             if (!sameBatch)
                 break;
@@ -160,6 +159,14 @@ void RenderSystem::Update(Scene* scene)
             instanceMatrices.push_back(current.world);
             ++j;
         }
+
+        RenderCommand cmd;
+        cmd.material = AssetsManager::GetMaterial(first.material);
+        cmd.mesh = AssetsManager::GetMesh(first.mesh);
+        cmd.subMeshID = first.submeshID;
+        cmd.metrices = instanceMatrices;
+
+        Renderer::AddCommand(cmd);
 
         i = j;
     }

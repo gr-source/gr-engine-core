@@ -3,6 +3,11 @@
 FileStream::FileStream(const std::string& path, StreamType type) : stream(path, (type == StreamType::OUTPUT ? std::ios_base::out : std::ios_base::in) | std::ios_base::binary)
 {}
 
+FileStream::~FileStream()
+{
+    close();
+}
+
 bool FileStream::write(const void* buffer, size_t size)
 {
     return stream.write(static_cast<const char*>(buffer), size).good();

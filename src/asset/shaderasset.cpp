@@ -3,33 +3,30 @@
 #include "gr-base/core/file/stream.hpp"
 #include <cstdint>
 
-ShaderAsset::ShaderAsset() : m_flags(0)
-{}
-
 void ShaderAsset::AddUniform(const std::string& name, const std::string& typesname, int count)
 {
-    m_parameters.emplace(name, std::make_tuple(typesname, count));
+    parameters.emplace(name, std::make_tuple(typesname, count));
 }
 
 bool ShaderAsset::serialize(Stream* stream) const
 {
-    if (!stream->write(m_name))
+    if (!stream->write(name))
         return false;
 
-    if (!stream->write(m_fragment))
+    if (!stream->write(fragment))
         return false;
 
-    if (!stream->write(m_vertex))
+    if (!stream->write(vertex))
         return false;
 
-    if (!stream->write(m_flags))
+    if (!stream->write(flags))
         return false;
 
-    uint64_t length = static_cast<uint64_t>(m_parameters.size());
+    uint64_t length = static_cast<uint64_t>(parameters.size());
     if (!stream->write(length))
         return false;
 
-    for (auto &&[name, info] : m_parameters)
+    for (auto &&[name, info] : parameters)
     {
         auto&& [typesname, count] = info;
 
@@ -47,16 +44,16 @@ bool ShaderAsset::serialize(Stream* stream) const
 
 bool ShaderAsset::deserialize(Stream* stream)
 {
-    if (!stream->read(m_name))
+    if (!stream->read(name))
         return false;
 
-    if (!stream->read(m_fragment))
+    if (!stream->read(fragment))
         return false;
 
-    if (!stream->read(m_vertex))
+    if (!stream->read(vertex))
         return false;
 
-    if (!stream->read(m_flags))
+    if (!stream->read(flags))
         return false;
 
     uint64_t length = 0;

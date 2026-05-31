@@ -1,51 +1,50 @@
 #pragma once
 
-#include "gr-base/core/task/runtime/default.hpp"
-
-#include "gr-base/core/geometry/material.hpp"
-
 #include "gr-base/core/geometry/default.hpp"
-
-extern "C"
-{
-#include "gr-base/externals/array.h"
-}
+#include "gr-base/externals/hash.hpp"
 
 #include "gr-base/managers/default.hpp"
+
+#include <unordered_map>
+#include <vector>
 
 class MaterialManager
 {
 public:
     MaterialManager();
 
-    MaterialID create(const std::string &name);
+    MaterialHandle create(Hash64 hash);
 
-    Material *get(MaterialID id);
+    Material *get(MaterialHandle h);
 
-    MaterialID find(const std::string &name);
+    void destroy(MaterialHandle h);
 
-    const char *getname(MaterialID id);
+    MaterialHandle find(Hash64 hash) const;
 
-    void destroy(MaterialID id);
-
-    MaterialID GetCount() const;
+    size_t GetCount() const;
 
 private:
-    std::unordered_map<std::string, MaterialID> m_materialnamemap;
+    struct Slot
+    {
+        uint32_t next;
+        uint32_t version;
+    };
 
-    std::unordered_map<MaterialID, std::string> m_materialmap;
+    std::unordered_map<Hash64, MaterialHandle> m_materialMap;
 
-    array* m_pool;
+    std::vector<Material> m_materialPool;
 
-    MaterialID m_count;
+    size_t m_capacity;
 
-    MaterialID m_freeID;
+    size_t m_count;
 
-    MaterialID allocate();
+    Slot *m_slots;
+    uint32_t m_freeID;
 
-    void realloc(MaterialID size);
+    void resize();
 
-    void addFreeID(MaterialID start);
+    void addFreeID(size_t oldCapacity);
 };
+
 
 

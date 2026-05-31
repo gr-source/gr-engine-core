@@ -197,8 +197,7 @@ void Scene::MarkChildrenDirty(Entity entity)
 void Scene::Unlink(Entity entity)
 {
     auto rel = m_world->GetComponent<Relationship>(entity);
-
-    if (!rel)
+    if (rel == nullptr)
         return;
 
     Entity parent = rel->parent;
@@ -234,20 +233,6 @@ void Scene::Unlink(Entity entity)
 
     hierarchyDirty = true;
 }
-/*
-void Scene::SetParent(Entity parent, Entity child)
-{
-    auto childRel  = m_world->GetOrAddComponent<Relationship>(child);
-    auto parentRel = m_world->GetOrAddComponent<Relationship>(parent);
-
-    childRel->parent = parent;
-
-    childRel->nextSibling = parentRel->firstChild;
-    parentRel->firstChild = child;
-
-    MarkChildrenDirty(child);
-}
-*/
 
 void Scene::SetParent(Entity parent, Entity child)
 {
@@ -259,6 +244,9 @@ void Scene::SetParent(Entity parent, Entity child)
 
     auto childRel  = m_world->GetComponent<Relationship>(child);
     auto parentRel = m_world->GetComponent<Relationship>(parent);
+
+    if (childRel->parent != INVALID_ENTITY)
+        Unlink(child);
 
     childRel->parent = parent;
     childRel->nextSibling = INVALID_ENTITY;
@@ -282,25 +270,6 @@ void Scene::SetParent(Entity parent, Entity child)
 
         // parent agora aponta pro novo
         parentRel->firstChild = child;
-
-        /*
-        Entity sibling = parentRel->firstChild;
-
-        while (sibling != INVALID_ENTITY)
-        {
-            auto siblingRel = m_world->GetComponent<Relationship>(sibling);
-            if (siblingRel == nullptr)
-                break;
-
-            if (siblingRel->nextSibling == INVALID_ENTITY)
-            {
-                siblingRel->nextSibling = child;
-                break;
-            }
-
-            sibling = siblingRel->nextSibling;
-        }
-        */
     }
 
     hierarchyDirty = true;

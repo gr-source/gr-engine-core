@@ -2,22 +2,23 @@
 
 #include "gr-base/asset/materialasset.hpp"
 #include "gr-base/asset/shaderasset.hpp"
-#include "gr-base/core/assetReference.hpp"
+
 #include "gr-base/core/binary/gHeader.hpp"
 #include "gr-base/core/file/file.hpp"
 
 #include "gr-base/core/animation/animation.hpp"
 
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/assetDB.hpp"
 
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/geometry/default.hpp"
 
 #include "gr-base/core/logger.hpp"
 #include "gr-base/core/scene.hpp"
-#include "gr-base/core/task/scenetaskmanager.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
+#include "gr-base/externals/hash.hpp"
 #include "gr-base/managers/meshmanager.hpp"
 #include "gr-base/managers/shaderprefabmanager.hpp"
 #include "gr-base/task/modelloadtask.hpp"
@@ -85,32 +86,19 @@ gr::gTexture *AssetsManager::CreateTexture(const std::string &name)
 }
 
 // ********** Mesh ********** //
-MeshID AssetsManager::CreateMesh(const std::string &name, const MeshAsset* src)
+MeshHandle AssetsManager::CreateMesh(Hash64 hash)
 {
-    return s_AssetsManager->mMeshManager->create(name, src);
+    return s_AssetsManager->mMeshManager->create(hash);
 }
 
-Mesh *AssetsManager::GetMesh(MeshID id)
+Mesh *AssetsManager::GetMesh(MeshHandle h)
 {
-    return s_AssetsManager->mMeshManager->get(id);
+    return s_AssetsManager->mMeshManager->get(h);
 }
 
-MeshID AssetsManager::FindMesh(const std::string &name)
+MeshHandle AssetsManager::FindMesh(Hash64 hash)
 {
-    return s_AssetsManager->mMeshManager->find(name);
-}
-
-std::string AssetsManager::GetMeshName(MeshID id)
-{
-    auto name = s_AssetsManager->mMeshManager->getname(id);
-    if (name == nullptr)
-        throw std::runtime_error("MeshList do not register.");
-    return name;
-}
-
-void AssetsManager::RemoveMesh(MeshID id)
-{
-    s_AssetsManager->mMeshManager->destroy(id);
+    return s_AssetsManager->mMeshManager->find(hash);
 }
 
 /*
@@ -180,14 +168,24 @@ std::vector<gr::Shader *> AssetsManager::GetShaderList(ShaderType type)
 }
 */
 
-MaterialID AssetsManager::CreateMaterial(const std::string &name)
+MaterialHandle AssetsManager::CreateMaterial(AssetHash hash)
 {
-    return s_AssetsManager->mMaterialManager->create(name);
+    return s_AssetsManager->mMaterialManager->create(hash);
 }
 
-Material *AssetsManager::GetMaterial(MaterialID id)
+Material *AssetsManager::GetMaterial(MaterialHandle h)
 {
-    return s_AssetsManager->mMaterialManager->get(id);
+    return s_AssetsManager->mMaterialManager->get(h);
+}
+
+MaterialHandle AssetsManager::FindMaterial(AssetHash hash)
+{
+    return s_AssetsManager->mMaterialManager->find(hash);
+}
+
+size_t AssetsManager::GetMaterialCount()
+{
+    return s_AssetsManager->mMaterialManager->GetCount();
 }
 
 usize AssetsManager::GetTextureCount()
@@ -197,12 +195,7 @@ usize AssetsManager::GetTextureCount()
 
 size_t AssetsManager::GetMeshCount()
 {
-    return s_AssetsManager->mMeshManager->getCount();
-}
-
-MaterialID AssetsManager::GetMaterialCount()
-{
-    return s_AssetsManager->mMaterialManager->GetCount();
+    return s_AssetsManager->mMeshManager->GetCount();
 }
 
 const std::vector<ShaderPrefab*>& AssetsManager::GetAllShader3D()
@@ -210,22 +203,8 @@ const std::vector<ShaderPrefab*>& AssetsManager::GetAllShader3D()
     return s_AssetsManager->mShaderPrefabManager->GetAllShader3d();
 }
 
-MaterialID AssetsManager::FindMaterial(const std::string &name)
-{
-    return s_AssetsManager->mMaterialManager->find(name);
-}
-
-std::string AssetsManager::GetMaterialName(MaterialID id)
-{
-    return s_AssetsManager->mMaterialManager->getname(id);
-}
-
 void AssetsManager::RemoveTask(const std::string &name)
 {
-    // Check if task on the scene
-    if (s_AssetsManager->mSceneTaskManager.remove_task(name))
-        return;
-
     // Check if task on the texture
     if (s_AssetsManager->mTextureManager.remove_task(name))
         return;
@@ -236,12 +215,11 @@ void AssetsManager::RemoveTask(const std::string &name)
     */
 }
 
-// public, static
-MaterialID AssetsManager::LoadMaterial(const std::string& name)
+MaterialHandle AssetsManager::LoadMaterial(const std::string& name)
 {
     try
     {
-        return LoadMaterialFromFile(AssetReference::GetFile(name));
+        return LoadMaterialFromFile(AssetDB::Resolve(hash::fnv1_str(name.c_str())));
     } catch (const std::exception& e)
     {
         throw e;
@@ -250,32 +228,59 @@ MaterialID AssetsManager::LoadMaterial(const std::string& name)
     return ID_INVALID;
 }
 
-MaterialID AssetsManager::LoadMaterialFromFile(const std::string& file)
+MaterialHandle AssetsManager::LoadMaterial(Hash64 hash)
+{
+    try
+    {
+        return LoadMaterialFromFile(AssetDB::Resolve(hash));
+    } catch (const std::exception& e)
+    {
+        throw std::runtime_error(e.what());
+    }
+
+    return ID_INVALID;
+}
+
+MaterialHandle AssetsManager::LoadMaterialFromFile(const std::string& file)
 {
     MaterialAsset asset;
-    if (!LoadFromFile(file, &asset))
-        return ID_INVALID;
+    if (!LoadFromFile(file + HEADER_MATERIAL_EXTENSION, HEADER_MATERIAL_SIGN, [&](Stream* stream)
+                {
+                    return asset.deserialize(stream);
+                }))
+        return HANDLE_INVALID;
 
     ShaderPrefab* prefab = s_AssetsManager->mShaderPrefabManager->find(asset.GetShader());
     if (prefab == nullptr)
-        prefab = LoadShader2(asset.GetShader());
+        prefab = LoadShader(asset.GetShader());
 
-    MaterialID materialID = CreateMaterial(asset.GetName());
+    MaterialHandle h = CreateMaterial(asset.hash);
 
-    auto material = GetMaterial(materialID);
-    material->SetShaderPrefab(prefab);
+    auto material = GetMaterial(h);
+    material->prefab = prefab;
 
     for (auto&& [name, buffer] : asset.GetOverrides())
         material->Set(name, buffer.data(), buffer.size());
 
-    return materialID;
+    return h;
 }
 
-ShaderPrefab* AssetsManager::LoadShader2(const std::string& name)
+ShaderPrefab* AssetsManager::LoadShader(const std::string& name)
 {
     try
     {
-        return LoadShaderFromFile(AssetReference::GetFile(name));
+        return LoadShaderFromFile(AssetDB::Resolve(hash::fnv1_str(name.c_str())));
+    } catch (const std::exception& e)
+    {
+        throw std::runtime_error(e.what());
+    }
+}
+
+ShaderPrefab* AssetsManager::LoadShader(Hash64 hash)
+{
+    try
+    {
+        return LoadShaderFromFile(AssetDB::Resolve(hash));
     } catch (const std::exception& e)
     {
         throw std::runtime_error(e.what());
@@ -285,32 +290,76 @@ ShaderPrefab* AssetsManager::LoadShader2(const std::string& name)
 ShaderPrefab* AssetsManager::LoadShaderFromFile(const std::string& file)
 {
     ShaderAsset asset;
-    if (!LoadFromFile(file, &asset))
+    if (!LoadFromFile(file + HEADER_SHADER_EXTENSION, HEADER_SHADER_SIGN, [&](Stream* stream)
+                {
+                    return asset.deserialize(stream);
+                }))
         return nullptr;
 
     return s_AssetsManager->mShaderPrefabManager->create(&asset);
 }
 
-MeshID AssetsManager::LoadMesh(const std::string& name)
+MeshHandle AssetsManager::LoadMesh(const std::string& name)
 {
     try
     {
-        return LoadMeshFromFile(AssetReference::GetFile(name));
+        return LoadMeshFromFile(AssetDB::Resolve(hash::fnv1_str(name.c_str())));
     } catch (const std::exception& e)
     {
-        throw e;
+        throw std::runtime_error(e.what());
     }
 }
 
-MeshID AssetsManager::LoadMeshFromFile(const std::string& file)
+MeshHandle AssetsManager::LoadMesh(Hash64 hash)
+{
+    try
+    {
+        return LoadMeshFromFile(AssetDB::Resolve(hash));
+    } catch (const std::exception& e)
+    {
+        throw std::runtime_error(e.what());
+    }
+}
+
+#include "gr-base/asset/meshasset.hpp"
+
+MeshHandle AssetsManager::LoadMeshFromFile(const std::string& file)
 {
     MeshAsset asset;
-    if (!LoadFromFile(file, &asset))
-        return ID_INVALID;
+    if (!LoadFromFile(file + HEADER_MESH_EXTENSION, HEADER_MESH_SIGN, [&](Stream* stream)
+            {
+                return asset.deserialize(stream);
+            }))
+        return HANDLE_INVALID;
 
-    MeshID meshID = CreateMesh(asset.GetName(), &asset);
+    auto& submeshes = asset.submeshes;
+    auto& vertices = asset.vertices;
 
-    return meshID;
+    MeshHandle h = CreateMesh(asset.hash);
+
+    Mesh* mesh = GetMesh(h);
+    mesh->vertices = (Vertex3D*)malloc(vertices.size() * sizeof(Vertex3D));
+    mesh->numVertices = vertices.size();
+
+    memcpy(mesh->vertices, vertices.data(), vertices.size() * sizeof(Vertex3D));
+
+    mesh->submeshes = (Submesh*)malloc(submeshes.size() * sizeof(Submesh));
+    mesh->numSubmeshes = submeshes.size();
+
+    for (size_t i=0;i<mesh->numSubmeshes;i++)
+    {
+        auto& assetSubmesh = submeshes[i];
+
+        auto& indices = assetSubmesh.indices;
+
+        auto& submesh = mesh->submeshes[i];
+        submesh.indices = (uint32_t*)malloc(indices.size() * sizeof(uint32_t));
+        submesh.numIndices = indices.size();
+
+        memcpy(submesh.indices, indices.data(), indices.size() * sizeof(uint32_t));
+    }
+
+    return h;
 }
 
 // private
@@ -326,26 +375,23 @@ AssetsManager::~AssetsManager()
     delete mShaderPrefabManager;
 }
 
-bool AssetsManager::LoadFromFile(const std::string& file, Asset* asset)
+bool AssetsManager::LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func)
 {
     FileStream stream(file, StreamType::INPUT);
 
-    bool result = false;
-
     FileHeader header{};
-    if (stream.read(&header, sizeof(FileHeader)))
-    {
-        if (asset->deserialize(&stream))
-            result = true;
-    }
-    stream.close();
+    if (!stream.read(&header, sizeof(FileHeader)))
+        return false;
 
-    return result;
+    if (header.sign != sign)
+        return false;
+
+    return func(&stream);
 }
 
 void AssetsManager::loadGameObject(const std::string &name, std::function<void(Entity)> func)
 {
-    loadGameObjectFromFile(AssetReference::GetFile(name), func);
+    loadGameObjectFromFile(AssetDB::Resolve(hash::fnv1_str(name.c_str())) + HEADER_MODEL_EXTENSION, func);
 }
 
 void AssetsManager::loadGameObjectFromFile(const std::string &file, std::function<void(Entity)> func)

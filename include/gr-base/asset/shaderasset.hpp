@@ -13,71 +13,22 @@ enum : uint32_t
     ShaderAssetFlags_Line       = 1 << 3
 };
 
-class ShaderAsset : public Asset
+struct ShaderAsset
 {
-public:
-    ShaderAsset();
+    std::unordered_map<std::string, std::tuple<std::string, int>> parameters;
 
-    inline void SetName(const std::string& name)
-    {
-        m_name = name;
-    }
+    std::string fragment;
 
-    inline const std::string& GetName() const
-    {
-        return m_name;
-    }
+    std::string vertex;
 
-    inline void SetFragment(const std::string& src)
-    {
-        m_fragment = src;
-    }
+    std::string name;
 
-    inline const std::string& GetFragment() const
-    {
-        return m_fragment;
-    }
-
-    inline void SetVertex(const std::string& src)
-    {
-        m_vertex = src;
-    }
-
-    inline const std::string& GetVertex() const
-    {
-        return m_vertex;
-    }
-
-    inline void SetFlags(uint32_t flags)
-    {
-        m_flags = flags;
-    }
-
-    inline uint32_t GetFlags() const
-    {
-        return m_flags;
-    }
+    uint32_t flags;
 
     void AddUniform(const std::string& name, const std::string& typesname, int count);
 
-    inline const std::unordered_map<std::string, std::tuple<std::string, int>>& GetUnifoms() const
-    {
-        return m_parameters;
-    }
+    bool serialize(Stream* stream) const;
 
-    bool serialize(Stream* stream) const override;
-
-    bool deserialize(Stream* stream) override;
-
-private:
-    std::string m_name;
-
-    std::string m_fragment;
-
-    std::string m_vertex;
-
-    uint32_t m_flags;
-
-    std::unordered_map<std::string, std::tuple<std::string, int>> m_parameters;
+    bool deserialize(Stream* stream);
 };
 
