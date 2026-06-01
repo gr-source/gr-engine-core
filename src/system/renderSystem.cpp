@@ -92,54 +92,17 @@ void RenderSystem::Update(Scene* scene)
             {
                 auto& material = meshRender.materials[j];
 
-                uint64_t key =
-                    ((uint64_t)material * 73856093u) ^
-                    ((uint64_t)mesh      * 19349663u) ^
-                    ((uint64_t)j   * 83492791u);
 
-                uint32_t index = key & (BUCKET_COUNT - 1);
-                
-                if (buckets[index] == (size_t)-1)
-                {
-
-                    Renderable r;
-                    r.material = material;
-                    r.mesh = mesh;
-                    r.submesh = j;
-
-                    m_renderables.push_back(r);
-
-                    buckets[index] = m_renderables.size() - 1;
-                }
-
-                m_renderables[buckets[index]].instances.push_back(&transform.worldMatrix);
-
-                // std::cout << "Index: << " << index << std::endl;
-
-                //.instances.push_back(&transform.worldMatrix);
+                m_renderables.push_back({
+                            material,
+                            mesh,
+                            static_cast<uint32_t>(j),
+                            &transform.worldMatrix
+                        });
             }
         }
     }
 
-    for (auto& r : m_renderables)
-    {
-        std::vector<Matrix4x4> instances(r.instances.size());
-        for (size_t i=0;i<r.instances.size();i++)
-            instances[i] = *r.instances[i];
-
-        r.instances.clear();
-
-        RenderCommand cmd;
-        cmd.material = AssetsManager::GetMaterial(r.material);
-        cmd.mesh = AssetsManager::GetMesh(r.mesh);
-        cmd.subMeshID = r.submesh;
-        cmd.instances = instances.data();
-        cmd.instanceCount = instances.size();
-
-        Renderer::AddCommand(cmd);
-    }
-
-    /*
     std::sort(m_renderables.begin(), m_renderables.end(),
     [](const Renderable& a, const Renderable& b)
     {
@@ -149,11 +112,9 @@ void RenderSystem::Update(Scene* scene)
         if (a.mesh != b.mesh)
             return a.mesh < b.mesh;
 
-        return a.submeshID < b.submeshID;
+        return a.submesh < b.submesh;
     });
-    */
 
-    /*
     size_t i = 0;
     while (i < m_renderables.size())
     {
@@ -168,30 +129,29 @@ void RenderSystem::Update(Scene* scene)
             const auto& current = m_renderables[j];
 
             bool sameBatch =
-                handle_get_first(current.material) == handle_get_first(first.material) &&
-                handle_get_first(current.mesh)   == handle_get_first(first.mesh) &&
-                current.submeshID  == first.submeshID;
+                current.material == first.material &&
+                current.mesh   == first.mesh &&
+                current.submesh  == first.submesh;
 
             if (!sameBatch)
                 break;
 
-            instanceMatrices.push_back(current.world);
+            instanceMatrices.push_back(*current.world);
             ++j;
         }
 
         RenderCommand cmd;
         cmd.material = AssetsManager::GetMaterial(first.material);
         cmd.mesh = AssetsManager::GetMesh(first.mesh);
-        cmd.subMeshID = first.submeshID;
-        cmd.metrices = instanceMatrices;
+        cmd.subMeshID = first.submesh;
+        cmd.instances = instanceMatrices;
 
         Renderer::AddCommand(cmd);
 
         i = j;
     }
-    */
 
-    // m_renderables.clear();
+    m_renderables.clear();
 }
 
 

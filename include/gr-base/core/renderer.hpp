@@ -16,8 +16,7 @@ struct RenderCommand
     Material* material;
     Mesh* mesh;
     int subMeshID;
-    const Matrix4x4* instances;
-    size_t instanceCount;
+    std::vector<Matrix4x4> instances;
 };
 
 #include <vector>
@@ -51,22 +50,8 @@ public:
     static void AddCommand(const RenderCommand& cmd);
 
 private:
-    static Renderer& GetInstance();
-
     std::vector<RenderCommand> m_commands;
 
-    // std::vector<RenderBatch> m_batches;
-    //
-    // std::vector<MaterialID> m_materiallookup;
-    //
-    // std::vector<MeshID> m_meshlookup;
-    //
-    // std::vector<int> m_submeshlookup;
-
-    void renderCmd();
-
-    // void sorting();
-
-    void addCommand(const RenderCommand& cmd);
+    static void RenderCmd();
 };
 

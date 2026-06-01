@@ -13,8 +13,7 @@ struct Renderable
     MaterialHandle material;
     MeshHandle mesh;
     uint32_t submesh;
-
-    std::vector<const Matrix4x4*> instances;
+    Matrix4x4 *world;
 };
 
 class RenderSystem : public System

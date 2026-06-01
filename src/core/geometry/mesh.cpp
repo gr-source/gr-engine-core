@@ -19,7 +19,7 @@ void Mesh::Build()
         { gr::shader_data_type::Float4, "a_InstanceMatrixRow3", true }
     };
 
-    auto pbo = gr::vertex_buffer::create(nullptr, sizeof(Matrix4x4), gr::buffer_usage::dynamic_draw);
+        auto pbo = gr::vertex_buffer::create(nullptr, sizeof(Matrix4x4), gr::buffer_usage::dynamic_draw);
     pbo->SetLayout(instanceLayout);
     
     std::vector<uint32_t> allIndices;

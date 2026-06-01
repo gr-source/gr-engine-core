@@ -30,6 +30,7 @@ void Renderer::Shutdown()
 struct Data
 {
     RenderTarget* rendertarget = nullptr;
+    std::vector<RenderCommand> commands;
 } data;
 
 void Renderer::Process()
@@ -47,7 +48,7 @@ void Renderer::Process()
 
 
     gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LESS);
-    GetInstance().renderCmd();
+    RenderCmd();
     // RenderManager::Render();
 
     gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
@@ -59,23 +60,17 @@ void Renderer::Process()
     data.rendertarget->unbind();
 }
 
-Renderer& Renderer::GetInstance()
-{
-    static Renderer ins;
-    return ins;
-}
-
-void Renderer::renderCmd()
+void Renderer::RenderCmd()
 {
     bool enable[10] = {false};
     int textureID[10] = {0};
 
-    for (auto &&[material, mesh, submeshID, instances, instanceCount] : m_commands)
+    for (auto &&[material, mesh, submeshID, instances] : data.commands)
     {
-        if (!instanceCount)
+        if (instances.empty())
             continue;
 
-        bool instancing = instanceCount > 1;
+        bool instancing = instances.size() > 1;
 
         auto shader =
             material->prefab->Get(
@@ -101,6 +96,7 @@ void Renderer::renderCmd()
 
         GPUMesh& gpuMesh = mesh->gpuMesh;
 
+
         if (gpuMesh.vertexarray == nullptr)
             mesh->Build();
 
@@ -112,15 +108,15 @@ void Renderer::renderCmd()
             pbo->Bind();
 
             pbo->SetData(
-                instances,
-                instanceCount * sizeof(Matrix4x4));
+                instances.data(),
+                instances.size() * sizeof(Matrix4x4));
 
             glDrawElementsInstanced(
                 GL_TRIANGLES,
                 submesh.indexCount,
                 GL_UNSIGNED_INT,
                 (void*)(submesh.indexOffset * sizeof(uint32_t)),
-                (GLsizei)instanceCount);
+                (GLsizei)instances.size());
         }
         else
         {
@@ -134,9 +130,11 @@ void Renderer::renderCmd()
                 GL_UNSIGNED_INT,
                 (void*)(submesh.indexOffset * sizeof(uint32_t)));
         }
+
+        gpuMesh.vertexarray->Unbind();
     }
 
-    m_commands.clear();
+    data.commands.clear();
 }
 
 void Renderer::SetRenderTarget(RenderTarget* rt)
@@ -146,14 +144,9 @@ void Renderer::SetRenderTarget(RenderTarget* rt)
 
 void Renderer::AddCommand(const RenderCommand& cmd)
 {
-    return GetInstance().addCommand(cmd);
+    data.commands.push_back(cmd);
 }
 
-
-void Renderer::addCommand(const RenderCommand& cmd)
-{
-    m_commands.push_back(cmd);
-}
 
 
 
