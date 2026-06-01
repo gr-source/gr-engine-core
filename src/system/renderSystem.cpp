@@ -18,15 +18,6 @@
 #include "gr-base/script/camera.hpp"
 #include <algorithm>
 
-static constexpr uint32_t BUCKET_COUNT = 1 << 16;
-
-struct Bucket
-{
-    std::vector<const Matrix4x4*> instances;
-};
-
-size_t buckets[BUCKET_COUNT] = {(size_t)-1};
-
 void RenderSystem::Update(Scene* scene)
 {
     Entity cameraEntity = scene->GetCamera();
@@ -91,7 +82,6 @@ void RenderSystem::Update(Scene* scene)
             for (size_t j=0;j<meshRender.numMaterials;j++)
             {
                 auto& material = meshRender.materials[j];
-
 
                 m_renderables.push_back({
                             material,
