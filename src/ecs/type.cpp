@@ -1,24 +1,31 @@
 #include "gr-base/ecs/type.hpp"
-#include "gr-base/core/logger.hpp"
-#include <cassert>
-#include <cstdlib>
-#include <iostream>
 
-// private
-Type& Type::GetInstance()
+#include "gr-base/core/logger.hpp"
+
+Type* Type::s_Type = nullptr;
+
+void Type::Initialize()
 {
-    static Type s_Type;
-    return s_Type;
+    if (s_Type == nullptr)
+        s_Type = new Type();
 }
 
+void Type::Shutdown()
+{
+    if (s_Type != nullptr)
+        delete s_Type;
+    s_Type = nullptr;
+}
+
+// private
 Type::Type() : m_count(0), m_capacity(0), m_typeInfoPool(nullptr)
 {
-    logger::info("[Type] Initialize");
+    logger::info("[ Type ] Initialize '%p'.", this);
 }
 
 Type::~Type()
 {
-    logger::info("[Type] Shutdown");
+    logger::info("[ Type ] Shutdown '%p'.", this);
 }
 
 void Type::registry(TypeInfo* src)

@@ -16,16 +16,20 @@ enum class Priority : uint8_t
 class MainThreadDispatcher
 {
 public:
+    static void Initialize();
+
+    static void Shutdown();
+
+    static void Process();
+
     template <typename ...Args>
     static void AddDelayed(float seconds, Args &&...args);
 
     template <typename ...Args>
     static void Add(Priority priority, Args &&...args);
 
-    static void Process();
-
 private:
-    static MainThreadDispatcher &GetInstance();
+    static MainThreadDispatcher* s_MainThreadDispatcher;
 
     std::vector<std::function<void()>> m_events[static_cast<int>(Priority::COUNT)];
 
@@ -37,8 +41,8 @@ private:
     
     std::mutex m_mutex;
 
-    MainThreadDispatcher() = default;
-    ~MainThreadDispatcher() = default;
+    MainThreadDispatcher();
+    ~MainThreadDispatcher();
 
     void process();
 
@@ -50,13 +54,13 @@ private:
 template <typename... Args>
 inline void MainThreadDispatcher::AddDelayed(float seconds, Args&&... args)
 {
-    return GetInstance().addDelayed(seconds, std::move(std::bind(std::forward<Args>(args)...)));
+    return s_MainThreadDispatcher->addDelayed(seconds, std::move(std::bind(std::forward<Args>(args)...)));
 }
 
 template <typename... Args>
 inline void MainThreadDispatcher::Add(Priority priority, Args&&... args)
 {
-    return GetInstance().add(priority, std::move(std::bind(std::forward<Args>(args)...)));
+    return s_MainThreadDispatcher->add(priority, std::move(std::bind(std::forward<Args>(args)...)));
 }
 
 

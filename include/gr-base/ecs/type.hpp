@@ -12,17 +12,21 @@
 class Type
 {
 public:
+    static void Initialize();
+
+    static void Shutdown();
+
     template <typename T>
     static void Registry(const char* name, bool serializable = false);
 
     inline static const TypeInfo* GetTypeInfoByHash(Hash64 hash)
     {
-        return GetInstance().getTypeInfoByHash(hash);
+        return s_Type->getTypeInfoByHash(hash);
     }
 
     inline static const TypeInfo* GetTypeInfoByName(const char* name)
     {
-        return GetInstance().getTypeInfoByHash(hash::fnv1_str(name));
+        return s_Type->getTypeInfoByHash(hash::fnv1_str(name));
     }
 
     template <typename T>
@@ -30,12 +34,12 @@ public:
 
     static TypeID GetTypeIDByHash(Hash64 hash)
     {
-        return GetInstance().getTypeIDByHash(hash);
+        return s_Type->getTypeIDByHash(hash);
     }
 
     inline static TypeID GetTypeIDByName(const char* name)
     {
-        return GetInstance().getTypeIDByHash(hash::fnv1_str(name));
+        return s_Type->getTypeIDByHash(hash::fnv1_str(name));
     }
 
     template <typename T>
@@ -43,7 +47,7 @@ public:
 
     inline static const TypeInfo* GetTypeInfoByID(TypeID id)
     {
-        return GetInstance().getTypeInfoByID(id);
+        return s_Type->getTypeInfoByID(id);
     }
 
     template <typename... Components>
@@ -54,7 +58,7 @@ public:
     }
 
 private:
-    static Type& GetInstance();
+    static Type* s_Type;
 
     std::unordered_map<Hash64, TypeID> m_hashToTypeIDMap;
 
@@ -128,20 +132,20 @@ inline void Type::Registry(const char* name, bool serializable)
         info.deserialize = nullptr;
     }
 
-    GetInstance().registry(&info);
+    s_Type->registry(&info);
 }
 
 template <typename T>
 inline const TypeInfo* Type::GetType()
 {
-    static TypeInfo* info = GetInstance().getTypeIDByHash(GetHash64ByType<T>());
+    static TypeInfo* info = s_Type->getTypeIDByHash(GetHash64ByType<T>());
     return info;
 }
 
 template <typename T>
 inline TypeID Type::GetTypeID()
 {
-    static TypeID id = GetInstance().getTypeIDByHash(GetHash64ByType<T>());
+    static TypeID id = s_Type->getTypeIDByHash(GetHash64ByType<T>());
     return id;
 }
 

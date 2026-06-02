@@ -6,13 +6,17 @@
 class EventManager
 {
 public:
+    static void Initialize();
+
+    static void Shutdown();
+
     template <typename... Args>
     static void Attach(const std::string& name, Args&&...args);
 
     static void Notify(const std::string& name);
 
 private:
-    static EventManager& GetInstance();
+    static EventManager* s_EventManager;
 
     EventManager();
     ~EventManager();
@@ -28,7 +32,7 @@ template <typename... Args>
 inline void EventManager::Attach(const std::string& name, Args&&...args)
 {
     if constexpr (sizeof...(Args) > 0)
-        GetInstance().attach(name, std::bind(std::forward<Args>(args)...));
+        s_EventManager->attach(name, std::bind(std::forward<Args>(args)...));
 }
 
 

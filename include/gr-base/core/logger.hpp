@@ -1,12 +1,22 @@
 #pragma once
 
-#include <cstdarg>
-#include <mutex>
 #include <utility>
+#include <cstdarg>
+#include <string>
+#include <mutex>
+
+struct logger_config
+{
+    std::string path;
+};
 
 class logger
 {
 public:
+    static void Initialize(const logger_config& config);
+
+    static void Shutdown();
+
     template <typename... Args>
     static void debug(const char* fmt, Args&&... args);
 
@@ -30,16 +40,16 @@ private:
     {
         va_list ap;
         va_start(ap, fmt);
-        GetInstance().vlog(prefix, fmt, ap);
+        s_logger->vlog(prefix, fmt, ap);
         va_end(ap);
     }
 
-    static logger& GetInstance();
+    static logger* s_logger;
 
     std::mutex m_mutex;
     int m_handle;
 
-    logger();
+    logger(const logger_config &config);
     ~logger();
 
     void vlog(const char* prefix, const char* fmt, va_list ap);

@@ -132,14 +132,41 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${SCRIPT_SRC} ${geometry} ${file} ${core} ${culling} ${task} ${binary} ${animation} ${physics} ${thread} ${managers_src} ${EXTERNAL_SRC} ${ECS_SRC} ${ASSET_SRC} ${TASK_SRC} ${SYSTEM_SRC} ${PREFAB_SRC})
+add_subdirectory(imgui)
+
+set(SRC
+    src/application.cpp
+    src/runtime.cpp
+)
+
+add_library(${PROJECT_NAME} SHARED
+    ${SCRIPT_SRC}
+    ${geometry}
+    ${file}
+    ${core}
+    ${culling}
+    ${task}
+    ${binary}
+    ${animation}
+    ${physics}
+    ${thread}
+
+    ${managers_src}
+    ${EXTERNAL_SRC}
+    ${SYSTEM_SRC}
+    ${PREFAB_SRC}
+    ${ASSET_SRC}
+    ${TASK_SRC}
+    ${ECS_SRC}
+    ${SRC}
+)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     ${BULLET_INCLUDE_DIRS}
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${BULLET_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${BULLET_LIBRARIES} imgui)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC INTERNAL_REGISTER_SCRIPT)
 

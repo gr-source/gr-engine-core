@@ -6,17 +6,37 @@
 #include <ctime>
 #include <vector>
 
+
+MainThreadDispatcher* MainThreadDispatcher::s_MainThreadDispatcher = nullptr;
+
+void MainThreadDispatcher::Initialize()
+{
+    if (s_MainThreadDispatcher == nullptr)
+        s_MainThreadDispatcher = new MainThreadDispatcher();
+}
+
+void MainThreadDispatcher::Shutdown()
+{
+    if (s_MainThreadDispatcher != nullptr)
+        delete s_MainThreadDispatcher;
+    s_MainThreadDispatcher = nullptr;
+}
+
 // public
 void MainThreadDispatcher::Process()
 {
-    return GetInstance().process();
+    return s_MainThreadDispatcher->process();
 }
 
 // private
-MainThreadDispatcher &MainThreadDispatcher::GetInstance()
+MainThreadDispatcher::MainThreadDispatcher()
 {
-    static MainThreadDispatcher instance;
-    return instance;
+    logger::info("[ MainThreadDispatcher ] Initialize '%p'.", this);
+}
+
+MainThreadDispatcher::~MainThreadDispatcher()
+{
+    logger::info("[ MainThreadDispatcher ] Shutdown '%p'.", this);
 }
 
 void MainThreadDispatcher::process()

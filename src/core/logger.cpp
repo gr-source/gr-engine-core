@@ -1,4 +1,5 @@
 #include "gr-base/core/logger.hpp"
+
 #include "gr-base/core/file/file.hpp"
 
 #include <sys/types.h>
@@ -9,16 +10,25 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-// private
-logger& logger::GetInstance()
+logger* logger::s_logger = nullptr;
+
+void logger::Initialize(const logger_config &config)
 {
-    static logger s_logger;
-    return s_logger;
+    if (s_logger == nullptr)
+        s_logger = new logger(config);
 }
 
-logger::logger()
+void logger::Shutdown()
 {
-    std::string dir = gfile::get_config_directory() + "/logs";
+    if (s_logger != nullptr)
+        delete s_logger;
+    s_logger = nullptr;
+}
+
+// private
+logger::logger(const logger_config &config)
+{
+    std::string dir = config.path + "/logs";
     if (!gfile::exists(dir))
         gfile::create_directory(dir);
 
