@@ -25,9 +25,9 @@ public:
 
     static bool IsMainThread();
 
-    static std::size_t GetThreadCount();
+    static size_t GetThreadCount();
 
-    static std::size_t GetCount();
+    static size_t GetCount();
 
 private:
     static Threadpool* s_Threadpool;
@@ -48,7 +48,7 @@ private:
 
     const std::thread::id m_mainThreadID;
 
-    Threadpool(std::uint32_t maxThread);
+    Threadpool(uint32_t maxThread);
     ~Threadpool();
 
     bool isMainThread() const;

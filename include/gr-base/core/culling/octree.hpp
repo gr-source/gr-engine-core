@@ -5,6 +5,9 @@
 #include <gr-math/gmath.hpp>
 
 #include <gr-math/vector3.hpp>
+
+#include <unordered_map>
+#include <vector>
 #include <memory>
 #include <array>
 

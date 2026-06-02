@@ -1,22 +1,11 @@
 #pragma once
 
-#include <unordered_map>
-#include <vector>
-
-class CharacterController;
-class SkinnedMeshRender;
-class LODComponent;
-class MeshCollider;
-class BoxCollider;
-class MeshFilter;
-class MeshRender;
-class Rigidbody;
-class Animator;
-class Light;
-
 struct Relationship;
+struct MeshFilter;
+struct MeshRender;
 struct Transform;
 struct Camera;
+struct Light;
 struct Name;
 
 void RegistryDefaultComponent();

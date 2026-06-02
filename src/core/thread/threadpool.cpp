@@ -14,8 +14,6 @@ void Threadpool::Initialize()
 {
     if (s_Threadpool == nullptr)
         s_Threadpool = new Threadpool(std::thread::hardware_concurrency());
-
-    logger::info("[Threadpool] Initialize");
 }
 
 void Threadpool::Shutdown()
@@ -24,8 +22,6 @@ void Threadpool::Shutdown()
         delete s_Threadpool;
 
     s_Threadpool = nullptr;
-
-    logger::info("[Threadpool] Shutdown");
 }
 
 bool Threadpool::IsMainThread()
@@ -44,16 +40,20 @@ std::size_t Threadpool::GetCount()
 }
 
 // private
-Threadpool::Threadpool(std::uint32_t maxThread) : m_bStop(false), m_hasTask(false), m_available(0), m_mainThreadID(std::this_thread::get_id())
+Threadpool::Threadpool(uint32_t maxThread) : m_bStop(false), m_hasTask(false), m_available(0), m_mainThreadID(std::this_thread::get_id())
 {
-    for (std::uint32_t i=0;i<maxThread;i++)
-    {
+    logger::info("[ Threadpool ] Initialize '%p'.", this);
+
+    for (uint32_t i=0;i<maxThread;i++)
         m_threads.emplace_back(&Threadpool::update, this);
-    }
+
+    logger::info("[ Threadpool] Started with %u worker threads.", maxThread);
 }
 
 Threadpool::~Threadpool()
 {
+    logger::info("[ Threadpool ] Stopping %zu worker threads.", m_threads.size());
+
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_bStop = true;
@@ -72,6 +72,8 @@ Threadpool::~Threadpool()
             thread.join();
         }
     }
+
+    logger::info("[ Threadpool ] Shutdown '%p'.", this);
 }
 
 bool Threadpool::isMainThread() const
