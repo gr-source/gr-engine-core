@@ -8,6 +8,8 @@
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/world.hpp"
 
+#include "gr-base/managers/assetsManager.hpp"
+#include "gr-base/script/meshFilter.hpp"
 #include "gr-base/spatial/bvhtree.hpp"
 
 #include "gr-base/externals/handle.h"
@@ -114,6 +116,18 @@ Entity Scene::create(Entity other)
         } else
         {
             ((void(*)(void*, const void*))(type->copy))(dst, src);
+        }
+    }
+
+    auto meshFilter = go.GetComponent<MeshFilter>();
+    if (meshFilter != nullptr && meshFilter->mesh != HANDLE_INVALID)
+    {
+        auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
+        if (mesh != nullptr)
+        {
+            auto& bounds = mesh->localBounds;
+            if (bounds.Volume() > 0.0f)
+                m_bvhtree->insert(go.entity, bounds);
         }
     }
 
@@ -307,9 +321,8 @@ void Scene::Update()
             sys->Update(this);
     }
 
-    m_bvhtree->renderer();
+    // m_bvhtree->renderer();
 }
-
 
 void Scene::MarkChanged(TypeID type, Entity e)
 {

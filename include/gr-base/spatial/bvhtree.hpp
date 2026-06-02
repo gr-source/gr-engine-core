@@ -40,6 +40,10 @@ public:
 
     void sync(Entity entity, const AABB& bounds);
 
+    void query(const AABB& queryBounds, std::vector<Entity>& results);
+
+    void queryFrustumAABB(std::vector<Entity>& results);
+
     void renderer();
 
 private:

@@ -1,5 +1,6 @@
 #include "gr-base/spatial/bvhtree.hpp"
 
+#include "gr-base/core/culling/frustum.hpp"
 #include "gr-base/core/debugdraw.hpp"
 
 #include <cstdlib>
@@ -72,6 +73,63 @@ void BVHtree::sync(Entity entity, const AABB& bounds)
         syncHeirarchy(id);
     else
         syncHeirarchy(node.parent);
+}
+
+#include <stack>
+
+void BVHtree::query(const AABB& queryBounds, std::vector<Entity>& results)
+{
+    std::stack<NodeID> stack;
+    stack.push(m_root);
+
+    while (!stack.empty())
+    {
+        NodeID id = stack.top();
+        stack.pop();
+
+        if (id == INVALID_NODE) continue;
+        Node& node = m_nodes[id];
+
+        if (!node.boundary.Intersects(queryBounds))
+            continue;
+
+        if (node.isLeaf())
+            results.push_back(node.entity);
+        else
+        {
+            stack.push(node.left);
+            stack.push(node.right);
+        }
+    }
+}
+
+
+void BVHtree::queryFrustumAABB(std::vector<Entity>& results)
+{
+    std::stack<NodeID> stack;
+    stack.push(m_root);
+
+    while (!stack.empty())
+    {
+        NodeID id = stack.top();
+        stack.pop();
+
+        if (id == INVALID_NODE) continue;
+        Node& node = m_nodes[id];
+
+        auto& boundary = node.boundary;
+
+        if (!Frustum::IsCubeInFrustumAABB(boundary.min, boundary.max))
+            continue;
+
+        if (node.isLeaf())
+            results.push_back(node.entity);
+        else
+        {
+            stack.push(node.left);
+            stack.push(node.right);
+        }
+    }
 }
 
 void BVHtree::renderer()

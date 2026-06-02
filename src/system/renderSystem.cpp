@@ -16,6 +16,9 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
+
+#include "gr-base/spatial/bvhtree.hpp"
+
 #include <algorithm>
 
 void RenderSystem::Update(Scene* scene)
@@ -56,11 +59,39 @@ void RenderSystem::Update(Scene* scene)
         }
     }
 
+    std::vector<Entity> entities;
+
+    auto bvh = scene->GetBVHtree();
+    bvh->queryFrustumAABB(entities);
+
+    for (auto& entity : entities)
+    {
+        auto transform = world->GetComponent<Transform>(entity);
+        auto meshFilter = world->GetComponent<MeshFilter>(entity);
+        auto meshRender = world->GetComponent<MeshRender>(entity);
+
+        if (meshFilter == nullptr || meshRender == nullptr)
+            continue;
+
+        auto& mesh = meshFilter->mesh;
+        for (size_t j=0;j<meshRender->numMaterials;j++)
+        {
+            auto& material = meshRender->materials[j];
+
+            m_renderables.push_back({
+                        material,
+                        mesh,
+                        static_cast<uint32_t>(j),
+                        &transform->worldMatrix
+                    });
+        }
+    }
+
+    /*
     Signature requiredMask =
         Type::GetMask<Transform, MeshRender, MeshFilter>();
 
     auto array = scene->GetWorld()->GetRawArchetype();
-
     for (size_t a = 0; a < scene->GetWorld()->GetArchetypeCount(); a++)
     {
         ArchetypeStorage& archetype = array[a];
@@ -92,6 +123,7 @@ void RenderSystem::Update(Scene* scene)
             }
         }
     }
+    */
 
     std::sort(m_renderables.begin(), m_renderables.end(),
     [](const Renderable& a, const Renderable& b)

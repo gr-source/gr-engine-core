@@ -1,8 +1,7 @@
 #pragma once
 
+#include <gr-math/aabb.hpp>
 #include <gr-math/gmath.hpp>
-
-#include <array>
 
 class Frustum {
 public:
@@ -16,8 +15,12 @@ public:
 
     static bool IsSphereInFrustum(const Vector3& center, float radius);
 
+    static AABB ComputeAABB();
+
 private:
     static float m_Frustum[6][4];
+
+    static bool IntersectPlanes(const float planeA[4], const float planeB[4], const float planeC[4], Vector3 &out);
 
     static void DrawCube(Vector3 points[8]);
 };

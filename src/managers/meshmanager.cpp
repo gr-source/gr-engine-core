@@ -32,9 +32,6 @@ MeshHandle MeshManager::create(Hash64 hash)
 
 Mesh *MeshManager::get(MeshHandle h) const
 {
-    if (h == HANDLE_INVALID)
-        return nullptr;
-
     uint32_t index = handle_get_first(h);
     uint32_t version = handle_get_second(h);
 

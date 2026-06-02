@@ -1,5 +1,6 @@
 #include "gr-base/core/culling/frustum.hpp"
 #include "gr-base/core/debugdraw.hpp"
+#include <cfloat>
 
 enum FrustumSide {
 	RIGHT	= 0,		// The RIGHT side of the frustum
@@ -178,6 +179,52 @@ bool Frustum::IsSphereInFrustum(const Vector3 &center, float radius)
         if (distance < -radius)
             return false;
     }
+    return true;
+}
+
+AABB Frustum::ComputeAABB()
+{
+    Vector3 min{+FLT_MAX, +FLT_MAX, +FLT_MAX};
+    Vector3 max{-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+    // Para cada combinação de 3 planos, encontramos um vértice do frustum
+    for (int i = 0; i < 6; i++)
+    {
+        for (int j = i + 1; j < 6; j++)
+        {
+            for (int k = j + 1; k < 6; k++)
+            {
+                Vector3 point;
+                if (IntersectPlanes(m_Frustum[i], m_Frustum[j], m_Frustum[k], point))
+                {
+                    min.x = std::min(min.x, point.x);
+                    min.y = std::min(min.y, point.y);
+                    min.z = std::min(min.z, point.z);
+
+                    max.x = std::max(max.x, point.x);
+                    max.y = std::max(max.y, point.y);
+                    max.z = std::max(max.z, point.z);
+                }
+            }
+        }
+    }
+
+    return AABB{min, max};
+}
+
+bool Frustum::IntersectPlanes(const float planeA[4], const float planeB[4], const float planeC[4], Vector3 &out)
+{
+    // Usando determinante
+    Vector3 n1{planeA[0], planeA[1], planeA[2]};
+    Vector3 n2{planeB[0], planeB[1], planeB[2]};
+    Vector3 n3{planeC[0], planeC[1], planeC[2]};
+
+    float det = Math::dot(n1, Math::cross(n2, n3));
+    if (fabs(det) < 1e-6f)
+        return false;
+
+    Vector3 p = -planeA[3] * Math::cross(n2, n3) - planeB[3] * Math::cross(n3, n1) - planeC[3] * Math::cross(n1, n2) / det;
+    out = p;
     return true;
 }
 
