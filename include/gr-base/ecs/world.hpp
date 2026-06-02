@@ -64,6 +64,14 @@ public:
         return static_cast<T*>(GetOrAddComponent(e, Type::GetTypeID<T>()));
     }
 
+    bool HasComponent(Entity entity, Signature mask) const;
+
+    template <typename... Components>
+    bool HasComponent(Entity entity) const
+    {
+        return HasComponent(entity, Type::GetMask<Components...>());
+    }
+
     void DelComponent(Entity e, Hash64 hash);
 
     void DelComponent(Entity e, const char* name)

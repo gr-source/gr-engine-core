@@ -2,6 +2,7 @@
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/externals/handle.h"
+#include <cassert>
 #include <cstdlib>
 
 MeshManager::MeshManager() : m_meshPool(nullptr), m_count(0), m_capacity(0), m_slots(nullptr), m_freeID(0)
@@ -31,6 +32,9 @@ MeshHandle MeshManager::create(Hash64 hash)
 
 Mesh *MeshManager::get(MeshHandle h) const
 {
+    if (h == HANDLE_INVALID)
+        return nullptr;
+
     uint32_t index = handle_get_first(h);
     uint32_t version = handle_get_second(h);
 

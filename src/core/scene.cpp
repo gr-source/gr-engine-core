@@ -8,6 +8,8 @@
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/world.hpp"
 
+#include "gr-base/spatial/bvhtree.hpp"
+
 #include "gr-base/externals/handle.h"
 #include "gr-base/managers/sceneManager.hpp"
 
@@ -24,10 +26,11 @@ Scene* Scene::GetCurrent()
     return SceneManager::GetCurrent();
 }
 
-Scene::Scene() : m_world(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_ENTITY), hierarchyDirty(false)
+Scene::Scene() : m_bvhtree(nullptr), m_world(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_ENTITY), hierarchyDirty(false)
 {
-    logger::info("[ Scene ] Create '0x%lX'.", this);
+    logger::info("[ Scene ] Create '%p'.", this);
 
+    m_bvhtree = new BVHtree();
     m_world = new World();
 
     m_root = m_world->Create();
@@ -36,9 +39,11 @@ Scene::Scene() : m_world(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_ENTI
 
 Scene::~Scene()
 {
-    logger::info("[ Scene ] Destroy '0x%lX'.", this);
-
     delete m_world;
+
+    delete m_bvhtree;
+
+    logger::info("[ Scene ] Destroy '%p'.", this);
 }
 
 Entity Scene::create(const char* name)
@@ -301,6 +306,8 @@ void Scene::Update()
         for (auto& sys : m_systems[i])
             sys->Update(this);
     }
+
+    m_bvhtree->renderer();
 }
 
 

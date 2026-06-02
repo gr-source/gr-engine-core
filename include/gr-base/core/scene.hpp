@@ -6,6 +6,8 @@
 #include "gr-base/core/system.hpp"
 #include "gr-base/ecs/default.hpp"
 
+#include "gr-base/spatial/default.hpp"
+
 #include <unordered_set>
 #include <vector>
 #include <string>
@@ -72,6 +74,11 @@ public:
         return m_world;
     }
 
+    inline BVHtree* GetBVHtree() const
+    {
+        return m_bvhtree;
+    }
+
     size_t GetEntityCount() const;
 
     void MarkChildrenDirty(Entity entity);
@@ -122,6 +129,8 @@ private:
     std::vector<std::unique_ptr<System>> m_systems[static_cast<int>(StageType::COUNT)];
 
     std::vector<ChangeSet> changes;
+
+    BVHtree* m_bvhtree;
 
     World* m_world;
 

@@ -4,6 +4,12 @@ project(gr-base VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
+find_package(Bullet QUIET)
+if(NOT Bullet_FOUND)
+    message(FATAL_ERROR "Please install libbullet-dev")
+    return()
+endif()
+
 set(geometry
     src/core/geometry/boneWeight.cpp
     src/core/geometry/material.cpp
@@ -52,8 +58,6 @@ set(binary
 )
 
 set(SCRIPT_SRC
-    src/script/meshRender.cpp
-    src/script/meshFilter.cpp
     src/script/default.cpp
 )
 
@@ -76,8 +80,6 @@ set(task
 set(managers_src
     src/managers/materialmanager.cpp
     src/managers/eventManager.cpp
-    src/managers/bvhtreemanager.cpp
-    src/managers/octreemanager.cpp
     src/managers/assetsManager.cpp
     src/managers/shadermanager.cpp
     src/managers/shaderprefabmanager.cpp
@@ -126,18 +128,16 @@ set(PREFAB_SRC
     src/prefab/shaderprefab.cpp
 )
 
-find_package(Bullet QUIET)
-if(NOT Bullet_FOUND)
-    message(FATAL_ERROR "Please install libbullet-dev")
-    return()
-endif()
-
-add_subdirectory(imgui)
-
 set(SRC
     src/application.cpp
     src/runtime.cpp
 )
+
+set(SPATIAL_SRC
+    src/spatial/bvhtree.cpp
+)
+
+add_subdirectory(imgui)
 
 add_library(${PROJECT_NAME} SHARED
     ${SCRIPT_SRC}
@@ -150,9 +150,10 @@ add_library(${PROJECT_NAME} SHARED
     ${animation}
     ${physics}
     ${thread}
-
     ${managers_src}
+
     ${EXTERNAL_SRC}
+    ${SPATIAL_SRC}
     ${SYSTEM_SRC}
     ${PREFAB_SRC}
     ${ASSET_SRC}

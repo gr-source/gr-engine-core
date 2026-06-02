@@ -1,5 +1,10 @@
 #include "gr-base/system/transformsystem.hpp"
 
+#include "gr-base/managers/assetsManager.hpp"
+
+#include "gr-base/core/geometry/mesh.hpp"
+
+#include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/relationship.hpp"
 #include "gr-base/script/transform.hpp"
 
@@ -8,8 +13,11 @@
 #include "gr-base/ecs/world.hpp"
 #include "gr-base/ecs/view.hpp"
 
+#include "gr-base/spatial/bvhtree.hpp"
+
 void TransformSystem::Update(Scene* scene)
 {
+    BVHtree* bvh = scene->GetBVHtree();
     World* world = scene->GetWorld();
 
     auto entities = scene->Changed<Transform>();
@@ -29,6 +37,20 @@ void TransformSystem::Update(Scene* scene)
             Transform* parentTransform = world->GetComponent<Transform>(rel->parent);
             if (parentTransform != nullptr)
                 transform->worldMatrix = parentTransform->worldMatrix * transform->localMatrix;
+        }
+
+        auto meshFilter = world->GetComponent<MeshFilter>(entity);
+        if (meshFilter != nullptr)
+        {
+            auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
+            if (mesh != nullptr)
+            {
+                AABB bounds = mesh->localBounds;
+                bounds.min = transform->worldMatrix * bounds.min;
+                bounds.max = transform->worldMatrix * bounds.max;
+
+                bvh->sync(entity, bounds);
+            }
         }
     }
 

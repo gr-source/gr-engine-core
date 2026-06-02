@@ -52,6 +52,14 @@ struct GameObject
         return static_cast<T*>(GetOrAddComponent(Type::GetTypeID<T>()));
     }
 
+    bool HasComponent(Signature mask) const;
+
+    template <typename... Components>
+    bool HasComponent() const
+    {
+        return HasComponent(Type::GetMask<Components...>());
+    }
+
     void DelComponent(TypeID typeID);
 
     inline void DelComponent(const char* name)

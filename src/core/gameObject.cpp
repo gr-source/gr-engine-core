@@ -26,6 +26,10 @@ void* GameObject::GetOrAddComponent(TypeID typeID)
     return scene->GetWorld()->GetOrAddComponent(entity, typeID);
 }
 
+bool GameObject::HasComponent(Signature mask) const
+{
+    return scene->GetWorld()->HasComponent(entity, mask);
+}
 
 void GameObject::DelComponent(TypeID typeID)
 {

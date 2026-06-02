@@ -168,6 +168,22 @@ void* World::GetOrAddComponent(Entity e, TypeID typeID)
     return AddComponent(e, typeID, nullptr);
 }
 
+bool World::HasComponent(Entity entity, Signature mask) const
+{
+    if (!m_entityLocationMap->isAlive(entity))
+        return false;
+
+    uint32_t entityID = handle_get_first(entity);
+    if (entityID >= entityToLocation.size())
+        return false;
+
+    auto& loc = entityToLocation[entityID];
+    
+    auto arche = GetArchetypeByID(loc.archetype);
+
+    return (arche->m_mask & mask) == mask;
+}
+
 void World::DelComponent(Entity e, Hash64 hash)
 {
     if (!m_entityLocationMap->isAlive(e))

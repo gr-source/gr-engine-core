@@ -1,9 +1,14 @@
 #pragma once
 
-#include "gr-base/asset/modelasset.hpp"
-#include "gr-base/core/default.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
+
+#include "gr-base/asset/modelasset.hpp"
+
+#include "gr-base/core/default.hpp"
+
 #include "gr-base/ecs/default.hpp"
+
+#include "gr-base/spatial/bvhtree.hpp"
 
 #include <functional>
 #include <string>

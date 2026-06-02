@@ -1,18 +1,23 @@
 #include "gr-base/task/modelloadtask.hpp"
-#include "gr-base/core/binary/gHeader.hpp"
 
-#include "gr-base/core/console.hpp"
+#include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/core/file/memoryStream.hpp"
 #include "gr-base/core/file/fileStream.hpp"
-
 #include "gr-base/core/file/stream.hpp"
+
+#include "gr-base/spatial/bvhtree.hpp"
+
+#include "gr-base/core/console.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/ecs/type.hpp"
+
 #include "gr-base/managers/assetsManager.hpp"
+
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/transform.hpp"
 
 void ModelLoadTask::onPreExecute()
 {
@@ -79,13 +84,22 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
 
     if (asset->mesh != INVALID_HASH64)
     {
-        MeshHandle mesh = AssetsManager::FindMesh(asset->mesh);
-        if (mesh == HANDLE_INVALID)
-            mesh = AssetsManager::LoadMesh(asset->mesh);
+        MeshHandle meshHandle = AssetsManager::FindMesh(asset->mesh);
+        if (meshHandle == HANDLE_INVALID)
+            meshHandle = AssetsManager::LoadMesh(asset->mesh);
 
         {
             auto meshFilter = go.GetOrAddComponent<MeshFilter>();
-            meshFilter->mesh = mesh;
+            meshFilter->mesh = meshHandle;
+
+            auto mesh = AssetsManager::GetMesh(meshHandle);
+
+            auto& bounds = mesh->localBounds;
+            if (bounds.Volume() > 0.0f)
+            {
+                auto bvh = m_scene->GetBVHtree();
+                bvh->insert(go.entity, bounds);
+            }
         }
 
         {
@@ -119,6 +133,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         }
     }
 
+
     for (auto& assetChild : asset->childrent)
     {
         Entity child = CreateFromAsset(&assetChild);
@@ -128,5 +143,6 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
 
     return go.entity;
 }
+
 
 

@@ -2,6 +2,8 @@
 
 #include "gr-base/externals/hash.hpp"
 
+struct GameObject;
+
 class RenderTarget;
 class Scene;
 
