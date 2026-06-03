@@ -146,6 +146,8 @@ void* World::GetComponent(Entity e, TypeID typeID) const
         return nullptr;
 
     auto type = Type::GetTypeInfoByID(typeID);
+    if (type == nullptr)
+        return nullptr;
 
     EntityID entityID = handle_get_first(e);
     if (entityID >= entityToLocation.size())
@@ -153,11 +155,11 @@ void* World::GetComponent(Entity e, TypeID typeID) const
 
     auto& rec = entityToLocation[entityID];
 
-    ArchetypeStorage* archeType = GetArchetypeByID(rec.archetype);
-    if ((archeType->m_mask & (1ull << typeID)) != (1ull << typeID))
+    auto arche = GetArchetypeByID(rec.archetype);
+    if ((arche->m_mask & (1ull << typeID)) != (1ull << typeID))
         return nullptr;
 
-    return archeType->Get(rec.slot, type);
+    return arche->Get(rec.slot, type);
 }
 
 void* World::GetOrAddComponent(Entity e, TypeID typeID)

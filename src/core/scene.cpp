@@ -10,6 +10,7 @@
 
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/script/meshFilter.hpp"
+#include "gr-base/script/meshRender.hpp"
 #include "gr-base/spatial/bvhtree.hpp"
 
 #include "gr-base/externals/handle.h"
@@ -119,15 +120,18 @@ Entity Scene::create(Entity other)
         }
     }
 
-    auto meshFilter = go.GetComponent<MeshFilter>();
-    if (meshFilter != nullptr && meshFilter->mesh != HANDLE_INVALID)
+    if (go.HasComponent<Transform, MeshFilter, MeshRender>())
     {
-        auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
-        if (mesh != nullptr)
+        auto meshFilter = go.GetComponent<MeshFilter>();
+        if (meshFilter->mesh != HANDLE_INVALID)
         {
-            auto& bounds = mesh->localBounds;
-            if (bounds.Volume() > 0.0f)
-                m_bvhtree->insert(go.entity, bounds);
+            auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
+            if (mesh != nullptr)
+            {
+                auto& bounds = mesh->localBounds;
+                if (bounds.Volume() > 0.0f)
+                    m_bvhtree->insert(go.entity, bounds);
+            }
         }
     }
 

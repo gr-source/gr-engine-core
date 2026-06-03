@@ -70,7 +70,7 @@ void RenderSystem::Update(Scene* scene)
         auto meshFilter = world->GetComponent<MeshFilter>(entity);
         auto meshRender = world->GetComponent<MeshRender>(entity);
 
-        if (meshFilter == nullptr || meshRender == nullptr)
+        if (meshRender == nullptr)
             continue;
 
         auto& mesh = meshFilter->mesh;
@@ -86,44 +86,6 @@ void RenderSystem::Update(Scene* scene)
                     });
         }
     }
-
-    /*
-    Signature requiredMask =
-        Type::GetMask<Transform, MeshRender, MeshFilter>();
-
-    auto array = scene->GetWorld()->GetRawArchetype();
-    for (size_t a = 0; a < scene->GetWorld()->GetArchetypeCount(); a++)
-    {
-        ArchetypeStorage& archetype = array[a];
-
-        if ((archetype.m_mask & requiredMask) != requiredMask)
-            continue;
-
-        const auto transforms  = archetype.GetRaw<Transform>();
-        const auto meshRenders = archetype.GetRaw<MeshRender>();
-        const auto meshFilters = archetype.GetRaw<MeshFilter>();
-
-        for (ComponentID i = 0; i < archetype.entityCount; i++)
-        {
-            auto& transform = transforms[i];
-            auto& meshFilter = meshFilters[i];
-            auto& meshRender = meshRenders[i];
-
-            auto& mesh = meshFilter.mesh;
-            for (size_t j=0;j<meshRender.numMaterials;j++)
-            {
-                auto& material = meshRender.materials[j];
-
-                m_renderables.push_back({
-                            material,
-                            mesh,
-                            static_cast<uint32_t>(j),
-                            &transform.worldMatrix
-                        });
-            }
-        }
-    }
-    */
 
     std::sort(m_renderables.begin(), m_renderables.end(),
     [](const Renderable& a, const Renderable& b)

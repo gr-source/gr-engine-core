@@ -91,15 +91,6 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         {
             auto meshFilter = go.GetOrAddComponent<MeshFilter>();
             meshFilter->mesh = meshHandle;
-
-            auto mesh = AssetsManager::GetMesh(meshHandle);
-
-            auto& bounds = mesh->localBounds;
-            if (bounds.Volume() > 0.0f)
-            {
-                auto bvh = m_scene->GetBVHtree();
-                bvh->insert(go.entity, bounds);
-            }
         }
 
         {
@@ -133,6 +124,22 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         }
     }
 
+    if (go.HasComponent<Transform, MeshFilter, MeshRender>())
+    {
+        auto meshFilter = go.GetComponent<MeshFilter>();
+        if (meshFilter->mesh != HANDLE_INVALID)
+        {
+            auto bvh = m_scene->GetBVHtree();
+
+            auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
+            if (mesh != nullptr)
+            {
+                auto& bounds = mesh->localBounds;
+                if (bounds.Volume() > 0.0f)
+                    bvh->insert(go.entity, bounds);
+            }
+        }
+    }
 
     for (auto& assetChild : asset->childrent)
     {
