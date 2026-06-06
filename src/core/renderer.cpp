@@ -1,7 +1,10 @@
 #include "gr-base/core/renderer.hpp"
 
-#include "gr-base/core/debugdraw.hpp"
+#include "gr-base/debug/debugDraw.hpp"
+
 #include "gr-base/core/rendertarget.hpp"
+#include "gr-base/core/logger.hpp"
+
 #include "gr-base/managers/assetsManager.hpp"
 #include <algorithm>
 #include <gr-render/gRender.h>
@@ -12,65 +15,101 @@
 
 #include "gr-base/prefab/shaderprefab.hpp"
 
- RenderTarget* Renderer::backbuffer = nullptr;
+Renderer* Renderer::s_Renderer = nullptr;
 
 void Renderer::Initialize()
 {
-    if (backbuffer == nullptr)
-        backbuffer = new RenderTarget(1024, 1024);
+    if (s_Renderer == nullptr)
+        s_Renderer = new Renderer();
 }
 
 void Renderer::Shutdown()
 {
-    if (backbuffer != nullptr)
-        delete backbuffer;
-    backbuffer = nullptr;
+    if (s_Renderer != nullptr)
+        delete s_Renderer;
+    s_Renderer = nullptr;
 }
 
-struct Data
+void Renderer::BeginFrame()
 {
-    RenderTarget* rendertarget = nullptr;
-    std::vector<RenderCommand> commands;
-} data;
+    s_Renderer->beginFrame();
+}
 
-void Renderer::Process()
+void Renderer::EndFrame()
 {
-    if (data.rendertarget == nullptr)
-        return;
+    s_Renderer->endFrame();
+}
 
-    data.rendertarget->bind();
+void Renderer::Render()
+{
+    s_Renderer->render();
+}
+
+void Renderer::SetRenderTarget(RenderTarget* rt)
+{
+    s_Renderer->m_rendertarget = rt;
+}
+
+void Renderer::Submit(const RenderCommand& cmd)
+{
+    s_Renderer->m_commands.push_back(cmd);
+}
+
+// priuvae
+Renderer::Renderer() : m_rendertarget(nullptr)
+{
+    logger::info("[ Renderer ] Intialize '%p'.", this);
+}
+
+Renderer::~Renderer()
+{
+    logger::info("[ Renderer ] Shutdown '%p'.", this);
+}
+
+void Renderer::beginFrame()
+{
+    m_rendertarget->bind();
 
     gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
     gr::gRender::SetEnable(GR_DEPTH, true);
 
     gr::gRender::SetBackgroundColor(Color{0.5f, 0.5f, 0.5f, 1.0f});
     gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_DEPTH_BUFFER | gr::GR_COLOR_BUFFER);
+}
 
+void Renderer::endFrame()
+{
+    m_rendertarget->unbind();
+
+    m_commands.clear();
+}
+
+void Renderer::render()
+{
+    if (m_rendertarget == nullptr)
+        return;
 
     gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LESS);
-    RenderCmd();
-    // RenderManager::Render();
+    draw();
 
     gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
     DebugDraw::Render();
 
     // gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
     // m_skybox.render(camera);
-
-    data.rendertarget->unbind();
 }
 
-void Renderer::RenderCmd()
+void Renderer::draw()
 {
     bool enable[10] = {false};
     int textureID[10] = {0};
 
-    for (auto &&[material, mesh, submeshID, instances] : data.commands)
+    for (auto &&[material, mesh, submeshID, instances, instanceCount] : m_commands)
     {
-        if (instances.empty())
+        if (!instanceCount)
             continue;
 
-        bool instancing = instances.size() > 1;
+        bool instancing = instanceCount > 1;
 
         auto shader =
             material->prefab->Get(
@@ -108,15 +147,15 @@ void Renderer::RenderCmd()
             pbo->Bind();
 
             pbo->SetData(
-                instances.data(),
-                instances.size() * sizeof(Matrix4x4));
+                instances,
+                instanceCount * sizeof(Matrix4x4));
 
             glDrawElementsInstanced(
                 GL_TRIANGLES,
                 submesh.indexCount,
                 GL_UNSIGNED_INT,
                 (void*)(submesh.indexOffset * sizeof(uint32_t)),
-                (GLsizei)instances.size());
+                (GLsizei)instanceCount);
         }
         else
         {
@@ -133,18 +172,6 @@ void Renderer::RenderCmd()
 
         gpuMesh.vertexarray->Unbind();
     }
-
-    data.commands.clear();
-}
-
-void Renderer::SetRenderTarget(RenderTarget* rt)
-{
-    data.rendertarget = rt;
-}
-
-void Renderer::AddCommand(const RenderCommand& cmd)
-{
-    data.commands.push_back(cmd);
 }
 
 

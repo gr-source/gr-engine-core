@@ -4,54 +4,52 @@
 
 #include "gr-base/core/geometry/default.hpp"
 
-#include "gr-base/managers/default.hpp"
-
 #include <gr-math/types.hpp>
 
-#include <unordered_map>
 #include <vector>
 
 struct RenderCommand
 {
     Material* material;
     Mesh* mesh;
-    int subMeshID;
-    std::vector<Matrix4x4> instances;
+    uint32_t submesh;
+    const Matrix4x4* instances;
+    size_t instanceCount;
 };
-
-#include <vector>
-
-
-// class RenderBatch
-// {
-// public:
-//     std::vector<Matrix4x4> matrices;
-//
-//     MaterialInstance* materialInstance;
-//
-//     const SubMesh* cacheSubMesh;
-//     Mesh* mesh;
-//     int submeshID;
-// };
 
 class Renderer
 {
 public:
-    static RenderTarget* backbuffer;
-
     static void Initialize();
 
     static void Shutdown();
 
-    static void Process();
+    static void BeginFrame();
+
+    static void EndFrame();
+
+    static void Render();
 
     static void SetRenderTarget(RenderTarget* rt);
 
-    static void AddCommand(const RenderCommand& cmd);
+    static void Submit(const RenderCommand& cmd);
 
 private:
+    static Renderer *s_Renderer;
+
     std::vector<RenderCommand> m_commands;
 
-    static void RenderCmd();
+    RenderTarget* m_rendertarget;
+
+    Renderer();
+    ~Renderer();
+
+    void beginFrame();
+
+    void endFrame();
+
+    void render();
+
+    void draw();
 };
 

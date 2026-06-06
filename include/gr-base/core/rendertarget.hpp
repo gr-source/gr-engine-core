@@ -8,12 +8,6 @@ public:
     RenderTarget(int width, int height);
     ~RenderTarget();
 
-    void init();
-
-    void shutdown();
-
-    bool is_valid() const;
-
     void bind();
 
     void unbind();
@@ -44,8 +38,6 @@ private:
     int m_width;
 
     int m_height;
-
-    bool bvalid;
 };
 
 

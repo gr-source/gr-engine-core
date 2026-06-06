@@ -1,5 +1,5 @@
 #include "gr-base/core/culling/frustum.hpp"
-#include "gr-base/core/debugdraw.hpp"
+
 #include <cfloat>
 
 enum FrustumSide {
@@ -39,7 +39,8 @@ float Frustum::m_Frustum[6][4] {
 	{0.0f, 0.0f, 0.0f, 0.0f},
 };
 
-void Frustum::CalculateFrustum(const Matrix4x4& vp) {   
+void Frustum::CalculateFrustum(const Matrix4x4& vp) 
+{
 	auto data = reinterpret_cast<const float *>(&vp);
 
 	// This will extract the RIGHT side of the frustum
@@ -228,169 +229,4 @@ bool Frustum::IntersectPlanes(const float planeA[4], const float planeB[4], cons
     return true;
 }
 
-void Frustum::DrawCube(Vector3 points[8]) {
-	DebugDraw::DrawLine(points[0], points[1], Color::blue);
-	DebugDraw::DrawLine(points[1], points[2], Color::blue);
-	DebugDraw::DrawLine(points[2], points[3], Color::blue);
-	DebugDraw::DrawLine(points[3], points[0], Color::blue);
 
-	DebugDraw::DrawLine(points[4], points[5], Color::blue);
-	DebugDraw::DrawLine(points[5], points[6], Color::blue);
-	DebugDraw::DrawLine(points[6], points[7], Color::blue);
-	DebugDraw::DrawLine(points[7], points[4], Color::blue);
-
-	DebugDraw::DrawLine(points[0], points[4], Color::blue);
-	DebugDraw::DrawLine(points[1], points[5], Color::blue);
-	DebugDraw::DrawLine(points[2], points[6], Color::blue);
-	DebugDraw::DrawLine(points[3], points[7], Color::blue);
-}
-
-/*
-const bool Frustum::PointInFrustum(const Vector3& point) const {
-	for (int i = 0; i < 6; i++) {
-		if (m_Frustum[i][A] * point.x + m_Frustum[i][B] * point.y + m_Frustum[i][C] * point.z + m_Frustum[i][D] <= 0) {
-			return false;
-		}
-	}
-	return true;
-}
-
-const bool Frustum::SphereInFrustum(const Vector3& point, float radius) const {
-	for (int i = 0; i < 6; i++)	{
-		if (m_Frustum[i][A] * point.x + m_Frustum[i][B] * point.y + m_Frustum[i][C] * point.z + m_Frustum[i][D] <= -radius) {
-			return false;
-		}
-	}
-	return true;
-}
-
-const bool Frustum::IsCubeInFrustum(const Vector3 *vertice) const {
-    for (int i = 0; i < 6; i++ ) {
-		if (m_Frustum[i][A] * (vertice[0].x) + m_Frustum[i][B] * (vertice[0].y) + m_Frustum[i][C] * (vertice[0].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (vertice[1].x) + m_Frustum[i][B] * (vertice[1].y) + m_Frustum[i][C] * (vertice[1].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (vertice[2].x) + m_Frustum[i][B] * (vertice[2].y) + m_Frustum[i][C] * (vertice[2].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (vertice[3].x) + m_Frustum[i][B] * (vertice[3].y) + m_Frustum[i][C] * (vertice[3].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (vertice[4].x) + m_Frustum[i][B] * (vertice[4].y) + m_Frustum[i][C] * (vertice[4].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (vertice[5].x) + m_Frustum[i][B] * (vertice[5].y) + m_Frustum[i][C] * (vertice[5].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (vertice[6].x) + m_Frustum[i][B] * (vertice[6].y) + m_Frustum[i][C] * (vertice[6].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (vertice[7].x) + m_Frustum[i][B] * (vertice[7].y) + m_Frustum[i][C] * (vertice[7].z) + m_Frustum[i][D] > 0)
-		   continue;
-		return false;
-	}
-	return true;
-}
-
-#include "../renderer.h"
-
-const bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) const {
-    Vector3 points[8] {
-        Vector3(min.x, min.y, min.z),
-        Vector3(max.x, min.y, min.z),
-        Vector3(max.x, max.y, min.z),
-        Vector3(min.x, max.y, min.z),
- 
-        Vector3(min.x, min.y, max.z),
-        Vector3(max.x, min.y, max.z),
-        Vector3(max.x, max.y, max.z),
-        Vector3(min.x, max.y, max.z)
-    };
-
-	// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum
-	DebugDraw::DrawLine(points[0], points[1], Color::blue);
-	DebugDraw::DrawLine(points[1], points[2], Color::blue);
-	DebugDraw::DrawLine(points[2], points[3], Color::blue);
-	DebugDraw::DrawLine(points[3], points[0], Color::blue);
-
-	DebugDraw::DrawLine(points[4], points[5], Color::blue);
-	DebugDraw::DrawLine(points[5], points[6], Color::blue);
-	DebugDraw::DrawLine(points[6], points[7], Color::blue);
-	DebugDraw::DrawLine(points[7], points[4], Color::blue);
-
-	DebugDraw::DrawLine(points[0], points[4], Color::blue);
-	DebugDraw::DrawLine(points[1], points[5], Color::blue);
-	DebugDraw::DrawLine(points[2], points[6], Color::blue);
-	DebugDraw::DrawLine(points[3], points[7], Color::blue);
-
-	for (int i = 0; i < 6; i++ ) {
-		if (m_Frustum[i][A] * (points[0].x) + m_Frustum[i][B] * (points[0].y) + m_Frustum[i][C] * (points[0].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[1].x) + m_Frustum[i][B] * (points[1].y) + m_Frustum[i][C] * (points[1].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[2].x) + m_Frustum[i][B] * (points[2].y) + m_Frustum[i][C] * (points[2].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[3].x) + m_Frustum[i][B] * (points[3].y) + m_Frustum[i][C] * (points[3].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[4].x) + m_Frustum[i][B] * (points[4].y) + m_Frustum[i][C] * (points[4].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[5].x) + m_Frustum[i][B] * (points[5].y) + m_Frustum[i][C] * (points[5].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[6].x) + m_Frustum[i][B] * (points[6].y) + m_Frustum[i][C] * (points[6].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[7].x) + m_Frustum[i][B] * (points[7].y) + m_Frustum[i][C] * (points[7].z) + m_Frustum[i][D] > 0)
-		   continue;
-		return false;
-	}
-	return true;
-}
-
-const bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model) const {
-	Vector3 points[8] {
-		Vector3(model * Vector4(min.x, min.y, min.z, 1.0f)),
-		Vector3(model * Vector4(max.x, min.y, min.z, 1.0f)),
-		Vector3(model * Vector4(max.x, max.y, min.z, 1.0f)),
-		Vector3(model * Vector4(min.x, max.y, min.z, 1.0f)),
-
-		Vector3(model * Vector4(min.x, min.y, max.z, 1.0f)),
-		Vector3(model * Vector4(max.x, min.y, max.z, 1.0f)),
-		Vector3(model * Vector4(max.x, max.y, max.z, 1.0f)),
-		Vector3(model * Vector4(min.x, max.y, max.z, 1.0f))
-	};
-
-	if (DebugDraw::bDebugMode) {
-
-		// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum
-		DebugDraw::DrawLine(points[0], points[1], Color::blue);
-		DebugDraw::DrawLine(points[1], points[2], Color::blue);
-		DebugDraw::DrawLine(points[2], points[3], Color::blue);
-		DebugDraw::DrawLine(points[3], points[0], Color::blue);
-
-		DebugDraw::DrawLine(points[4], points[5], Color::blue);
-		DebugDraw::DrawLine(points[5], points[6], Color::blue);
-		DebugDraw::DrawLine(points[6], points[7], Color::blue);
-		DebugDraw::DrawLine(points[7], points[4], Color::blue);
-
-		DebugDraw::DrawLine(points[0], points[4], Color::blue);
-		DebugDraw::DrawLine(points[1], points[5], Color::blue);
-		DebugDraw::DrawLine(points[2], points[6], Color::blue);
-		DebugDraw::DrawLine(points[3], points[7], Color::blue);
-	}
-
-	for (int i = 0; i < 6; i++ ) {
-		if (m_Frustum[i][A] * (points[0].x) + m_Frustum[i][B] * (points[0].y) + m_Frustum[i][C] * (points[0].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[1].x) + m_Frustum[i][B] * (points[1].y) + m_Frustum[i][C] * (points[1].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[2].x) + m_Frustum[i][B] * (points[2].y) + m_Frustum[i][C] * (points[2].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[3].x) + m_Frustum[i][B] * (points[3].y) + m_Frustum[i][C] * (points[3].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[4].x) + m_Frustum[i][B] * (points[4].y) + m_Frustum[i][C] * (points[4].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[5].x) + m_Frustum[i][B] * (points[5].y) + m_Frustum[i][C] * (points[5].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[6].x) + m_Frustum[i][B] * (points[6].y) + m_Frustum[i][C] * (points[6].z) + m_Frustum[i][D] > 0)
-		   continue;
-		if (m_Frustum[i][A] * (points[7].x) + m_Frustum[i][B] * (points[7].y) + m_Frustum[i][C] * (points[7].z) + m_Frustum[i][D] > 0)
-		   continue;
-		return false;
-	}
-	return true;
-}
-*/

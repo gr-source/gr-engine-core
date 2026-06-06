@@ -1,7 +1,9 @@
 #include "gr-base/core/culling/octree.hpp"
 
-#include "gr-base/core/debugdraw.hpp"
+#include "gr-base/debug/debugDraw.hpp"
+
 #include "gr-base/script/transform.hpp"
+
 #include <gr-math/vector3.hpp>
 
 #include <algorithm>

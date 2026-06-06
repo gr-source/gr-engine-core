@@ -2,16 +2,8 @@
 
 #include <gr-render/gl.h>
 
-RenderTarget::RenderTarget(int width, int height) : textureColor(0), textureDepth(0), framebuffer(0), m_width(width), m_height(height), renderbufferDepth(0), bvalid(false)
+RenderTarget::RenderTarget(int width, int height) : textureColor(0), textureDepth(0), framebuffer(0), m_width(width), m_height(height), renderbufferDepth(0)
 {
-    init();
-}
-
-void RenderTarget::init()
-{
-    if (bvalid)
-        return;
-
     glGenTextures(1, &textureColor);
     glBindTexture(GL_TEXTURE_2D, textureColor);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
@@ -44,43 +36,21 @@ void RenderTarget::init()
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    bvalid = true;
-}
-
-void RenderTarget::shutdown()
-{
-    if (textureColor)
-    {
-        glDeleteTextures(1, &textureColor);
-    }
-
-    if (textureDepth)
-    {
-        glDeleteTextures(1, &textureDepth);
-    }
-
-    if (framebuffer)
-    {
-        glDeleteFramebuffers(1, &framebuffer);
-    }
-
-    if (renderbufferDepth)
-    {
-        glDeleteRenderbuffers(1, &renderbufferDepth);
-    }
-
-    bvalid = false;
-}
-
-bool RenderTarget::is_valid() const
-{
-    return bvalid;
 }
 
 RenderTarget::~RenderTarget()
 {
-    shutdown();
+    if (textureColor)
+        glDeleteTextures(1, &textureColor);
+
+    if (textureDepth)
+        glDeleteTextures(1, &textureDepth);
+
+    if (framebuffer)
+        glDeleteFramebuffers(1, &framebuffer);
+
+    if (renderbufferDepth)
+        glDeleteRenderbuffers(1, &renderbufferDepth);
 }
 
 void RenderTarget::bind()

@@ -40,7 +40,6 @@ set(core
     src/core/rendertarget.cpp
     src/core/renderer.cpp
     src/core/gameObject.cpp
-    src/core/debugdraw.cpp
     src/core/display.cpp
     src/core/console.cpp
     src/core/logger.cpp
@@ -136,6 +135,10 @@ set(SRC
 set(SPATIAL_SRC
     src/spatial/bvhtree.cpp
 )
+set(DEBUG_SRC
+    src/debug/debugDraw.cpp
+    src/debug/debugLine.cpp
+)
 
 add_subdirectory(imgui)
 
@@ -156,6 +159,7 @@ add_library(${PROJECT_NAME} SHARED
     ${SPATIAL_SRC}
     ${SYSTEM_SRC}
     ${PREFAB_SRC}
+    ${DEBUG_SRC}
     ${ASSET_SRC}
     ${TASK_SRC}
     ${ECS_SRC}

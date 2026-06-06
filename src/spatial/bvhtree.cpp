@@ -1,7 +1,8 @@
 #include "gr-base/spatial/bvhtree.hpp"
 
 #include "gr-base/core/culling/frustum.hpp"
-#include "gr-base/core/debugdraw.hpp"
+
+#include "gr-base/debug/debugDraw.hpp"
 
 #include <cstdlib>
 

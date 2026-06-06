@@ -5,6 +5,7 @@
 #include "gr-base/core/geometry/mesh.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
+#include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/relationship.hpp"
 #include "gr-base/script/transform.hpp"
 
@@ -39,17 +40,20 @@ void TransformSystem::Update(Scene* scene)
                 transform->worldMatrix = parentTransform->worldMatrix * transform->localMatrix;
         }
 
-        auto meshFilter = world->GetComponent<MeshFilter>(entity);
-        if (meshFilter != nullptr)
+        if (world->HasComponent<Transform, MeshFilter, MeshRender>(entity))
         {
-            auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
-            if (mesh != nullptr)
+            auto meshFilter = world->GetComponent<MeshFilter>(entity);
+            if (meshFilter != nullptr)
             {
-                AABB bounds = mesh->localBounds;
-                bounds.min = transform->worldMatrix * bounds.min;
-                bounds.max = transform->worldMatrix * bounds.max;
+                auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
+                if (mesh != nullptr)
+                {
+                    AABB bounds = mesh->localBounds;
+                    bounds.min = transform->worldMatrix * bounds.min;
+                    bounds.max = transform->worldMatrix * bounds.max;
 
-                bvh->sync(entity, bounds);
+                    bvh->sync(entity, bounds);
+                }
             }
         }
     }

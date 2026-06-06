@@ -1,6 +1,7 @@
 #include "gr-base/runtime.hpp"
 
-#include "gr-base/core/debugdraw.hpp"
+#include "gr-base/debug/debugDraw.hpp"
+
 #include "gr-base/core/mainthreaddispatcher.hpp"
 
 #include "gr-base/core/renderer.hpp"

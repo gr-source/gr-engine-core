@@ -1,6 +1,7 @@
 #include "gr-base/system/worldsystem.hpp"
 
-#include "gr-base/core/debugdraw.hpp"
+#include "gr-base/debug/debugDraw.hpp"
+
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/scene.hpp"
 

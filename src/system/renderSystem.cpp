@@ -28,6 +28,7 @@ void RenderSystem::Update(Scene* scene)
         return;
 
     auto world = scene->GetWorld();
+    auto bvh = scene->GetBVHtree();
 
     Transform* cameraTransform =
         world->GetComponent<Transform>(cameraEntity);
@@ -60,8 +61,6 @@ void RenderSystem::Update(Scene* scene)
     }
 
     std::vector<Entity> entities;
-
-    auto bvh = scene->GetBVHtree();
     bvh->queryFrustumAABB(entities);
 
     for (auto& entity : entities)
@@ -78,7 +77,13 @@ void RenderSystem::Update(Scene* scene)
         {
             auto& material = meshRender->materials[j];
 
+            uint64_t sortKey =
+                  (uint64_t)handle_get_first(material) << 32
+                | (uint64_t)handle_get_first(mesh) << 16
+                | (uint64_t)j;
+
             m_renderables.push_back({
+                        sortKey,
                         material,
                         mesh,
                         static_cast<uint32_t>(j),
@@ -87,55 +92,56 @@ void RenderSystem::Update(Scene* scene)
         }
     }
 
+    if (m_renderables.size() >= m_metrices.size())
+        m_metrices.resize(m_renderables.size() + 1, Matrix4x4::identityMatrix);
+
+    sorting();
+
+    m_renderables.clear();
+}
+
+void RenderSystem::sorting()
+{
     std::sort(m_renderables.begin(), m_renderables.end(),
     [](const Renderable& a, const Renderable& b)
     {
-        if (a.material != b.material)
-            return a.material < b.material;
-
-        if (a.mesh != b.mesh)
-            return a.mesh < b.mesh;
-
-        return a.submesh < b.submesh;
+        return a.sortKey < b.sortKey;
     });
 
-    size_t i = 0;
+    size_t i = 0, matrixID = 0;
     while (i < m_renderables.size())
     {
         const auto& first = m_renderables[i];
 
-        std::vector<Matrix4x4> instanceMatrices;
+        size_t start = i;
 
-        size_t j = i;
-
-        while (j < m_renderables.size())
+        while (start < m_renderables.size())
         {
-            const auto& current = m_renderables[j];
+            const auto& current = m_renderables[start];
 
-            bool sameBatch =
-                current.material == first.material &&
-                current.mesh   == first.mesh &&
-                current.submesh  == first.submesh;
+            bool sameBatch = current.sortKey == first.sortKey;
 
             if (!sameBatch)
                 break;
 
-            instanceMatrices.push_back(*current.world);
-            ++j;
+            m_metrices[matrixID++] = *current.world;
+
+            ++start;
         }
+
+        size_t count = start - i;
 
         RenderCommand cmd;
         cmd.material = AssetsManager::GetMaterial(first.material);
         cmd.mesh = AssetsManager::GetMesh(first.mesh);
-        cmd.subMeshID = first.submesh;
-        cmd.instances = instanceMatrices;
+        cmd.submesh = first.submesh;
+        cmd.instances = &m_metrices[matrixID - count];
+        cmd.instanceCount = count;
 
-        Renderer::AddCommand(cmd);
+        Renderer::Submit(cmd);
 
-        i = j;
+        i = start;
     }
-
-    m_renderables.clear();
 }
 
 
