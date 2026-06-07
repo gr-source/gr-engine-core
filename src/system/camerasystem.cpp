@@ -3,7 +3,7 @@
 #include "gr-base/core/rendertarget.hpp"
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/ecs/view.hpp"
+#include "gr-base/ecs/world.hpp"
 
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
@@ -12,7 +12,11 @@ void CameraSystem::Update(Scene* scene)
 {
     auto world = scene->GetWorld();
 
-    for (auto&& [e, transform, camera, data] : world->Query<Transform, Camera, CameraData>())
+    world->Query<Transform, Camera, CameraData>([](
+                Entity entity,
+                Transform* transform,
+                Camera* camera,
+                CameraData* data)
     {
         float aspectRatio = static_cast<float>(camera->rendertarget->GetWidth()) / static_cast<float>(camera->rendertarget->GetHeight());
 
@@ -40,5 +44,5 @@ void CameraSystem::Update(Scene* scene)
         data->viewProjection =
             data->projection *
             data->view;
-    }
+    });
 }

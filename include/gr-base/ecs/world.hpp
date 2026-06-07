@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/ecs/archetypeStorage.hpp"
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/type.hpp"
 
@@ -87,10 +88,28 @@ public:
 
     std::vector<TypeID> GetAllComponentType(Entity e) const;
 
-    template<typename... Components>
-    View<Components...> Query()
+    template<typename... Components, typename Func>
+    void Query(Func&& func)
     {
-        return View<Components...>(this);
+        Signature requiredMask = Type::GetMask<Components...>();
+
+        for (size_t i=0;i<m_capacity;i++)
+        {
+            const auto& arche = m_archetypePool[i];
+
+            auto& entities = arche.slotToEntity;
+
+            if ((arche.m_mask & requiredMask) == requiredMask)
+            {
+                for (size_t j=0;j<arche.m_count;j++)
+                {
+                    auto& entity = entities[j];
+
+                    func(entity, arche.GetRaw<Components>()...);
+                }
+            }
+        }
+        // return View<Components...>(this);
     }
 
     size_t GetCount(ArchetypeID id) const;

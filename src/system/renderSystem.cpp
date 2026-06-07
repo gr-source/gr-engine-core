@@ -4,7 +4,7 @@
 #include "gr-base/core/renderer.hpp"
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/ecs/view.hpp"
+#include "gr-base/ecs/world.hpp"
 
 #include "gr-base/externals/handle.h"
 #include "gr-base/managers/assetsManager.hpp"

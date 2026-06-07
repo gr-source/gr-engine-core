@@ -29,8 +29,8 @@ class EntityManager;
 class World;
 class Type;
 
-template<typename... Components>
-class View;
+// template<typename... Components>
+// class View;
 
 struct TypeInfo;
 
