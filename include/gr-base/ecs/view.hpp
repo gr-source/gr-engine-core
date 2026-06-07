@@ -102,7 +102,7 @@ public:
             if ((array[i].m_mask & requiredMask) == requiredMask)
             {
                 m_matching.push_back(i);
-                m_count += array[i].entityCount;
+                m_count += array[i].m_count;
             }
         }
     }

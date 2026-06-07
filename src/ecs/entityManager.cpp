@@ -51,9 +51,10 @@ bool EntityManager::isAlive(Entity entity) const
     return entity != INVALID_ENTITY && m_entities[id].generation == generation;
 }
 
+// private
 void EntityManager::resize()
 {
-    EntityID oldCapacity = m_capacity;
+    size_t oldCapacity = m_capacity;
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
     m_entities = (EntityInfo*)realloc(m_entities, m_capacity * sizeof(EntityInfo));
@@ -61,11 +62,11 @@ void EntityManager::resize()
     addFreeID(oldCapacity);
 }
 
-void EntityManager::addFreeID(EntityID oldCapacity)
+void EntityManager::addFreeID(size_t oldCapacity)
 {
-    EntityID lastEntity = m_capacity - 1;
-    for (EntityID i=oldCapacity;i<lastEntity;i++)
-        m_entities[i] = { i + 1, 1 };
+    size_t lastEntity = m_capacity - 1;
+    for (size_t i=oldCapacity;i<lastEntity;i++)
+        m_entities[i] = { static_cast<EntityID>(i) + 1, 1 };
 
     m_entities[lastEntity] = { m_freeID, 1 };
     m_freeID = oldCapacity;

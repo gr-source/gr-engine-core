@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 
-ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask), m_buffer(nullptr), m_capacity(0), m_stride(0), entityCount(0)
+ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask), m_buffer(nullptr), m_capacity(0), m_stride(0), m_count(0)
 {
     if (typeID != INVALID_TYPE)
     {
@@ -43,7 +43,7 @@ ArchetypeStorage::ArchetypeStorage(ArchetypeStorage&& other) noexcept
     m_buffer = other.m_buffer;
     other.m_buffer = nullptr;
 
-    entityCount = other.entityCount;
+    m_count = other.m_count;
 
     slotToEntity = std::move(other.slotToEntity);
     
@@ -72,11 +72,10 @@ ArchetypeID ArchetypeStorage::addEdges(TypeID typeID)
 
 ComponentID ArchetypeStorage::Allocate(Entity entity)
 {
-    if (entityCount >= m_capacity)
+    if (m_count >= m_capacity)
         resize();
 
-    ComponentID id = entityCount++;
-    assert(id < m_capacity);
+    ComponentID id = static_cast<ComponentID>(m_count++);
 
     slotToEntity[id] = entity;
 
@@ -87,7 +86,7 @@ bool ArchetypeStorage::Deallocate(ComponentID removeComponentID)
 {
     assert(removeComponentID < entityCount);
 
-    ComponentID lastComponentID = --entityCount;
+    ComponentID lastComponentID = static_cast<ComponentID>(--m_count);
     if (removeComponentID != lastComponentID)
     {
         Signature mask = m_mask;
@@ -179,7 +178,7 @@ void ArchetypeStorage::resize()
                 uint8_t* oldComponent = lastArray;
                 uint8_t* newComponent = newArray;
 
-                for (ComponentID i=0;i<entityCount;i++)
+                for (size_t i=0;i<m_count;i++)
                 {
                     ((void (*)(void*, const void*))(type->move))(newComponent, oldComponent);
 

@@ -20,11 +20,11 @@ public:
 
     size_t m_capacity;
 
+    size_t m_count;
+
     size_t m_stride;
 
     uint8_t* m_buffer;
-
-    uint32_t entityCount;
 
     Signature m_mask;
 
@@ -32,8 +32,6 @@ public:
     std::vector<ArchetypeID> m_addEdges;
 
     ArchetypeID addEdges(TypeID typeID);
-
-    // void LinkAdd(TypeID type, ArchetypeID dstID);
 
     ComponentID Allocate(Entity entity);
 

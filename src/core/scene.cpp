@@ -140,6 +140,9 @@ Entity Scene::create(Entity other)
 
 void Scene::destroy(Entity e)
 {
+    if (m_world->HasComponent<Transform, MeshFilter, MeshRender>(e))
+        m_bvhtree->remove(e);
+
     Unlink(e);
 
     m_world->Destroy(e);
@@ -193,7 +196,7 @@ std::string Scene::GetName() const
 
 size_t Scene::GetEntityCount() const
 {
-    return m_world->GetCount();
+    return m_world->GetEntityCount();
 }
 
 void Scene::MarkChildrenDirty(Entity entity)

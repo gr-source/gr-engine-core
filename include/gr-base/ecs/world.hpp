@@ -15,9 +15,9 @@ public:
 
     Entity Create();
 
-    void Destroy(Entity e);
+    void Destroy(Entity entity);
 
-    bool IsAlive(Entity e) const;
+    bool IsAlive(Entity entity) const;
 
     ArchetypeID GetOrCreateArcheType(Signature mask, TypeID typeID);
 
@@ -95,7 +95,7 @@ public:
 
     size_t GetCount(ArchetypeID id) const;
 
-    size_t GetCount() const;
+    size_t GetEntityCount() const;
 
     ArchetypeStorage* GetArchetypeByID(ArchetypeID id) const;
 

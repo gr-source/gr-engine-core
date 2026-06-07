@@ -37,7 +37,7 @@ void EventManager::attach(const std::string &name, std::function<void ()> func)
 {
     m_listener[name].push_back(func);
 
-    logger::debug("[EventManager] Attached function: %s", name.c_str());
+    logger::debug("[ EventManager ] Attached function: %s", name.c_str());
 }
 
 void EventManager::notify(const std::string &name)
@@ -45,7 +45,7 @@ void EventManager::notify(const std::string &name)
     for (auto& func : m_listener[name])
         func();
 
-    logger::debug("[EventManager] Calling function: %s", name.c_str());
+    logger::debug("[ EventManager ] Calling function: %s", name.c_str());
 }
 
 

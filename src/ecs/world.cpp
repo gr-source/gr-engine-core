@@ -43,26 +43,24 @@ Entity World::Create()
     return e;
 }
 
-void World::Destroy(Entity e)
+void World::Destroy(Entity entity)
 {
-    if (!m_entityLocationMap->isAlive(e))
+    if (!m_entityLocationMap->isAlive(entity))
         return;
 
-    EntityID entityID = handle_get_first(e);
+    EntityID entityID = handle_get_first(entity);
 
     auto& rec = entityToLocation[entityID];
 
     auto& arche = m_archetypePool[rec.archetype];
 
-    uint32_t lastGlobal = arche.entityCount > 0 ? arche.entityCount - 1 : 0;
+    uint32_t lastGlobal = static_cast<uint32_t>(arche.m_count > 0 ? arche.m_count - 1 : 0);
     if (arche.Deallocate(rec.slot) && rec.slot != lastGlobal)
-    {
         entityToLocation[handle_get_first(arche.slotToEntity[lastGlobal])].slot = rec.slot;
-    }
 
     entityToLocation[entityID] = { m_emptyArchetypeStorage, INVALID_COMPONENT };
 
-    m_entityLocationMap->destroy(e);
+    m_entityLocationMap->destroy(entity);
 }
 
 bool World::IsAlive(Entity entity) const
@@ -219,10 +217,10 @@ std::vector<TypeID> World::GetAllComponentType(Entity e) const
 
 size_t World::GetCount(ArchetypeID id) const
 {
-    return GetArchetypeByID(id)->entityCount;
+    return GetArchetypeByID(id)->m_count;
 }
 
-size_t World::GetCount() const
+size_t World::GetEntityCount() const
 {
     return m_entityLocationMap->GetCount();
 }
@@ -273,7 +271,7 @@ void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
 
     if (srcSlotIndex != INVALID_COMPONENT)
     {
-        uint32_t lastGlobal = src->entityCount > 0 ? src->entityCount - 1 : 0;
+        uint32_t lastGlobal = static_cast<uint32_t>(src->m_count > 0 ? src->m_count - 1 : 0);
         if (src->Deallocate(srcSlotIndex) && srcSlotIndex != lastGlobal)
         {
             entityToLocation[handle_get_first(src->slotToEntity[lastGlobal])].slot = srcSlotIndex;

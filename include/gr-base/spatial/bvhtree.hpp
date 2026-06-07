@@ -59,6 +59,8 @@ private:
 
     size_t m_capacity;
 
+    size_t m_count;
+
     void renderer_node(NodeID id);
 
     void removeLeaf(NodeID id);

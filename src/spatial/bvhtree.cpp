@@ -6,7 +6,7 @@
 
 #include <cstdlib>
 
-BVHtree::BVHtree() : m_freeList(nullptr), m_freeID(INVALID_NODE), m_nodes(nullptr), m_capacity(0), m_root(INVALID_NODE)
+BVHtree::BVHtree() : m_freeList(nullptr), m_freeID(INVALID_NODE), m_nodes(nullptr), m_capacity(0), m_root(INVALID_NODE), m_count(0)
 {}
 
 BVHtree::~BVHtree()
@@ -16,6 +16,8 @@ BVHtree::~BVHtree()
 
     if (m_nodes != nullptr)
         free(m_nodes);
+
+    std::cout << "Exists: " << m_count << std::endl;
 }
 
 void BVHtree::insert(Entity entity, const AABB &bounds)
@@ -490,6 +492,8 @@ NodeID BVHtree::allocate()
     node.left = INVALID_NODE;
     node.height = 0;
 
+    m_count++;
+
     return id;
 }
 
@@ -497,6 +501,8 @@ void BVHtree::deallocate(NodeID id)
 {
     m_freeList[id] = m_freeID;
     m_freeID = id;
+
+    m_count--;
 }
 
 void BVHtree::resize()
