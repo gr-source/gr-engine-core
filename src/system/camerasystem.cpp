@@ -13,36 +13,36 @@ void CameraSystem::Update(Scene* scene)
     auto world = scene->GetWorld();
 
     world->Query<Transform, Camera, CameraData>([](
-                Entity entity,
-                Transform* transform,
-                Camera* camera,
-                CameraData* data)
+                const Entity& entity,
+                Transform& transform,
+                Camera& camera,
+                CameraData& data)
     {
-        float aspectRatio = static_cast<float>(camera->rendertarget->GetWidth()) / static_cast<float>(camera->rendertarget->GetHeight());
+        float aspectRatio = static_cast<float>(camera.rendertarget->GetWidth()) / static_cast<float>(camera.rendertarget->GetHeight());
 
-        data->projection =
+        data.projection =
             Math::perspective(
-                Math::rad(camera->fov),
+                Math::rad(camera.fov),
                 aspectRatio,
-                camera->nearPlane,
-                camera->farPlane
+                camera.nearPlane,
+                camera.farPlane
             );
 
-        data->forward =
-            transform->rotation * Vector3::forward;
+        data.forward =
+            transform.rotation * Vector3::forward;
 
-        data->right =
-            transform->rotation * Vector3::right;
+        data.right =
+            transform.rotation * Vector3::right;
 
-        data->up =
-            transform->rotation * Vector3::up;
+        data.up =
+            transform.rotation * Vector3::up;
 
-        data->view = Math::lookAt(transform->position, transform->position + data->forward, data->up);
+        data.view = Math::lookAt(transform.position, transform.position + data.forward, data.up);
 
-        // data->view = Math::Inverse(transform->worldMatrix);
+        // data.view = Math::Inverse(transform.worldMatrix);
 
-        data->viewProjection =
-            data->projection *
-            data->view;
+        data.viewProjection =
+            data.projection *
+            data.view;
     });
 }

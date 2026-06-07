@@ -105,7 +105,7 @@ public:
                 {
                     auto& entity = entities[j];
 
-                    func(entity, arche.GetRaw<Components>()...);
+                    func(entity, arche.GetRaw<Components>()[j]...);
                 }
             }
         }
