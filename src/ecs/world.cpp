@@ -23,7 +23,7 @@ World::~World()
 {
     logger::info("[ World ] Destroy '0x%lX'.", this);
 
-    for (ArchetypeID i=0;i<m_count;i++)
+    for (size_t i=0;i<m_count;i++)
         m_archetypePool[i].~ArchetypeStorage();
 
     if (m_archetypePool != nullptr)
@@ -85,7 +85,7 @@ ArchetypeID World::GetOrCreateArcheType(Signature mask, TypeID typeID)
     if (m_count >= m_capacity)
         resize();
 
-    ArchetypeID id = m_count++;
+    ArchetypeID id = static_cast<ArchetypeID>(m_count++);
 
     ArchetypeStorage& arche = m_archetypePool[id];
     new (&arche) ArchetypeStorage(mask, typeID);
@@ -306,7 +306,7 @@ void World::LinkAdd(TypeID typeID, ArchetypeID srcID, ArchetypeID dstID)
 
 void World::resize()
 {
-    ArchetypeID oldCapacity = m_capacity;
+    size_t oldCapacity = m_capacity;
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
     // logger::debug("[ World ] [ RESIZE ] 'm_archetypePool' of=0x%lX.", this);
@@ -315,7 +315,7 @@ void World::resize()
 
     ArchetypeStorage* newPool = (ArchetypeStorage*)malloc(m_capacity * sizeof(ArchetypeStorage));
 
-    for (ArchetypeID i=0;i<m_count;i++)
+    for (size_t i=0;i<m_count;i++)
     {
         ArchetypeStorage* src = m_archetypePool + i;
         ArchetypeStorage* dst = newPool + i;

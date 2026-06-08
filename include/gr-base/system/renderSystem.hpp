@@ -4,6 +4,8 @@
 
 #include "gr-base/core/system.hpp"
 
+#include "gr-base/ecs/default.hpp"
+
 #include "gr-base/managers/default.hpp"
 
 #include <gr-render/shader.hpp>
@@ -29,7 +31,7 @@ private:
 
     void sorting();
 
-    static void Setuplight(gr::Shader* shader);
+    void Setuplight(World* world, gr::Shader* shader);
 };
 
 

@@ -59,6 +59,16 @@ public:
 
     static std::vector<TypeID> GetTypesOfMask(Signature mask);
 
+    inline static const TypeInfo* GetTypeInfoPool()
+    {
+        return s_Type->m_typeInfoPool;
+    }
+
+    inline static size_t GetTypeCount()
+    {
+        return s_Type->m_count;
+    }
+
 private:
     static Type* s_Type;
 

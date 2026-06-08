@@ -12,18 +12,12 @@ void SceneManager::Initialize()
 {
     if (s_SceneManager == nullptr)
         s_SceneManager = new SceneManager();
-
-    logger::info("[ SceneManager ] Initialize '0x%lX'.", s_SceneManager);
 }
 
 void SceneManager::Shutdown()
 {
     if (s_SceneManager != nullptr)
-    {
         delete s_SceneManager;
-
-        logger::info("[ SceneManager ] Shutdown '0x%lX'.", s_SceneManager);
-    }
     s_SceneManager = nullptr;
 }
 
@@ -64,10 +58,14 @@ Scene *SceneManager::GetCurrent()
 
 // ***** private ***** //
 SceneManager::SceneManager() : m_current(nullptr)
-{}
+{
+    logger::info("[ SceneManager ] Initialize '%p'.", this);
+}
 
 SceneManager::~SceneManager()
-{}
+{
+    logger::info("[ SceneManager ] Shutdown '%p'.", this);
+}
 
 Scene *SceneManager::create(const std::string &name)
 {

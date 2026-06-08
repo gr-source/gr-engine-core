@@ -16,6 +16,7 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
+#include "gr-base/script/light.hpp"
 
 #include "gr-base/spatial/bvhtree.hpp"
 
@@ -55,7 +56,9 @@ void RenderSystem::Update(Scene* scene)
             shader->setUniform("u_mat_eye",        &cameraTransform->position);
 
             shader->set_uniform("u_mat_numLights", 0);
-            // Setuplight(scene, shader);
+
+            Setuplight(world, shader);
+
             shader->unbind();
         }
     }
@@ -144,5 +147,37 @@ void RenderSystem::sorting()
     }
 }
 
+void RenderSystem::Setuplight(World* world, gr::Shader* shader)
+{
+    int numLight = 0;
+    world->Query<Transform, Light>([&](Entity*, Transform* transforms, Light* lights, size_t count)
+    {
+        numLight += static_cast<int>(count);
+
+        for (size_t i=0;i<count;i++)
+        {
+            Transform& transform = transforms[i];
+            Light& light = lights[i];
+
+            auto position   = transform.position;
+            auto forward    = transform.rotation * Vector3::forward;
+            auto color      = light.color;
+            auto type       = light.type;
+
+            // auto attenuation = Vector3{light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()};
+            // auto params      = Vector3{light->getInnecone(), light->getOutercone(), (float)light->getType()};
+            // auto projection  = light->getProjetion();
+            
+            shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].position").c_str(),    &position);
+            shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].direction").c_str(),   &forward);
+            shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].color").c_str(),       &color);
+            // shader->setUniform(("lights[" + std::to_string(i) + "].attenuation").c_str(), &attenuation);
+            // shader->setUniform(("lights[" + std::to_string(i) + "].params").c_str(),      &params);
+            shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].type").c_str(),       &type);
+        }
+    });
+
+    shader->set_uniform("u_mat_numLights", numLight);
+}
 
 

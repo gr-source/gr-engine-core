@@ -93,14 +93,15 @@ public:
     {
         Signature requiredMask = Type::GetMask<Components...>();
 
-        for (size_t i=0;i<m_capacity;i++)
+        for (size_t i=0;i<m_count;i++)
         {
             const auto& arche = m_archetypePool[i];
 
             if ((arche.mask & requiredMask) != requiredMask)
                 continue;
 
-            for (size_t j=0;j<arche.chunk_capacity;j++)
+            size_t chunk_count = arche.component_capacity > 0 ? (arche.stats.entityCount + arche.component_capacity - 1) / arche.component_capacity : 0;
+            for (size_t j=0;j<chunk_count;j++)
             {
                 Chunk& chunk = arche.chunks[j];
 
@@ -141,9 +142,9 @@ private:
 
     ArchetypeStorage* m_archetypePool;
 
-    ArchetypeID m_capacity;
+    size_t m_capacity;
 
-    ArchetypeID m_count;
+    size_t m_count;
 
     ArchetypeStorage* GetArchetypeByMask(Signature mask) const;
 

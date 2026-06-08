@@ -10,20 +10,16 @@ struct Light
         eSpot      = 2,
     };
 
-    static Matrix4x4 mProjection;
+    LightType type = LightType::eDirection;
 
-    int m_type;
+    Color color = Color::white;
 
-    Color m_color;
+    float attenuationConstant = 1.0f;
+    float attenuationLinear = 0.0f;
+    float attenuationQuadratic = 0.0f;
 
-    float m_attenuationConstant;
-    float m_attenuationLinear;
-
-    float m_attenuationQuadratic;
-
-    float m_angleInnerCone;
-
-    float m_angleOuterCone;
+    float angleInnerCone = 0.0f;
+    float angleOuterCone = 0.0f;
 };
 
 

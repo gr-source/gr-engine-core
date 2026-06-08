@@ -9,6 +9,7 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
+#include "gr-base/script/light.hpp"
 #include "gr-base/script/name.hpp"
 
 template <>
@@ -35,6 +36,7 @@ void RegistryDefaultComponent()
     REGISTRY(CameraData, false);
     REGISTRY(Transform, true);
     REGISTRY(Camera, true);
+    REGISTRY(Light, true);
     REGISTRY(Name, false);
 }
 

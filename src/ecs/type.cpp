@@ -17,7 +17,6 @@ void Type::Shutdown()
     s_Type = nullptr;
 }
 
-
 std::vector<TypeID> Type::GetTypesOfMask(Signature mask)
 {
     std::vector<TypeID> types;
