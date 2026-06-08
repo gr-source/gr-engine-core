@@ -58,6 +58,47 @@ ArchetypeStorage::ArchetypeStorage(Signature _mask, TypeID typeID) :
     }
 }
 
+
+ArchetypeStorage::ArchetypeStorage(ArchetypeStorage&& other) noexcept :
+    mask(other.mask)
+{
+    typeOffset_capacity = other.typeOffset_capacity;
+
+    typeOffsets = other.typeOffsets;
+    other.typeOffsets = nullptr;
+
+    component_capacity = other.component_capacity;
+
+    component_stride = other.component_stride;
+
+    freeID = other.freeID;
+
+    freeList = other.freeList;
+    other.freeList = nullptr;
+
+    chunk_capacity = other.chunk_capacity;
+
+    chunks = other.chunks;
+    other.chunks = nullptr;
+
+    stats = other.stats;
+
+    m_removeEdges = std::move(other.m_removeEdges);
+    m_addEdges = std::move(other.m_addEdges);
+}
+
+ArchetypeStorage::~ArchetypeStorage()
+{
+    if (typeOffsets != nullptr)
+        free(typeOffsets);
+
+    if (freeList != nullptr)
+        free(freeList);
+
+    if (chunks != nullptr)
+        free(chunks);
+}
+
 ArchetypeID ArchetypeStorage::addEdges(TypeID typeID)
 {
     if (typeID >= m_addEdges.size())
@@ -113,6 +154,7 @@ uint8_t* ArchetypeStorage::getRaw(ChunkID chunkID, TypeID typeID) const
     return chunk.data + typeOffsets[typeID];
 }
 
+#include <iostream>
 Entity ArchetypeStorage::deallocate(EntityLocation loc)
 {
     assert(chunk_capacity >= loc.chunk);
@@ -145,6 +187,23 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
 
         chunk.entities[dst_row] = moved;
     }
+
+    // TODO: Precisa adiciona o destrutira mas o move já destroi isso quebra
+    /*
+    Signature temp = mask;
+    while (temp)
+    {
+        auto info = Type::GetTypeInfoByID(__builtin_ctzll(temp));
+
+        uint8_t* array = chunk.data + typeOffsets[info->index];
+
+        uint8_t* src = array + (info->stride * src_row);
+
+        ((void (*)(uint8_t*))(info->destructor))(src);
+        
+        temp &= (temp - 1);
+    }
+    */
 
     if (chunk.count == 0)
     {

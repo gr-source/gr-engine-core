@@ -44,6 +44,8 @@ struct ArchetypeStorage
     std::vector<ArchetypeID> m_addEdges;
 
     ArchetypeStorage(Signature _mask, TypeID typeID);
+    ArchetypeStorage(ArchetypeStorage&& other) noexcept;
+    ~ArchetypeStorage();
 
     ArchetypeID addEdges(TypeID typeID);
 
