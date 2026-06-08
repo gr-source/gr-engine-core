@@ -9,7 +9,9 @@ typedef uint32_t CellID;
 
 #define INVALID_CELL (CellID)-1
 
-#define VIEW_DISTANCE 8
+#define LOAD_DISTANCE 8
+
+#define UNLOAD_DISTANCE 16
 
 #define CELL_SIZE 16
 
@@ -24,11 +26,22 @@ struct ChunkCoord
     }
 };
 
+enum class ChunkState
+{
+    Loading,
+    Loaded,
+    Unloading
+};
+
 typedef struct StreamChunk
 {
-    Entity* entities;
-    Vector2 position;
     ChunkCoord coord;
+
+    Vector2 position;
+
+    ChunkState state;
+
+    Entity* entities;
 } StreamChunk;
 
 struct ChunkCoordHash

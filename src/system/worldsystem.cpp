@@ -29,10 +29,9 @@ void WorldSystem::Update(Scene* scene)
     int currentX = floor(transform->position.x / CELL_SIZE);
     int currentZ = floor(transform->position.z / CELL_SIZE);
 
-    size_t created = 0, destroy = 0;
-    for (int x=-VIEW_DISTANCE;x<VIEW_DISTANCE;x++)
+    for (int x=-LOAD_DISTANCE;x<LOAD_DISTANCE;x++)
     {
-        for (int z=-VIEW_DISTANCE;z<VIEW_DISTANCE;z++)
+        for (int z=-LOAD_DISTANCE;z<LOAD_DISTANCE;z++)
         {
             int chunkIdX = currentX + x;
             int chunkIdZ = currentZ + z;
@@ -40,10 +39,7 @@ void WorldSystem::Update(Scene* scene)
             ChunkCoord coord{chunkIdX, chunkIdZ};
 
             if (!has(coord))
-            {
-                created++;
                 create(coord);
-            }
         }
     }
 
@@ -54,27 +50,19 @@ void WorldSystem::Update(Scene* scene)
         int dx = chunk->coord.x - currentX;
         int dz = chunk->coord.z - currentZ;
 
-        if(std::abs(dx) > VIEW_DISTANCE ||
-           std::abs(dz) > VIEW_DISTANCE)
+        if(std::abs(dx) > LOAD_DISTANCE ||
+           std::abs(dz) > LOAD_DISTANCE)
         {
-            destroy++;
             m_chunkNameMap.erase(chunk->coord);
+
+            unloadChunk(*it);
+
             it = m_chunkLoaded.erase(it);
         }
         else
         {
             ++it;
         }
-    }
-
-    static size_t lastCreated = 0, lastDestroy = 0, count = 0;
-
-    if (lastCreated != created || lastDestroy != destroy)
-    {
-        std::cout << "Create: " << created << " " << destroy << " C: " << count++<< std::endl;
-
-        lastCreated = created;
-        lastDestroy = destroy;
     }
 
     for (auto& chunkID : m_chunkLoaded)
@@ -89,6 +77,7 @@ void WorldSystem::create(const ChunkCoord& coord)
     chunk->coord = coord;
     chunk->position = {(float)(coord.x * CELL_SIZE), (float)(coord.z * CELL_SIZE)};
     chunk->entities = nullptr;
+    chunk->state = ChunkState::Loaded;
 
     m_chunkNameMap.emplace(coord, id);
 

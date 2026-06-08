@@ -135,9 +135,14 @@ set(SRC
 set(SPATIAL_SRC
     src/spatial/bvhtree.cpp
 )
+
 set(DEBUG_SRC
     src/debug/debugDraw.cpp
     src/debug/debugLine.cpp
+)
+
+set(MODULE_SRC
+    src/module/moduleloader.cpp
 )
 
 add_subdirectory(imgui)
@@ -157,6 +162,7 @@ add_library(${PROJECT_NAME} SHARED
 
     ${EXTERNAL_SRC}
     ${SPATIAL_SRC}
+    ${MODULE_SRC}
     ${SYSTEM_SRC}
     ${PREFAB_SRC}
     ${DEBUG_SRC}
