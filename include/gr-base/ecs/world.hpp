@@ -97,22 +97,17 @@ public:
         {
             const auto& arche = m_archetypePool[i];
 
-            auto& entities = arche.slotToEntity;
+            if ((arche.mask & requiredMask) != requiredMask)
+                continue;
 
-            if ((arche.m_mask & requiredMask) == requiredMask)
+            for (size_t j=0;j<arche.chunk_capacity;j++)
             {
-                for (size_t j=0;j<arche.m_count;j++)
-                {
-                    auto& entity = entities[j];
+                Chunk& chunk = arche.chunks[j];
 
-                    func(entity, arche.GetRaw<Components>()[j]...);
-                }
+                func(chunk.entities, arche.getRaw<Components>(static_cast<ChunkID>(j))..., chunk.count);
             }
         }
-        // return View<Components...>(this);
     }
-
-    size_t GetCount(ArchetypeID id) const;
 
     size_t GetEntityCount() const;
 
@@ -129,17 +124,18 @@ public:
     }
 
 private:
-    struct Location
+    struct EntityRecord
     {
         uint32_t archetype;
-        uint32_t slot;
+
+        EntityLocation location;
     };
 
     std::unordered_map<Signature, ArchetypeID> m_signArcheTypeMap;
 
     std::shared_ptr<EntityManager> m_entityLocationMap;
 
-    std::vector<Location> entityToLocation;
+    std::vector<EntityRecord> entityRecords;
 
     ArchetypeID m_emptyArchetypeStorage;
 

@@ -7,7 +7,203 @@
 #include <cstdlib>
 #include <cstring>
 
-ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask), m_buffer(nullptr), m_capacity(0), m_stride(0), m_count(0)
+ArchetypeStorage::ArchetypeStorage(Signature _mask, TypeID typeID) :
+    mask(_mask),
+    typeOffset_capacity(0),
+    typeOffsets(nullptr),
+
+    freeID(INVALID_CHUNK),
+    freeList(nullptr),
+
+    chunk_capacity(0),
+    chunks(nullptr),
+
+    component_capacity(0),
+    component_stride(0)
+{
+
+    if (typeID != INVALID_TYPE)
+    {
+        m_removeEdges.resize(typeID + 1, INVALID_ARCHETYPE);
+        m_addEdges.resize(typeID + 1, INVALID_ARCHETYPE);
+    }
+
+    Signature temp = mask;
+    while (temp)
+    {
+        auto info = Type::GetTypeInfoByID(__builtin_ctzll(temp));
+
+        component_stride += info->stride;
+
+        temp &= (temp - 1);
+    }
+
+    if (component_stride)
+        component_capacity = CHUNK_SIZE / component_stride;
+
+    size_t offset = 0;
+    temp = mask;
+    while (temp)
+    {
+        auto info = Type::GetTypeInfoByID(__builtin_ctzll(temp));
+        
+        while (info->index >= typeOffset_capacity)
+            grow_type();
+
+        typeOffsets[info->index] = offset;
+
+        offset += info->stride * component_capacity;
+
+        temp &= (temp - 1);
+    }
+}
+
+ArchetypeID ArchetypeStorage::addEdges(TypeID typeID)
+{
+    if (typeID >= m_addEdges.size())
+        m_addEdges.resize(typeID + 1, INVALID_ARCHETYPE);
+
+    if (typeID >= m_removeEdges.size())
+        m_removeEdges.resize(typeID + 1, INVALID_ARCHETYPE);
+
+    return m_addEdges[typeID];
+}
+
+EntityLocation ArchetypeStorage::allocate(Entity entity)
+{
+    if (freeID == INVALID_CHUNK)
+        grow();
+
+    ChunkID chunkID = freeID;
+
+    Chunk& chunk = chunks[chunkID];
+
+    uint32_t row = static_cast<uint32_t>(chunk.count++);
+    chunk.entities[row] = entity;
+
+    if (chunk.count >= chunk.capacity)
+        freeID = freeList[chunkID];
+
+    stats.entityCount++;
+
+    return {chunkID, row};
+}
+
+uint8_t* ArchetypeStorage::get(EntityLocation loc, const TypeInfo* info) const
+{
+    assert(typeOffset_capacity >= info->index);
+
+    assert(chunk_capacity >= loc.chunk);
+
+    Chunk& chunk = chunks[loc.chunk];
+    assert(chunk.count >= loc.row);
+
+    uint8_t* array = chunk.data + typeOffsets[info->index];
+
+    return array + (loc.row * info->stride);
+}
+
+uint8_t* ArchetypeStorage::getRaw(ChunkID chunkID, TypeID typeID) const
+{
+    assert(typeOffset_capacity >= typeID);
+    assert(chunk_capacity >= chunkID);
+
+    Chunk& chunk = chunks[chunkID];
+
+    return chunk.data + typeOffsets[typeID];
+}
+
+Entity ArchetypeStorage::deallocate(EntityLocation loc)
+{
+    assert(chunk_capacity >= loc.chunk);
+
+    Chunk& chunk = chunks[loc.chunk];
+
+    uint32_t dst_row = loc.row;
+    uint32_t src_row = --chunk.count;
+
+    Entity moved = INVALID_ENTITY;
+
+    if (dst_row != src_row)
+    {
+        Signature temp = mask;
+        while (temp)
+        {
+            auto info = Type::GetTypeInfoByID(__builtin_ctzll(temp));
+
+            uint8_t* array = chunk.data + typeOffsets[info->index];
+
+            uint8_t* src = array + (info->stride * src_row);
+            uint8_t* dst = array + (info->stride * dst_row);
+
+            ((void (*)(uint8_t*, const uint8_t*))(info->move))(dst, src);
+            
+            temp &= (temp - 1);
+        }
+
+        moved = chunk.entities[src_row];
+
+        chunk.entities[dst_row] = moved;
+    }
+
+    if (chunk.count == 0)
+    {
+        freeList[loc.chunk] = freeID;
+        freeID = loc.chunk;
+    }
+
+    stats.entityCount--;
+
+    return moved;
+}
+
+void ArchetypeStorage::grow()
+{
+    size_t oldCapacity = chunk_capacity;
+
+    chunk_capacity = chunk_capacity > 0 ? chunk_capacity * 2 : 2;
+
+    freeList = (ChunkID*)realloc(freeList, chunk_capacity * sizeof(ChunkID));
+    chunks = (Chunk*)realloc(chunks, chunk_capacity * sizeof(Chunk));
+
+    for (size_t i=oldCapacity;i<chunk_capacity;i++)
+    {
+        Chunk& chunk = chunks[i];
+        chunk.capacity = component_capacity;
+        chunk.count = 0;
+
+        chunk.entities = component_capacity > 0 ? ((Entity*)malloc(component_capacity * sizeof(Entity))) : nullptr;
+        chunk.data = component_capacity > 0 ? ((uint8_t*)malloc(component_capacity * component_stride)) : nullptr;
+    }
+
+    addFreeID(oldCapacity);
+}
+
+
+void ArchetypeStorage::addFreeID(size_t oldCapacity)
+{
+    size_t capacity = chunk_capacity - 1;
+    for (size_t i=oldCapacity;i<capacity;i++)
+        freeList[i] = static_cast<ChunkID>(i + 1);
+
+    freeList[capacity] = freeID;
+    freeID = static_cast<ChunkID>(oldCapacity);
+}
+
+void ArchetypeStorage::grow_type()
+{
+    typeOffset_capacity = typeOffset_capacity > 0 ? typeOffset_capacity * 2 : 2;
+
+    typeOffsets = (size_t*)realloc(typeOffsets, typeOffset_capacity * sizeof(size_t));
+}
+
+/*
+ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) :
+    m_mask(mask),
+    m_buffer(nullptr),
+    m_capacity(0),
+    m_stride(0),
+    m_count(0)
 {
     if (typeID != INVALID_TYPE)
     {
@@ -17,12 +213,12 @@ ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) : m_mask(mask)
 
     while (mask)
     {
-        TypeID typeID = __builtin_ctzll(mask);
-
-        auto info = Type::GetTypeInfoByID(typeID);
+        auto info = Type::GetTypeInfoByID(__builtin_ctzll(mask));
         
-        if (typeID >= m_typeidtoarrayoffset.size())
-            m_typeidtoarrayoffset.resize(typeID + 1, 0);
+        if (info->index >= m_typeidtoarrayoffset.size())
+            m_typeidtoarrayoffset.resize(info->index + 1, 0);
+
+        m_typeidtoarrayoffset[info->index] = m_stride;
 
         m_stride += info->stride;
 
@@ -246,6 +442,6 @@ uint8_t* ArchetypeStorage::allocate(const TypeInfo* info, size_t capacity)
 
     return buffer;
 }
-
+*/
 
 

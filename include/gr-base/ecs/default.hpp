@@ -14,6 +14,8 @@
 #define INVALID_ENTITY (Entity)-1
 #define INVALID_TYPE (TypeID)-1
 
+#define INVALID_CHUNK (ChunkID)-1
+
 typedef Handle Entity;
 
 typedef uint32_t ComponentID;

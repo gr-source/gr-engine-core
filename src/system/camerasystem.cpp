@@ -13,36 +13,44 @@ void CameraSystem::Update(Scene* scene)
     auto world = scene->GetWorld();
 
     world->Query<Transform, Camera, CameraData>([](
-                const Entity& entity,
-                Transform& transform,
-                Camera& camera,
-                CameraData& data)
+                const Entity* entities,
+                Transform* transforms,
+                Camera* cameras,
+                CameraData* datas,
+                size_t count)
     {
-        float aspectRatio = static_cast<float>(camera.rendertarget->GetWidth()) / static_cast<float>(camera.rendertarget->GetHeight());
+        for (size_t i=0;i<count;i++)
+        {
+            Transform& transform = transforms[i];
+            CameraData& data = datas[i];
+            Camera& camera = cameras[i];
 
-        data.projection =
-            Math::perspective(
-                Math::rad(camera.fov),
-                aspectRatio,
-                camera.nearPlane,
-                camera.farPlane
-            );
+            float aspectRatio = static_cast<float>(camera.rendertarget->GetWidth()) / static_cast<float>(camera.rendertarget->GetHeight());
 
-        data.forward =
-            transform.rotation * Vector3::forward;
+            data.projection =
+                Math::perspective(
+                    Math::rad(camera.fov),
+                    aspectRatio,
+                    camera.nearPlane,
+                    camera.farPlane
+                );
 
-        data.right =
-            transform.rotation * Vector3::right;
+            data.forward =
+                transform.rotation * Vector3::forward;
 
-        data.up =
-            transform.rotation * Vector3::up;
+            data.right =
+                transform.rotation * Vector3::right;
 
-        data.view = Math::lookAt(transform.position, transform.position + data.forward, data.up);
+            data.up =
+                transform.rotation * Vector3::up;
 
-        // data.view = Math::Inverse(transform.worldMatrix);
+            data.view = Math::lookAt(transform.position, transform.position + data.forward, data.up);
 
-        data.viewProjection =
-            data.projection *
-            data.view;
+            // data.view = Math::Inverse(transform.worldMatrix);
+
+            data.viewProjection =
+                data.projection *
+                data.view;
+        }
     });
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gr-base/ecs/default.hpp"
+
 #include <cstddef>
 #include <cstdint>
 
@@ -7,10 +9,11 @@
 
 struct Chunk
 {
-    size_t capacity;
-    size_t count;
+    size_t capacity = 0;
+    size_t count = 0;
 
-    uint8_t* memory;
+    Entity* entities = nullptr;
+    uint8_t* data = nullptr;
 };
 
 

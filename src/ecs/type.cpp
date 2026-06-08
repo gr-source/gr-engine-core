@@ -17,6 +17,19 @@ void Type::Shutdown()
     s_Type = nullptr;
 }
 
+
+std::vector<TypeID> Type::GetTypesOfMask(Signature mask)
+{
+    std::vector<TypeID> types;
+    while (mask)
+    {
+        types.push_back(__builtin_ctzll(mask));
+        
+        mask &= (mask - 1);
+    }
+    return types;
+}
+
 // private
 Type::Type() : m_count(0), m_capacity(0), m_typeInfoPool(nullptr)
 {

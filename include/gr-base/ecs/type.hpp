@@ -57,6 +57,8 @@ public:
         return mask;
     }
 
+    static std::vector<TypeID> GetTypesOfMask(Signature mask);
+
 private:
     static Type* s_Type;
 
