@@ -317,11 +317,11 @@ void World::resize()
 
     for (ArchetypeID i=0;i<m_count;i++)
     {
-        ArchetypeStorage* oldArcheType = m_archetypePool + i;
-        ArchetypeStorage* newArcheType = newPool + i;
+        ArchetypeStorage* src = m_archetypePool + i;
+        ArchetypeStorage* dst = newPool + i;
 
-        new (newArcheType) ArchetypeStorage(std::move(*oldArcheType));
-        oldArcheType->~ArchetypeStorage();
+        new (dst) ArchetypeStorage(std::move(*src));
+        src->~ArchetypeStorage();
     }
 
     free(m_archetypePool);

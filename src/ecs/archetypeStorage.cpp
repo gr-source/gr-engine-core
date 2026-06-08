@@ -116,14 +116,20 @@ EntityLocation ArchetypeStorage::allocate(Entity entity)
         grow();
 
     ChunkID chunkID = freeID;
+    assert(chunkID < chunk_capacity);
 
     Chunk& chunk = chunks[chunkID];
 
     uint32_t row = static_cast<uint32_t>(chunk.count++);
+    assert(row < chunk.capacity);
+
     chunk.entities[row] = entity;
 
     if (chunk.count >= chunk.capacity)
+    {
         freeID = freeList[chunkID];
+        freeList[chunkID] = INVALID_CHUNK;
+    }
 
     stats.entityCount++;
 
@@ -132,9 +138,9 @@ EntityLocation ArchetypeStorage::allocate(Entity entity)
 
 uint8_t* ArchetypeStorage::get(EntityLocation loc, const TypeInfo* info) const
 {
-    assert(typeOffset_capacity >= info->index);
+    assert(info->index < typeOffset_capacity);
 
-    assert(chunk_capacity >= loc.chunk);
+    assert(loc.chunk < chunk_capacity);
 
     Chunk& chunk = chunks[loc.chunk];
     assert(chunk.count >= loc.row);
@@ -146,20 +152,23 @@ uint8_t* ArchetypeStorage::get(EntityLocation loc, const TypeInfo* info) const
 
 uint8_t* ArchetypeStorage::getRaw(ChunkID chunkID, TypeID typeID) const
 {
-    assert(typeOffset_capacity >= typeID);
-    assert(chunk_capacity >= chunkID);
+    assert(typeID < typeOffset_capacity);
+    assert(chunkID < chunk_capacity);
 
     Chunk& chunk = chunks[chunkID];
 
     return chunk.data + typeOffsets[typeID];
 }
 
-#include <iostream>
 Entity ArchetypeStorage::deallocate(EntityLocation loc)
 {
-    assert(chunk_capacity >= loc.chunk);
+    assert(loc.chunk < chunk_capacity);
 
     Chunk& chunk = chunks[loc.chunk];
+    assert(chunk.count > 0);
+    assert(loc.row < chunk.count);
+
+    bool wasFull = (chunk.count == chunk.capacity);
 
     uint32_t dst_row = loc.row;
     uint32_t src_row = --chunk.count;
@@ -205,7 +214,7 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
     }
     */
 
-    if (chunk.count == 0)
+    if (wasFull)
     {
         freeList[loc.chunk] = freeID;
         freeID = loc.chunk;
@@ -237,7 +246,6 @@ void ArchetypeStorage::grow()
 
     addFreeID(oldCapacity);
 }
-
 
 void ArchetypeStorage::addFreeID(size_t oldCapacity)
 {
