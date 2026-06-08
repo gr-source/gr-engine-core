@@ -29,82 +29,80 @@ void WorldSystem::Update(Scene* scene)
     int currentX = floor(transform->position.x / CELL_SIZE);
     int currentZ = floor(transform->position.z / CELL_SIZE);
 
-    std::unordered_set<CellID> m_chunkAvailable;
-
-    for (int x=-CELL_RENDER_DISTANCE;x<CELL_RENDER_DISTANCE;x++)
+    size_t created = 0, destroy = 0;
+    for (int x=-VIEW_DISTANCE;x<VIEW_DISTANCE;x++)
     {
-        for (int z=-CELL_RENDER_DISTANCE;z<CELL_RENDER_DISTANCE;z++)
+        for (int z=-VIEW_DISTANCE;z<VIEW_DISTANCE;z++)
         {
             int chunkIdX = currentX + x;
             int chunkIdZ = currentZ + z;
 
-            std::string key = std::to_string(chunkIdX) + "_" + std::to_string(chunkIdZ);
+            ChunkCoord coord{chunkIdX, chunkIdZ};
 
-            CellID chunkID = find(key);
-            if (chunkID == INVALID_CELL)
+            if (!has(coord))
             {
-                chunkID = create(key);
-
-                StreamChunk* chunk = get(chunkID);
-                chunk->position = {(float)(chunkIdX * CELL_SIZE), (float)(chunkIdZ * CELL_SIZE)};
-                chunk->entities = nullptr;
+                created++;
+                create(coord);
             }
-
-            m_chunkAvailable.emplace(chunkID);
         }
     }
 
     for (auto it = m_chunkLoaded.begin(); it != m_chunkLoaded.end(); )
     {
-        if (m_chunkAvailable.find(*it) == m_chunkAvailable.end())
+        auto chunk = m_pool.get(*it);
+
+        int dx = chunk->coord.x - currentX;
+        int dz = chunk->coord.z - currentZ;
+
+        if(std::abs(dx) > VIEW_DISTANCE ||
+           std::abs(dz) > VIEW_DISTANCE)
         {
-            StreamChunk* chunk = m_pool.get(*it);
-
-            m_chunkNameMap.erase(chunk->name);
-
-            unloadChunk(*it);
-
+            destroy++;
+            m_chunkNameMap.erase(chunk->coord);
             it = m_chunkLoaded.erase(it);
-        } else
+        }
+        else
         {
             ++it;
         }
     }
 
+    static size_t lastCreated = 0, lastDestroy = 0, count = 0;
+
+    if (lastCreated != created || lastDestroy != destroy)
+    {
+        std::cout << "Create: " << created << " " << destroy << " C: " << count++<< std::endl;
+
+        lastCreated = created;
+        lastDestroy = destroy;
+    }
+
     for (auto& chunkID : m_chunkLoaded)
-        render(get(chunkID));
+        render(m_pool.get(chunkID));
 }
 
-CellID WorldSystem::create(const std::string &name)
+void WorldSystem::create(const ChunkCoord& coord)
 {
     CellID id = m_pool.allocate();
 
     StreamChunk* chunk = m_pool.get(id);
-    chunk->name = strdup(name.c_str());
+    chunk->coord = coord;
+    chunk->position = {(float)(coord.x * CELL_SIZE), (float)(coord.z * CELL_SIZE)};
+    chunk->entities = nullptr;
 
-    m_chunkNameMap.emplace(name, id);
+    m_chunkNameMap.emplace(coord, id);
 
     m_chunkLoaded.push_back(id);
-
-    return id;
 }
 
-CellID WorldSystem::find(const std::string &name)
+bool WorldSystem::has(const ChunkCoord& coord) const
 {
-    auto it = m_chunkNameMap.find(name);
-    if (it == m_chunkNameMap.end())
-        return INVALID_CELL;
-    return it->second;
-}
-
-StreamChunk* WorldSystem::get(CellID id)
-{
-    return m_pool.get(id);
+    return m_chunkNameMap.find(coord) != m_chunkNameMap.end();
 }
 
 void WorldSystem::unloadChunk(CellID id)
 {
-    StreamChunk* chunk = get(id);
+    StreamChunk* chunk = m_pool.get(id);
 
     if (chunk->entities != nullptr)
     {
@@ -117,8 +115,6 @@ void WorldSystem::unloadChunk(CellID id)
 
         vector_free(chunk->entities);
     }
-
-    free(chunk->name);
 
     m_pool.deallocate(id);
 }

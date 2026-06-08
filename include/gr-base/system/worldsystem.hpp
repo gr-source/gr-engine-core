@@ -25,17 +25,15 @@ public:
     int RenderDistance;
 
 private:
-    std::unordered_map<std::string, CellID> m_chunkNameMap;
+    std::unordered_map<ChunkCoord, CellID, ChunkCoordHash> m_chunkNameMap;
 
     std::vector<CellID> m_chunkLoaded;
 
     ObjectPool<StreamChunk> m_pool;
 
-    CellID create(const std::string& name);
+    void create(const ChunkCoord& coord);
 
-    CellID find(const std::string& name);
-
-    StreamChunk* get(CellID id);
+    bool has(const ChunkCoord& coord) const;
 
     void unloadChunk(CellID id);
 
