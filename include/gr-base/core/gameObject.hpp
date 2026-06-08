@@ -21,9 +21,9 @@ struct GameObject
     }
 
     template <typename T>
-    inline T* AddComponent()
+    inline T* AddComponent(T temp = {})
     {
-        return static_cast<T*>(AddComponent(Type::GetTypeID<T>()));
+        return static_cast<T*>(AddComponent(Type::GetTypeID<T>(), &temp));
     }
 
     void* GetComponent(TypeID typeID) const;

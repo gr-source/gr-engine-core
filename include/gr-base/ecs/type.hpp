@@ -78,8 +78,8 @@ private:
 
     std::vector<Hash64> m_typeIDToHash;
 
-    TypeID m_capacity;
-    TypeID m_count;
+    size_t m_capacity;
+    size_t m_count;
 
     Type();
     ~Type();
@@ -188,10 +188,7 @@ inline void Type::Move(void* dst, void* src)
     }
     else
     {
-        new(dst) T(std::move(*static_cast<T*>(src)));
-
-        if constexpr (!std::is_trivially_destructible_v<T>)
-            static_cast<T*>(src)->~T();
+        new (dst) T(std::move(*static_cast<T*>(src)));
     }
 }
 
@@ -204,7 +201,7 @@ inline void Type::Copy(void* dst, const void* src)
     }
     else
     {
-        new(dst) T(std::move(*static_cast<const T*>(src)));
+        new(dst) T(*static_cast<const T*>(src));
     }
 }
 

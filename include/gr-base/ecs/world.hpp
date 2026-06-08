@@ -31,11 +31,9 @@ public:
         return AddComponent(e, Type::GetTypeIDByName(name), src);
     }
 
-    template <typename T, typename... Args>
-    T* AddComponent(Entity e, Args&&... args)
+    template <typename T>
+    T* AddComponent(Entity e, T temp ={})
     {
-        T temp{std::forward<Args>(args)...};
-
         return static_cast<T*>(AddComponent(e, Type::GetTypeID<T>(), &temp));
     }
 

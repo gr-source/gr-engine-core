@@ -54,7 +54,7 @@ Entity Scene::create(const char* name)
     Entity e = m_world->Create();
     m_world->AddComponent<Transform>(e);
     if (name != nullptr)
-        m_world->AddComponent<Name>(e, strdup(name));
+        m_world->AddComponent<Name>(e, { strdup(name) });
 
     m_world->AddComponent<Relationship>(e);
     SetParent(m_root, e);
@@ -116,6 +116,10 @@ Entity Scene::create(Entity other)
             memcpy(dst, src, type->stride);
         } else
         {
+            // o component foi inicializado em AddComponent
+            ((void(*)(void*))(type->destructor))(dst);
+
+            // Reinicializa com os dados novos copiados
             ((void(*)(void*, const void*))(type->copy))(dst, src);
         }
     }

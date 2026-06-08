@@ -198,7 +198,6 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
     }
 
     // TODO: Precisa adiciona o destrutira mas o move já destroi isso quebra
-    /*
     Signature temp = mask;
     while (temp)
     {
@@ -212,7 +211,6 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
         
         temp &= (temp - 1);
     }
-    */
 
     if (wasFull)
     {

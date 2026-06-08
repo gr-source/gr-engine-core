@@ -11,9 +11,7 @@ bool GameObject::IsAlive() const
 
 void* GameObject::AddComponent(TypeID typeID, const void* src)
 {
-    scene->GetWorld()->AddComponent(entity, typeID, src);
-
-    return GetComponent(typeID);
+    return scene->GetWorld()->AddComponent(entity, typeID, src);
 }
 
 void* GameObject::GetComponent(TypeID typeID) const

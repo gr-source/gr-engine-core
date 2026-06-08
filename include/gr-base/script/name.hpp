@@ -2,6 +2,6 @@
 
 struct Name
 {
-    char* value;
+    char* value = nullptr;
 };
 

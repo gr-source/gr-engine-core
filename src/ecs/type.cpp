@@ -48,7 +48,7 @@ void Type::registry(TypeInfo* src)
     if (m_count >= m_capacity)
         resize();
 
-    TypeID id = m_count++;
+    TypeID id = static_cast<TypeID>(m_count++);
 
     TypeInfo* dest = m_typeInfoPool + id;
     memcpy((void*)dest, (void*)src, sizeof(TypeInfo));

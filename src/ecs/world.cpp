@@ -56,15 +56,7 @@ void World::Destroy(Entity entity)
 
     Entity moved = INVALID_ENTITY;
     if ((moved = arche.deallocate(rec.location)) != INVALID_ENTITY)
-    {
         entityRecords[handle_get_first(moved)].location = rec.location;
-    }
-
-    /*
-    uint32_t lastGlobal = static_cast<uint32_t>(arche.m_count > 0 ? arche.m_count - 1 : 0);
-    if (arche.Deallocate(rec.slot) && rec.slot != lastGlobal)
-        entityRecords[handle_get_first(arche.slotToEntity[lastGlobal])].slot = rec.slot;
-    */
 
     entityRecords[entityID] = { m_emptyArchetypeStorage, EntityLocation{ INVALID_CHUNK, INVALID_COMPONENT } };
 
