@@ -2,7 +2,7 @@
 
 #include "gr-base/core/default.hpp"
 
-#include "gr-base/ecs/typeRegistry.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/default.hpp"
 
 struct GameObject
@@ -17,39 +17,39 @@ struct GameObject
 
     inline void* AddComponent(const char* name)
     {
-        return AddComponent(TypeRegistry::GetTypeIDByName(name));
+        return AddComponent(ComponentRegistry::GetTypeIDByName(name));
     }
 
     template <typename T>
     inline T* AddComponent(T temp = {})
     {
-        return static_cast<T*>(AddComponent(TypeRegistry::GetTypeID<T>(), &temp));
+        return static_cast<T*>(AddComponent(ComponentRegistry::GetTypeID<T>(), &temp));
     }
 
     void* GetComponent(TypeID typeID) const;
 
     inline void* GetComponent(const char* name) const
     {
-        return GetComponent(TypeRegistry::GetTypeIDByName(name));
+        return GetComponent(ComponentRegistry::GetTypeIDByName(name));
     }
 
     template <typename T>
     inline T* GetComponent() const
     {
-        return static_cast<T*>(GetComponent(TypeRegistry::GetTypeID<T>()));
+        return static_cast<T*>(GetComponent(ComponentRegistry::GetTypeID<T>()));
     }
 
     void* GetOrAddComponent(TypeID typeID);
 
     inline void* GetOrAddComponent(const char* name)
     {
-        return GetOrAddComponent(TypeRegistry::GetTypeIDByName(name));
+        return GetOrAddComponent(ComponentRegistry::GetTypeIDByName(name));
     }
 
     template <typename T>
     inline T* GetOrAddComponent()
     {
-        return static_cast<T*>(GetOrAddComponent(TypeRegistry::GetTypeID<T>()));
+        return static_cast<T*>(GetOrAddComponent(ComponentRegistry::GetTypeID<T>()));
     }
 
     bool HasComponent(Signature mask) const;
@@ -57,20 +57,20 @@ struct GameObject
     template <typename... Components>
     bool HasComponent() const
     {
-        return HasComponent(TypeRegistry::GetMask<Components...>());
+        return HasComponent(ComponentRegistry::GetMask<Components...>());
     }
 
     void DelComponent(TypeID typeID);
 
     inline void DelComponent(const char* name)
     {
-        DelComponent(TypeRegistry::GetTypeIDByName(name));
+        DelComponent(ComponentRegistry::GetTypeIDByName(name));
     }
 
     template <typename T>
     inline void DelComponent()
     {
-        DelComponent(TypeRegistry::GetTypeID<T>());
+        DelComponent(ComponentRegistry::GetTypeID<T>());
     }
 };
 

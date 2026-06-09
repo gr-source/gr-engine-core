@@ -87,9 +87,10 @@ set(managers_src
 )
 
 set(ECS_SRC
+    src/ecs/componentRegistry.cpp
     src/ecs/archetypeStorage.cpp
+    src/ecs/systemRegistry.cpp
     src/ecs/entityManager.cpp
-    src/ecs/typeRegistry.cpp
     src/ecs/world.cpp
 )
 
@@ -121,6 +122,7 @@ set(SYSTEM_SRC
     src/system/camerasystem.cpp
     src/system/renderSystem.cpp
     src/system/worldsystem.cpp
+    src/system/default.cpp
 )
 
 set(PREFAB_SRC

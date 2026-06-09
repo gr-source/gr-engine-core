@@ -63,7 +63,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
 
     for (auto &&[hash, buffer] : asset->componentBuffer)
     {
-        auto type = TypeRegistry::GetTypeInfoByHash(hash);
+        auto type = ComponentRegistry::GetComponentInfoByHash(hash);
         if (type == nullptr)
             continue;
 

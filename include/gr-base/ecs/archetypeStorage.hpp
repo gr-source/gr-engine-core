@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gr-base/ecs/typeRegistry.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/ecs/chunk.hpp"
@@ -51,12 +51,12 @@ struct ArchetypeStorage
 
     EntityLocation allocate(Entity entity);
 
-    uint8_t* get(EntityLocation loc, const TypeInfo* info) const;
+    uint8_t* get(EntityLocation loc, const ComponentInfo* info) const;
 
     template <typename T>
     inline T* getRaw(ChunkID chunkID) const
     {
-        return reinterpret_cast<T*>(getRaw(chunkID, TypeRegistry::GetTypeID<T>()));
+        return reinterpret_cast<T*>(getRaw(chunkID, ComponentRegistry::GetTypeID<T>()));
     }
 
     uint8_t* getRaw(ChunkID chunkID, TypeID typeID) const;
@@ -101,7 +101,7 @@ public:
 
     bool Deallocate(ComponentID id);
 
-    void* Get(ComponentID id, const TypeInfo* type);
+    void* Get(ComponentID id, const ComponentInfo* type);
 
     uint8_t* GetRaw(TypeID typeID) const;
 
@@ -116,7 +116,7 @@ public:
 private:
     void resize();
 
-    uint8_t* allocate(const TypeInfo* info, size_t capacity);
+    uint8_t* allocate(const ComponentInfo* info, size_t capacity);
 };
 */
 

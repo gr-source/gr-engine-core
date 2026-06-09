@@ -2,12 +2,16 @@
 
 #include "gr-base/core/default.hpp"
 
-class System
+class ISystem
 {
 public:
-    virtual ~System() {}
+    virtual ~ISystem() {}
 
     virtual void Update(Scene* scene) = 0;
 };
+
+// template <typename T, typename... Systems>
+// class ISystemImp : public ISystem
+// {};
 
 

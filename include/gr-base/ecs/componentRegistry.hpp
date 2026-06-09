@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/typeinfo.hpp"
 
 #include "gr-base/externals/hash.hpp"
@@ -9,7 +10,7 @@
 #include <type_traits>
 #include <vector>
 
-class TypeRegistry
+class ComponentRegistry
 {
 public:
     static void Initialize();
@@ -17,37 +18,37 @@ public:
     static void Shutdown();
 
     template <typename T>
-    static void Registry(const char* name, bool serializable = false);
+    static void Register(const char* name, bool serializable);
 
-    inline static const TypeInfo* GetTypeInfoByHash(Hash64 hash)
+    inline static const ComponentInfo* GetComponentInfoByHash(Hash64 hash)
     {
-        return s_TypeRegistry->getTypeInfoByHash(hash);
+        return s_ComponentRegistry->getComponentInfoByHash(hash);
     }
 
-    inline static const TypeInfo* GetTypeInfoByName(const char* name)
+    inline static const ComponentInfo* GetComponentInfoByName(const char* name)
     {
-        return s_TypeRegistry->getTypeInfoByHash(hash::fnv1_str(name));
+        return s_ComponentRegistry->getComponentInfoByHash(hash::fnv1_str(name));
     }
 
     template <typename T>
-    static const TypeInfo* GetType();
+    static const ComponentInfo* GetType();
 
     static TypeID GetTypeIDByHash(Hash64 hash)
     {
-        return s_TypeRegistry->getTypeIDByHash(hash);
+        return s_ComponentRegistry->getTypeIDByHash(hash);
     }
 
     inline static TypeID GetTypeIDByName(const char* name)
     {
-        return s_TypeRegistry->getTypeIDByHash(hash::fnv1_str(name));
+        return s_ComponentRegistry->getTypeIDByHash(hash::fnv1_str(name));
     }
 
     template <typename T>
     static TypeID GetTypeID();
 
-    inline static const TypeInfo* GetTypeInfoByID(TypeID id)
+    inline static const ComponentInfo* GetComponentInfoByID(TypeID id)
     {
-        return s_TypeRegistry->getTypeInfoByID(id);
+        return s_ComponentRegistry->getComponentInfoByID(id);
     }
 
     template <typename... Components>
@@ -59,40 +60,41 @@ public:
 
     static std::vector<TypeID> GetTypesOfMask(Signature mask);
 
-    inline static const TypeInfo* GetTypeInfoPool()
+    inline static const ComponentInfo* GetComponents()
     {
-        return s_TypeRegistry->m_typeInfoPool;
+        return s_ComponentRegistry->m_components;
     }
 
-    inline static size_t GetTypeCount()
+    inline static size_t GetComponentCount()
     {
-        return s_TypeRegistry->m_count;
+        return s_ComponentRegistry->m_count;
     }
 
 private:
-    static TypeRegistry* s_TypeRegistry;
+    static ComponentRegistry* s_ComponentRegistry;
 
-    std::unordered_map<Hash64, TypeID> m_hashToTypeIDMap;
+    std::unordered_map<Hash64, TypeID> m_hashMap;
 
-    TypeInfo* m_typeInfoPool;
+    ComponentInfo* m_components;
+    
+    size_t m_capacity;
+
+    size_t m_count;
 
     std::vector<Hash64> m_typeIDToHash;
 
-    size_t m_capacity;
-    size_t m_count;
+    ComponentRegistry();
+    ~ComponentRegistry();
 
-    TypeRegistry();
-    ~TypeRegistry();
+    void register_info(ComponentInfo* info);
 
-    void registry(TypeInfo* info);
+    void grow();
 
-    void resize();
-
-    const TypeInfo* getTypeInfoByHash(Hash64 hash) const;
+    const ComponentInfo* getComponentInfoByHash(Hash64 hash) const;
 
     TypeID getTypeIDByHash(Hash64 hash) const;
 
-    const TypeInfo* getTypeInfoByID(TypeID id);
+    const ComponentInfo* getComponentInfoByID(TypeID id);
 
     template <typename T>
     static void Constructor(void* dest, const void* src);
@@ -108,14 +110,19 @@ private:
 };
 
 template <typename T>
-inline void TypeRegistry::Registry(const char* name, bool serializable)
+inline void ComponentRegistry::Register(const char* name, bool serializable)
 {
-    TypeInfo info;
+    static_assert(type_traits<T>::category == TypeCategory::Component,
+                  "TypeTraits must be specialized for T");
+
+    ComponentInfo info;
     info.name = name;
     info.hash = GetHash64ByType<T>(name);
     info.index = INVALID_TYPE;
+
     info.stride = sizeof(T);
     info.alignment = alignof(T);
+    
     info.storage = type_traits<T>::storage;
 
     // flags
@@ -123,10 +130,11 @@ inline void TypeRegistry::Registry(const char* name, bool serializable)
     info.serializable = serializable;
 
     // Methods
-    info.constructor = (MethodPointer)TypeRegistry::Constructor<T>;
-    info.destructor = (MethodPointer)TypeRegistry::Destructor<T>;
-    info.copy = (MethodPointer)TypeRegistry::Copy<T>;
-    info.move = (MethodPointer)TypeRegistry::Move<T>;
+    info.constructor = (MethodPointer)ComponentRegistry::Constructor<T>;
+    info.destructor = (MethodPointer)ComponentRegistry::Destructor<T>;
+
+    info.copy = (MethodPointer)ComponentRegistry::Copy<T>;
+    info.move = (MethodPointer)ComponentRegistry::Move<T>;
 
     if constexpr (HasSerialize<T>::value)
     {
@@ -144,25 +152,25 @@ inline void TypeRegistry::Registry(const char* name, bool serializable)
         info.deserialize = nullptr;
     }
 
-    s_TypeRegistry->registry(&info);
+    s_ComponentRegistry->register_info(&info);
 }
 
 template <typename T>
-inline const TypeInfo* TypeRegistry::GetType()
+inline const ComponentInfo* ComponentRegistry::GetType()
 {
-    static TypeInfo* info = s_TypeRegistry->getTypeIDByHash(GetHash64ByType<T>());
+    static ComponentInfo* info = s_ComponentRegistry->getTypeIDByHash(GetHash64ByType<T>());
     return info;
 }
 
 template <typename T>
-inline TypeID TypeRegistry::GetTypeID()
+inline TypeID ComponentRegistry::GetTypeID()
 {
-    static TypeID id = s_TypeRegistry->getTypeIDByHash(GetHash64ByType<T>());
+    static TypeID id = s_ComponentRegistry->getTypeIDByHash(GetHash64ByType<T>());
     return id;
 }
 
 template <typename T>
-inline void TypeRegistry::Constructor(void* dst, const void* src)
+inline void ComponentRegistry::Constructor(void* dst, const void* src)
 {
     if (src != nullptr)
         new (dst) T(*static_cast<const T*>(src));
@@ -171,7 +179,7 @@ inline void TypeRegistry::Constructor(void* dst, const void* src)
 }
 
 template <typename T>
-inline void TypeRegistry::Destructor(void* dst)
+inline void ComponentRegistry::Destructor(void* dst)
 {
     if constexpr (!std::is_trivially_destructible_v<T>)
     {
@@ -180,7 +188,7 @@ inline void TypeRegistry::Destructor(void* dst)
 }
 
 template<typename T>
-inline void TypeRegistry::Move(void* dst, void* src)
+inline void ComponentRegistry::Move(void* dst, void* src)
 {
     if constexpr (std::is_trivially_copyable_v<T>)
     {
@@ -193,7 +201,7 @@ inline void TypeRegistry::Move(void* dst, void* src)
 }
 
 template <typename T>
-inline void TypeRegistry::Copy(void* dst, const void* src)
+inline void ComponentRegistry::Copy(void* dst, const void* src)
 {
     if constexpr (std::is_trivially_copyable_v<T>)
     {

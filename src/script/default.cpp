@@ -2,7 +2,7 @@
 
 #include "gr-base/core/logger.hpp"
 
-#include "gr-base/ecs/typeRegistry.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/relationship.hpp"
@@ -12,27 +12,30 @@
 #include "gr-base/script/light.hpp"
 #include "gr-base/script/name.hpp"
 
-#define REGISTRY(K, b) \
-        TypeRegistry::Registry<K>(#K, b) \
+#define REGISTER_COMPONENT(K, b) \
+        do \
+        { \
+            ComponentRegistry::Register<K>(#K, b); \
+        } while (0)
 
 void RegistryDefaultComponent()
 {
-    logger::debug("[TypeRegistry::Registry] Carregando script padrões...");
+    logger::debug("[ComponentRegistry::Registry] Carregando script padrões...");
 
-    REGISTRY(Relationship, false);
+    REGISTER_COMPONENT(Relationship, false);
 
-    REGISTRY(MeshRender, false);
-    REGISTRY(MaterialRef, false);
+    REGISTER_COMPONENT(MeshRender, false);
+    REGISTER_COMPONENT(MaterialRef, false);
 
-    REGISTRY(MeshFilter, false);
-    REGISTRY(MeshRef, false);
+    REGISTER_COMPONENT(MeshFilter, false);
+    REGISTER_COMPONENT(MeshRef, false);
     
-    REGISTRY(CameraData, false);
-    REGISTRY(Transform, true);
-    REGISTRY(Camera, true);
-    REGISTRY(Light, true);
-    REGISTRY(Name, false);
+    REGISTER_COMPONENT(CameraData, false);
+    REGISTER_COMPONENT(Transform, true);
+    REGISTER_COMPONENT(Camera, true);
+    REGISTER_COMPONENT(Light, true);
+    REGISTER_COMPONENT(Name, false);
 }
 
-#undef REGISTRY
+#undef REGISTER_COMPONENT
 

@@ -10,3 +10,13 @@ struct Relationship
     Entity prevSibling = INVALID_ENTITY;
 };
 
+template <>
+struct type_traits<Relationship>
+{
+    static constexpr TypeCategory category = TypeCategory::Component;
+
+    static constexpr StorageKind storage = StorageKind::Archetype;
+
+    static constexpr size_t size = sizeof(Relationship);
+};
+

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gr-base/ecs/default.hpp"
+
 #include <gr-math/gmath.hpp>
 
 struct Light
@@ -20,6 +22,16 @@ struct Light
 
     float angleInnerCone = 0.0f;
     float angleOuterCone = 0.0f;
+};
+
+template <>
+struct type_traits<Light>
+{
+    static constexpr TypeCategory category = TypeCategory::Component;
+
+    static constexpr StorageKind storage = StorageKind::Archetype;
+
+    static constexpr size_t size = sizeof(Light);
 };
 
 

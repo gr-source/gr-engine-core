@@ -109,7 +109,7 @@ void* World::AddComponent(Entity e, TypeID typeID, const void* component)
     if (!m_entityLocationMap->isAlive(e))
         return nullptr;
 
-    auto type = TypeRegistry::GetTypeInfoByID(typeID);
+    auto type = ComponentRegistry::GetComponentInfoByID(typeID);
     if (type == nullptr)
         return nullptr;
 
@@ -144,7 +144,7 @@ void* World::GetComponent(Entity e, TypeID typeID) const
     if (!m_entityLocationMap->isAlive(e))
         return nullptr;
 
-    auto type = TypeRegistry::GetTypeInfoByID(typeID);
+    auto type = ComponentRegistry::GetComponentInfoByID(typeID);
     if (type == nullptr)
         return nullptr;
 
@@ -190,7 +190,7 @@ void World::DelComponent(Entity e, Hash64 hash)
     if (!m_entityLocationMap->isAlive(e))
         return;
 
-    auto type = TypeRegistry::GetTypeInfoByHash(hash);
+    auto type = ComponentRegistry::GetComponentInfoByHash(hash);
     if (type == nullptr)
         return;
 
@@ -211,7 +211,7 @@ void World::DelComponent(Entity e, Hash64 hash)
 
 std::vector<TypeID> World::GetAllComponentType(Entity e) const
 {
-    return TypeRegistry::GetTypesOfMask(GetMask(e));
+    return ComponentRegistry::GetTypesOfMask(GetMask(e));
 }
 
 size_t World::GetEntityCount() const
@@ -242,7 +242,7 @@ void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
     {
         TypeID typeID = __builtin_ctzll(common);
 
-        auto info = TypeRegistry::GetTypeInfoByID(typeID);
+        auto info = ComponentRegistry::GetComponentInfoByID(typeID);
 
         void* dst_component = dst->get(dst_loc, info);
         void* src_component = src->get(src_loc, info);

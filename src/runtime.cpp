@@ -13,7 +13,8 @@
 #include "gr-base/managers/eventManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 
-#include "gr-base/ecs/typeRegistry.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
+#include "gr-base/ecs/systemRegistry.hpp"
 
 void Runtime::initialize()
 {
@@ -21,7 +22,8 @@ void Runtime::initialize()
 
     EventManager::Initialize();
 
-    TypeRegistry::Initialize();
+    ComponentRegistry::Initialize();
+    SystemRegistry::Initialize();
 
     Threadpool::Initialize();
 
@@ -50,7 +52,8 @@ void Runtime::shutdown()
 
     Threadpool::Shutdown();
 
-    TypeRegistry::Shutdown();
+    ComponentRegistry::Shutdown();
+    SystemRegistry::Shutdown();
 
     EventManager::Shutdown();
 

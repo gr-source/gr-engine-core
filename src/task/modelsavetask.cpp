@@ -40,7 +40,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
 
     for (auto& typeID : scene->GetWorld()->GetAllComponentType(entity))
     {
-        auto type = TypeRegistry::GetTypeInfoByID(typeID);
+        auto type = ComponentRegistry::GetComponentInfoByID(typeID);
 
         auto component = gameObject.GetComponent(typeID);
 

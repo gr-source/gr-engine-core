@@ -8,13 +8,15 @@
 
 #include "gr-base/externals/handle.h"
 
-#define INVALID_ARCHETYPE (ArchetypeID)-1
-#define INVALID_COMPONENT (ComponentID)-1
-#define INVALID_SIGNATURE (Signature)-1
-#define INVALID_ENTITY (Entity)-1
-#define INVALID_TYPE (TypeID)-1
+#include <stdint.h>
 
-#define INVALID_CHUNK (ChunkID)-1
+#define INVALID_ARCHETYPE UINT32_MAX
+#define INVALID_COMPONENT UINT32_MAX
+#define INVALID_CHUNK UINT32_MAX
+#define INVALID_TYPE UINT32_MAX
+
+#define INVALID_SIGNATURE UINT64_MAX
+#define INVALID_ENTITY UINT64_MAX
 
 typedef Handle Entity;
 
@@ -31,10 +33,10 @@ class EntityManager;
 class TypeRegistry;
 class World;
 
-// template<typename... Components>
-// class View;
+struct TypeInfo2;
 
-struct TypeInfo;
+struct ComponentInfo;
+struct SystemInfo;
 
 template <typename T>
 inline Hash64 GetHash64ByType(const char* key = nullptr) noexcept

@@ -27,39 +27,39 @@ public:
 
     inline void* AddComponent(Entity e, const char* name, const void* src)
     {
-        return AddComponent(e, TypeRegistry::GetTypeIDByName(name), src);
+        return AddComponent(e, ComponentRegistry::GetTypeIDByName(name), src);
     }
 
     template <typename T>
     T* AddComponent(Entity e, T temp ={})
     {
-        return static_cast<T*>(AddComponent(e, TypeRegistry::GetTypeID<T>(), &temp));
+        return static_cast<T*>(AddComponent(e, ComponentRegistry::GetTypeID<T>(), &temp));
     }
 
     void* GetComponent(Entity e, TypeID typeID) const;
 
     inline void* GetComponent(Entity e, const char* name) const
     {
-        return GetComponent(e, TypeRegistry::GetTypeIDByName(name));
+        return GetComponent(e, ComponentRegistry::GetTypeIDByName(name));
     }
 
     template <typename T>
     T* GetComponent(Entity e)
     {
-        return static_cast<T*>(GetComponent(e, TypeRegistry::GetTypeID<T>()));
+        return static_cast<T*>(GetComponent(e, ComponentRegistry::GetTypeID<T>()));
     }
 
     void* GetOrAddComponent(Entity e, TypeID typeID);
 
     inline void* GetOrAddComponent(Entity e, const char* name)
     {
-        return GetOrAddComponent(e, TypeRegistry::GetTypeIDByName(name));
+        return GetOrAddComponent(e, ComponentRegistry::GetTypeIDByName(name));
     }
 
     template <typename T>
     inline T* GetOrAddComponent(Entity e)
     {
-        return static_cast<T*>(GetOrAddComponent(e, TypeRegistry::GetTypeID<T>()));
+        return static_cast<T*>(GetOrAddComponent(e, ComponentRegistry::GetTypeID<T>()));
     }
 
     bool HasComponent(Entity entity, Signature mask) const;
@@ -67,7 +67,7 @@ public:
     template <typename... Components>
     bool HasComponent(Entity entity) const
     {
-        return HasComponent(entity, TypeRegistry::GetMask<Components...>());
+        return HasComponent(entity, ComponentRegistry::GetMask<Components...>());
     }
 
     void DelComponent(Entity e, Hash64 hash);
@@ -88,7 +88,7 @@ public:
     template<typename... Components, typename Func>
     void Query(Func&& func)
     {
-        Signature requiredMask = TypeRegistry::GetMask<Components...>();
+        Signature requiredMask = ComponentRegistry::GetMask<Components...>();
 
         for (size_t i=0;i<m_count;i++)
         {

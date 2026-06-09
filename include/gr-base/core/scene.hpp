@@ -107,7 +107,7 @@ public:
     template <typename T>
     inline void MarkChanged(Entity e)
     {
-        MarkChanged(TypeRegistry::GetTypeID<T>(), e);
+        MarkChanged(ComponentRegistry::GetTypeID<T>(), e);
     }
 
     void MarkChanged(TypeID type, Entity e);
@@ -115,7 +115,7 @@ public:
     template <typename T>
     std::vector<Entity> Changed()
     {
-        return Changed(TypeRegistry::GetTypeID<T>());
+        return Changed(ComponentRegistry::GetTypeID<T>());
     }
 
     std::vector<Entity> Changed(TypeID type);
@@ -126,7 +126,7 @@ private:
 
     std::vector<Entity> v_object_selected_list;
 
-    std::vector<std::unique_ptr<System>> m_systems[static_cast<int>(StageType::COUNT)];
+    std::vector<std::unique_ptr<ISystem>> m_systems[static_cast<int>(StageType::COUNT)];
 
     std::vector<ChangeSet> changes;
 

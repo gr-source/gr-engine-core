@@ -12,7 +12,7 @@
 #include <vector>
 #include <string>
 
-class WorldSystem : public System
+class WorldSystem : public ISystem
 {
 public:
     WorldSystem();
@@ -38,5 +38,11 @@ private:
     void unloadChunk(CellID id);
 
     void render(StreamChunk* chunk);
+};
+
+template <>
+struct type_traits<WorldSystem>
+{
+    static constexpr TypeCategory category = TypeCategory::System;
 };
 

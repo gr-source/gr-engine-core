@@ -8,27 +8,37 @@
 
 typedef void (*MethodPointer)();
 
-typedef struct TypeInfo
+struct TypeInfo2
 {
-    const char* name;
-    Hash64 hash;
-    TypeID index;
-    size_t stride;
-    size_t alignment;
+    const char* name = nullptr;
+    Hash64 hash = INVALID_HASH64;
+    TypeID index = INVALID_TYPE;
 
-    bool globalCpy;
-    bool serializable;
+    size_t stride = 0;
+    size_t alignment = 0;
 
-    StorageKind storage;
+    MethodPointer constructor = nullptr;
+    MethodPointer destructor = nullptr;
 
-    MethodPointer constructor;
-    MethodPointer destructor;
-    MethodPointer copy;
-    MethodPointer move;
+    MethodPointer copy = nullptr;
+    MethodPointer move = nullptr;
+};
 
-    MethodPointer serialize;
-    MethodPointer deserialize;
-} TypeInfo;
+struct ComponentInfo : TypeInfo2
+{
+    MethodPointer serialize = nullptr;
+    MethodPointer deserialize = nullptr;
+
+    StorageKind storage = StorageKind::Archetype;
+
+    bool globalCpy = false;
+    bool serializable = false;
+};
+
+struct SystemInfo : TypeInfo2
+{
+    Signature depends_on = 0;
+};
 
 template<typename, typename = void>
 struct HasSerialize : std::false_type {};

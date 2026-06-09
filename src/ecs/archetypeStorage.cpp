@@ -30,7 +30,7 @@ ArchetypeStorage::ArchetypeStorage(Signature _mask, TypeID typeID) :
     Signature temp = mask;
     while (temp)
     {
-        auto info = TypeRegistry::GetTypeInfoByID(__builtin_ctzll(temp));
+        auto info = ComponentRegistry::GetComponentInfoByID(__builtin_ctzll(temp));
 
         component_stride += info->stride;
 
@@ -44,7 +44,7 @@ ArchetypeStorage::ArchetypeStorage(Signature _mask, TypeID typeID) :
     temp = mask;
     while (temp)
     {
-        auto info = TypeRegistry::GetTypeInfoByID(__builtin_ctzll(temp));
+        auto info = ComponentRegistry::GetComponentInfoByID(__builtin_ctzll(temp));
         
         while (info->index >= typeOffset_capacity)
             grow_type();
@@ -135,7 +135,7 @@ EntityLocation ArchetypeStorage::allocate(Entity entity)
     return {chunkID, row};
 }
 
-uint8_t* ArchetypeStorage::get(EntityLocation loc, const TypeInfo* info) const
+uint8_t* ArchetypeStorage::get(EntityLocation loc, const ComponentInfo* info) const
 {
     assert(info->index < typeOffset_capacity);
 
@@ -179,7 +179,7 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
         Signature temp = mask;
         while (temp)
         {
-            auto info = TypeRegistry::GetTypeInfoByID(__builtin_ctzll(temp));
+            auto info = ComponentRegistry::GetComponentInfoByID(__builtin_ctzll(temp));
 
             uint8_t* array = chunk.data + typeOffsets[info->index];
 
@@ -199,7 +199,7 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
     Signature temp = mask;
     while (temp)
     {
-        auto info = TypeRegistry::GetTypeInfoByID(__builtin_ctzll(temp));
+        auto info = ComponentRegistry::GetComponentInfoByID(__builtin_ctzll(temp));
 
         uint8_t* array = chunk.data + typeOffsets[info->index];
 
@@ -276,7 +276,7 @@ ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) :
 
     while (mask)
     {
-        auto info = Type::GetTypeInfoByID(__builtin_ctzll(mask));
+        auto info = Type::GetComponentInfoByID(__builtin_ctzll(mask));
         
         if (info->index >= m_typeidtoarrayoffset.size())
             m_typeidtoarrayoffset.resize(info->index + 1, 0);
@@ -353,7 +353,7 @@ bool ArchetypeStorage::Deallocate(ComponentID removeComponentID)
         {
             TypeID typeID = __builtin_ctzll(mask);
 
-            auto type = Type::GetTypeInfoByID(typeID);
+            auto type = Type::GetComponentInfoByID(typeID);
 
             auto offset = m_typeidtoarrayoffset[typeID];
 
@@ -378,7 +378,7 @@ bool ArchetypeStorage::Deallocate(ComponentID removeComponentID)
     return false;
 }
 
-void* ArchetypeStorage::Get(ComponentID id, const TypeInfo* type)
+void* ArchetypeStorage::Get(ComponentID id, const ComponentInfo* type)
 {
     if (id == INVALID_COMPONENT)
         return nullptr;
@@ -422,7 +422,7 @@ void ArchetypeStorage::resize()
         uint64_t mask = m_mask;
         while (mask)
         {
-            auto type = Type::GetTypeInfoByID(__builtin_ctzll(mask));
+            auto type = Type::GetComponentInfoByID(__builtin_ctzll(mask));
 
             auto oldOffset = m_typeidtoarrayoffset[type->index];
 
@@ -470,7 +470,7 @@ void ArchetypeStorage::resize()
     uint64_t mask = m_mask;
     while (mask)
     {
-        auto type = Type::GetTypeInfoByID(__builtin_ctzll(mask));
+        auto type = Type::GetComponentInfoByID(__builtin_ctzll(mask));
 
         m_typeidtoarrayoffset[type->index] = offset;
 
@@ -484,7 +484,7 @@ void ArchetypeStorage::resize()
 
 
 #include <iostream>
-uint8_t* ArchetypeStorage::allocate(const TypeInfo* info, size_t capacity)
+uint8_t* ArchetypeStorage::allocate(const ComponentInfo* info, size_t capacity)
 {
     std::cout << "[ ========== " << info->name << " ========== ]"<< std::endl;
 

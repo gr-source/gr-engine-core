@@ -19,7 +19,7 @@ struct Renderable
     Matrix4x4 *world;
 };
 
-class RenderSystem : public System
+class RenderSystem : public ISystem
 {
 public:
     void Update(Scene* scene) override;
@@ -34,4 +34,9 @@ private:
     void Setuplight(World* world, gr::Shader* shader);
 };
 
+template <>
+struct type_traits<RenderSystem>
+{
+    static constexpr TypeCategory category = TypeCategory::System;
+};
 
