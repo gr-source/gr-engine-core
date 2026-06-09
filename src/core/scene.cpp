@@ -42,6 +42,16 @@ Scene::Scene() : m_bvhtree(nullptr), m_world(nullptr), m_root(INVALID_ENTITY), m
 
 Scene::~Scene()
 {
+    for (auto& id : m_systemIDs)
+    {
+        ISystem* system = m_typeIDToSystem[id];
+
+        auto info = SystemRegistry::GetSystemByID(id);
+        ((void (*)(ISystem*))(info->destructor))(system);
+
+        free(system);
+    }
+
     delete m_world;
 
     delete m_bvhtree;
@@ -326,11 +336,8 @@ std::string Scene::GetEntityName(Entity entity)
 
 void Scene::Update()
 {
-    for (int i=0;i<static_cast<int>(StageType::COUNT);i++)
-    {
-        for (auto& sys : m_systems[i])
-            sys->Update(this);
-    }
+    for (auto& sys : m_systems)
+        sys->Update(this);
 
     // m_bvhtree->renderer();
 }
@@ -367,4 +374,83 @@ std::vector<Entity> Scene::Changed(TypeID type)
 
     return std::move(change.entities);
 }
+
+void Scene::registerSystem(const SystemInfo* info)
+{
+    m_systemIDs.push_back(info->index);
+
+    if (info->index >= m_typeIDToSystem.size())
+        m_typeIDToSystem.resize(info->index + 1, nullptr);
+
+    ISystem* system = createSystem(info);
+
+    m_typeIDToSystem[info->index] = system;
+
+    m_systems.push_back(system);
+
+    sortSystems();
+}
+
+ISystem* Scene::createSystem(const SystemInfo* info)
+{
+    ISystem* system = (ISystem*)malloc(info->stride);
+    ((void(*)(ISystem*, const ISystem*))(info->constructor))(system, nullptr);
+
+    return system;
+}
+
+void Scene::sortSystems()
+{
+    std::unordered_map<TypeID, Signature> graph;
+    for (auto& id : m_systemIDs)
+        graph[id] = SystemRegistry::GetSystemByID(id)->depends_on;
+
+    std::unordered_set<TypeID> visited;
+    std::unordered_set<TypeID> temp;
+    std::vector<TypeID> order;
+    bool hasCycle = false;
+
+    std::function<void(TypeID)> dfs = [&](TypeID node)
+    {
+        if (temp.count(node))
+        { 
+            hasCycle = true; 
+            return;
+        }
+
+        if (!visited.count(node))
+        {
+            temp.insert(node);
+
+            Signature mask = graph[node];
+            while (mask)
+            {
+                dfs(__builtin_ctzll(mask));
+
+                mask &= (mask - 1);
+            }
+
+            temp.erase(node);
+            visited.insert(node);
+            order.push_back(node);
+        }
+    };
+
+    for (auto& id : m_systemIDs)
+    {
+        if (!visited.count(id))
+            dfs(id);
+    }
+
+    if (hasCycle)
+    {
+        std::cout << "Erro: ciclo detectado na DAG!\n";
+        return;
+    }
+
+    for (size_t i=0;i<order.size();i++)
+        m_systems[i] = m_typeIDToSystem[order[i]];
+}
+
+
 

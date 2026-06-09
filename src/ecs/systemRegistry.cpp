@@ -78,12 +78,19 @@ void SystemRegistry::grow()
     m_systems = (SystemInfo*)realloc(m_systems, m_capacity * sizeof(SystemInfo));
 }
 
-const SystemInfo* SystemRegistry::getSystemInfoByHash(Hash64 hash) const
+const SystemInfo* SystemRegistry::getSystemByHash(Hash64 hash) const
 {
     auto it = m_hashMap.find(hash);
     if (it != m_hashMap.end())
         return m_systems + it->second;
     return nullptr;
+}
+
+const SystemInfo* SystemRegistry::getSystemByID(TypeID id)
+{
+    assert(id < m_count);
+
+    return m_systems + id;
 }
 
 TypeID SystemRegistry::getTypeIDByHash(Hash64 hash) const
@@ -92,13 +99,6 @@ TypeID SystemRegistry::getTypeIDByHash(Hash64 hash) const
     if (it != m_hashMap.end())
         return it->second;
     return INVALID_TYPE;
-}
-
-const SystemInfo* SystemRegistry::getSystemInfoByID(TypeID id)
-{
-    assert(id < componentCount);
-
-    return m_systems + id;
 }
 
 

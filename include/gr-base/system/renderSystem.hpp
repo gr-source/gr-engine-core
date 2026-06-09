@@ -38,5 +38,7 @@ template <>
 struct type_traits<RenderSystem>
 {
     static constexpr TypeCategory category = TypeCategory::System;
+
+    static constexpr size_t size = sizeof(RenderSystem);
 };
 

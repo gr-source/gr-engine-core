@@ -4,6 +4,8 @@
 #include "gr-base/core/default.hpp"
 
 #include "gr-base/core/system.hpp"
+
+#include "gr-base/ecs/systemRegistry.hpp"
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/spatial/default.hpp"
@@ -99,8 +101,8 @@ public:
 
     std::string GetEntityName(Entity entity);
 
-    template <typename T, typename... Args>
-    void RegistrySystem(StageType stage, Args&&... args);
+    template <typename T>
+    void RegistrySystem();
 
     void Update();
 
@@ -126,8 +128,6 @@ private:
 
     std::vector<Entity> v_object_selected_list;
 
-    std::vector<std::unique_ptr<ISystem>> m_systems[static_cast<int>(StageType::COUNT)];
-
     std::vector<ChangeSet> changes;
 
     BVHtree* m_bvhtree;
@@ -139,13 +139,30 @@ private:
     Entity m_root;
 
     Entity m_camera;
+
+    // systems
+    std::vector<TypeID> m_systemIDs;
+
+    std::vector<ISystem*> m_typeIDToSystem;
+
+    std::vector<ISystem*> m_systems;
+
+    void registerSystem(const SystemInfo* info);
+
+    ISystem* createSystem(const SystemInfo* info);
+
+    void sortSystems();
 };
 
 
-template <typename T, typename... Args>
-void Scene::RegistrySystem(StageType stage, Args&&... args)
+template <typename T>
+inline void Scene::RegistrySystem()
 {
-    m_systems[static_cast<int>(stage)].push_back(std::make_unique<T>(std::forward<Args>(args)...));
+    auto info = SystemRegistry::GetSystem<T>();
+    if (info != nullptr)
+        registerSystem(info);
+
+    // m_systems[static_cast<int>(stage)].push_back(std::make_unique<T>(std::forward<Args>(args)...));
 }
 
 

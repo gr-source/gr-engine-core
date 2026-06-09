@@ -44,5 +44,7 @@ template <>
 struct type_traits<WorldSystem>
 {
     static constexpr TypeCategory category = TypeCategory::System;
+
+    static constexpr size_t size = sizeof(WorldSystem);
 };
 

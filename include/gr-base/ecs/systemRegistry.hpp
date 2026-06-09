@@ -20,18 +20,18 @@ public:
     template <typename T, typename... Systems>
     static void Register(const char* name);
 
-    inline static const SystemInfo* GetSystemInfoByHash(Hash64 hash)
+    inline static const SystemInfo* GetSystemByHash(Hash64 hash)
     {
-        return s_SystemRegistry->getSystemInfoByHash(hash);
+        return s_SystemRegistry->getSystemByHash(hash);
     }
 
-    inline static const SystemInfo* GetSystemInfoByName(const char* name)
+    inline static const SystemInfo* GetSystemByName(const char* name)
     {
-        return s_SystemRegistry->getSystemInfoByHash(hash::fnv1_str(name));
+        return s_SystemRegistry->getSystemByHash(hash::fnv1_str(name));
     }
 
     template <typename T>
-    static const SystemInfo* GetType();
+    static const SystemInfo* GetSystem();
 
     static TypeID GetTypeIDByHash(Hash64 hash)
     {
@@ -46,9 +46,9 @@ public:
     template <typename T>
     static TypeID GetTypeID();
 
-    inline static const SystemInfo* GetSystemInfoByID(TypeID id)
+    inline static const SystemInfo* GetSystemByID(TypeID id)
     {
-        return s_SystemRegistry->getSystemInfoByID(id);
+        return s_SystemRegistry->getSystemByID(id);
     }
 
     template <typename... Components>
@@ -78,11 +78,11 @@ private:
 
     void grow();
 
-    const SystemInfo* getSystemInfoByHash(Hash64 hash) const;
+    const SystemInfo* getSystemByHash(Hash64 hash) const;
+
+    const SystemInfo* getSystemByID(TypeID id);
 
     TypeID getTypeIDByHash(Hash64 hash) const;
-
-    const SystemInfo* getSystemInfoByID(TypeID id);
 
     template <typename T>
     static void Constructor(void* dest, const void* src);
@@ -124,15 +124,21 @@ inline void SystemRegistry::Register(const char *name)
 }
 
 template <typename T>
-inline const SystemInfo* SystemRegistry::GetType()
+inline const SystemInfo* SystemRegistry::GetSystem()
 {
-    static SystemInfo* info = s_SystemRegistry->getTypeIDByHash(GetHash64ByType<T>());
+    static_assert(type_traits<T>::size > 0, "This type is incomplete.");
+    static_assert(type_traits<T>::category == TypeCategory::System, "This type is not valid.");
+
+    static const SystemInfo* info = s_SystemRegistry->getSystemByHash(GetHash64ByType<T>());
     return info;
 }
 
 template <typename T>
 inline TypeID SystemRegistry::GetTypeID()
 {
+    static_assert(type_traits<T>::size > 0, "This type is incomplete.");
+    static_assert(type_traits<T>::category == TypeCategory::System, "This type is not valid.");
+
     static TypeID id = s_SystemRegistry->getTypeIDByHash(GetHash64ByType<T>());
     return id;
 }
