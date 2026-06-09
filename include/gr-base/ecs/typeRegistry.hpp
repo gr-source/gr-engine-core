@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <vector>
 
-class Type
+class TypeRegistry
 {
 public:
     static void Initialize();
@@ -21,12 +21,12 @@ public:
 
     inline static const TypeInfo* GetTypeInfoByHash(Hash64 hash)
     {
-        return s_Type->getTypeInfoByHash(hash);
+        return s_TypeRegistry->getTypeInfoByHash(hash);
     }
 
     inline static const TypeInfo* GetTypeInfoByName(const char* name)
     {
-        return s_Type->getTypeInfoByHash(hash::fnv1_str(name));
+        return s_TypeRegistry->getTypeInfoByHash(hash::fnv1_str(name));
     }
 
     template <typename T>
@@ -34,12 +34,12 @@ public:
 
     static TypeID GetTypeIDByHash(Hash64 hash)
     {
-        return s_Type->getTypeIDByHash(hash);
+        return s_TypeRegistry->getTypeIDByHash(hash);
     }
 
     inline static TypeID GetTypeIDByName(const char* name)
     {
-        return s_Type->getTypeIDByHash(hash::fnv1_str(name));
+        return s_TypeRegistry->getTypeIDByHash(hash::fnv1_str(name));
     }
 
     template <typename T>
@@ -47,7 +47,7 @@ public:
 
     inline static const TypeInfo* GetTypeInfoByID(TypeID id)
     {
-        return s_Type->getTypeInfoByID(id);
+        return s_TypeRegistry->getTypeInfoByID(id);
     }
 
     template <typename... Components>
@@ -61,16 +61,16 @@ public:
 
     inline static const TypeInfo* GetTypeInfoPool()
     {
-        return s_Type->m_typeInfoPool;
+        return s_TypeRegistry->m_typeInfoPool;
     }
 
     inline static size_t GetTypeCount()
     {
-        return s_Type->m_count;
+        return s_TypeRegistry->m_count;
     }
 
 private:
-    static Type* s_Type;
+    static TypeRegistry* s_TypeRegistry;
 
     std::unordered_map<Hash64, TypeID> m_hashToTypeIDMap;
 
@@ -81,8 +81,8 @@ private:
     size_t m_capacity;
     size_t m_count;
 
-    Type();
-    ~Type();
+    TypeRegistry();
+    ~TypeRegistry();
 
     void registry(TypeInfo* info);
 
@@ -108,7 +108,7 @@ private:
 };
 
 template <typename T>
-inline void Type::Registry(const char* name, bool serializable)
+inline void TypeRegistry::Registry(const char* name, bool serializable)
 {
     TypeInfo info;
     info.name = name;
@@ -123,10 +123,10 @@ inline void Type::Registry(const char* name, bool serializable)
     info.serializable = serializable;
 
     // Methods
-    info.constructor = (MethodPointer)Type::Constructor<T>;
-    info.destructor = (MethodPointer)Type::Destructor<T>;
-    info.copy = (MethodPointer)Type::Copy<T>;
-    info.move = (MethodPointer)Type::Move<T>;
+    info.constructor = (MethodPointer)TypeRegistry::Constructor<T>;
+    info.destructor = (MethodPointer)TypeRegistry::Destructor<T>;
+    info.copy = (MethodPointer)TypeRegistry::Copy<T>;
+    info.move = (MethodPointer)TypeRegistry::Move<T>;
 
     if constexpr (HasSerialize<T>::value)
     {
@@ -144,25 +144,25 @@ inline void Type::Registry(const char* name, bool serializable)
         info.deserialize = nullptr;
     }
 
-    s_Type->registry(&info);
+    s_TypeRegistry->registry(&info);
 }
 
 template <typename T>
-inline const TypeInfo* Type::GetType()
+inline const TypeInfo* TypeRegistry::GetType()
 {
-    static TypeInfo* info = s_Type->getTypeIDByHash(GetHash64ByType<T>());
+    static TypeInfo* info = s_TypeRegistry->getTypeIDByHash(GetHash64ByType<T>());
     return info;
 }
 
 template <typename T>
-inline TypeID Type::GetTypeID()
+inline TypeID TypeRegistry::GetTypeID()
 {
-    static TypeID id = s_Type->getTypeIDByHash(GetHash64ByType<T>());
+    static TypeID id = s_TypeRegistry->getTypeIDByHash(GetHash64ByType<T>());
     return id;
 }
 
 template <typename T>
-inline void Type::Constructor(void* dst, const void* src)
+inline void TypeRegistry::Constructor(void* dst, const void* src)
 {
     if (src != nullptr)
         new (dst) T(*static_cast<const T*>(src));
@@ -171,7 +171,7 @@ inline void Type::Constructor(void* dst, const void* src)
 }
 
 template <typename T>
-inline void Type::Destructor(void* dst)
+inline void TypeRegistry::Destructor(void* dst)
 {
     if constexpr (!std::is_trivially_destructible_v<T>)
     {
@@ -180,7 +180,7 @@ inline void Type::Destructor(void* dst)
 }
 
 template<typename T>
-inline void Type::Move(void* dst, void* src)
+inline void TypeRegistry::Move(void* dst, void* src)
 {
     if constexpr (std::is_trivially_copyable_v<T>)
     {
@@ -193,7 +193,7 @@ inline void Type::Move(void* dst, void* src)
 }
 
 template <typename T>
-inline void Type::Copy(void* dst, const void* src)
+inline void TypeRegistry::Copy(void* dst, const void* src)
 {
     if constexpr (std::is_trivially_copyable_v<T>)
     {

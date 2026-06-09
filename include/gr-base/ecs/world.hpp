@@ -2,7 +2,6 @@
 
 #include "gr-base/ecs/archetypeStorage.hpp"
 #include "gr-base/ecs/default.hpp"
-#include "gr-base/ecs/type.hpp"
 
 #include <unordered_map>
 #include <memory>
@@ -28,39 +27,39 @@ public:
 
     inline void* AddComponent(Entity e, const char* name, const void* src)
     {
-        return AddComponent(e, Type::GetTypeIDByName(name), src);
+        return AddComponent(e, TypeRegistry::GetTypeIDByName(name), src);
     }
 
     template <typename T>
     T* AddComponent(Entity e, T temp ={})
     {
-        return static_cast<T*>(AddComponent(e, Type::GetTypeID<T>(), &temp));
+        return static_cast<T*>(AddComponent(e, TypeRegistry::GetTypeID<T>(), &temp));
     }
 
     void* GetComponent(Entity e, TypeID typeID) const;
 
     inline void* GetComponent(Entity e, const char* name) const
     {
-        return GetComponent(e, Type::GetTypeIDByName(name));
+        return GetComponent(e, TypeRegistry::GetTypeIDByName(name));
     }
 
     template <typename T>
     T* GetComponent(Entity e)
     {
-        return static_cast<T*>(GetComponent(e, Type::GetTypeID<T>()));
+        return static_cast<T*>(GetComponent(e, TypeRegistry::GetTypeID<T>()));
     }
 
     void* GetOrAddComponent(Entity e, TypeID typeID);
 
     inline void* GetOrAddComponent(Entity e, const char* name)
     {
-        return GetOrAddComponent(e, Type::GetTypeIDByName(name));
+        return GetOrAddComponent(e, TypeRegistry::GetTypeIDByName(name));
     }
 
     template <typename T>
     inline T* GetOrAddComponent(Entity e)
     {
-        return static_cast<T*>(GetOrAddComponent(e, Type::GetTypeID<T>()));
+        return static_cast<T*>(GetOrAddComponent(e, TypeRegistry::GetTypeID<T>()));
     }
 
     bool HasComponent(Entity entity, Signature mask) const;
@@ -68,7 +67,7 @@ public:
     template <typename... Components>
     bool HasComponent(Entity entity) const
     {
-        return HasComponent(entity, Type::GetMask<Components...>());
+        return HasComponent(entity, TypeRegistry::GetMask<Components...>());
     }
 
     void DelComponent(Entity e, Hash64 hash);
@@ -89,7 +88,7 @@ public:
     template<typename... Components, typename Func>
     void Query(Func&& func)
     {
-        Signature requiredMask = Type::GetMask<Components...>();
+        Signature requiredMask = TypeRegistry::GetMask<Components...>();
 
         for (size_t i=0;i<m_count;i++)
         {

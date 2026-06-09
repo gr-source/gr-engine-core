@@ -1,7 +1,7 @@
 #pragma once
 
+#include "gr-base/ecs/typeRegistry.hpp"
 #include "gr-base/ecs/default.hpp"
-#include "gr-base/ecs/type.hpp"
 
 #include "gr-base/ecs/chunk.hpp"
 
@@ -56,7 +56,7 @@ struct ArchetypeStorage
     template <typename T>
     inline T* getRaw(ChunkID chunkID) const
     {
-        return reinterpret_cast<T*>(getRaw(chunkID, Type::GetTypeID<T>()));
+        return reinterpret_cast<T*>(getRaw(chunkID, TypeRegistry::GetTypeID<T>()));
     }
 
     uint8_t* getRaw(ChunkID chunkID, TypeID typeID) const;

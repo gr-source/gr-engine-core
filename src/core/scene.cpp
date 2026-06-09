@@ -103,7 +103,7 @@ Entity Scene::create(Entity other)
 
     for (auto& typeID : m_world->GetAllComponentType(other))
     {
-        auto type = Type::GetTypeInfoByID(typeID);
+        auto type = TypeRegistry::GetTypeInfoByID(typeID);
 
         if (go.GetComponent(typeID) != nullptr)
             continue;

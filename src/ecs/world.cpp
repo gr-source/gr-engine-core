@@ -4,7 +4,6 @@
 
 #include "gr-base/ecs/archetypeStorage.hpp"
 #include "gr-base/ecs/entityManager.hpp"
-#include "gr-base/ecs/type.hpp"
 
 #include "gr-base/externals/handle.h"
 
@@ -110,7 +109,7 @@ void* World::AddComponent(Entity e, TypeID typeID, const void* component)
     if (!m_entityLocationMap->isAlive(e))
         return nullptr;
 
-    auto type = Type::GetTypeInfoByID(typeID);
+    auto type = TypeRegistry::GetTypeInfoByID(typeID);
     if (type == nullptr)
         return nullptr;
 
@@ -145,7 +144,7 @@ void* World::GetComponent(Entity e, TypeID typeID) const
     if (!m_entityLocationMap->isAlive(e))
         return nullptr;
 
-    auto type = Type::GetTypeInfoByID(typeID);
+    auto type = TypeRegistry::GetTypeInfoByID(typeID);
     if (type == nullptr)
         return nullptr;
 
@@ -191,7 +190,7 @@ void World::DelComponent(Entity e, Hash64 hash)
     if (!m_entityLocationMap->isAlive(e))
         return;
 
-    auto type = Type::GetTypeInfoByHash(hash);
+    auto type = TypeRegistry::GetTypeInfoByHash(hash);
     if (type == nullptr)
         return;
 
@@ -212,7 +211,7 @@ void World::DelComponent(Entity e, Hash64 hash)
 
 std::vector<TypeID> World::GetAllComponentType(Entity e) const
 {
-    return Type::GetTypesOfMask(GetMask(e));
+    return TypeRegistry::GetTypesOfMask(GetMask(e));
 }
 
 size_t World::GetEntityCount() const
@@ -243,7 +242,7 @@ void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
     {
         TypeID typeID = __builtin_ctzll(common);
 
-        auto info = Type::GetTypeInfoByID(typeID);
+        auto info = TypeRegistry::GetTypeInfoByID(typeID);
 
         void* dst_component = dst->get(dst_loc, info);
         void* src_component = src->get(src_loc, info);

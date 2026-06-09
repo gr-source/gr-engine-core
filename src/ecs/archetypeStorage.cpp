@@ -1,7 +1,6 @@
 #include "gr-base/ecs/archetypeStorage.hpp"
 
 #include "gr-base/core/logger.hpp"
-#include "gr-base/ecs/type.hpp"
 
 #include <cassert>
 #include <cstdlib>
@@ -31,7 +30,7 @@ ArchetypeStorage::ArchetypeStorage(Signature _mask, TypeID typeID) :
     Signature temp = mask;
     while (temp)
     {
-        auto info = Type::GetTypeInfoByID(__builtin_ctzll(temp));
+        auto info = TypeRegistry::GetTypeInfoByID(__builtin_ctzll(temp));
 
         component_stride += info->stride;
 
@@ -45,7 +44,7 @@ ArchetypeStorage::ArchetypeStorage(Signature _mask, TypeID typeID) :
     temp = mask;
     while (temp)
     {
-        auto info = Type::GetTypeInfoByID(__builtin_ctzll(temp));
+        auto info = TypeRegistry::GetTypeInfoByID(__builtin_ctzll(temp));
         
         while (info->index >= typeOffset_capacity)
             grow_type();
@@ -180,7 +179,7 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
         Signature temp = mask;
         while (temp)
         {
-            auto info = Type::GetTypeInfoByID(__builtin_ctzll(temp));
+            auto info = TypeRegistry::GetTypeInfoByID(__builtin_ctzll(temp));
 
             uint8_t* array = chunk.data + typeOffsets[info->index];
 
@@ -197,11 +196,10 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
         chunk.entities[dst_row] = moved;
     }
 
-    // TODO: Precisa adiciona o destrutira mas o move já destroi isso quebra
     Signature temp = mask;
     while (temp)
     {
-        auto info = Type::GetTypeInfoByID(__builtin_ctzll(temp));
+        auto info = TypeRegistry::GetTypeInfoByID(__builtin_ctzll(temp));
 
         uint8_t* array = chunk.data + typeOffsets[info->index];
 

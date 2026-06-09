@@ -11,8 +11,6 @@
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/ecs/type.hpp"
-
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
@@ -65,7 +63,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
 
     for (auto &&[hash, buffer] : asset->componentBuffer)
     {
-        auto type = Type::GetTypeInfoByHash(hash);
+        auto type = TypeRegistry::GetTypeInfoByHash(hash);
         if (type == nullptr)
             continue;
 

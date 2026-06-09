@@ -28,8 +28,8 @@ typedef uint64_t Signature;
 
 class ArchetypeStorage;
 class EntityManager;
+class TypeRegistry;
 class World;
-class Type;
 
 // template<typename... Components>
 // class View;

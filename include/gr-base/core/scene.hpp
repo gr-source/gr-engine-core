@@ -107,7 +107,7 @@ public:
     template <typename T>
     inline void MarkChanged(Entity e)
     {
-        MarkChanged(Type::GetTypeID<T>(), e);
+        MarkChanged(TypeRegistry::GetTypeID<T>(), e);
     }
 
     void MarkChanged(TypeID type, Entity e);
@@ -115,7 +115,7 @@ public:
     template <typename T>
     std::vector<Entity> Changed()
     {
-        return Changed(Type::GetTypeID<T>());
+        return Changed(TypeRegistry::GetTypeID<T>());
     }
 
     std::vector<Entity> Changed(TypeID type);

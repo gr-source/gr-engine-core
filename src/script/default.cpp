@@ -2,7 +2,7 @@
 
 #include "gr-base/core/logger.hpp"
 
-#include "gr-base/ecs/type.hpp"
+#include "gr-base/ecs/typeRegistry.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/relationship.hpp"
@@ -19,11 +19,11 @@ struct type_traits<Name>
 };
 
 #define REGISTRY(K, b) \
-        Type::Registry<K>(#K, b) \
+        TypeRegistry::Registry<K>(#K, b) \
 
 void RegistryDefaultComponent()
 {
-    logger::debug("[Type::Registry] Carregando script padrões...");
+    logger::debug("[TypeRegistry::Registry] Carregando script padrões...");
 
     REGISTRY(Relationship, false);
 

@@ -5,13 +5,15 @@
 #include "gr-base/core/mainthreaddispatcher.hpp"
 
 #include "gr-base/core/renderer.hpp"
+
 #include "gr-base/core/thread/taskmanager.hpp"
 #include "gr-base/core/thread/threadpool.hpp"
+
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/eventManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 
-#include "gr-base/ecs/type.hpp"
+#include "gr-base/ecs/typeRegistry.hpp"
 
 void Runtime::initialize()
 {
@@ -19,7 +21,7 @@ void Runtime::initialize()
 
     EventManager::Initialize();
 
-    Type::Initialize();
+    TypeRegistry::Initialize();
 
     Threadpool::Initialize();
 
@@ -48,7 +50,7 @@ void Runtime::shutdown()
 
     Threadpool::Shutdown();
 
-    Type::Shutdown();
+    TypeRegistry::Shutdown();
 
     EventManager::Shutdown();
 

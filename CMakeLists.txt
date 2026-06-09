@@ -87,10 +87,10 @@ set(managers_src
 )
 
 set(ECS_SRC
-    src/ecs/entityManager.cpp
     src/ecs/archetypeStorage.cpp
+    src/ecs/entityManager.cpp
+    src/ecs/typeRegistry.cpp
     src/ecs/world.cpp
-    src/ecs/type.cpp
 )
 
 set(EXTERNAL_SRC
