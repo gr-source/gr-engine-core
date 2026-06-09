@@ -43,6 +43,13 @@ inline Hash64 GetHash64ByType(const char* key = nullptr) noexcept
     return hash;
 }
 
+enum class TypeCategory
+{
+    Unknown,
+    Component,
+    System
+};
+
 enum class StorageKind
 {
     Archetype,
@@ -52,7 +59,11 @@ enum class StorageKind
 template <typename T>
 struct type_traits
 {
+    static constexpr TypeCategory category = TypeCategory::Unknown;
+
     static constexpr StorageKind storage = StorageKind::Archetype;
+
+    static constexpr size_t size = sizeof(T);
 };
 
 

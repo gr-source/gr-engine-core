@@ -12,12 +12,6 @@
 #include "gr-base/script/light.hpp"
 #include "gr-base/script/name.hpp"
 
-template <>
-struct type_traits<Name>
-{
-    static constexpr StorageKind storage = StorageKind::Sparse;
-};
-
 #define REGISTRY(K, b) \
         TypeRegistry::Registry<K>(#K, b) \
 
