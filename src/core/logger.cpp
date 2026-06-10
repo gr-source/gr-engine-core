@@ -28,11 +28,10 @@ void logger::Shutdown()
 // private
 logger::logger(const logger_config &config)
 {
-    std::string dir = config.path + "/logs";
-    if (!gfile::exists(dir))
-        gfile::create_directory(dir);
+    if (!gfile::exists(config.path))
+        gfile::create_directory(config.path);
 
-    std::string file = dir + "/" + __DATE__ + ".txt";
+    std::string file = config.path + "/" + __DATE__ + ".txt";
 
     m_handle = open(file.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
     if (m_handle == -1)
