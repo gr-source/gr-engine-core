@@ -101,9 +101,6 @@ public:
 
     std::string GetEntityName(Entity entity);
 
-    template <typename T>
-    void RegistrySystem();
-
     void Update();
 
     template <typename T>
@@ -122,6 +119,27 @@ public:
 
     std::vector<Entity> Changed(TypeID type);
 
+    void AddSystemByID(TypeID systemID);
+
+    template <typename T>
+    void AddSystem();
+
+    void DelSystemByID(TypeID systemID);
+
+    template <typename T>
+    void DelSystem();
+
+    inline const std::vector<TypeID>& GetSystemIDs() const
+    {
+        return m_systemIDs;
+    }
+
+    inline ISystem* GetSystem(TypeID id) const
+    {
+        if (id >= m_typeIDToSystem.size())
+            return nullptr;
+        return m_typeIDToSystem[id];
+    }
 
 private:
     std::unordered_set<Handle> u_object_has_been_selected;
@@ -147,8 +165,6 @@ private:
 
     std::vector<ISystem*> m_systems;
 
-    void registerSystem(const SystemInfo* info);
-
     ISystem* createSystem(const SystemInfo* info);
 
     void sortSystems();
@@ -156,13 +172,19 @@ private:
 
 
 template <typename T>
-inline void Scene::RegistrySystem()
+inline void Scene::AddSystem()
 {
-    auto info = SystemRegistry::GetSystem<T>();
-    if (info != nullptr)
-        registerSystem(info);
+    auto systemID = SystemRegistry::GetTypeID<T>();
+    if (systemID != INVALID_TYPE)
+        AddSystemByID(systemID);
+}
 
-    // m_systems[static_cast<int>(stage)].push_back(std::make_unique<T>(std::forward<Args>(args)...));
+template <typename T>
+inline void Scene::DelSystem()
+{
+    auto systemID = SystemRegistry::GetTypeID<T>();
+    if (systemID != INVALID_TYPE)
+        DelSystemByID(systemID);
 }
 
 

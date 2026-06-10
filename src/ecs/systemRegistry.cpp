@@ -59,7 +59,10 @@ void SystemRegistry::register_info(SystemInfo* src)
     if (m_count >= m_capacity)
         grow();
 
-    TypeID typeID = static_cast<TypeID>(m_nextID++);
+    if (m_bitsetMap.find(src->hash) == m_bitsetMap.end())
+        m_bitsetMap.emplace(src->hash, static_cast<TypeID>(m_nextID++));
+
+    TypeID typeID = m_bitsetMap[src->hash];
     if (typeID >= m_typeIDToIndex.size())
         m_typeIDToIndex.resize(typeID + 1, INVALID_TYPE);
 

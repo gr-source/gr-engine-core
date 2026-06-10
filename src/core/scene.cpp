@@ -47,6 +47,7 @@ Scene::~Scene()
         ISystem* system = m_typeIDToSystem[id];
 
         auto info = SystemRegistry::GetSystemByID(id);
+
         ((void (*)(ISystem*))(info->destructor))(system);
 
         free(system);
@@ -375,8 +376,12 @@ std::vector<Entity> Scene::Changed(TypeID type)
     return std::move(change.entities);
 }
 
-void Scene::registerSystem(const SystemInfo* info)
+void Scene::AddSystemByID(TypeID systemID)
 {
+    auto info = SystemRegistry::GetSystemByID(systemID);
+    if (info == nullptr)
+        return;
+
     if (info->index >= m_typeIDToSystem.size())
         m_typeIDToSystem.resize(info->index + 1, nullptr);
 
@@ -390,6 +395,31 @@ void Scene::registerSystem(const SystemInfo* info)
     m_typeIDToSystem[info->index] = system;
 
     m_systems.push_back(system);
+
+    sortSystems();
+}
+
+void Scene::DelSystemByID(TypeID systemID)
+{
+    auto info = SystemRegistry::GetSystemByID(systemID);
+    if (info == nullptr)
+        return;
+
+    if (info->index >= m_typeIDToSystem.size())
+        return;
+
+    if (m_typeIDToSystem[info->index] == nullptr)
+        return;
+
+    m_systemIDs.erase(std::remove(m_systemIDs.begin(), m_systemIDs.end(), info->index), m_systemIDs.end());
+
+    ISystem* system = m_typeIDToSystem[info->index];
+    m_typeIDToSystem[info->index] = nullptr;
+
+    m_systems.erase(std::remove(m_systems.begin(), m_systems.end(), system), m_systems.end());
+
+    ((void(*)(ISystem*))(info->destructor))(system);
+    free(system);
 
     sortSystems();
 }
@@ -455,6 +485,8 @@ void Scene::sortSystems()
 
     for (size_t i=0;i<order.size();i++)
     {
+        std::cout << SystemRegistry::GetSystemByID(order[i])->name << std::endl;
+
         m_systems[i] = m_typeIDToSystem[order[i]];
         m_systemIDs[i] = order[i];
     }
