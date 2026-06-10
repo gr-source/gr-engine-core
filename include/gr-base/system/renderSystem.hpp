@@ -4,6 +4,7 @@
 
 #include "gr-base/core/system.hpp"
 
+#include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/managers/default.hpp"

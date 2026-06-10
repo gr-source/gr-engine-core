@@ -5,9 +5,8 @@
 
 #include "gr-base/externals/hash.hpp"
 
-#include <cstring>
 #include <unordered_map>
-#include <type_traits>
+#include <cstring>
 #include <vector>
 
 class ComponentRegistry
@@ -147,7 +146,7 @@ inline void ComponentRegistry::Register(const char* name, bool serializable)
     info.copy = (MethodPointer)ComponentRegistry::Copy<T>;
     info.move = (MethodPointer)ComponentRegistry::Move<T>;
 
-    if constexpr (HasSerialize<T>::value)
+    if constexpr (engine::type_traits::serialize<T>::value)
     {
         info.serialize = (MethodPointer)T::Serialize;
     } else
@@ -155,7 +154,7 @@ inline void ComponentRegistry::Register(const char* name, bool serializable)
         info.serialize = nullptr;
     }
 
-    if constexpr (HasDeserialize<T>::value)
+    if constexpr (engine::type_traits::deserialize<T>::value)
     {
         info.deserialize = (MethodPointer)T::Deserialize;
     } else

@@ -2,6 +2,7 @@
 
 #include "gr-base/core/renderer.hpp"
 
+#include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
 
 #include <gr-math/gmath.hpp>

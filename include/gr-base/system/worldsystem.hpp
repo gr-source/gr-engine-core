@@ -8,6 +8,8 @@
 
 #include "gr-base/core/default.hpp"
 
+#include "gr-base/ecs/type_traits.hpp"
+
 #include <unordered_map>
 #include <vector>
 #include <string>

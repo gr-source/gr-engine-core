@@ -2,13 +2,12 @@
 
 #include "gr-base/core/file/default.hpp"
 
+#include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
-
-#include <type_traits>
 
 typedef void (*MethodPointer)();
 
-struct TypeInfo2
+struct TypeInfo
 {
     const char* name = nullptr;
     Hash64 hash = INVALID_HASH64;
@@ -24,7 +23,7 @@ struct TypeInfo2
     MethodPointer move = nullptr;
 };
 
-struct ComponentInfo : TypeInfo2
+struct ComponentInfo : TypeInfo
 {
     MethodPointer serialize = nullptr;
     MethodPointer deserialize = nullptr;
@@ -35,41 +34,10 @@ struct ComponentInfo : TypeInfo2
     bool serializable = false;
 };
 
-struct SystemInfo : TypeInfo2
+struct SystemInfo : TypeInfo
 {
     Signature depends_on = 0;
 };
 
-template<typename, typename = void>
-struct HasSerialize : std::false_type {};
-
-template<typename T>
-struct HasSerialize<
-    T,
-    std::void_t<
-        decltype(
-            T::Serialize(
-                std::declval<Stream*>(),
-                std::declval<const T*>()
-            )
-        )
-    >
-> : std::true_type {};
-
-template<typename, typename = void>
-struct HasDeserialize : std::false_type {};
-
-template<typename T>
-struct HasDeserialize<
-    T,
-    std::void_t<
-        decltype(
-            T::Deserialize(
-                std::declval<Stream*>(),
-                std::declval<T*>()
-            )
-        )
-    >
-> : std::true_type {};
 
 

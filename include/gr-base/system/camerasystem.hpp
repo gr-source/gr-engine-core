@@ -2,6 +2,7 @@
 
 #include "gr-base/core/system.hpp"
 
+#include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
 
 class CameraSystem : public ISystem
