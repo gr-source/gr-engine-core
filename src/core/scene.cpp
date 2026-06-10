@@ -485,8 +485,6 @@ void Scene::sortSystems()
 
     for (size_t i=0;i<order.size();i++)
     {
-        std::cout << SystemRegistry::GetSystemByID(order[i])->name << std::endl;
-
         m_systems[i] = m_typeIDToSystem[order[i]];
         m_systemIDs[i] = order[i];
     }

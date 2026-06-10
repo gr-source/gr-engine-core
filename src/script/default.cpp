@@ -15,7 +15,7 @@
 #define REGISTER_COMPONENT(K, b) \
         do \
         { \
-            ComponentRegistry::Register<K>(#K, b); \
+            ComponentRegistry::Register<K>(b); \
         } while (0)
 
 void RegistryDefaultComponent()

@@ -18,7 +18,7 @@ public:
     static void Shutdown();
 
     template <typename T, typename... Systems>
-    static void Register(const char* name);
+    static void Register();
 
     template <typename T>
     static void Unregister();
@@ -122,15 +122,20 @@ private:
 };
 
 template <typename T, typename... Systems>
-inline void SystemRegistry::Register(const char *name)
+inline void SystemRegistry::Register()
 {
     static_assert(engine::type_traits::size<T> > 0,
         "TypeTraits must be a complete type.");
     static_assert(engine::type_traits::category<T> == TypeCategory::System,
         "TypeTraits must be specialized for T");
 
+    std::string_view temp = engine::type_traits::name<T>;
+
     SystemInfo info;
-    info.name = name;
+
+    strncpy(info.name, temp.data(), sizeof(info.name));
+    info.name[temp.size()] = '\0';
+
     info.hash = engine::type_traits::hash<T>;
     info.index = INVALID_TYPE;
 

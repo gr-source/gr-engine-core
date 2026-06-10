@@ -8,7 +8,7 @@
 
 #define REGISTER_SYSTEM(K, ...) \
     do{ \
-        SystemRegistry::Register<K __VA_OPT__(,) __VA_ARGS__>(#K); \
+        SystemRegistry::Register<K __VA_OPT__(,) __VA_ARGS__>(); \
     } while (0)
 
 void RegistryDefaultSystem()

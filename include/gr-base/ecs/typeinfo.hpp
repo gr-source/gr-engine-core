@@ -9,7 +9,7 @@ typedef void (*MethodPointer)();
 
 struct TypeInfo
 {
-    const char* name = nullptr;
+    char name[256]{0};
     Hash64 hash = INVALID_HASH64;
     TypeID index = INVALID_TYPE;
 

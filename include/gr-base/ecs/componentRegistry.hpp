@@ -17,7 +17,7 @@ public:
     static void Shutdown();
 
     template <typename T>
-    static void Register(const char* name, bool serializable);
+    static void Register(bool serializable);
 
     template <typename T>
     static void Unregister();
@@ -118,15 +118,20 @@ private:
 };
 
 template <typename T>
-inline void ComponentRegistry::Register(const char* name, bool serializable)
+inline void ComponentRegistry::Register(bool serializable)
 {
     static_assert(engine::type_traits::size<T> > 0,
         "TypeTraits must be a complete type.");
     static_assert(engine::type_traits::category<T> == TypeCategory::Component,
         "TypeTraits must be specialized for T");
 
+    std::string_view temp = engine::type_traits::name<T>;
+
     ComponentInfo info;
-    info.name = name;
+
+    strncpy(info.name, temp.data(), sizeof(info.name));
+    info.name[temp.size()] = '\0';
+
     info.hash = engine::type_traits::hash<T>;
     info.index = INVALID_TYPE;
 
