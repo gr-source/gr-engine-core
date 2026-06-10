@@ -11,11 +11,7 @@ public:
 };
 
 template <>
-struct type_traits<CameraSystem>
-{
-    static constexpr TypeCategory category = TypeCategory::System;
-
-    static constexpr size_t size = sizeof(CameraSystem);
-};
+inline constexpr TypeCategory engine::type_traits::category<CameraSystem> =
+    TypeCategory::System;
 
 

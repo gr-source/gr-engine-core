@@ -67,20 +67,7 @@ static const uint32_t crc32_table[256] = {
     0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
 };
 
-Hash64 hash::fnv1_str(const char* str)
-{
-    uint64_t hash = 14695981039346656037UL;
-
-    char c = '\0';
-    while ((c = *str++))
-    {
-        hash ^= (uint64_t)(uint8_t)(c);
-        hash *= 1099511628211UL;
-    }
-    return hash;
-}
-
-Hash64 hash::fnv1_buff(const uint8_t* buff, size_t length)
+Hash64 engine::hash::fnv1_buff(const uint8_t* buff, size_t length)
 {
     uint64_t hash = 14695981039346656037UL;
 
@@ -92,7 +79,7 @@ Hash64 hash::fnv1_buff(const uint8_t* buff, size_t length)
     return hash;
 }
 
-uint32_t hash::crc32_str(const char* str)
+uint32_t engine::hash::crc32_str(const char* str)
 {
     uint32_t crc = 0xFFFFFFFF;
 
@@ -106,7 +93,7 @@ uint32_t hash::crc32_str(const char* str)
     return ~crc;
 }
 
-uint32_t hash::crc32_buff(const uint8_t* data, size_t length)
+uint32_t engine::hash::crc32_buff(const uint8_t* data, size_t length)
 {
     uint32_t crc = 0xFFFFFFFF;
     for (size_t i = 0; i < length; i++)

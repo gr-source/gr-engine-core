@@ -20,6 +20,9 @@ public:
     template <typename T>
     static void Register(const char* name, bool serializable);
 
+    template <typename T>
+    static void Unregister();
+
     inline static const ComponentInfo* GetComponentInfoByHash(Hash64 hash)
     {
         return s_ComponentRegistry->getComponentInfoByHash(hash);
@@ -27,7 +30,7 @@ public:
 
     inline static const ComponentInfo* GetComponentInfoByName(const char* name)
     {
-        return s_ComponentRegistry->getComponentInfoByHash(hash::fnv1_str(name));
+        return s_ComponentRegistry->getComponentInfoByHash(engine::hash::fnv1_str(name));
     }
 
     template <typename T>
@@ -40,16 +43,13 @@ public:
 
     inline static TypeID GetTypeIDByName(const char* name)
     {
-        return s_ComponentRegistry->getTypeIDByHash(hash::fnv1_str(name));
+        return s_ComponentRegistry->getTypeIDByHash(engine::hash::fnv1_str(name));
     }
 
     template <typename T>
     static TypeID GetTypeID();
 
-    inline static const ComponentInfo* GetComponentInfoByID(TypeID id)
-    {
-        return s_ComponentRegistry->getComponentInfoByID(id);
-    }
+    static const ComponentInfo* GetComponentByID(TypeID id);
 
     template <typename... Components>
     inline static Signature GetMask()
@@ -73,7 +73,14 @@ public:
 private:
     static ComponentRegistry* s_ComponentRegistry;
 
+    std::unordered_map<Hash64, TypeID> m_bitsetMap;
+
     std::unordered_map<Hash64, TypeID> m_hashMap;
+    
+    std::vector<Hash64> m_typeIDToHash;
+
+    std::vector<TypeID> m_typeIDToIndex;
+    std::vector<TypeID> m_indexToTypeID;
 
     ComponentInfo* m_components;
     
@@ -81,12 +88,14 @@ private:
 
     size_t m_count;
 
-    std::vector<Hash64> m_typeIDToHash;
+    size_t m_nextID;
 
     ComponentRegistry();
     ~ComponentRegistry();
 
     void register_info(ComponentInfo* info);
+
+    void unregister(TypeID id);
 
     void grow();
 
@@ -94,7 +103,7 @@ private:
 
     TypeID getTypeIDByHash(Hash64 hash) const;
 
-    const ComponentInfo* getComponentInfoByID(TypeID id);
+    const ComponentInfo* getComponentByID(TypeID id) const;
 
     template <typename T>
     static void Constructor(void* dest, const void* src);
@@ -112,18 +121,20 @@ private:
 template <typename T>
 inline void ComponentRegistry::Register(const char* name, bool serializable)
 {
-    static_assert(type_traits<T>::category == TypeCategory::Component,
-                  "TypeTraits must be specialized for T");
+    static_assert(engine::type_traits::size<T> > 0,
+        "TypeTraits must be a complete type.");
+    static_assert(engine::type_traits::category<T> == TypeCategory::Component,
+        "TypeTraits must be specialized for T");
 
     ComponentInfo info;
     info.name = name;
-    info.hash = GetHash64ByType<T>(name);
+    info.hash = engine::type_traits::hash<T>;
     info.index = INVALID_TYPE;
 
-    info.stride = sizeof(T);
-    info.alignment = alignof(T);
+    info.stride = engine::type_traits::size<T>;
+    info.alignment = engine::type_traits::alignment<T>;
     
-    info.storage = type_traits<T>::storage;
+    info.storage = engine::type_traits::storage<T>;
 
     // flags
     info.globalCpy = std::is_trivially_copyable_v<T>;
@@ -156,16 +167,39 @@ inline void ComponentRegistry::Register(const char* name, bool serializable)
 }
 
 template <typename T>
+inline void ComponentRegistry::Unregister()
+{
+    static_assert(engine::type_traits::size<T> > 0,
+        "TypeTraits must be a complete type.");
+    static_assert(engine::type_traits::category<T> == TypeCategory::Component,
+        "TypeTraits must be specialized for T");
+
+    TypeID id = s_ComponentRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
+    if (id != INVALID_TYPE)
+        s_ComponentRegistry->unregister(id);
+}
+
+template <typename T>
 inline const ComponentInfo* ComponentRegistry::GetType()
 {
-    static ComponentInfo* info = s_ComponentRegistry->getTypeIDByHash(GetHash64ByType<T>());
+    static_assert(engine::type_traits::size<T> > 0,
+        "TypeTraits must be a complete type.");
+    static_assert(engine::type_traits::category<T> == TypeCategory::Component,
+        "TypeTraits must be specialized for T");
+
+    static ComponentInfo* info = s_ComponentRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
     return info;
 }
 
 template <typename T>
 inline TypeID ComponentRegistry::GetTypeID()
 {
-    static TypeID id = s_ComponentRegistry->getTypeIDByHash(GetHash64ByType<T>());
+    static_assert(engine::type_traits::size<T> > 0,
+        "TypeTraits must be a complete type.");
+    static_assert(engine::type_traits::category<T> == TypeCategory::Component,
+        "TypeTraits must be specialized for T");
+
+    static TypeID id = s_ComponentRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
     return id;
 }
 

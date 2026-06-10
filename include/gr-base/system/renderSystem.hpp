@@ -35,10 +35,6 @@ private:
 };
 
 template <>
-struct type_traits<RenderSystem>
-{
-    static constexpr TypeCategory category = TypeCategory::System;
-
-    static constexpr size_t size = sizeof(RenderSystem);
-};
+inline constexpr TypeCategory engine::type_traits::category<RenderSystem> =
+    TypeCategory::System;
 

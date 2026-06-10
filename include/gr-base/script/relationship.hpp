@@ -11,12 +11,6 @@ struct Relationship
 };
 
 template <>
-struct type_traits<Relationship>
-{
-    static constexpr TypeCategory category = TypeCategory::Component;
-
-    static constexpr StorageKind storage = StorageKind::Archetype;
-
-    static constexpr size_t size = sizeof(Relationship);
-};
+inline constexpr TypeCategory engine::type_traits::category<Relationship> =
+    TypeCategory::Component;
 

@@ -40,7 +40,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
 
     for (auto& typeID : scene->GetWorld()->GetAllComponentType(entity))
     {
-        auto type = ComponentRegistry::GetComponentInfoByID(typeID);
+        auto type = ComponentRegistry::GetComponentByID(typeID);
 
         auto component = gameObject.GetComponent(typeID);
 
@@ -96,7 +96,7 @@ void ModelSaveTask::onPreExecute()
 // private
 std::string ModelSaveTask::doInBackground()
 {
-    std::string file = gfile::create_temp_file(std::to_string(hash::fnv1_str(m_path.c_str())));
+    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_path.c_str())));
 
     FileStream stream(file, StreamType::OUTPUT);
 
@@ -122,7 +122,7 @@ void ModelSaveTask::onPostExecute(Result<std::string> result)
     if (!result.success)
         return Console::LogError("[ModelSaveTask] falied in to save asset '%s'!!!", name.c_str());
 
-    AssetHash hash = hash::fnv1_str(m_path.c_str());
+    AssetHash hash = engine::hash::fnv1_str(m_path.c_str());
 
     AssetDB::Registry(hash, m_path);
 

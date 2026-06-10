@@ -41,10 +41,6 @@ private:
 };
 
 template <>
-struct type_traits<WorldSystem>
-{
-    static constexpr TypeCategory category = TypeCategory::System;
-
-    static constexpr size_t size = sizeof(WorldSystem);
-};
+inline constexpr TypeCategory engine::type_traits::category<WorldSystem> =
+    TypeCategory::System;
 

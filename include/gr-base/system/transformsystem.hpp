@@ -11,11 +11,7 @@ public:
 };
 
 template <>
-struct type_traits<TransformSystem>
-{
-    static constexpr TypeCategory category = TypeCategory::System;
-
-    static constexpr size_t size = sizeof(TransformSystem);
-};
+inline constexpr TypeCategory engine::type_traits::category<TransformSystem> =
+    TypeCategory::System;
 
 

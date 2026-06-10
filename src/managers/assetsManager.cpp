@@ -219,7 +219,7 @@ MaterialHandle AssetsManager::LoadMaterial(const std::string& name)
 {
     try
     {
-        return LoadMaterialFromFile(AssetDB::Resolve(hash::fnv1_str(name.c_str())));
+        return LoadMaterialFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())));
     } catch (const std::exception& e)
     {
         throw e;
@@ -269,7 +269,7 @@ ShaderPrefab* AssetsManager::LoadShader(const std::string& name)
 {
     try
     {
-        return LoadShaderFromFile(AssetDB::Resolve(hash::fnv1_str(name.c_str())));
+        return LoadShaderFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())));
     } catch (const std::exception& e)
     {
         throw std::runtime_error(e.what());
@@ -303,7 +303,7 @@ MeshHandle AssetsManager::LoadMesh(const std::string& name)
 {
     try
     {
-        return LoadMeshFromFile(AssetDB::Resolve(hash::fnv1_str(name.c_str())));
+        return LoadMeshFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())));
     } catch (const std::exception& e)
     {
         throw std::runtime_error(e.what());
@@ -426,7 +426,7 @@ bool AssetsManager::LoadFromFile(const std::string& file, Hash64 sign, std::func
 
 void AssetsManager::loadGameObject(const std::string &name, std::function<void(Entity)> func)
 {
-    loadGameObjectFromFile(AssetDB::Resolve(hash::fnv1_str(name.c_str())) + HEADER_MODEL_EXTENSION, func);
+    loadGameObjectFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())) + HEADER_MODEL_EXTENSION, func);
 }
 
 void AssetsManager::loadGameObjectFromFile(const std::string &file, std::function<void(Entity)> func)

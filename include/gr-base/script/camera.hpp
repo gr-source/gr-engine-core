@@ -16,14 +16,8 @@ struct Camera
 };
 
 template <>
-struct type_traits<Camera>
-{
-    static constexpr TypeCategory category = TypeCategory::Component;
-
-    static constexpr StorageKind storage = StorageKind::Archetype;
-
-    static constexpr size_t size = sizeof(Camera);
-};
+inline constexpr TypeCategory engine::type_traits::category<Camera> =
+    TypeCategory::Component;
 
 struct CameraData
 {
@@ -37,14 +31,8 @@ struct CameraData
 };
 
 template <>
-struct type_traits<CameraData>
-{
-    static constexpr TypeCategory category = TypeCategory::Component;
-
-    static constexpr StorageKind storage = StorageKind::Archetype;
-
-    static constexpr size_t size = sizeof(CameraData);
-};
+inline constexpr TypeCategory engine::type_traits::category<CameraData> =
+    TypeCategory::Component;
 
 
 

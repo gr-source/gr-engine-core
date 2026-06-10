@@ -8,13 +8,7 @@ struct Name
 };
 
 template <>
-struct type_traits<Name>
-{
-    static constexpr TypeCategory category = TypeCategory::Component;
-
-    static constexpr StorageKind storage = StorageKind::Archetype;
-
-    static constexpr size_t size = sizeof(Name);
-};
+inline constexpr TypeCategory engine::type_traits::category<Name> =
+    TypeCategory::Component;
 
 

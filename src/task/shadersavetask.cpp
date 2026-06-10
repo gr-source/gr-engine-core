@@ -22,7 +22,7 @@ void ShaderSaveTask::onPreExecute()
 
 std::string ShaderSaveTask::doInBackground()
 {
-    std::string file = gfile::create_temp_file(std::to_string(hash::fnv1_str(m_path.c_str())));
+    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_path.c_str())));
 
     FileStream stream(file, StreamType::OUTPUT);
 
@@ -48,7 +48,7 @@ void ShaderSaveTask::onPostExecute(Result<std::string> result)
     if (!result.success)
         return Console::LogError("[ShaderSaveTask] falied in to save asset '%s'!!!", name.c_str());
 
-    AssetHash hash = hash::fnv1_str(m_path.c_str());
+    AssetHash hash = engine::hash::fnv1_str(m_path.c_str());
 
     AssetDB::Registry(hash, m_path);
 

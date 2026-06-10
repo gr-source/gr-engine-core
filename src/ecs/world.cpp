@@ -109,7 +109,7 @@ void* World::AddComponent(Entity e, TypeID typeID, const void* component)
     if (!m_entityLocationMap->isAlive(e))
         return nullptr;
 
-    auto type = ComponentRegistry::GetComponentInfoByID(typeID);
+    auto type = ComponentRegistry::GetComponentByID(typeID);
     if (type == nullptr)
         return nullptr;
 
@@ -144,7 +144,7 @@ void* World::GetComponent(Entity e, TypeID typeID) const
     if (!m_entityLocationMap->isAlive(e))
         return nullptr;
 
-    auto type = ComponentRegistry::GetComponentInfoByID(typeID);
+    auto type = ComponentRegistry::GetComponentByID(typeID);
     if (type == nullptr)
         return nullptr;
 
@@ -242,7 +242,7 @@ void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
     {
         TypeID typeID = __builtin_ctzll(common);
 
-        auto info = ComponentRegistry::GetComponentInfoByID(typeID);
+        auto info = ComponentRegistry::GetComponentByID(typeID);
 
         void* dst_component = dst->get(dst_loc, info);
         void* src_component = src->get(src_loc, info);

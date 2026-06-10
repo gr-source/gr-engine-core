@@ -38,13 +38,6 @@ struct TypeInfo2;
 struct ComponentInfo;
 struct SystemInfo;
 
-template <typename T>
-inline Hash64 GetHash64ByType(const char* key = nullptr) noexcept
-{
-    static Hash64 hash = hash::fnv1_str(key);
-    return hash;
-}
-
 enum class TypeCategory
 {
     Unknown,
@@ -59,13 +52,47 @@ enum class StorageKind
 };
 
 template <typename T>
-struct type_traits
+inline constexpr std::string_view get_type_name()
 {
-    static constexpr TypeCategory category = TypeCategory::Unknown;
+#if defined(__clang__)
+    constexpr auto prefix = std::string_view{"[T = "};
+    constexpr auto suffix = std::string_view{"]"};
+    constexpr auto func = std::string_view{__PRETTY_FUNCTION__};
+#else // GCC
+    constexpr auto prefix = std::string_view{"with T = "};
+    constexpr auto suffix = std::string_view{";"};
+    constexpr auto func = std::string_view{__PRETTY_FUNCTION__};
+#endif
+    constexpr auto start = func.find(prefix) + prefix.size();
+    constexpr auto end = func.find(suffix);
+    return func.substr(start, end - start);
+}
 
-    static constexpr StorageKind storage = StorageKind::Archetype;
+namespace engine::type_traits
+{
+    template <typename T>
+    inline constexpr std::string_view name =
+        get_type_name<T>();
 
-    static constexpr size_t size = sizeof(T);
-};
+    template <typename T>
+    inline constexpr Hash64 hash =
+        engine::hash::fnv1_str(engine::type_traits::name<T>);
+
+    template <typename T>
+    inline constexpr TypeCategory category =
+        TypeCategory::Unknown;
+
+    template <typename T>
+    inline constexpr StorageKind storage =
+        StorageKind::Archetype;
+
+    template <typename T>
+    inline constexpr size_t size =
+        sizeof(T);
+
+    template <typename T>
+    inline constexpr size_t alignment =
+        alignof(T);
+}
 
 

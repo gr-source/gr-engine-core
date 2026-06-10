@@ -25,13 +25,7 @@ struct Light
 };
 
 template <>
-struct type_traits<Light>
-{
-    static constexpr TypeCategory category = TypeCategory::Component;
-
-    static constexpr StorageKind storage = StorageKind::Archetype;
-
-    static constexpr size_t size = sizeof(Light);
-};
+inline constexpr TypeCategory engine::type_traits::category<Light> =
+    TypeCategory::Component;
 
 

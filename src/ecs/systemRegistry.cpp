@@ -40,7 +40,8 @@ std::vector<TypeID> SystemRegistry::GetTypesOfMask(Signature mask)
 SystemRegistry::SystemRegistry() :
     m_capacity(0),
     m_count(0),
-    m_systems(nullptr)
+    m_systems(nullptr),
+    m_nextID(0)
 {
     logger::info("[ SystemRegistry ] Initialize '%p'.", this);
 }
@@ -58,17 +59,58 @@ void SystemRegistry::register_info(SystemInfo* src)
     if (m_count >= m_capacity)
         grow();
 
-    TypeID id = static_cast<TypeID>(m_count++);
+    TypeID typeID = static_cast<TypeID>(m_nextID++);
+    if (typeID >= m_typeIDToIndex.size())
+        m_typeIDToIndex.resize(typeID + 1, INVALID_TYPE);
 
-    SystemInfo* dest = m_systems + id;
-    memcpy((void*)dest, (void*)src, sizeof(SystemInfo));
+    TypeID index = static_cast<TypeID>(m_count++);
+    m_typeIDToIndex[typeID] = index;
+    m_indexToTypeID[index] = typeID;
 
-    dest->index = id;
+    auto dst = &m_systems[index];
+    memcpy((void*)dst, (void*)src, sizeof(SystemInfo));
 
-    m_hashMap.emplace(dest->hash, id);
+    dst->index = typeID;
 
-    logger::debug("[ SystemRegistry ] registered: name=%s, hash=%llu, index=%d, stride=%ld alignment=%ld", \
-        dest->name, dest->hash, dest->index, dest->stride, dest->alignment); \
+    m_hashMap.emplace(dst->hash, typeID);
+
+    logger::debug("[ SystemRegistry ] registered: name=%s, hash=0x%llX, index=%d, stride=%ld alignment=%ld",
+        dst->name, dst->hash, dst->index, dst->stride, dst->alignment);
+}
+
+#include <iostream>
+void SystemRegistry::unregister(TypeID id)
+{
+    if (id >= m_typeIDToIndex.size())
+        return;
+
+    TypeID index = m_typeIDToIndex[id];
+    if (index == INVALID_TYPE)
+        return;
+
+    SystemInfo info = m_systems[index];
+
+    m_typeIDToIndex[id] = INVALID_TYPE;
+    m_hashMap.erase(info.hash);
+
+    TypeID lastIndex = static_cast<TypeID>(--m_count);
+    if (index != lastIndex)
+    {
+        auto dst = m_systems + index;
+        auto src = m_systems + lastIndex;
+
+        TypeID movedTypeID = m_indexToTypeID[lastIndex];
+
+        memcpy(dst, src, sizeof(ComponentInfo));
+
+        m_typeIDToIndex[movedTypeID] = index;
+        m_indexToTypeID[index] = movedTypeID;
+
+        std::cout << "Swap" << std::endl;
+    }
+
+    logger::debug("[ SystemRegistry ] unregistered: name=%s, hash=0x%llX, index=%d, stride=%ld alignment=%ld",
+        info.name, info.hash, info.index, info.stride, info.alignment);
 }
 
 void SystemRegistry::grow()
@@ -76,21 +118,27 @@ void SystemRegistry::grow()
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
     m_systems = (SystemInfo*)realloc(m_systems, m_capacity * sizeof(SystemInfo));
+
+    m_indexToTypeID.resize(m_capacity, INVALID_TYPE);
 }
 
 const SystemInfo* SystemRegistry::getSystemByHash(Hash64 hash) const
 {
     auto it = m_hashMap.find(hash);
-    if (it != m_hashMap.end())
-        return m_systems + it->second;
-    return nullptr;
+    if (it == m_hashMap.end())
+        return nullptr;
+    return getSystemByID(it->second);
 }
 
-const SystemInfo* SystemRegistry::getSystemByID(TypeID id)
+const SystemInfo* SystemRegistry::getSystemByID(TypeID id) const
 {
-    assert(id < m_count);
+    if (id >= m_typeIDToIndex.size())
+        return nullptr;
 
-    return m_systems + id;
+    TypeID index = m_typeIDToIndex[id];
+    if (index == INVALID_TYPE)
+        return nullptr;
+    return &m_systems[index];
 }
 
 TypeID SystemRegistry::getTypeIDByHash(Hash64 hash) const

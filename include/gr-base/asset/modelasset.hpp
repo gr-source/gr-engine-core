@@ -28,7 +28,7 @@ struct ModelAsset
     template <typename T>
     inline void AddComponent(const T& pref)
     {
-        AddComponent(GetHash64ByType<T>(), &pref, sizeof(T));
+        AddComponent(engine::type_traits::hash<T>, &pref, sizeof(T));
     }
 
     void AddComponent(Hash64 hash, const void* data, size_t size);

@@ -23,7 +23,7 @@ void MeshSaveTask::onPreExecute()
 
 std::string MeshSaveTask::doInBackground()
 {
-    std::string file = gfile::create_temp_file(std::to_string(hash::fnv1_str(m_path.c_str())));
+    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_path.c_str())));
 
     FileStream stream(file, StreamType::OUTPUT);
 
@@ -49,7 +49,7 @@ void MeshSaveTask::onPostExecute(Result<std::string> result)
     if (!result.success)
         return Console::LogError("[MeshSaveTask] falied in to save asset '%s'!!!", name.c_str());
 
-    AssetHash hash = hash::fnv1_str(m_path.c_str());
+    AssetHash hash = engine::hash::fnv1_str(m_path.c_str());
 
     AssetDB::Registry(hash, m_path);
 

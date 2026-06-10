@@ -24,6 +24,11 @@ void ComponentRegistry::Shutdown()
     s_ComponentRegistry = nullptr;
 }
 
+const ComponentInfo* ComponentRegistry::GetComponentByID(TypeID id)
+{
+    return s_ComponentRegistry->getComponentByID(id);
+}
+
 std::vector<TypeID> ComponentRegistry::GetTypesOfMask(Signature mask)
 {
     std::vector<TypeID> types;
@@ -40,7 +45,8 @@ std::vector<TypeID> ComponentRegistry::GetTypesOfMask(Signature mask)
 ComponentRegistry::ComponentRegistry() :
     m_capacity(0),
     m_count(0),
-    m_components(nullptr)
+    m_components(nullptr),
+    m_nextID(0)
 {
     logger::info("[ ComponentRegistry ] Initialize '%p'.", this);
 }
@@ -58,17 +64,61 @@ void ComponentRegistry::register_info(ComponentInfo* src)
     if (m_count >= m_capacity)
         grow();
 
-    TypeID id = static_cast<TypeID>(m_count++);
+    if (m_bitsetMap.find(src->hash) == m_bitsetMap.end())
+        m_bitsetMap.emplace(src->hash, static_cast<TypeID>(m_nextID++));
 
-    ComponentInfo* dest = m_components + id;
-    memcpy((void*)dest, (void*)src, sizeof(ComponentInfo));
+    TypeID typeID = m_bitsetMap[src->hash];
+    if (typeID >= m_typeIDToIndex.size())
+        m_typeIDToIndex.resize(typeID + 1, INVALID_TYPE);
 
-    dest->index = id;
+    TypeID index = static_cast<TypeID>(m_count++);
+    m_typeIDToIndex[typeID] = index;
+    m_indexToTypeID[index] = typeID;
 
-    m_hashMap.emplace(dest->hash, id);
+    auto dst = &m_components[index];
+    memcpy((void*)dst, (void*)src, sizeof(ComponentInfo));
 
-    logger::debug("[ ComponentRegistry ] registered: name=%s, hash=%llu, index=%d, stride=%ld alignment=%ld", \
-        dest->name, dest->hash, dest->index, dest->stride, dest->alignment); \
+    dst->index = typeID;
+
+    m_hashMap.emplace(dst->hash, typeID);
+
+    logger::debug("[ ComponentRegistry ] registered: name=%s, hash=0x%llX, index=%d, stride=%ld alignment=%ld",
+        dst->name, dst->hash, dst->index, dst->stride, dst->alignment);
+}
+
+#include <iostream>
+void ComponentRegistry::unregister(TypeID id)
+{
+    if (id >= m_typeIDToIndex.size())
+        return;
+
+    TypeID index = m_typeIDToIndex[id];
+    if (index == INVALID_TYPE)
+        return;
+
+    ComponentInfo info = m_components[index];
+
+    m_typeIDToIndex[id] = INVALID_TYPE;
+    m_hashMap.erase(info.hash);
+
+    TypeID lastIndex = static_cast<TypeID>(--m_count);
+    if (index != lastIndex)
+    {
+        auto dst = m_components + index;
+        auto src = m_components + lastIndex;
+
+        TypeID movedTypeID = m_indexToTypeID[lastIndex];
+
+        memcpy(dst, src, sizeof(ComponentInfo));
+
+        m_typeIDToIndex[movedTypeID] = index;
+        m_indexToTypeID[index] = movedTypeID;
+
+        std::cout << "Swap" << std::endl;
+    }
+
+    logger::debug("[ ComponentRegistry ] unregistered: name=%s, hash=0x%llX, index=%d, stride=%ld alignment=%ld",
+        info.name, info.hash, info.index, info.stride, info.alignment);
 }
 
 void ComponentRegistry::grow()
@@ -76,14 +126,16 @@ void ComponentRegistry::grow()
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
     m_components = (ComponentInfo*)realloc(m_components, m_capacity * sizeof(ComponentInfo));
+
+    m_indexToTypeID.resize(m_capacity, INVALID_TYPE);
 }
 
 const ComponentInfo* ComponentRegistry::getComponentInfoByHash(Hash64 hash) const
 {
     auto it = m_hashMap.find(hash);
-    if (it != m_hashMap.end())
-        return m_components + it->second;
-    return nullptr;
+    if (it == m_hashMap.end())
+        return nullptr;
+    return getComponentByID(it->second);
 }
 
 TypeID ComponentRegistry::getTypeIDByHash(Hash64 hash) const
@@ -94,11 +146,15 @@ TypeID ComponentRegistry::getTypeIDByHash(Hash64 hash) const
     return INVALID_TYPE;
 }
 
-const ComponentInfo* ComponentRegistry::getComponentInfoByID(TypeID id)
+const ComponentInfo* ComponentRegistry::getComponentByID(TypeID id) const
 {
-    assert(id < componentCount);
+    if (id >= m_typeIDToIndex.size())
+        return nullptr;
 
-    return m_components + id;
+    TypeID index = m_typeIDToIndex[id];
+    if (index == INVALID_TYPE)
+        return nullptr;
+    return &m_components[index];
 }
 
 

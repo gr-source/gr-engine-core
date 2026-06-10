@@ -74,13 +74,13 @@ public:
 
     void DelComponent(Entity e, const char* name)
     {
-        DelComponent(e, hash::fnv1_str(name));
+        DelComponent(e, engine::hash::fnv1_str(name));
     }
 
     template <typename T>
     void DelComponent(Entity e)
     {
-        DelComponent(e, GetHash64ByType<T>());
+        DelComponent(e, engine::type_traits::hash<T>);
     }
 
     std::vector<TypeID> GetAllComponentType(Entity e) const;

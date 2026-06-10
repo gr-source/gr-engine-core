@@ -113,7 +113,7 @@ Entity Scene::create(Entity other)
 
     for (auto& typeID : m_world->GetAllComponentType(other))
     {
-        auto type = ComponentRegistry::GetComponentInfoByID(typeID);
+        auto type = ComponentRegistry::GetComponentByID(typeID);
 
         if (go.GetComponent(typeID) != nullptr)
             continue;
@@ -377,10 +377,13 @@ std::vector<Entity> Scene::Changed(TypeID type)
 
 void Scene::registerSystem(const SystemInfo* info)
 {
-    m_systemIDs.push_back(info->index);
-
     if (info->index >= m_typeIDToSystem.size())
         m_typeIDToSystem.resize(info->index + 1, nullptr);
+
+    if (m_typeIDToSystem[info->index] != nullptr)
+        return;
+
+    m_systemIDs.push_back(info->index);
 
     ISystem* system = createSystem(info);
 
@@ -425,7 +428,9 @@ void Scene::sortSystems()
             Signature mask = graph[node];
             while (mask)
             {
-                dfs(__builtin_ctzll(mask));
+                TypeID dep = __builtin_ctzll(mask);
+                if (graph.find(dep) != graph.end())
+                    dfs(dep);
 
                 mask &= (mask - 1);
             }
@@ -449,7 +454,10 @@ void Scene::sortSystems()
     }
 
     for (size_t i=0;i<order.size();i++)
+    {
         m_systems[i] = m_typeIDToSystem[order[i]];
+        m_systemIDs[i] = order[i];
+    }
 }
 
 

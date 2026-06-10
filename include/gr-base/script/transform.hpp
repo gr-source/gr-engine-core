@@ -16,14 +16,8 @@ struct Transform
 };
 
 template <>
-struct type_traits<Transform>
-{
-    static constexpr TypeCategory category = TypeCategory::Component;
-
-    static constexpr StorageKind storage = StorageKind::Archetype;
-
-    static constexpr size_t size = sizeof(Transform);
-};
+inline constexpr TypeCategory engine::type_traits::category<Transform> =
+    TypeCategory::Component;
 
 
 

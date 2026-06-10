@@ -20,6 +20,9 @@ public:
     template <typename T, typename... Systems>
     static void Register(const char* name);
 
+    template <typename T>
+    static void Unregister();
+
     inline static const SystemInfo* GetSystemByHash(Hash64 hash)
     {
         return s_SystemRegistry->getSystemByHash(hash);
@@ -27,7 +30,7 @@ public:
 
     inline static const SystemInfo* GetSystemByName(const char* name)
     {
-        return s_SystemRegistry->getSystemByHash(hash::fnv1_str(name));
+        return s_SystemRegistry->getSystemByHash(engine::hash::fnv1_str(name));
     }
 
     template <typename T>
@@ -40,7 +43,7 @@ public:
 
     inline static TypeID GetTypeIDByName(const char* name)
     {
-        return s_SystemRegistry->getTypeIDByHash(hash::fnv1_str(name));
+        return s_SystemRegistry->getTypeIDByHash(engine::hash::fnv1_str(name));
     }
 
     template <typename T>
@@ -60,14 +63,31 @@ public:
 
     static std::vector<TypeID> GetTypesOfMask(Signature mask);
 
+    inline static size_t GetCount()
+    {
+        return s_SystemRegistry->m_count;
+    }
+
+    inline static const SystemInfo* GetSystems()
+    {
+        return s_SystemRegistry->m_systems;
+    }
+
 private:
     static SystemRegistry* s_SystemRegistry;
 
     std::unordered_map<Hash64, TypeID> m_hashMap;
 
+    std::vector<TypeID> m_typeIDToIndex;
+    std::vector<TypeID> m_indexToTypeID;
+
     SystemInfo* m_systems;
+
     size_t m_capacity;
+
     size_t m_count;
+
+    size_t m_nextID;
 
     std::vector<Hash64> m_typeIDToHash;
 
@@ -76,11 +96,13 @@ private:
 
     void register_info(SystemInfo* info);
 
+    void unregister(TypeID id);
+
     void grow();
 
     const SystemInfo* getSystemByHash(Hash64 hash) const;
 
-    const SystemInfo* getSystemByID(TypeID id);
+    const SystemInfo* getSystemByID(TypeID id) const;
 
     TypeID getTypeIDByHash(Hash64 hash) const;
 
@@ -100,16 +122,18 @@ private:
 template <typename T, typename... Systems>
 inline void SystemRegistry::Register(const char *name)
 {
-    static_assert(type_traits<T>::category == TypeCategory::System,
-                  "TypeTraits must be specialized for T");
+    static_assert(engine::type_traits::size<T> > 0,
+        "TypeTraits must be a complete type.");
+    static_assert(engine::type_traits::category<T> == TypeCategory::System,
+        "TypeTraits must be specialized for T");
 
     SystemInfo info;
     info.name = name;
-    info.hash = GetHash64ByType<T>(name);
+    info.hash = engine::type_traits::hash<T>;
     info.index = INVALID_TYPE;
 
-    info.stride = sizeof(T);
-    info.alignment = alignof(T);
+    info.stride = engine::type_traits::size<T>;
+    info.alignment = engine::type_traits::alignment<T>;
     
     // Methods
     info.constructor = (MethodPointer)SystemRegistry::Constructor<T>;
@@ -126,20 +150,37 @@ inline void SystemRegistry::Register(const char *name)
 template <typename T>
 inline const SystemInfo* SystemRegistry::GetSystem()
 {
-    static_assert(type_traits<T>::size > 0, "This type is incomplete.");
-    static_assert(type_traits<T>::category == TypeCategory::System, "This type is not valid.");
+    static_assert(engine::type_traits::size<T> > 0,
+        "TypeTraits must be a complete type.");
+    static_assert(engine::type_traits::category<T> == TypeCategory::System,
+        "TypeTraits must be specialized for T");
 
-    static const SystemInfo* info = s_SystemRegistry->getSystemByHash(GetHash64ByType<T>());
+    static const SystemInfo* info = s_SystemRegistry->getSystemByHash(engine::type_traits::hash<T>);
     return info;
+}
+
+template <typename T>
+inline void SystemRegistry::Unregister()
+{
+    static_assert(engine::type_traits::size<T> > 0,
+        "TypeTraits must be a complete type.");
+    static_assert(engine::type_traits::category<T> == TypeCategory::System,
+        "TypeTraits must be specialized for T");
+
+    TypeID id = s_SystemRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
+    if (id != INVALID_TYPE)
+        s_SystemRegistry->unregister(id);
 }
 
 template <typename T>
 inline TypeID SystemRegistry::GetTypeID()
 {
-    static_assert(type_traits<T>::size > 0, "This type is incomplete.");
-    static_assert(type_traits<T>::category == TypeCategory::System, "This type is not valid.");
+    static_assert(engine::type_traits::size<T> > 0,
+        "TypeTraits must be a complete type.");
+    static_assert(engine::type_traits::category<T> == TypeCategory::System,
+        "TypeTraits must be specialized for T");
 
-    static TypeID id = s_SystemRegistry->getTypeIDByHash(GetHash64ByType<T>());
+    static TypeID id = s_SystemRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
     return id;
 }
 

@@ -14,14 +14,8 @@ struct MeshFilter
 };
 
 template <>
-struct type_traits<MeshFilter>
-{
-    static constexpr TypeCategory category = TypeCategory::Component;
-
-    static constexpr StorageKind storage = StorageKind::Archetype;
-
-    static constexpr size_t size = sizeof(MeshFilter);
-};
+inline constexpr TypeCategory engine::type_traits::category<MeshFilter> =
+    TypeCategory::Component;
 
 struct MeshRef
 {
@@ -29,13 +23,7 @@ struct MeshRef
 };
 
 template <>
-struct type_traits<MeshRef>
-{
-    static constexpr TypeCategory category = TypeCategory::Component;
-
-    static constexpr StorageKind storage = StorageKind::Archetype;
-
-    static constexpr size_t size = sizeof(MeshRef);
-};
+inline constexpr TypeCategory engine::type_traits::category<MeshRef> =
+    TypeCategory::Component;
 
 

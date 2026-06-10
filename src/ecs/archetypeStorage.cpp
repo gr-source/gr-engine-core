@@ -30,7 +30,7 @@ ArchetypeStorage::ArchetypeStorage(Signature _mask, TypeID typeID) :
     Signature temp = mask;
     while (temp)
     {
-        auto info = ComponentRegistry::GetComponentInfoByID(__builtin_ctzll(temp));
+        auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
 
         component_stride += info->stride;
 
@@ -44,7 +44,7 @@ ArchetypeStorage::ArchetypeStorage(Signature _mask, TypeID typeID) :
     temp = mask;
     while (temp)
     {
-        auto info = ComponentRegistry::GetComponentInfoByID(__builtin_ctzll(temp));
+        auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
         
         while (info->index >= typeOffset_capacity)
             grow_type();
@@ -179,7 +179,7 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
         Signature temp = mask;
         while (temp)
         {
-            auto info = ComponentRegistry::GetComponentInfoByID(__builtin_ctzll(temp));
+            auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
 
             uint8_t* array = chunk.data + typeOffsets[info->index];
 
@@ -199,7 +199,7 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
     Signature temp = mask;
     while (temp)
     {
-        auto info = ComponentRegistry::GetComponentInfoByID(__builtin_ctzll(temp));
+        auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
 
         uint8_t* array = chunk.data + typeOffsets[info->index];
 
@@ -276,7 +276,7 @@ ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) :
 
     while (mask)
     {
-        auto info = Type::GetComponentInfoByID(__builtin_ctzll(mask));
+        auto info = Type::GetComponentByID(__builtin_ctzll(mask));
         
         if (info->index >= m_typeidtoarrayoffset.size())
             m_typeidtoarrayoffset.resize(info->index + 1, 0);
@@ -353,7 +353,7 @@ bool ArchetypeStorage::Deallocate(ComponentID removeComponentID)
         {
             TypeID typeID = __builtin_ctzll(mask);
 
-            auto type = Type::GetComponentInfoByID(typeID);
+            auto type = Type::GetComponentByID(typeID);
 
             auto offset = m_typeidtoarrayoffset[typeID];
 
@@ -422,7 +422,7 @@ void ArchetypeStorage::resize()
         uint64_t mask = m_mask;
         while (mask)
         {
-            auto type = Type::GetComponentInfoByID(__builtin_ctzll(mask));
+            auto type = Type::GetComponentByID(__builtin_ctzll(mask));
 
             auto oldOffset = m_typeidtoarrayoffset[type->index];
 
@@ -470,7 +470,7 @@ void ArchetypeStorage::resize()
     uint64_t mask = m_mask;
     while (mask)
     {
-        auto type = Type::GetComponentInfoByID(__builtin_ctzll(mask));
+        auto type = Type::GetComponentByID(__builtin_ctzll(mask));
 
         m_typeidtoarrayoffset[type->index] = offset;
 
