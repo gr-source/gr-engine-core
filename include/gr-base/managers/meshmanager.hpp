@@ -17,7 +17,7 @@ public:
 
     Mesh *get(MeshHandle h) const;
 
-    void destroy(MeshHandle h);
+    void remove(MeshHandle h);
 
     MeshHandle find(Hash64 hash) const;
 
@@ -28,6 +28,7 @@ private:
     {
         uint32_t next;
         uint32_t version;
+        Hash64 hash;
     };
 
     std::unordered_map<Hash64, MeshHandle> m_meshMap;

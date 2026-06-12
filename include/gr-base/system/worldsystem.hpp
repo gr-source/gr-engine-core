@@ -2,6 +2,7 @@
 
 #include "gr-base/core/system.hpp"
 
+#include "gr-base/managers/default.hpp"
 #include "gr-base/system/world/cell.hpp"
 
 #include "gr-base/pool/poolObject.hpp"
@@ -27,17 +28,19 @@ public:
     int RenderDistance;
 
 private:
-    std::unordered_map<ChunkCoord, CellID, ChunkCoordHash> m_chunkNameMap;
+    std::unordered_map<Hash64, StreamChunk> m_chunkNameMap;
 
-    std::vector<CellID> m_chunkLoaded;
+    std::vector<Hash64> m_chunkLoaded;
 
-    ObjectPool<StreamChunk> m_pool;
+    // ObjectPool<StreamChunk> m_pool;
+
+    MeshHandle CreateMesh(const ChunkCoord& coord);
 
     void create(const ChunkCoord& coord);
 
-    bool has(const ChunkCoord& coord) const;
+    bool has(Hash64 hash) const;
 
-    void unloadChunk(CellID id);
+    void unloadChunk(Hash64 hash);
 
     void render(StreamChunk* chunk);
 };

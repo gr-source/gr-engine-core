@@ -2,6 +2,7 @@
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/externals/handle.h"
+#include "gr-base/externals/hash.hpp"
 #include <cassert>
 #include <cstdlib>
 
@@ -16,6 +17,8 @@ MeshHandle MeshManager::create(Hash64 hash)
     uint32_t id = m_freeID;
 
     Slot& slot = m_slots[id];
+    slot.hash = hash;
+
     m_freeID = slot.next;
 
     m_count++;
@@ -42,7 +45,7 @@ Mesh *MeshManager::get(MeshHandle h) const
     return &m_meshPool[index];
 }
 
-void MeshManager::destroy(MeshHandle h)
+void MeshManager::remove(MeshHandle h)
 {
     uint32_t index = handle_get_first(h);
     uint32_t version = handle_get_second(h);
@@ -51,9 +54,14 @@ void MeshManager::destroy(MeshHandle h)
     if (slot.version != version)
         return;
 
-    m_freeID = index;
+    Mesh& mesh = m_meshPool[index];
+    mesh.~Mesh();
+
+    m_meshMap.erase(slot.hash);
 
     slot.next = m_freeID;
+    m_freeID = index;
+
     slot.version++;
 
     m_count--;
@@ -89,9 +97,9 @@ void MeshManager::addFreeID(size_t oldCapacity)
 {
     size_t lastElement = m_capacity - 1;
     for (size_t i=oldCapacity;i<lastElement;i++)
-        m_slots[i] = { static_cast<uint32_t>(i) + 1, 1 };
+        m_slots[i] = { static_cast<uint32_t>(i) + 1, 1, INVALID_HASH64 };
 
-    m_slots[lastElement] = { m_freeID, 1 };
+    m_slots[lastElement] = { m_freeID, 1, INVALID_HASH64 };
     m_freeID = static_cast<uint32_t>(oldCapacity);
 }
 

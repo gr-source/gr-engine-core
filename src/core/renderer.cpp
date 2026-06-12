@@ -50,9 +50,14 @@ void Renderer::SetRenderTarget(RenderTarget* rt)
     s_Renderer->m_rendertarget = rt;
 }
 
-void Renderer::Submit(const RenderCommand& cmd)
+void Renderer::Submit(const MaterialHandle& material, const MeshHandle& mesh, uint32_t submesh, const Matrix4x4* matrice)
 {
-    s_Renderer->m_commands.push_back(cmd);
+    uint64_t sortKey =
+          (uint64_t)handle_get_first(material) << 32
+        | (uint64_t)handle_get_first(mesh) << 16
+        | (uint64_t)submesh;
+
+    s_Renderer->m_renderables.push_back(Renderable{ sortKey, material, mesh, submesh, matrice });
 }
 
 // priuvae
@@ -68,10 +73,18 @@ Renderer::~Renderer()
 
 void Renderer::beginFrame()
 {
+    if (m_renderables.size() >= m_metrices.size())
+        m_metrices.resize(m_renderables.size() + 1, Matrix4x4::identityMatrix);
+
+    sorting();
+
+    m_renderables.clear();
+
     m_rendertarget->bind();
 
     gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
     gr::gRender::SetEnable(GR_DEPTH, true);
+    gr::gRender::SetEnable(GR_CULL_FACE, true);
 
     gr::gRender::SetBackgroundColor(Color{0.5f, 0.5f, 0.5f, 1.0f});
     gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_DEPTH_BUFFER | gr::GR_COLOR_BUFFER);
@@ -174,6 +187,49 @@ void Renderer::draw()
     }
 }
 
+void Renderer::sorting()
+{
+    std::sort(m_renderables.begin(), m_renderables.end(),
+    [](const Renderable& a, const Renderable& b)
+    {
+        return a.sortKey < b.sortKey;
+    });
+
+    size_t i = 0, matrixID = 0;
+    while (i < m_renderables.size())
+    {
+        const auto& first = m_renderables[i];
+
+        size_t start = i;
+
+        while (start < m_renderables.size())
+        {
+            const auto& current = m_renderables[start];
+
+            bool sameBatch = current.sortKey == first.sortKey;
+
+            if (!sameBatch)
+                break;
+
+            m_metrices[matrixID++] = *current.world;
+
+            ++start;
+        }
+
+        size_t count = start - i;
+
+        RenderCommand cmd;
+        cmd.material = AssetsManager::GetMaterial(first.material);
+        cmd.mesh = AssetsManager::GetMesh(first.mesh);
+        cmd.submesh = first.submesh;
+        cmd.instances = &m_metrices[matrixID - count];
+        cmd.instanceCount = count;
+
+        m_commands.push_back(cmd);
+
+        i = start;
+    }
+}
 
 
 

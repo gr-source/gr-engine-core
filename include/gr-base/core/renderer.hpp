@@ -3,6 +3,7 @@
 #include "gr-base/core/default.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
+#include "gr-base/managers/default.hpp"
 
 #include <gr-math/types.hpp>
 
@@ -15,6 +16,15 @@ struct RenderCommand
     uint32_t submesh;
     const Matrix4x4* instances;
     size_t instanceCount;
+};
+
+struct Renderable
+{
+    uint64_t sortKey;
+    MaterialHandle material;
+    MeshHandle mesh;
+    uint32_t submesh;
+    const Matrix4x4 *world;
 };
 
 class Renderer
@@ -32,12 +42,16 @@ public:
 
     static void SetRenderTarget(RenderTarget* rt);
 
-    static void Submit(const RenderCommand& cmd);
+    static void Submit(const MaterialHandle& material, const MeshHandle& mesh, uint32_t submesh, const Matrix4x4* matrice);
 
 private:
     static Renderer *s_Renderer;
 
     std::vector<RenderCommand> m_commands;
+
+    std::vector<Renderable> m_renderables;
+
+    std::vector<Matrix4x4> m_metrices;
 
     RenderTarget* m_rendertarget;
 
@@ -51,5 +65,7 @@ private:
     void render();
 
     void draw();
+
+    void sorting();
 };
 

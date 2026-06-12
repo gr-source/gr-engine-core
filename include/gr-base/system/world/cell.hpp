@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gr-base/ecs/default.hpp"
+#include "gr-base/managers/default.hpp"
 #include <cstdint>
 
 #include <gr-math/vector2.hpp>
@@ -13,7 +14,7 @@ typedef uint32_t CellID;
 
 #define UNLOAD_DISTANCE 16
 
-#define CELL_SIZE 16
+#define TERRAIN_CHUNK_SIZE 32
 
 struct ChunkCoord
 {
@@ -33,7 +34,7 @@ enum class ChunkState
     Unloading
 };
 
-typedef struct StreamChunk
+struct StreamChunk
 {
     ChunkCoord coord;
 
@@ -41,8 +42,14 @@ typedef struct StreamChunk
 
     ChunkState state;
 
+    MaterialHandle material;
+
+    MeshHandle mesh;
+
     Entity* entities;
-} StreamChunk;
+
+    Matrix4x4 transform;
+};
 
 struct ChunkCoordHash
 {

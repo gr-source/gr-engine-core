@@ -91,6 +91,11 @@ MeshHandle AssetsManager::CreateMesh(Hash64 hash)
     return s_AssetsManager->mMeshManager->create(hash);
 }
 
+void AssetsManager::RemoveMesh(MeshHandle handle)
+{
+    s_AssetsManager->mMeshManager->remove(handle);
+}
+
 Mesh *AssetsManager::GetMesh(MeshHandle h)
 {
     return s_AssetsManager->mMeshManager->get(h);

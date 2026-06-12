@@ -80,70 +80,13 @@ void RenderSystem::Update(Scene* scene)
         {
             auto& material = meshRender->materials[j];
 
-            uint64_t sortKey =
-                  (uint64_t)handle_get_first(material) << 32
-                | (uint64_t)handle_get_first(mesh) << 16
-                | (uint64_t)j;
-
-            m_renderables.push_back({
-                        sortKey,
+            Renderer::Submit(
                         material,
                         mesh,
                         static_cast<uint32_t>(j),
                         &transform->worldMatrix
-                    });
+                    );
         }
-    }
-
-    if (m_renderables.size() >= m_metrices.size())
-        m_metrices.resize(m_renderables.size() + 1, Matrix4x4::identityMatrix);
-
-    sorting();
-
-    m_renderables.clear();
-}
-
-void RenderSystem::sorting()
-{
-    std::sort(m_renderables.begin(), m_renderables.end(),
-    [](const Renderable& a, const Renderable& b)
-    {
-        return a.sortKey < b.sortKey;
-    });
-
-    size_t i = 0, matrixID = 0;
-    while (i < m_renderables.size())
-    {
-        const auto& first = m_renderables[i];
-
-        size_t start = i;
-
-        while (start < m_renderables.size())
-        {
-            const auto& current = m_renderables[start];
-
-            bool sameBatch = current.sortKey == first.sortKey;
-
-            if (!sameBatch)
-                break;
-
-            m_metrices[matrixID++] = *current.world;
-
-            ++start;
-        }
-
-        size_t count = start - i;
-
-        RenderCommand cmd;
-        cmd.material = AssetsManager::GetMaterial(first.material);
-        cmd.mesh = AssetsManager::GetMesh(first.mesh);
-        cmd.submesh = first.submesh;
-        cmd.instances = &m_metrices[matrixID - count];
-        cmd.instanceCount = count;
-
-        Renderer::Submit(cmd);
-
-        i = start;
     }
 }
 

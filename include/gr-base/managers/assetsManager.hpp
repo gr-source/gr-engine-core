@@ -52,6 +52,8 @@ public:
     // ********** Mesh ********** //
     static MeshHandle CreateMesh(Hash64 hash);
 
+    static void RemoveMesh(MeshHandle handle);
+
     static Mesh *GetMesh(MeshHandle h);
 
     static MeshHandle FindMesh(Hash64 hash);
