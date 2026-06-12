@@ -28,11 +28,11 @@ public:
     int RenderDistance;
 
 private:
-    std::unordered_map<Hash64, StreamChunk> m_chunkNameMap;
+    std::unordered_map<Hash64, Handle> m_chunkNameMap;
 
-    std::vector<Hash64> m_chunkLoaded;
+    std::vector<Handle> m_chunkLoaded;
 
-    // ObjectPool<StreamChunk> m_pool;
+    ObjectPool<StreamChunk> m_pool;
 
     MeshHandle CreateMesh(const ChunkCoord& coord);
 
@@ -40,7 +40,7 @@ private:
 
     bool has(Hash64 hash) const;
 
-    void unloadChunk(Hash64 hash);
+    void unloadChunk(Handle h);
 
     void render(StreamChunk* chunk);
 };

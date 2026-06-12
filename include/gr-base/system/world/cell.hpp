@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gr-base/ecs/default.hpp"
+#include "gr-base/externals/hash.hpp"
 #include "gr-base/managers/default.hpp"
 #include <cstdint>
 
@@ -37,6 +38,8 @@ enum class ChunkState
 struct StreamChunk
 {
     ChunkCoord coord;
+
+    Hash64 hash;
 
     Vector2 position;
 

@@ -48,7 +48,7 @@ void WorldSystem::Update(Scene* scene)
 
     for (auto it = m_chunkLoaded.begin(); it != m_chunkLoaded.end(); )
     {
-        auto chunk =& m_chunkNameMap[*it];
+        auto chunk = m_pool.get(*it);
 
         int dx = chunk->coord.x - currentX;
         int dz = chunk->coord.z - currentZ;
@@ -56,10 +56,9 @@ void WorldSystem::Update(Scene* scene)
         if(std::abs(dx) > LOAD_DISTANCE ||
            std::abs(dz) > LOAD_DISTANCE)
         {
+            m_chunkNameMap.erase(chunk->hash);
+
             unloadChunk(*it);
-
-
-            m_chunkNameMap.erase(*it);
 
             it = m_chunkLoaded.erase(it);
         }
@@ -69,11 +68,102 @@ void WorldSystem::Update(Scene* scene)
         }
     }
 
-    for (auto& hash : m_chunkLoaded)
-        render(&m_chunkNameMap[hash]);
+    StreamChunk* chunks = m_pool.getRaw();
+    for (size_t i=0;i<m_pool.getCount();i++)
+        render(chunks + i);
 }
 
 #include "gr-base/managers/assetsManager.hpp"
+
+void WorldSystem::create(const ChunkCoord& coord)
+{
+    Handle h = m_pool.create();
+
+    ChunkCoordHash s_ChunkCoordHash;
+
+    Hash64 hash = s_ChunkCoordHash(coord);
+
+    StreamChunk* chunk = m_pool.get(h);
+    chunk->coord = coord;
+    chunk->hash = hash;
+    chunk->position = {
+        (float)coord.x * TERRAIN_CHUNK_SIZE,
+        (float)coord.z * TERRAIN_CHUNK_SIZE
+    };
+
+    chunk->entities = nullptr;
+    chunk->state = ChunkState::Loaded;
+    chunk->transform = Math::CreateTRS(
+            Vector3{ chunk->position.x, 0.0f, chunk->position.y },
+            Quaternion::identity,
+            Vector3{ float(TERRAIN_CHUNK_SIZE), 1.0f, float(TERRAIN_CHUNK_SIZE) }
+        );
+
+    chunk->mesh = AssetsManager::FindMesh(hash);
+    if (chunk->mesh == HANDLE_INVALID)
+        chunk->mesh = CreateMesh(coord);
+
+    chunk->material = AssetsManager::FindMaterial(engine::hash::fnv1_str("material/DefaultMaterial"));
+    if (chunk->material == HANDLE_INVALID)
+        chunk->material = AssetsManager::LoadMaterial(engine::hash::fnv1_str("material/DefaultMaterial"));
+
+    m_chunkNameMap.emplace(hash, h);
+
+    m_chunkLoaded.push_back(h);
+}
+
+bool WorldSystem::has(Hash64 hash) const
+{
+    return m_chunkNameMap.find(hash) != m_chunkNameMap.end();
+}
+
+void WorldSystem::unloadChunk(Handle h)
+{
+    StreamChunk* chunk = m_pool.get(h);
+
+    if (chunk->mesh != HANDLE_INVALID)
+    {
+        auto mesh = AssetsManager::GetMesh(chunk->mesh);
+        if (mesh != nullptr)
+        {
+            free(mesh->vertices);
+            for (uint32_t i=0;i<mesh->numSubmeshes;i++)
+            {
+                auto& submesh = mesh->submeshes[i];
+                free(submesh.indices);
+            }
+            free(mesh->submeshes);
+
+            if (mesh->gpuMesh.pbo != nullptr)
+                delete mesh->gpuMesh.pbo;
+
+            if (mesh->gpuMesh.vertexarray != nullptr)
+                delete mesh->gpuMesh.vertexarray;
+
+            AssetsManager::RemoveMesh(chunk->mesh);
+        }
+    }
+
+    m_pool.destroy(h);
+}
+
+void WorldSystem::render(StreamChunk* chunk)
+{
+    Vector2 position = chunk->position;
+
+    Vector3 p1{position.x,              0, position.y};
+    Vector3 p2{position.x + TERRAIN_CHUNK_SIZE, 0, position.y};
+    Vector3 p3{position.x + TERRAIN_CHUNK_SIZE, 0, position.y + TERRAIN_CHUNK_SIZE};
+    Vector3 p4{position.x,              0, position.y + TERRAIN_CHUNK_SIZE};
+
+    DebugDraw::DrawLine(p1, p2);
+    DebugDraw::DrawLine(p2, p3);
+    DebugDraw::DrawLine(p3, p4);
+    DebugDraw::DrawLine(p4, p1);
+
+    Renderer::Submit(chunk->material, chunk->mesh, 0, &chunk->transform);
+    // Renderer::Submit(chunk->material, chunk->mesh, 0, &Matrix4x4::identityMatrix);
+}
 
 struct MyVertex3D
 {
@@ -206,107 +296,5 @@ MeshHandle WorldSystem::CreateMesh(const ChunkCoord& coord)
 
     return handle;
 }
-
-void WorldSystem::create(const ChunkCoord& coord)
-{
-    // CellID id = m_pool.allocate();
-
-    StreamChunk chunk;
-    chunk.coord = coord;
-    chunk.position = {
-        (float)coord.x * TERRAIN_CHUNK_SIZE,
-        (float)coord.z * TERRAIN_CHUNK_SIZE
-    };
-
-    chunk.entities = nullptr;
-    chunk.state = ChunkState::Loaded;
-    chunk.transform = Math::CreateTRS(
-            Vector3{ chunk.position.x, 0.0f, chunk.position.y },
-            Quaternion::identity,
-            Vector3{ float(TERRAIN_CHUNK_SIZE), 1.0f, float(TERRAIN_CHUNK_SIZE) }
-        );
-
-    ChunkCoordHash s_ChunkCoordHash;
-
-    Hash64 hash = s_ChunkCoordHash(coord);
-
-    chunk.mesh = AssetsManager::FindMesh(hash);
-    if (chunk.mesh == HANDLE_INVALID)
-        chunk.mesh = CreateMesh(coord);
-
-    chunk.material = AssetsManager::FindMaterial(engine::hash::fnv1_str("material/DefaultMaterial"));
-    if (chunk.material == HANDLE_INVALID)
-        chunk.material = AssetsManager::LoadMaterial(engine::hash::fnv1_str("material/DefaultMaterial"));
-
-    m_chunkNameMap.emplace(hash, chunk);
-
-    m_chunkLoaded.push_back(hash);
-}
-
-bool WorldSystem::has(Hash64 hash) const
-{
-    return m_chunkNameMap.find(hash) != m_chunkNameMap.end();
-}
-
-void WorldSystem::unloadChunk(Hash64 hash)
-{
-    StreamChunk* chunk = &m_chunkNameMap[hash];
-
-    if (chunk->entities != nullptr)
-    {
-        for (size_t i=0;i<vector_length(chunk->entities);i++)
-        {
-            // GameObjectHandle& handle = chunk->objects[i];
-
-            // GameObject::Destroy(handle);
-        }
-
-        vector_free(chunk->entities);
-    }
-
-    if (chunk->mesh != HANDLE_INVALID)
-    {
-        auto mesh = AssetsManager::GetMesh(chunk->mesh);
-        if (mesh != nullptr)
-        {
-            free(mesh->vertices);
-            for (uint32_t i=0;i<mesh->numSubmeshes;i++)
-            {
-                auto& submesh = mesh->submeshes[i];
-                free(submesh.indices);
-            }
-            free(mesh->submeshes);
-
-            if (mesh->gpuMesh.pbo != nullptr)
-                delete mesh->gpuMesh.pbo;
-
-            if (mesh->gpuMesh.vertexarray != nullptr)
-                delete mesh->gpuMesh.vertexarray;
-
-            AssetsManager::RemoveMesh(chunk->mesh);
-        }
-    }
-
-    // m_pool.deallocate(id);
-}
-
-void WorldSystem::render(StreamChunk* chunk)
-{
-    Vector2 position = chunk->position;
-
-    Vector3 p1{position.x,              0, position.y};
-    Vector3 p2{position.x + TERRAIN_CHUNK_SIZE, 0, position.y};
-    Vector3 p3{position.x + TERRAIN_CHUNK_SIZE, 0, position.y + TERRAIN_CHUNK_SIZE};
-    Vector3 p4{position.x,              0, position.y + TERRAIN_CHUNK_SIZE};
-
-    DebugDraw::DrawLine(p1, p2);
-    DebugDraw::DrawLine(p2, p3);
-    DebugDraw::DrawLine(p3, p4);
-    DebugDraw::DrawLine(p4, p1);
-
-    Renderer::Submit(chunk->material, chunk->mesh, 0, &chunk->transform);
-    // Renderer::Submit(chunk->material, chunk->mesh, 0, &Matrix4x4::identityMatrix);
-}
-
 
 
