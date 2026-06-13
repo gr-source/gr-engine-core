@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/core/geometry/mesh.hpp"
 #include "gr-base/core/system.hpp"
 
 #include "gr-base/managers/default.hpp"
@@ -28,15 +29,26 @@ public:
     int RenderDistance;
 
 private:
+    struct MeshCache
+    {
+        Mesh mesh;
+        uint64_t hash;
+        float radius;
+    };
+
     std::unordered_map<Hash64, Handle> m_chunkNameMap;
 
     std::vector<Handle> m_chunkLoaded;
 
     ObjectPool<StreamChunk> m_pool;
 
-    MeshHandle CreateMesh(Hash64 hash, int lodLevel, float& radius);
-
     void create(Hash64 hash);
+
+    void buildMesh(Hash64 hash, Handle poolID);
+
+    Mesh CreateMesh(Hash64 hash, int lodLevel, float& radius);
+
+    void UploadMesh(Handle poolID, std::vector<MeshCache> meshes);
 
     bool has(Hash64 hash) const;
 

@@ -11,9 +11,9 @@ typedef uint32_t CellID;
 
 #define INVALID_CELL (CellID)-1
 
-#define LOAD_DISTANCE 8
+#define TERRAIN_LOAD_DISTANCE 8
 
-#define UNLOAD_DISTANCE 16
+#define TERRAIN_UNLOAD_DISTANCE TERRAIN_LOAD_DISTANCE * 2
 
 #define TERRAIN_CHUNK_SIZE 32
 
@@ -32,9 +32,9 @@ struct ChunkCoord
 
 enum class ChunkState
 {
-    Loading,
-    Loaded,
-    Unloading
+    INACTIVE,
+    LOADING,
+    LOADED
 };
 
 struct StreamChunk

@@ -1,13 +1,16 @@
 #include "gr-base/system/worldsystem.hpp"
 
 #include "gr-base/core/culling/frustum.hpp"
+#include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/renderer.hpp"
+#include "gr-base/core/thread/threadpool.hpp"
 #include "gr-base/debug/debugDraw.hpp"
 
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/script/transform.hpp"
+#include "gr-base/system/world/cell.hpp"
 
 extern "C"
 {
@@ -31,9 +34,9 @@ void WorldSystem::Update(Scene* scene)
     int currentX = floor(transform->position.x / TERRAIN_CHUNK_SIZE);
     int currentZ = floor(transform->position.z / TERRAIN_CHUNK_SIZE);
 
-    for (int x=-LOAD_DISTANCE;x<=LOAD_DISTANCE;x++)
+    for (int x=-TERRAIN_LOAD_DISTANCE;x<=TERRAIN_LOAD_DISTANCE;x++)
     {
-        for (int z=-LOAD_DISTANCE;z<=LOAD_DISTANCE;z++)
+        for (int z=-TERRAIN_LOAD_DISTANCE;z<=TERRAIN_LOAD_DISTANCE;z++)
         {
             int chunkIdX = currentX + x;
             int chunkIdZ = currentZ + z;
@@ -56,17 +59,34 @@ void WorldSystem::Update(Scene* scene)
         int dx = ((int)handle_get_first(chunk->hash)) - currentX;
         int dz = ((int)handle_get_second(chunk->hash)) - currentZ;
 
-        if(std::abs(dx) > LOAD_DISTANCE ||
-           std::abs(dz) > LOAD_DISTANCE)
+        int distance = std::max(std::abs(dx), std::abs(dz));
+
+        if (distance > TERRAIN_UNLOAD_DISTANCE)
         {
-            m_chunkNameMap.erase(chunk->hash);
+            if (chunk->state != ChunkState::LOADING)
+            {
+                m_chunkNameMap.erase(chunk->hash);
 
-            unloadChunk(*it);
+                unloadChunk(*it);
 
-            it = m_chunkLoaded.erase(it);
+                it = m_chunkLoaded.erase(it);
+            } else
+            {
+                ++it;
+            }
         }
         else
         {
+            if (distance > TERRAIN_LOAD_DISTANCE)
+            {
+                if (chunk->state == ChunkState::LOADED)
+                    chunk->state = ChunkState::INACTIVE;
+            } else
+            {
+                if (chunk->state == ChunkState::INACTIVE)
+                    chunk->state = ChunkState::LOADED;
+            }
+
             ++it;
         }
     }
@@ -90,23 +110,14 @@ void WorldSystem::create(Hash64 hash)
         (float)((int)handle_get_second(hash)) * TERRAIN_CHUNK_SIZE
     };
 
-    chunk->state = ChunkState::Loaded;
+    chunk->state = ChunkState::LOADING;
     chunk->transform = Math::CreateTRS(
             position,
             Quaternion::identity,
             Vector3{ float(TERRAIN_CHUNK_SIZE), 1.0f, float(TERRAIN_CHUNK_SIZE) }
         );
 
-    for (int i=0;i<TERRAIN_NUM_LOD_LEVEL;i++)
-    {
-        uint64_t mesh_hash = hash << 8 | uint64_t(i);
-
-        chunk->mesh[i] = AssetsManager::FindMesh(mesh_hash);
-        if (chunk->mesh[i] == HANDLE_INVALID)
-        {
-            chunk->mesh[i] = CreateMesh(hash, i, chunk->radius[i]);
-        }
-    }
+    Threadpool::AddTask(&WorldSystem::buildMesh, this, hash, h);
 
     chunk->material = AssetsManager::FindMaterial(engine::hash::fnv1_str("material/Tree.Birch.Leaf.Summer.Mat"));
     if (chunk->material == HANDLE_INVALID)
@@ -115,6 +126,46 @@ void WorldSystem::create(Hash64 hash)
     m_chunkNameMap.emplace(hash, h);
 
     m_chunkLoaded.push_back(h);
+}
+
+void WorldSystem::buildMesh(Hash64 hash, Handle poolID)
+{
+    std::vector<MeshCache> meshes(TERRAIN_NUM_LOD_LEVEL);
+
+    for (int i=0;i<TERRAIN_NUM_LOD_LEVEL;i++)
+    {
+        meshes[i].hash = hash << 8 | uint64_t(i);
+
+        meshes[i].mesh = CreateMesh(hash, i, meshes[i].radius);
+    }
+
+    MainThreadDispatcher::Add(Priority::NORMAL, &WorldSystem::UploadMesh, this, poolID, meshes);
+}
+
+void WorldSystem::UploadMesh(Handle poolID, std::vector<MeshCache> meshes)
+{
+    auto chunk = m_pool.get(poolID);
+    if (chunk == nullptr || chunk->state != ChunkState::LOADING)
+        return;
+
+    for (int i=0;i<TERRAIN_NUM_LOD_LEVEL;i++)
+    {
+        auto& cache = meshes[i];
+
+        MeshHandle handle = AssetsManager::FindMesh(cache.hash);
+        if (handle == HANDLE_INVALID)
+        {
+            handle = AssetsManager::CreateMesh(cache.hash);
+
+            auto mesh = AssetsManager::GetMesh(handle);
+            *mesh = cache.mesh;
+        }
+
+        chunk->mesh[i] = handle;
+        chunk->radius[i] = cache.radius;
+    }
+
+    chunk->state = ChunkState::LOADED;
 }
 
 bool WorldSystem::has(Hash64 hash) const
@@ -157,6 +208,9 @@ void WorldSystem::unloadChunk(Handle h)
 
 void WorldSystem::render(StreamChunk* chunk, const Vector3& camPos)
 {
+    if (chunk->state != ChunkState::LOADED)
+        return;
+
     float worldX = (float)((int)handle_get_first(chunk->hash)) * TERRAIN_CHUNK_SIZE;
     float worldZ = (float)((int)handle_get_second(chunk->hash)) * TERRAIN_CHUNK_SIZE;
 
@@ -228,13 +282,8 @@ float get_terrain_height(float x, float y)
     return (total / max_value) * HEIGHT_MULT;
 }   
 
-MeshHandle WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
+Mesh WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
 {
-    uint64_t mesh_hash = hash << 8 | uint64_t(lodLevel);
-
-    MeshHandle handle = AssetsManager::CreateMesh(mesh_hash);
-    Mesh* mesh = AssetsManager::GetMesh(handle);
-
     float spacing = 1.0f;
 
     std::vector<MyVertex3D> vertices;
@@ -339,10 +388,11 @@ MeshHandle WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
     for (auto& v : vertices)
         openglvertices.push_back({v.position, v.normal, v.texCoords});
 
-    mesh->vertices = (Vertex3D*)malloc(openglvertices.size() * sizeof(Vertex3D));
-    mesh->numVertices = openglvertices.size();
+    Mesh mesh;
+    mesh.vertices = (Vertex3D*)malloc(openglvertices.size() * sizeof(Vertex3D));
+    mesh.numVertices = openglvertices.size();
 
-    memcpy(mesh->vertices, openglvertices.data(), openglvertices.size() * sizeof(Vertex3D));
+    memcpy(mesh.vertices, openglvertices.data(), openglvertices.size() * sizeof(Vertex3D));
 
     Submesh submesh;
     submesh.indices = (uint32_t*)malloc(indices.size() * sizeof(uint32_t));
@@ -353,12 +403,12 @@ MeshHandle WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
     std::vector<Submesh> submeshes;
     submeshes.push_back(submesh);
 
-    mesh->submeshes = (Submesh*)malloc(submeshes.size() * sizeof(Submesh));
-    mesh->numSubmeshes = submeshes.size();
+    mesh.submeshes = (Submesh*)malloc(submeshes.size() * sizeof(Submesh));
+    mesh.numSubmeshes = submeshes.size();
 
-    memcpy(mesh->submeshes, submeshes.data(), submeshes.size() * sizeof(Submesh));
+    memcpy(mesh.submeshes, submeshes.data(), submeshes.size() * sizeof(Submesh));
 
-    return handle;
+    return mesh;
 }
 
 
