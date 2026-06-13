@@ -331,15 +331,18 @@ Mesh WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
     }
 
     center /= float(vertices.size());
-    float maxRadiusSq = 0.0f;
+    float maxRadius = 0.0f;
     for (const auto& vertex : vertices) {
         float distSq = Math::magnitude(vertex.position - center);
-        if (distSq > maxRadiusSq) {
-            maxRadiusSq = distSq * TERRAIN_CHUNK_SIZE;
-        }
+
+        maxRadius = std::max(maxRadius, distSq);
+
+        // if (distSq > maxRadiusSq) {
+            // maxRadiusSq = distSq * TERRAIN_CHUNK_SIZE;
+        // }
     }
 
-    radius = maxRadiusSq * 1.50f;
+    radius = maxRadius * TERRAIN_CHUNK_SIZE;
 
     int reducedSize = (TERRAIN_CHUNK_SIZE / step) + 1;
     
