@@ -53,11 +53,11 @@ void Renderer::SetRenderTarget(RenderTarget* rt)
 void Renderer::Submit(const MaterialHandle& material, const MeshHandle& mesh, uint32_t submesh, const Matrix4x4* matrice)
 {
     uint64_t sortKey =
-          (uint64_t)handle_get_first(material) << 32
-        | (uint64_t)handle_get_first(mesh) << 16
-        | (uint64_t)submesh;
-
-    s_Renderer->m_renderables.push_back(Renderable{ sortKey, material, mesh, submesh, matrice });
+          (uint64_t)handle_get_first(material) << 36  // Ocupa bits 36 a 63
+        | (uint64_t)handle_get_first(mesh) << 8       // Ocupa bits 8 a 35
+        | (uint64_t)submesh;                          // Ocupa bits 0 a 7
+    
+    s_Renderer->m_renderables.push_back({ sortKey, material, mesh, submesh, matrice });
 }
 
 // priuvae
@@ -117,6 +117,12 @@ void Renderer::draw()
     bool enable[10] = {false};
     int textureID[10] = {0};
 
+    Material* lastMaterial = nullptr;
+    gr::Shader* lastShader = nullptr;
+    gr::vertex_array* lastVao = nullptr;
+
+    UniformID model = 0;
+
     for (auto &&[material, mesh, submeshID, instances, instanceCount] : m_commands)
     {
         if (!instanceCount)
@@ -130,51 +136,61 @@ void Renderer::draw()
                     ? ShaderPrefabFlags_Instancing
                     : ShaderPrefabFlags_none);
 
+        if (lastShader != shader)
+        {
+            shader->bind();
+
+            shader->setUniform("u_mat_texture", textureID);
+            shader->setUniform("u_mat_enable", enable);
+
+            model = shader->findUniform("u_mat_model");
+
+            lastShader = shader;
+        }
+
         if (shader != material->shader)
         {
             material->shader = shader;
 
             material->Build();
+            material->Flush();
         }
-
-        shader->bind();
-
-        shader->setUniform("u_mat_texture", textureID);
-        shader->setUniform("u_mat_enable", enable);
-
-        material->Flush();
 
         auto& submesh = mesh->submeshes[submeshID];
 
         GPUMesh& gpuMesh = mesh->gpuMesh;
 
-
         if (gpuMesh.vertexarray == nullptr)
             mesh->Build();
 
-        gpuMesh.vertexarray->Bind();
+        auto vao = gpuMesh.vertexarray;
+        if (vao != lastVao)
+        {
+            vao->Bind();
+            lastVao = vao;
+        }
 
         if (instancing)
         {
-            auto pbo = gpuMesh.pbo;
-            pbo->Bind();
-
-            pbo->SetData(
-                instances,
-                instanceCount * sizeof(Matrix4x4));
-
-            glDrawElementsInstanced(
-                GL_TRIANGLES,
-                submesh.indexCount,
-                GL_UNSIGNED_INT,
-                (void*)(submesh.indexOffset * sizeof(uint32_t)),
-                (GLsizei)instanceCount);
+            // auto pbo = gpuMesh.pbo;
+            // pbo->Bind();
+            //
+            // pbo->SetData(
+            //     instances,
+            //     instanceCount * sizeof(Matrix4x4));
+            //
+            // glDrawElementsInstanced(
+            //     GL_TRIANGLES,
+            //     submesh.indexCount,
+            //     GL_UNSIGNED_INT,
+            //     (void*)(submesh.indexOffset * sizeof(uint32_t)),
+            //     (GLsizei)instanceCount);
         }
         else
         {
-            shader->set_uniform(
-                "u_mat_model",
-                instances[0]);
+            shader->SetUniform(
+                model,
+                instances);
 
             glDrawElements(
                 GL_TRIANGLES,
@@ -183,7 +199,7 @@ void Renderer::draw()
                 (void*)(submesh.indexOffset * sizeof(uint32_t)));
         }
 
-        gpuMesh.vertexarray->Unbind();
+        vao->Unbind();
     }
 }
 

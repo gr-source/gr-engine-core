@@ -37,12 +37,14 @@ void WorldSystem::Update(Scene* scene)
             int chunkIdX = currentX + x;
             int chunkIdZ = currentZ + z;
 
-            ChunkCoord coord{chunkIdX, chunkIdZ};
+            // ChunkCoord coord{chunkIdX, chunkIdZ};
 
-            ChunkCoordHash s_ChunkCoordHash;
+            Handle hash = handle_create(chunkIdX, chunkIdZ);
 
-            if (!has(s_ChunkCoordHash(coord)))
-                create(coord);
+            // ChunkCoordHash s_ChunkCoordHash;
+
+            if (!has(hash))
+                create(hash);
         }
     }
 
@@ -50,8 +52,8 @@ void WorldSystem::Update(Scene* scene)
     {
         auto chunk = m_pool.get(*it);
 
-        int dx = chunk->coord.x - currentX;
-        int dz = chunk->coord.z - currentZ;
+        int dx = ((int)handle_get_first(chunk->hash)) - currentX;
+        int dz = ((int)handle_get_second(chunk->hash)) - currentZ;
 
         if(std::abs(dx) > LOAD_DISTANCE ||
            std::abs(dz) > LOAD_DISTANCE)
@@ -75,33 +77,28 @@ void WorldSystem::Update(Scene* scene)
 
 #include "gr-base/managers/assetsManager.hpp"
 
-void WorldSystem::create(const ChunkCoord& coord)
+void WorldSystem::create(Hash64 hash)
 {
     Handle h = m_pool.create();
 
-    ChunkCoordHash s_ChunkCoordHash;
-
-    Hash64 hash = s_ChunkCoordHash(coord);
-
     StreamChunk* chunk = m_pool.get(h);
-    chunk->coord = coord;
     chunk->hash = hash;
-    chunk->position = {
-        (float)coord.x * TERRAIN_CHUNK_SIZE,
-        (float)coord.z * TERRAIN_CHUNK_SIZE
+    Vector3 position = {
+        (float)((int)handle_get_first(hash)) * TERRAIN_CHUNK_SIZE,
+        0.0f,
+        (float)((int)handle_get_second(hash)) * TERRAIN_CHUNK_SIZE
     };
 
-    chunk->entities = nullptr;
     chunk->state = ChunkState::Loaded;
     chunk->transform = Math::CreateTRS(
-            Vector3{ chunk->position.x, 0.0f, chunk->position.y },
+            position,
             Quaternion::identity,
             Vector3{ float(TERRAIN_CHUNK_SIZE), 1.0f, float(TERRAIN_CHUNK_SIZE) }
         );
 
     chunk->mesh = AssetsManager::FindMesh(hash);
     if (chunk->mesh == HANDLE_INVALID)
-        chunk->mesh = CreateMesh(coord);
+        chunk->mesh = CreateMesh(hash);
 
     chunk->material = AssetsManager::FindMaterial(engine::hash::fnv1_str("material/DefaultMaterial"));
     if (chunk->material == HANDLE_INVALID)
@@ -149,12 +146,13 @@ void WorldSystem::unloadChunk(Handle h)
 
 void WorldSystem::render(StreamChunk* chunk)
 {
-    Vector2 position = chunk->position;
+    float worldX = (float)((int)handle_get_first(chunk->hash)) * TERRAIN_CHUNK_SIZE;
+    float worldZ = (float)((int)handle_get_second(chunk->hash)) * TERRAIN_CHUNK_SIZE;
 
-    Vector3 p1{position.x,              0, position.y};
-    Vector3 p2{position.x + TERRAIN_CHUNK_SIZE, 0, position.y};
-    Vector3 p3{position.x + TERRAIN_CHUNK_SIZE, 0, position.y + TERRAIN_CHUNK_SIZE};
-    Vector3 p4{position.x,              0, position.y + TERRAIN_CHUNK_SIZE};
+    Vector3 p1{worldX,              0, worldZ};
+    Vector3 p2{worldX + TERRAIN_CHUNK_SIZE, 0, worldZ};
+    Vector3 p3{worldX + TERRAIN_CHUNK_SIZE, 0, worldZ + TERRAIN_CHUNK_SIZE};
+    Vector3 p4{worldX,              0, worldZ + TERRAIN_CHUNK_SIZE};
 
     DebugDraw::DrawLine(p1, p2);
     DebugDraw::DrawLine(p2, p3);
@@ -172,11 +170,9 @@ struct MyVertex3D
     Vector2 texCoords;
 };
 
-MeshHandle WorldSystem::CreateMesh(const ChunkCoord& coord)
+MeshHandle WorldSystem::CreateMesh(Hash64 hash)
 {
-    ChunkCoordHash hash;
-
-    MeshHandle handle = AssetsManager::CreateMesh(hash(coord));
+    MeshHandle handle = AssetsManager::CreateMesh(hash);
     Mesh* mesh = AssetsManager::GetMesh(handle);
 
     float spacing = 1.0f;
@@ -197,8 +193,8 @@ MeshHandle WorldSystem::CreateMesh(const ChunkCoord& coord)
             float localX = (float)x / (TERRAIN_CHUNK_SIZE - 1);
             float localZ = (float)z / (TERRAIN_CHUNK_SIZE - 1);
 
-            int worldX = coord.x * TERRAIN_CHUNK_SIZE + x;
-            int worldZ = coord.z * TERRAIN_CHUNK_SIZE + z;
+            int worldX = ((int)handle_get_first(hash)) * TERRAIN_CHUNK_SIZE + x;
+            int worldZ = ((int)handle_get_second(hash)) * TERRAIN_CHUNK_SIZE + z;
 
             float height =
                 sin(worldX * 0.05f) * SIN_AMPLITUDE +

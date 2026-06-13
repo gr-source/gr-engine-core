@@ -34,9 +34,9 @@ private:
 
     ObjectPool<StreamChunk> m_pool;
 
-    MeshHandle CreateMesh(const ChunkCoord& coord);
+    MeshHandle CreateMesh(Handle hash);
 
-    void create(const ChunkCoord& coord);
+    void create(Hash64 hash);
 
     bool has(Hash64 hash) const;
 

@@ -37,19 +37,13 @@ enum class ChunkState
 
 struct StreamChunk
 {
-    ChunkCoord coord;
-
     Hash64 hash;
-
-    Vector2 position;
 
     ChunkState state;
 
     MaterialHandle material;
 
     MeshHandle mesh;
-
-    Entity* entities;
 
     Matrix4x4 transform;
 };
