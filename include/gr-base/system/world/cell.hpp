@@ -17,6 +17,8 @@ typedef uint32_t CellID;
 
 #define TERRAIN_CHUNK_SIZE 32
 
+#define TERRAIN_NUM_LOD_LEVEL 4
+
 struct ChunkCoord
 {
     int x;
@@ -43,17 +45,10 @@ struct StreamChunk
 
     MaterialHandle material;
 
-    MeshHandle mesh;
+    MeshHandle mesh[TERRAIN_NUM_LOD_LEVEL];
+    float radius[TERRAIN_NUM_LOD_LEVEL];
 
     Matrix4x4 transform;
 };
 
-struct ChunkCoordHash
-{
-    uint64_t operator()(const ChunkCoord& c) const
-    {
-        return (uint64_t(uint32_t(c.x)) << 32)
-             | uint32_t(c.z);
-    }
-};
 

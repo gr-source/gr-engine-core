@@ -34,7 +34,7 @@ private:
 
     ObjectPool<StreamChunk> m_pool;
 
-    MeshHandle CreateMesh(Handle hash);
+    MeshHandle CreateMesh(Hash64 hash, int lodLevel, float& radius);
 
     void create(Hash64 hash);
 
@@ -42,7 +42,7 @@ private:
 
     void unloadChunk(Handle h);
 
-    void render(StreamChunk* chunk);
+    void render(StreamChunk* chunk, const Vector3& camPos);
 };
 
 template <>
