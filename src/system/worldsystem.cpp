@@ -257,30 +257,64 @@ struct MyVertex3D
 #define STB_PERLIN_IMPLEMENTATION
 #include "gr-base/core/stb/stb_perlin.h"
 
-#define SIZE 64
-#define HEIGHT_MULT 10.0f // Multiplicador da altura máxima
-#define OCTAVES 8        // Número de camadas de ruído (detalhe)
-#define LACUNARITY 1.0f  // Frequência por oitava
-#define GAIN 0.5f        // Amplitude por oitava
+float fbm(float x, float y)
+{
+    float total = 0.0f;
+    float frequency = 1.0f / 256.0f;
+    float amplitude = 1.0f;
+    float maxValue = 0.0f;
+
+    for (int i = 0; i < 8; i++)
+    {
+        total += stb_perlin_noise3(
+            x * frequency,
+            y * frequency,
+            0,
+            0,0,0
+        ) * amplitude;
+
+        maxValue += amplitude;
+
+        amplitude *= 0.5f;
+        frequency *= 2.0f;
+    }
+
+    return total / maxValue;
+}
+
+float ridged(float x, float y)
+{
+    float n = fbm(x, y);
+
+    n = fabs(n);
+    n = 1.0f - n;
+
+    return n * n;
+}
 
 float get_terrain_height(float x, float y)
 {
-    float total = 0.0f;
-    float frequency = 1.0f / SIZE;
-    float amplitude = 1.0f;
-    float max_value = 0.0f;
+    float continents = fbm(x * 0.15f, y * 0.15f);
 
-    for (int i = 0; i < OCTAVES; i++)
+    float hills = fbm(x, y);
+
+    float mountains = ridged(x * 2.0f, y * 2.0f);
+
+    float h = 0.0f;
+
+    h += continents * 50.0f;
+    h += hills * 15.0f;
+    // h += mountains * 100.0f;
+
+    if (continents > 0.2f)
     {
-        total += stb_perlin_noise3(x * frequency, y * frequency, 0, 0, 0, 0) * amplitude;
-        
-        max_value += amplitude;
-        amplitude *= GAIN;
-        frequency *= LACUNARITY;
+        float mask = (continents - 0.2f) / 0.8f;
+        h += mountains * mask * 100.0f;
     }
 
-    return (total / max_value) * HEIGHT_MULT;
-}   
+    h = std::max(0.0f, h);
+    return h;
+}
 
 Mesh WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
 {
@@ -319,7 +353,7 @@ Mesh WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
 
             center += vertex.position;
 
-            vertex.normal = { 0.0f, 1.0f, 0.0f };
+            vertex.normal = { 0.0f, 0.0f, 0.0f };
 
             vertex.texCoords = {
                 localX,
