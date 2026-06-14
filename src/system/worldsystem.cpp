@@ -336,8 +336,8 @@ Mesh WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
     {
         for (int z = 0; z <= TERRAIN_CHUNK_SIZE; z+=step)
         {
-            float localX = (float)x / (TERRAIN_CHUNK_SIZE - 1);
-            float localZ = (float)z / (TERRAIN_CHUNK_SIZE - 1);
+            float localX = (float)x / TERRAIN_CHUNK_SIZE;
+            float localZ = (float)z / TERRAIN_CHUNK_SIZE;
 
             int worldX = ((int)handle_get_first(hash)) * TERRAIN_CHUNK_SIZE + x;
             int worldZ = ((int)handle_get_second(hash)) * TERRAIN_CHUNK_SIZE + z;
