@@ -12,11 +12,6 @@
 #include "gr-base/script/transform.hpp"
 #include "gr-base/system/world/cell.hpp"
 
-extern "C"
-{
-#include "gr-base/externals/vector.h"
-}
-
 WorldSystem::WorldSystem()
 {}
 
@@ -31,24 +26,21 @@ void WorldSystem::Update(Scene* scene)
 
     const auto transform = camera.GetComponent<Transform>();
 
-    int currentX = floor(transform->position.x / TERRAIN_CHUNK_SIZE);
-    int currentZ = floor(transform->position.z / TERRAIN_CHUNK_SIZE);
+    int worldX = ((int)floor(transform->position.x)) >> TERRAIN_CHUNK_BITS;
+    int worldZ = ((int)floor(transform->position.z)) >> TERRAIN_CHUNK_BITS;
 
     for (int x=-TERRAIN_LOAD_DISTANCE;x<=TERRAIN_LOAD_DISTANCE;x++)
     {
         for (int z=-TERRAIN_LOAD_DISTANCE;z<=TERRAIN_LOAD_DISTANCE;z++)
         {
-            int chunkIdX = currentX + x;
-            int chunkIdZ = currentZ + z;
+            int chunkIdX = worldX + x;
+            int chunkIdZ = worldZ + z;
 
-            // ChunkCoord coord{chunkIdX, chunkIdZ};
+            // bitpack
+            ChunkCoord coord = handle_create(chunkIdX, chunkIdZ);
 
-            Handle hash = handle_create(chunkIdX, chunkIdZ);
-
-            // ChunkCoordHash s_ChunkCoordHash;
-
-            if (!has(hash))
-                create(hash);
+            if (!has(coord))
+                create(coord);
         }
     }
 
@@ -56,8 +48,8 @@ void WorldSystem::Update(Scene* scene)
     {
         auto chunk = m_pool.get(*it);
 
-        int dx = ((int)handle_get_first(chunk->hash)) - currentX;
-        int dz = ((int)handle_get_second(chunk->hash)) - currentZ;
+        int dx = ((int)handle_get_first(chunk->coord)) - worldX;
+        int dz = ((int)handle_get_second(chunk->coord)) - worldZ;
 
         int distance = std::max(std::abs(dx), std::abs(dz));
 
@@ -65,7 +57,7 @@ void WorldSystem::Update(Scene* scene)
         {
             if (chunk->state != ChunkState::LOADING)
             {
-                m_chunkNameMap.erase(chunk->hash);
+                m_chunkNameMap.erase(chunk->coord);
 
                 unloadChunk(*it);
 
@@ -98,55 +90,119 @@ void WorldSystem::Update(Scene* scene)
 
 #include "gr-base/managers/assetsManager.hpp"
 
-void WorldSystem::create(Hash64 hash)
+void WorldSystem::create(ChunkCoord coord)
 {
     Handle h = m_pool.create();
 
     StreamChunk* chunk = m_pool.get(h);
-    chunk->hash = hash;
-    Vector3 position = {
-        (float)((int)handle_get_first(hash)) * TERRAIN_CHUNK_SIZE,
-        0.0f,
-        (float)((int)handle_get_second(hash)) * TERRAIN_CHUNK_SIZE
-    };
+    chunk->coord = coord;
 
     chunk->state = ChunkState::LOADING;
-    chunk->transform = Math::CreateTRS(
-            position,
-            Quaternion::identity,
-            Vector3{ float(TERRAIN_CHUNK_SIZE), 1.0f, float(TERRAIN_CHUNK_SIZE) }
-        );
+    chunk->transform = Matrix4x4::identityMatrix;
 
-    Threadpool::AddTask(&WorldSystem::buildMesh, this, hash, h);
+    Threadpool::AddTask(&WorldSystem::buildMesh, this, coord, h);
 
     chunk->material = AssetsManager::FindMaterial(engine::hash::fnv1_str("material/Tree.Birch.Leaf.Summer.Mat"));
     if (chunk->material == HANDLE_INVALID)
         chunk->material = AssetsManager::LoadMaterial(engine::hash::fnv1_str("material/Tree.Birch.Leaf.Summer.Mat"));
 
-    m_chunkNameMap.emplace(hash, h);
+    m_chunkNameMap.emplace(coord, h);
 
     m_chunkLoaded.push_back(h);
 }
 
-void WorldSystem::buildMesh(Hash64 hash, Handle poolID)
+static BoundingSphere CalculateBoundsSphere(Mesh* mesh)
+{
+    BoundingSphere sphere;
+
+    if (!mesh->numVertices)
+    {
+        sphere.center = Vector3::zero;
+        sphere.radius = 0.0f;
+        return sphere;
+    }
+
+    // 1. Primeiro calcula AABB (reaproveitando sua lógica)
+    Vector3 min = mesh->vertices[0].position;
+    Vector3 max = mesh->vertices[0].position;
+
+    for (size_t i = 0; i < mesh->numVertices; i++)
+    {
+        const auto& p = mesh->vertices[i].position;
+
+        min.x = std::min(min.x, p.x);
+        min.y = std::min(min.y, p.y);
+        min.z = std::min(min.z, p.z);
+
+        max.x = std::max(max.x, p.x);
+        max.y = std::max(max.y, p.y);
+        max.z = std::max(max.z, p.z);
+    }
+
+    // 2. Centro da esfera = centro do AABB
+    sphere.center = (min + max) * 0.5f;
+
+    // 3. Raio = maior distância até qualquer vértice
+    float radiusSq = 0.0f;
+
+    for (size_t i = 0; i < mesh->numVertices; i++)
+    {
+        const auto& p = mesh->vertices[i].position;
+        Vector3 d = p - sphere.center;
+
+        radiusSq = std::max(radiusSq,
+            d.x * d.x + d.y * d.y + d.z * d.z);
+    }
+
+    sphere.radius = std::sqrt(radiusSq);
+
+    return sphere;
+}
+
+void WorldSystem::buildMesh(ChunkCoord coord, Handle poolID)
 {
     std::vector<MeshCache> meshes(TERRAIN_NUM_LOD_LEVEL);
 
+    int worldX = ((int)handle_get_first(coord)) << TERRAIN_CHUNK_BITS;
+    int worldZ = ((int)handle_get_second(coord)) << TERRAIN_CHUNK_BITS;
+
+    Vector3 position = {
+        (float)worldX,
+        0.0f,
+        (float)worldZ
+    };
+
+    Matrix4x4 model = Math::CreateTRS(
+        position,
+        Quaternion::identity,
+        Vector3{ float(TERRAIN_CHUNK_SIZE), 1.0f, float(TERRAIN_CHUNK_SIZE) }
+    );
+
     for (int i=0;i<TERRAIN_NUM_LOD_LEVEL;i++)
     {
-        meshes[i].hash = hash << 8 | uint64_t(i);
+        auto& cache = meshes[i];
+        // Calcula uma hash para a mesh baseado no bitpack da ChunkCoord
+        cache.hash = coord << 8 | uint64_t(i);
 
-        meshes[i].mesh = CreateMesh(hash, i, meshes[i].radius);
+        Mesh mesh = CreateMesh(coord, i);
+
+        BoundingSphere bounds = CalculateBoundsSphere(&mesh);
+        bounds.center = model * bounds.center;
+        bounds.radius = bounds.radius * (float)TERRAIN_CHUNK_SIZE;
+
+        cache.mesh = mesh;
+        cache.bounds = bounds;
     }
 
-    MainThreadDispatcher::Add(Priority::NORMAL, &WorldSystem::UploadMesh, this, poolID, meshes);
+    MainThreadDispatcher::Add(Priority::NORMAL, &WorldSystem::UploadMesh, this, poolID, model, meshes);
 }
 
-void WorldSystem::UploadMesh(Handle poolID, std::vector<MeshCache> meshes)
+void WorldSystem::UploadMesh(Handle poolID, const Matrix4x4 transform, std::vector<MeshCache> meshes)
 {
     auto chunk = m_pool.get(poolID);
     if (chunk == nullptr || chunk->state != ChunkState::LOADING)
         return;
+    chunk->transform = transform;
 
     for (int i=0;i<TERRAIN_NUM_LOD_LEVEL;i++)
     {
@@ -161,16 +217,18 @@ void WorldSystem::UploadMesh(Handle poolID, std::vector<MeshCache> meshes)
             *mesh = cache.mesh;
         }
 
-        chunk->mesh[i] = handle;
-        chunk->radius[i] = cache.radius;
+        chunk->meshLOD[i] = {
+            .mesh = handle,
+            .bounds = cache.bounds
+        };
     }
 
     chunk->state = ChunkState::LOADED;
 }
 
-bool WorldSystem::has(Hash64 hash) const
+bool WorldSystem::has(ChunkCoord coord) const
 {
-    return m_chunkNameMap.find(hash) != m_chunkNameMap.end();
+    return m_chunkNameMap.find(coord) != m_chunkNameMap.end();
 }
 
 void WorldSystem::unloadChunk(Handle h)
@@ -179,9 +237,11 @@ void WorldSystem::unloadChunk(Handle h)
 
     for (int i=0;i<TERRAIN_NUM_LOD_LEVEL;i++)
     {
-        if (chunk->mesh[i] != HANDLE_INVALID)
+        auto& meshLOD = chunk->meshLOD[i];
+
+        if (meshLOD.mesh != HANDLE_INVALID)
         {
-            auto mesh = AssetsManager::GetMesh(chunk->mesh[i]);
+            auto mesh = AssetsManager::GetMesh(meshLOD.mesh);
             if (mesh != nullptr)
             {
                 free(mesh->vertices);
@@ -198,7 +258,7 @@ void WorldSystem::unloadChunk(Handle h)
                 if (mesh->gpuMesh.vertexarray != nullptr)
                     delete mesh->gpuMesh.vertexarray;
 
-                AssetsManager::RemoveMesh(chunk->mesh[i]);
+                AssetsManager::RemoveMesh(meshLOD.mesh);
             }
         }
     }
@@ -206,152 +266,187 @@ void WorldSystem::unloadChunk(Handle h)
     m_pool.destroy(h);
 }
 
+static void DrawDebugSphere(const Vector3& center, float radius, int segments = 16)
+{
+    const float step = 2.0f * 3.14159265f / segments;
+
+    // Círculo XZ (horizontal)
+    for (int i = 0; i < segments; i++)
+    {
+        float a0 = i * step;
+        float a1 = (i + 1) * step;
+
+        Vector3 p0 = {
+            center.x + cosf(a0) * radius,
+            center.y,
+            center.z + sinf(a0) * radius
+        };
+
+        Vector3 p1 = {
+            center.x + cosf(a1) * radius,
+            center.y,
+            center.z + sinf(a1) * radius
+        };
+
+        DebugDraw::DrawLine(p0, p1);
+    }
+
+    // Círculo XY
+    for (int i = 0; i < segments; i++)
+    {
+        float a0 = i * step;
+        float a1 = (i + 1) * step;
+
+        Vector3 p0 = {
+            center.x + cosf(a0) * radius,
+            center.y + sinf(a0) * radius,
+            center.z
+        };
+
+        Vector3 p1 = {
+            center.x + cosf(a1) * radius,
+            center.y + sinf(a1) * radius,
+            center.z
+        };
+
+        DebugDraw::DrawLine(p0, p1);
+    }
+
+    // Círculo YZ
+    for (int i = 0; i < segments; i++)
+    {
+        float a0 = i * step;
+        float a1 = (i + 1) * step;
+
+        Vector3 p0 = {
+            center.x,
+            center.y + cosf(a0) * radius,
+            center.z + sinf(a0) * radius
+        };
+
+        Vector3 p1 = {
+            center.x,
+            center.y + cosf(a1) * radius,
+            center.z + sinf(a1) * radius
+        };
+
+        DebugDraw::DrawLine(p0, p1);
+    }
+}
+
 void WorldSystem::render(StreamChunk* chunk, const Vector3& camPos)
 {
     if (chunk->state != ChunkState::LOADED)
         return;
 
-    float worldX = (float)((int)handle_get_first(chunk->hash)) * TERRAIN_CHUNK_SIZE;
-    float worldZ = (float)((int)handle_get_second(chunk->hash)) * TERRAIN_CHUNK_SIZE;
-
-    Vector3 position = { worldX, 0.0f, worldZ };
+    Vector3 position =
+    {
+        (float)(((int)handle_get_first(chunk->coord)) << TERRAIN_CHUNK_BITS),
+        0.0f,
+        (float)(((int)handle_get_second(chunk->coord)) << TERRAIN_CHUNK_BITS)
+    };
 
     int lodLevel = 0;
     float distance = Math::distance(position, camPos);
 
-    if (distance >= 150.0f + 5.0f) 
+    if (distance >= 300.0f + 5.0f)
         lodLevel = 3;
-    else if (distance >= 100.0f + 5.0f) 
+    else if (distance >= 200.0f + 5.0f) 
         lodLevel = 2;
-    else if (distance >= 50.0f + 5.0f)
+    else if (distance >= 100.0f + 5.0f)
         lodLevel = 1;
     else
         lodLevel = 0;
 
-    float radius = chunk->radius[lodLevel];
+    auto& meshLOD = chunk->meshLOD[lodLevel];
 
-    if (!Frustum::IsSphereInFrustum(position, radius))
+    auto& sphere = meshLOD.bounds;
+    if (!Frustum::IsSphereInFrustum(sphere.center, sphere.radius))
         return;
 
-    Vector3 p1{worldX,              0, worldZ};
-    Vector3 p2{worldX + TERRAIN_CHUNK_SIZE, 0, worldZ};
-    Vector3 p3{worldX + TERRAIN_CHUNK_SIZE, 0, worldZ + TERRAIN_CHUNK_SIZE};
-    Vector3 p4{worldX,              0, worldZ + TERRAIN_CHUNK_SIZE};
+    Vector3 p1{ position.x,                      0.0f, position.z };
+    Vector3 p2{ position.x + TERRAIN_CHUNK_SIZE, 0.0f, position.z };
+    Vector3 p3{ position.x + TERRAIN_CHUNK_SIZE, 0.0f, position.z + TERRAIN_CHUNK_SIZE};
+    Vector3 p4{ position.x,                      0.0f, position.z + TERRAIN_CHUNK_SIZE};
 
     DebugDraw::DrawLine(p1, p2);
     DebugDraw::DrawLine(p2, p3);
     DebugDraw::DrawLine(p3, p4);
     DebugDraw::DrawLine(p4, p1);
 
-    Renderer::Submit(chunk->material, chunk->mesh[lodLevel], 0, &chunk->transform);
+    Renderer::Submit(chunk->material, meshLOD.mesh, 0, &chunk->transform);
     // Renderer::Submit(chunk->material, chunk->mesh, 0, &Matrix4x4::identityMatrix);
 }
-
-struct MyVertex3D
-{
-    Vector3 position;
-    Vector3 normal;
-    Vector2 texCoords;
-};
 
 #define STB_PERLIN_IMPLEMENTATION
 #include "gr-base/core/stb/stb_perlin.h"
 
-float fbm(float x, float y)
-{
-    float total = 0.0f;
-    float frequency = 1.0f / 256.0f;
-    float amplitude = 1.0f;
-    float maxValue = 0.0f;
-
-    for (int i = 0; i < 8; i++)
-    {
-        total += stb_perlin_noise3(
-            x * frequency,
-            y * frequency,
-            0,
-            0,0,0
-        ) * amplitude;
-
-        maxValue += amplitude;
-
-        amplitude *= 0.5f;
-        frequency *= 2.0f;
-    }
-
-    return total / maxValue;
-}
-
-float ridged(float x, float y)
-{
-    float n = fbm(x, y);
-
-    n = fabs(n);
-    n = 1.0f - n;
-
-    return n * n;
-}
+#define SIZE 32
+#define HEIGHT_MULT 10.0f
+#define OCTAVES 8
+#define LACUNARITY 1.0f
+#define GAIN 0.5f
 
 float get_terrain_height(float x, float y)
 {
-    float continents = fbm(x * 0.15f, y * 0.15f);
+    float total = 0.0f;
+    float frequency = 1.0f / SIZE;
+    float amplitude = 1.0f;
+    float max_value = 0.0f;
 
-    float hills = fbm(x, y);
-
-    float mountains = ridged(x * 2.0f, y * 2.0f);
-
-    float h = 0.0f;
-
-    h += continents * 50.0f;
-    h += hills * 15.0f;
-    // h += mountains * 100.0f;
-
-    if (continents > 0.2f)
+    for (int i = 0; i < OCTAVES; i++)
     {
-        float mask = (continents - 0.2f) / 0.8f;
-        h += mountains * mask * 100.0f;
+        total += stb_perlin_noise3(x * frequency, y * frequency, 0, 0, 0, 0) * amplitude;
+        
+        max_value += amplitude;
+        amplitude *= GAIN;
+        frequency *= LACUNARITY;
     }
 
-    h = std::max(0.0f, h);
-    return h;
+    return (total / max_value) * HEIGHT_MULT;
 }
 
-Mesh WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
+Mesh WorldSystem::CreateMesh(ChunkCoord coord, int lodLevel)
 {
-    float spacing = 1.0f;
-
-    std::vector<MyVertex3D> vertices;
+    std::vector<Vertex3D> vertices;
     std::vector<uint32_t> indices;
 
-    int step = 1 << lodLevel;
-    
-    if (step > TERRAIN_CHUNK_SIZE)
-        step = TERRAIN_CHUNK_SIZE;
+    // =========================
+    // LOD → vertex count (CORRETO)
+    // =========================
+    int vertexCount = (TERRAIN_CHUNK_SIZE >> lodLevel) + 1;
+    vertexCount = std::max(2, vertexCount);
 
-    radius = 0.0f;
+    int step = TERRAIN_CHUNK_SIZE / (vertexCount - 1);
 
-    Vector3 center = Vector3::zero;
+    // Unpack
+    int chunkX = (int)handle_get_first(coord);
+    int chunkZ = (int)handle_get_second(coord);
 
-    for (int x = 0; x <= TERRAIN_CHUNK_SIZE; x+=step)
+    // =========================
+    // VERTEX GENERATION
+    // =========================
+    for (int ix = 0; ix < vertexCount; ix++)
     {
-        for (int z = 0; z <= TERRAIN_CHUNK_SIZE; z+=step)
+        for (int iz = 0; iz < vertexCount; iz++)
         {
+            int x = ix * step;
+            int z = iz * step;
+
             float localX = (float)x / TERRAIN_CHUNK_SIZE;
             float localZ = (float)z / TERRAIN_CHUNK_SIZE;
 
-            int worldX = ((int)handle_get_first(hash)) * TERRAIN_CHUNK_SIZE + x;
-            int worldZ = ((int)handle_get_second(hash)) * TERRAIN_CHUNK_SIZE + z;
+            int worldX = (chunkX << TERRAIN_CHUNK_BITS) + x;
+            int worldZ = (chunkZ << TERRAIN_CHUNK_BITS) + z;
 
-            float heigth = get_terrain_height(worldX, worldZ);
+            float height = get_terrain_height(worldX, worldZ);
 
-            MyVertex3D vertex{};
+            Vertex3D vertex{};
             vertex.position = {
                 localX,
-                heigth,
+                height,
                 localZ
             };
-
-            center += vertex.position;
 
             vertex.normal = { 0.0f, 0.0f, 0.0f };
 
@@ -364,29 +459,16 @@ Mesh WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
         }
     }
 
-    center /= float(vertices.size());
-    float maxRadius = 0.0f;
-    for (const auto& vertex : vertices) {
-        float distSq = Math::magnitude(vertex.position - center);
-
-        maxRadius = std::max(maxRadius, distSq);
-
-        // if (distSq > maxRadiusSq) {
-            // maxRadiusSq = distSq * TERRAIN_CHUNK_SIZE;
-        // }
-    }
-
-    radius = maxRadius * TERRAIN_CHUNK_SIZE;
-
-    int reducedSize = (TERRAIN_CHUNK_SIZE / step) + 1;
-    
-    for (int x = 0; x < reducedSize - 1; x++)
+    // =========================
+    // INDEX GENERATION
+    // =========================
+    for (int ix = 0; ix < vertexCount - 1; ix++)
     {
-        for (int z = 0; z < reducedSize - 1; z++)
+        for (int iz = 0; iz < vertexCount - 1; iz++)
         {
-            int topLeft     = x * (reducedSize) + z;
+            int topLeft     = ix * vertexCount + iz;
             int topRight    = topLeft + 1;
-            int bottomLeft  = (x + 1) * (reducedSize) + z;
+            int bottomLeft  = (ix + 1) * vertexCount + iz;
             int bottomRight = bottomLeft + 1;
 
             indices.push_back(topLeft);
@@ -399,51 +481,45 @@ Mesh WorldSystem::CreateMesh(Hash64 hash, int lodLevel, float& radius)
         }
     }
 
+    // =========================
+    // NORMALS
+    // =========================
     for (uint32_t i = 0; i < indices.size(); i += 3)
     {
-        const auto kIdx1 = indices[i + 0];
-        const auto kIdx2 = indices[i + 1];
-        const auto kIdx3 = indices[i + 2];
+        auto& v0 = vertices[indices[i + 0]];
+        auto& v1 = vertices[indices[i + 1]];
+        auto& v2 = vertices[indices[i + 2]];
 
-        auto& v0 = vertices[kIdx1];
-        auto& v1 = vertices[kIdx2];
-        auto& v2 = vertices[kIdx3];
-
-        const Vector3 kNormal = Math::normalize(
-            Math::cross(v1.position - v0.position, v2.position - v0.position)
+        Vector3 normal = Math::normalize(
+            Math::cross(v1.position - v0.position,
+                        v2.position - v0.position)
         );
 
-        v0.normal += kNormal;
-        v1.normal += kNormal;
-        v2.normal += kNormal;
+        v0.normal += normal;
+        v1.normal += normal;
+        v2.normal += normal;
     }
 
     for (auto& v : vertices)
         v.normal = Math::normalize(v.normal);
 
-    std::vector<Vertex3D> openglvertices;
-    for (auto& v : vertices)
-        openglvertices.push_back({v.position, v.normal, v.texCoords});
-
+    // =========================
+    // OUTPUT MESH
+    // =========================
     Mesh mesh;
-    mesh.vertices = (Vertex3D*)malloc(openglvertices.size() * sizeof(Vertex3D));
-    mesh.numVertices = openglvertices.size();
 
-    memcpy(mesh.vertices, openglvertices.data(), openglvertices.size() * sizeof(Vertex3D));
+    mesh.vertices = (Vertex3D*)malloc(vertices.size() * sizeof(Vertex3D));
+    mesh.numVertices = vertices.size();
+    memcpy(mesh.vertices, vertices.data(), vertices.size() * sizeof(Vertex3D));
 
     Submesh submesh;
     submesh.indices = (uint32_t*)malloc(indices.size() * sizeof(uint32_t));
     submesh.numIndices = indices.size();
-
     memcpy(submesh.indices, indices.data(), indices.size() * sizeof(uint32_t));
 
-    std::vector<Submesh> submeshes;
-    submeshes.push_back(submesh);
-
-    mesh.submeshes = (Submesh*)malloc(submeshes.size() * sizeof(Submesh));
-    mesh.numSubmeshes = submeshes.size();
-
-    memcpy(mesh.submeshes, submeshes.data(), submeshes.size() * sizeof(Submesh));
+    mesh.submeshes = (Submesh*)malloc(sizeof(Submesh));
+    mesh.numSubmeshes = 1;
+    mesh.submeshes[0] = submesh;
 
     return mesh;
 }

@@ -102,7 +102,7 @@ void Renderer::render()
     if (m_rendertarget == nullptr)
         return;
     
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LESS);
     draw();

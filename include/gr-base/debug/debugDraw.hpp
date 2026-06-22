@@ -4,7 +4,6 @@
 
 #include "gr-base/prefab/default.hpp"
 
-#include <gr-math/color.hpp>
 #include <gr-math/gmath.hpp>
 #include <gr-math/vector3.hpp>
 
@@ -23,7 +22,7 @@ public:
 
     static void Shutdown();
 
-    static void DrawLine(const Vector3 &start, const Vector3 &end, const Color &color = Color::green);
+    static void DrawLine(const Vector3 &start, const Vector3 &end, const Color &color = COLOR_GREEN);
 
     static void Render();
 

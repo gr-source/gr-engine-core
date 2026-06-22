@@ -36,4 +36,7 @@ struct Mesh
     void Build();
 };
 
+static void Mesh_Normalize(Mesh* mesh);
+
+
 

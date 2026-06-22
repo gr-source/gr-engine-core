@@ -346,7 +346,7 @@ static AABB CalculateBounds(Mesh* mesh)
     for (size_t i=0;i<mesh->numVertices;i++)
     {
         const auto& vertex = mesh->vertices[i];
-        const GPUVec4& p = vertex.position;
+        const auto& p = vertex.position;
 
         bounds.min.x = std::min(bounds.min.x, p.x);
         bounds.min.y = std::min(bounds.min.y, p.y);

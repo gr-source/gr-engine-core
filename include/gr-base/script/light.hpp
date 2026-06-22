@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gr-base/ecs/default.hpp"
+#include "gr-base/ecs/type_traits.hpp"
 
 #include <gr-math/gmath.hpp>
 
@@ -14,7 +14,7 @@ struct Light
 
     LightType type = LightType::eDirection;
 
-    Color color = Color::white;
+    Color color = COLOR_WHITE;
 
     float attenuationConstant = 1.0f;
     float attenuationLinear = 0.0f;

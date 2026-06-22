@@ -16,6 +16,7 @@
 #include <vector>
 #include <string>
 
+
 class WorldSystem : public ISystem
 {
 public:
@@ -33,24 +34,24 @@ private:
     {
         Mesh mesh;
         uint64_t hash;
-        float radius;
+        BoundingSphere bounds;
     };
 
-    std::unordered_map<Hash64, Handle> m_chunkNameMap;
+    std::unordered_map<ChunkCoord, Handle> m_chunkNameMap;
 
     std::vector<Handle> m_chunkLoaded;
 
     ObjectPool<StreamChunk> m_pool;
 
-    void create(Hash64 hash);
+    void create(ChunkCoord coord);
 
-    void buildMesh(Hash64 hash, Handle poolID);
+    void buildMesh(ChunkCoord coord, Handle poolID);
 
-    Mesh CreateMesh(Hash64 hash, int lodLevel, float& radius);
+    Mesh CreateMesh(ChunkCoord coord, int lodLevel);
 
-    void UploadMesh(Handle poolID, std::vector<MeshCache> meshes);
+    void UploadMesh(Handle poolID, const Matrix4x4 transform, std::vector<MeshCache> meshes);
 
-    bool has(Hash64 hash) const;
+    bool has(ChunkCoord coord) const;
 
     void unloadChunk(Handle h);
 

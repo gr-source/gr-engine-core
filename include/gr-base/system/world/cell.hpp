@@ -17,18 +17,11 @@ typedef uint32_t CellID;
 
 #define TERRAIN_CHUNK_SIZE 32
 
+#define TERRAIN_CHUNK_BITS 5
+
 #define TERRAIN_NUM_LOD_LEVEL 4
 
-struct ChunkCoord
-{
-    int x;
-    int z;
-
-    bool operator==(const ChunkCoord& c) const
-    {
-        return x == c.x && z == c.z;
-    }
-};
+typedef uint64_t ChunkCoord;
 
 enum class ChunkState
 {
@@ -37,16 +30,28 @@ enum class ChunkState
     LOADED
 };
 
+
+typedef struct BoundingSphere
+{
+    Vector3 center;
+    float radius;
+} BoundingSphere;
+
+typedef struct MeshTerrainLOD
+{
+    MeshHandle mesh;
+    BoundingSphere bounds;
+} MeshTerrainLOD;
+
 struct StreamChunk
 {
-    Hash64 hash;
+    ChunkCoord coord;
 
     ChunkState state;
 
     MaterialHandle material;
 
-    MeshHandle mesh[TERRAIN_NUM_LOD_LEVEL];
-    float radius[TERRAIN_NUM_LOD_LEVEL];
+    MeshTerrainLOD meshLOD[TERRAIN_NUM_LOD_LEVEL];
 
     Matrix4x4 transform;
 };

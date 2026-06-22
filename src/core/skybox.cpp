@@ -154,7 +154,7 @@ void Skybox::upload_cubemap_texture(gr::gTexture *texture, gr::Shader *shader)
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, m_cubemapTexture->getTextureID(), 0);
 
-        gr::gRender::SetBackgroundColor(Color::blue);
+        gr::gRender::SetBackgroundColor(COLOR_BLUE);
         gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_COLOR_BUFFER | gr::GR_DEPTH_BUFFER);
         
         m_vertexarray->bind();
