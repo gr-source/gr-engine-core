@@ -150,8 +150,7 @@ static BoundingSphere CalculateBoundsSphere(Mesh* mesh)
         const auto& p = mesh->vertices[i].position;
         Vector3 d = p - sphere.center;
 
-        radiusSq = std::max(radiusSq,
-            d.x * d.x + d.y * d.y + d.z * d.z);
+        radiusSq = std::max(radiusSq, Math::dot(d, d));
     }
 
     sphere.radius = std::sqrt(radiusSq);
@@ -166,7 +165,8 @@ void WorldSystem::buildMesh(ChunkCoord coord, Handle poolID)
     int worldX = ((int)handle_get_first(coord)) << TERRAIN_CHUNK_BITS;
     int worldZ = ((int)handle_get_second(coord)) << TERRAIN_CHUNK_BITS;
 
-    Vector3 position = {
+    Vector3 position =
+    {
         (float)worldX,
         0.0f,
         (float)worldZ
@@ -175,7 +175,7 @@ void WorldSystem::buildMesh(ChunkCoord coord, Handle poolID)
     Matrix4x4 model = Math::CreateTRS(
         position,
         Quaternion::identity,
-        Vector3{ float(TERRAIN_CHUNK_SIZE), 1.0f, float(TERRAIN_CHUNK_SIZE) }
+        Vector3{ float(TERRAIN_CHUNK_SIZE), 5.0f, float(TERRAIN_CHUNK_SIZE) }
     );
 
     for (int i=0;i<TERRAIN_NUM_LOD_LEVEL;i++)
@@ -381,29 +381,28 @@ void WorldSystem::render(StreamChunk* chunk, const Vector3& camPos)
 #define STB_PERLIN_IMPLEMENTATION
 #include "gr-base/core/stb/stb_perlin.h"
 
-#define SIZE 32
-#define HEIGHT_MULT 10.0f
-#define OCTAVES 8
-#define LACUNARITY 1.0f
-#define GAIN 0.5f
-
-float get_terrain_height(float x, float y)
+float FBM(float x, float z, int octaves, float gain, float lacunarity)
 {
     float total = 0.0f;
-    float frequency = 1.0f / SIZE;
+    float frequency = 1.0f;
     float amplitude = 1.0f;
     float max_value = 0.0f;
 
-    for (int i = 0; i < OCTAVES; i++)
+    for (int i = 0; i < octaves; i++)
     {
-        total += stb_perlin_noise3(x * frequency, y * frequency, 0, 0, 0, 0) * amplitude;
+        float sampleX = x * frequency;
+        float sampleZ = z * frequency;
+
+        float height = stb_perlin_noise3(sampleX, sampleZ, 0, 0, 0, 0) * 2.0f - 1.0f;
+
+        total += height * amplitude;
         
         max_value += amplitude;
-        amplitude *= GAIN;
-        frequency *= LACUNARITY;
+        amplitude *= gain;
+        frequency *= lacunarity;
     }
 
-    return (total / max_value) * HEIGHT_MULT;
+    return total / max_value;
 }
 
 Mesh WorldSystem::CreateMesh(ChunkCoord coord, int lodLevel)
@@ -423,6 +422,8 @@ Mesh WorldSystem::CreateMesh(ChunkCoord coord, int lodLevel)
     int chunkX = (int)handle_get_first(coord);
     int chunkZ = (int)handle_get_second(coord);
 
+    float frequency = 0.01f;
+
     // =========================
     // VERTEX GENERATION
     // =========================
@@ -439,7 +440,50 @@ Mesh WorldSystem::CreateMesh(ChunkCoord coord, int lodLevel)
             int worldX = (chunkX << TERRAIN_CHUNK_BITS) + x;
             int worldZ = (chunkZ << TERRAIN_CHUNK_BITS) + z;
 
-            float height = get_terrain_height(worldX, worldZ);
+
+            const float continentFreq = 0.0015f;
+            const float hillFreq      = 0.01f;
+            const float detailFreq    = 0.08f;
+
+            float continent = stb_perlin_fbm_noise3(
+                worldX * continentFreq,
+                worldZ * continentFreq,
+                0.0f,
+                2.0f,
+                0.5f,
+            5);
+
+        continent = continent * 0.5f + 0.5f; // [-1,1] -> [0,1]
+
+        float hills = stb_perlin_ridge_noise3(
+            worldX * hillFreq,
+            worldZ * hillFreq,
+            0.0f,
+            2.0f,
+            0.5f,
+            1.0f,
+            4);
+
+        float details = stb_perlin_noise3(
+            worldX * detailFreq,
+            worldZ * detailFreq,
+            0.0f,
+            0,
+            0,
+            0);
+
+            float height = 0.0f;
+
+            // oceanos e continentes
+            height += continent * 120.0f;
+
+            // montanhas apenas sobre terra
+            height += hills * continent * 60.0f;
+
+            // pequenos detalhes
+            height += details * 4.0f;
+
+            // float height = FBM(worldX, worldZ, 4, 0.5f, 2.0f);
 
             Vertex3D vertex{};
             vertex.position = {
