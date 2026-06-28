@@ -23,17 +23,12 @@ const void* Material::GetInternal(const std::string &name) const
 
 void Material::Sync()
 {
-    static size_t i=0;
     if (shader == lastShader)
         return;
-
-    std::cout << "Material::Sync: " << i++ << std::endl;
 
     lastShader = shader;
 
     Build();
-
-    Flush();
 }
 
 void Material::Build()
@@ -58,14 +53,14 @@ void Material::Flush()
     auto base = buffer.data();
 
     auto uniforms = shader->GetUniforms();
-    for (UniformID id=0;id<shader->GetUniformCount();id++)
+    for (size_t i=0;i<shader->GetUniformCount();i++)
     {
-        auto& uniform = uniforms[id];
+        auto& uniform = uniforms[i];
 
         if (strstr(uniform.name, "u_mat_") != nullptr)
-            continue;
+            break;
 
-        shader->SetUniform(id, base + uniform.offset);
+        shader->SetUniform(i, base + uniform.offset);
     }
 }
 

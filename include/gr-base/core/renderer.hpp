@@ -7,15 +7,24 @@
 
 #include <gr-math/types.hpp>
 
+#include <gr-render/shader.hpp>
+#include <gr-render/vertex_array.hpp>
 #include <vector>
 
 struct RenderCommand
 {
     Material* material;
-    Mesh* mesh;
-    uint32_t submesh;
+
+    gr::Shader* shader;
+
+    gr::vertex_array* vao;
+    gr::vertex_buffer* pbo;
+
     const Matrix4x4* instances;
     size_t instanceCount;
+
+    size_t indexCount;
+    size_t indexOffset;
 };
 
 struct Renderable

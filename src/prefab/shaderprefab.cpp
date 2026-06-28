@@ -1,6 +1,11 @@
 #include "gr-base/prefab/shaderprefab.hpp"
 #include "gr-base/core/console.hpp"
 
+
+#include <algorithm>
+
+#include <string.h>
+
 static std::unordered_map<std::string, UniformType> mTypeMapping =
 {
     {"float",       UniformType::FLOAT},
@@ -84,6 +89,26 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
             if (shader->registry(name.c_str(), count, it->second) == GR_INVALID_ID)
                 Console::LogWarning("[ShaderLoadTask] fail in to registry: %s", name.c_str());
         }
+
+        std::vector<gr::ShaderUniform> uniforms(shader->GetUniformCount());
+        for (size_t i=0;i<shader->GetUniformCount();i++)
+        {
+            uniforms[i] = shader->GetUniforms()[i];
+        }
+
+        std::sort(uniforms.begin(), uniforms.end(),
+        [](const gr::ShaderUniform& a, const gr::ShaderUniform& b)
+        {
+            bool aMat = strncmp(a.name, "u_mat_", 6) != 0;
+            bool bMat = strncmp(b.name, "u_mat_", 6) != 0;
+
+            if (aMat != bMat)
+                return aMat;
+
+            return strcmp(a.name, b.name) < 0;
+        });
+
+        memcpy(shader->GetUniforms(), uniforms.data(), uniforms.size() * sizeof(gr::ShaderUniform));
 
         m_shaders.push_back(shader);
     }

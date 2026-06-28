@@ -133,39 +133,19 @@ void Renderer::draw()
     bool enable[10] = {false};
     int textureID[10] = {0};
 
+    Material* lastMaterial = nullptr;
     gr::Shader* lastShader = nullptr;
     gr::vertex_array* lastVao = nullptr;
 
     UniformID model = 0;
 
-    // size_t el = 0;
-
-    for (auto &&[material, mesh, submeshID, instances, instanceCount] : m_commands)
+    for (auto &&[material, shader, vao, pbo, instances, instanceCount, indexCount, indexOffset] : m_commands)
     {
-        if (!instanceCount)
-            continue;
-
-        auto& submesh = mesh->submeshes[submeshID];
-
-        GPUMesh& gpuMesh = mesh->gpuMesh;
-
-        if (gpuMesh.vertexarray == nullptr)
-            mesh->Build();
-
-        auto vao = gpuMesh.vertexarray;
         if (vao != lastVao)
         {
             vao->Bind();
             lastVao = vao;
         }
-
-        bool instancing = instanceCount > 1;
-
-        auto shader =
-            material->prefab->Get(
-                instancing
-                    ? ShaderPrefabFlags_Instancing
-                    : ShaderPrefabFlags_none);
 
         if (lastShader != shader)
         {
@@ -176,17 +156,20 @@ void Renderer::draw()
 
             model = shader->findUniform("u_mat_model");
 
-            // el ++;
-
             lastShader = shader;
         }
 
         material->shader = shader;
         material->Sync();
 
-        if (instancing)
+        if (material != lastMaterial)
         {
-            auto pbo = gpuMesh.pbo;
+            material->Flush();
+            lastMaterial = material;
+        }
+
+        if (instanceCount > 1)
+        {
             pbo->Bind();
 
             pbo->SetData(
@@ -195,9 +178,9 @@ void Renderer::draw()
 
             glDrawElementsInstanced(
                 GL_TRIANGLES,
-                submesh.indexCount,
+                indexCount,
                 GL_UNSIGNED_INT,
-                (void*)(submesh.indexOffset * sizeof(uint32_t)),
+                (void*)(indexOffset * sizeof(uint32_t)),
                 (GLsizei)instanceCount);
         }
         else
@@ -208,18 +191,16 @@ void Renderer::draw()
 
             glDrawElements(
                 GL_TRIANGLES,
-                submesh.indexCount,
+                indexCount,
                 GL_UNSIGNED_INT,
-                (void*)(submesh.indexOffset * sizeof(uint32_t)));
+                (void*)(indexOffset * sizeof(uint32_t)));
         }
 
         RendererStats::TriangleCount +=
-            (submesh.indexCount / 3) * instanceCount;
+            (indexCount / 3) * instanceCount;
 
         // RendererStats::DrawCallCount++;
     }
-
-    // std::cout << el << std::endl;
 }
 
 void Renderer::sorting()
@@ -231,10 +212,11 @@ void Renderer::sorting()
     });
 
     MaterialHandle lastMaterial = HANDLE_INVALID;
-    Material* material = nullptr;
 
     MeshHandle lastMesh = HANDLE_INVALID;
     Mesh* mesh = nullptr;
+
+    RenderCommand cmd;
 
     size_t i = 0, matrixID = 0;
     while (i < m_renderables.size())
@@ -259,28 +241,48 @@ void Renderer::sorting()
 
         size_t count = start - i;
 
-        if (first.material != lastMaterial)
+        if (count > 0)
         {
-            material = AssetsManager::GetMaterial(first.material);
+            if (first.material != lastMaterial)
+            {
+                cmd.material = AssetsManager::GetMaterial(first.material);
 
-            lastMaterial = first.material;
+                lastMaterial = first.material;
+            }
+
+            if (first.mesh != lastMesh)
+            {
+                mesh = AssetsManager::GetMesh(first.mesh);
+
+                auto& gpuMesh = mesh->gpuMesh;
+
+                if (gpuMesh.vertexarray == nullptr)
+                    mesh->Build();
+
+                cmd.vao = gpuMesh.vertexarray;
+                cmd.pbo = gpuMesh.pbo;
+
+                lastMesh = first.mesh;
+            }
+
+            auto& submesh = mesh->submeshes[first.submesh];
+
+            cmd.instances = &m_metrices[matrixID - count];
+            cmd.instanceCount = count;
+
+            cmd.indexCount = submesh.indexCount;
+            cmd.indexOffset = submesh.indexOffset;
+
+            bool instancing = count > 1;
+
+            cmd.shader =
+                cmd.material->prefab->Get(
+                    instancing
+                        ? ShaderPrefabFlags_Instancing
+                        : ShaderPrefabFlags_none);
+
+            m_commands.push_back(cmd);
         }
-
-        if (first.mesh != lastMesh)
-        {
-            mesh = AssetsManager::GetMesh(first.mesh);
-
-            lastMesh = first.mesh;
-        }
-
-        RenderCommand cmd;
-        cmd.material = material;
-        cmd.mesh = mesh;
-        cmd.submesh = first.submesh;
-        cmd.instances = &m_metrices[matrixID - count];
-        cmd.instanceCount = count;
-
-        m_commands.push_back(cmd);
 
         i = start;
     }
