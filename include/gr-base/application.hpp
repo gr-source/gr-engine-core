@@ -14,6 +14,8 @@ public:
     virtual void shutdown() = 0;
 
     virtual void run() = 0;
+
+    virtual void dropPath(const char* path) {}
 };
 
 

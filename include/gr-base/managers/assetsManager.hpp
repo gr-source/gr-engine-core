@@ -81,6 +81,10 @@ public:
 
     static MaterialHandle LoadMaterialFromFile(const std::string& file);
 
+    static ShaderPrefab* FindShader(const std::string &name);
+
+    static ShaderPrefab* FindShader(Hash64 hash);
+
     static ShaderPrefab* LoadShader(const std::string& name);
 
     static ShaderPrefab* LoadShader(Hash64 hash);

@@ -1,5 +1,6 @@
 #include "gr-base/core/geometry/mesh.hpp"
 #include <cstring>
+#include <gr-render/gl.h>
 
 struct GPUVec2
 {
@@ -49,6 +50,11 @@ struct GPUVertex3D
 
 void Mesh::Build()
 {
+    glBindVertexArray(0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     std::vector<GPUVertex3D> gpuVertices(numVertices);
     for (size_t i=0;i<numVertices;i++)
     {
@@ -76,6 +82,7 @@ void Mesh::Build()
     auto pbo = gr::vertex_buffer::create(nullptr, sizeof(Matrix4x4), gr::buffer_usage::dynamic_draw);
     pbo->SetLayout(instanceLayout);
     
+    /*
     std::vector<uint32_t> allIndices;
 
     uint32_t offset = 0;
@@ -93,17 +100,29 @@ void Mesh::Build()
 
         offset += indices.size();
     }
+    */
 
-    auto ibo = gr::index_buffer::create(allIndices.data(), allIndices.size() * sizeof(uint32_t));
+    auto ibo = gr::index_buffer::create(indices, numIndices * sizeof(uint32_t));
 
     auto vertexarray = gr::vertex_array::create();
+    vertexarray->Bind();
     vertexarray->AddVertexBuffer(vbo);
     vertexarray->AddVertexBuffer(pbo);
     vertexarray->SetIndexBuffer(ibo);
 
+    vbo->Unbind();
+    ibo->Unbind();
+    pbo->Unbind();
+
+    vertexarray->Unbind();
+    vbo->Unbind();
+    ibo->Unbind();
+    pbo->Unbind();
+
     gpuMesh.vertexarray = vertexarray;
     gpuMesh.pbo = pbo;
     gpuMesh.ibo = ibo;
+    gpuMesh.vbo = vbo;
 }
 
 void Mesh_Normalize(Mesh* mesh)
@@ -111,39 +130,34 @@ void Mesh_Normalize(Mesh* mesh)
     if (!mesh->numVertices)
         return;
 
+    if ((mesh->numIndices % 3) == 0)
+        return;
+
     for (size_t i=0;i<mesh->numVertices;i++)
         mesh->vertices[i].normal = Vector3::zero;
 
     auto vertices = mesh->vertices;
 
-    for (size_t i=0;i<mesh->numSubmeshes;i++)
+    for (size_t i=0;i<mesh->numIndices;i++)
     {
-        Submesh& submesh = mesh->submeshes[i];
-        if ((submesh.numIndices % 3) == 0)
-            continue;
+        const int ia = mesh->indices[i + 0];
+        const int ib = mesh->indices[i + 1];
+        const int ic = mesh->indices[i + 2];
 
-        for (size_t j=0;j<submesh.numIndices;j+=3)
-        {
-            const int ia = submesh.indices[j + 0];
-            const int ib = submesh.indices[j + 1];
-            const int ic = submesh.indices[j + 2];
+        const Vector3 e1 = vertices[ia].position - vertices[ib].position;
+        const Vector3 e2 = vertices[ic].position - vertices[ib].position;
+        const Vector3 no = Math::cross( e1, e2 );
 
-            const Vector3 e1 = vertices[ia].position - vertices[ib].position;
-            const Vector3 e2 = vertices[ic].position - vertices[ib].position;
-            const Vector3 no = Math::cross( e1, e2 );
+        vertices[ia].normal += no;
+        vertices[ib].normal += no;
+        vertices[ic].normal += no;
+    }
 
-            vertices[ia].normal += no;
-            vertices[ib].normal += no;
-            vertices[ic].normal += no;
-        }
+    for (size_t j=0;j<mesh->numIndices;j++)
+    {
+        const int index = mesh->indices[j];
 
-
-        for (size_t j=0;j<submesh.numIndices;j++)
-        {
-            const int index = submesh.indices[j];
-
-            vertices[index].normal = Math::normalize(vertices[index].normal);
-        }
+        vertices[index].normal = Math::normalize(vertices[index].normal);
     }
 }
 

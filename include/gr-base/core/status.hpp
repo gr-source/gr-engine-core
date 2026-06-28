@@ -2,15 +2,15 @@
 
 #include <cstdlib>
 
-class Status {
-public:
-    static std::size_t BatchDrawCallRender;
+namespace RendererStats
+{
+    inline size_t InstanceCount = 0;
 
-    static std::size_t BatchDrawCallCount;
+    inline size_t BatchCount = 0;
 
-    static std::size_t BatchRenderCount;
+    inline size_t DrawCallCount = 0;
 
-    static std::size_t BatchCount;
+    inline size_t TriangleCount = 0;
 };
 
 

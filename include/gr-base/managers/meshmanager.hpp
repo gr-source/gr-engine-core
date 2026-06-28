@@ -2,9 +2,10 @@
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
-#include "gr-base/externals/hash.hpp"
 
-#include "gr-base/managers/default.hpp"
+#include "gr-base/core/default.hpp"
+
+#include "gr-base/externals/hash.hpp"
 
 #include <unordered_map>
 

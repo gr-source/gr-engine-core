@@ -69,6 +69,7 @@ void DebugLine::render()
 
     m_shader->unbind();
     m_vao->Unbind();
+    m_vbo->Unbind();
 
     m_lines.clear();
 }

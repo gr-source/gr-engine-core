@@ -255,7 +255,7 @@ MaterialHandle AssetsManager::LoadMaterialFromFile(const std::string& file)
                 }))
         return HANDLE_INVALID;
 
-    ShaderPrefab* prefab = s_AssetsManager->mShaderPrefabManager->find(asset.GetShader());
+    ShaderPrefab* prefab = s_AssetsManager->mShaderPrefabManager->find(engine::hash::fnv1_str(asset.GetShader()));
     if (prefab == nullptr)
         prefab = LoadShader(asset.GetShader());
 
@@ -270,26 +270,24 @@ MaterialHandle AssetsManager::LoadMaterialFromFile(const std::string& file)
     return h;
 }
 
+ShaderPrefab* AssetsManager::FindShader(const std::string &name)
+{
+    return FindShader(engine::hash::fnv1_str(name.c_str()));
+}
+
+ShaderPrefab* AssetsManager::FindShader(Hash64 hash)
+{
+    return s_AssetsManager->mShaderPrefabManager->find(hash);
+}
+
 ShaderPrefab* AssetsManager::LoadShader(const std::string& name)
 {
-    try
-    {
-        return LoadShaderFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())));
-    } catch (const std::exception& e)
-    {
-        throw std::runtime_error(e.what());
-    }
+    return LoadShaderFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())));
 }
 
 ShaderPrefab* AssetsManager::LoadShader(Hash64 hash)
 {
-    try
-    {
-        return LoadShaderFromFile(AssetDB::Resolve(hash));
-    } catch (const std::exception& e)
-    {
-        throw std::runtime_error(e.what());
-    }
+    return LoadShaderFromFile(AssetDB::Resolve(hash));
 }
 
 ShaderPrefab* AssetsManager::LoadShaderFromFile(const std::string& file)
@@ -306,24 +304,12 @@ ShaderPrefab* AssetsManager::LoadShaderFromFile(const std::string& file)
 
 MeshHandle AssetsManager::LoadMesh(const std::string& name)
 {
-    try
-    {
-        return LoadMeshFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())));
-    } catch (const std::exception& e)
-    {
-        throw std::runtime_error(e.what());
-    }
+    return LoadMeshFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())));
 }
 
 MeshHandle AssetsManager::LoadMesh(Hash64 hash)
 {
-    try
-    {
-        return LoadMeshFromFile(AssetDB::Resolve(hash));
-    } catch (const std::exception& e)
-    {
-        throw std::runtime_error(e.what());
-    }
+    return LoadMeshFromFile(AssetDB::Resolve(hash));
 }
 
 #include "gr-base/asset/meshasset.hpp"
@@ -372,29 +358,35 @@ MeshHandle AssetsManager::LoadMeshFromFile(const std::string& file)
 
     auto& submeshes = asset.submeshes;
     auto& vertices = asset.vertices;
+    auto& indices = asset.indices;
 
     MeshHandle h = CreateMesh(asset.hash);
 
     Mesh* mesh = GetMesh(h);
-    mesh->vertices = (Vertex3D*)malloc(vertices.size() * sizeof(Vertex3D));
-    mesh->numVertices = vertices.size();
+    {
+        mesh->vertices = (Vertex3D*)malloc(vertices.size() * sizeof(Vertex3D));
+        mesh->numVertices = static_cast<uint32_t>(vertices.size());
 
-    memcpy(mesh->vertices, vertices.data(), vertices.size() * sizeof(Vertex3D));
+        memcpy(mesh->vertices, vertices.data(), vertices.size() * sizeof(Vertex3D));
+    }
+
+    {
+        mesh->indices = (uint32_t*)malloc(indices.size() * sizeof(uint32_t));
+        mesh->numIndices = static_cast<uint32_t>(indices.size());
+
+        memcpy(mesh->indices, indices.data(), indices.size() * sizeof(uint32_t));
+    }
 
     mesh->submeshes = (Submesh*)malloc(submeshes.size() * sizeof(Submesh));
-    mesh->numSubmeshes = submeshes.size();
+    mesh->numSubmeshes = static_cast<uint32_t>(submeshes.size());
 
     for (size_t i=0;i<mesh->numSubmeshes;i++)
     {
         auto& assetSubmesh = submeshes[i];
 
-        auto& indices = assetSubmesh.indices;
-
         auto& submesh = mesh->submeshes[i];
-        submesh.indices = (uint32_t*)malloc(indices.size() * sizeof(uint32_t));
-        submesh.numIndices = indices.size();
-
-        memcpy(submesh.indices, indices.data(), indices.size() * sizeof(uint32_t));
+        submesh.indexOffset = assetSubmesh.indexOffset;
+        submesh.indexCount = assetSubmesh.indexCount;
     }
 
     mesh->localBounds = CalculateBounds(mesh);

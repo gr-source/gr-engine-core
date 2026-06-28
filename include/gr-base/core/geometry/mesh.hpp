@@ -5,28 +5,30 @@
 #include <gr-math/aabb.hpp>
 #include <gr-render/vertex_array.hpp>
 
-struct Submesh
-{
-    uint32_t* indices = nullptr;
-    size_t numIndices = 0;
-
-    size_t indexCount = 0;
-    size_t indexOffset = 0;
-};
-
-struct GPUMesh
+typedef struct GPUMesh
 {
     gr::vertex_array* vertexarray = nullptr;
 
     gr::vertex_buffer* pbo = nullptr;
 
+    gr::vertex_buffer* vbo = nullptr;
+
     gr::index_buffer* ibo = nullptr;
-};
+} GPUMesh;
+
+typedef struct Submesh
+{
+    size_t indexCount = 0;
+    size_t indexOffset = 0;
+} Submesh;
 
 struct Mesh
 {
     Vertex3D* vertices = nullptr;
     size_t numVertices = 0;
+
+    uint32_t* indices = nullptr;
+    size_t numIndices = 0;
 
     Submesh* submeshes = nullptr;
     size_t numSubmeshes = 0;

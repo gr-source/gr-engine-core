@@ -9,9 +9,10 @@
 
 struct SubMeshAsset
 {
-    std::vector<uint32_t> indices;
-
     std::string materialName;
+
+    uint32_t indexCount;
+    uint32_t indexOffset;
 };
 
 struct MeshAsset
@@ -19,6 +20,8 @@ struct MeshAsset
     std::vector<SubMeshAsset> submeshes;
 
     std::vector<Vertex3D> vertices;
+
+    std::vector<uint32_t> indices;
 
     std::string name;
 

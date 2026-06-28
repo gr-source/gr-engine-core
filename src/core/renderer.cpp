@@ -1,5 +1,6 @@
 #include "gr-base/core/renderer.hpp"
 
+#include "gr-base/core/status.hpp"
 #include "gr-base/debug/debugDraw.hpp"
 
 #include "gr-base/core/rendertarget.hpp"
@@ -73,6 +74,9 @@ Renderer::~Renderer()
 
 void Renderer::beginFrame()
 {
+    RendererStats::InstanceCount = m_renderables.size();
+    RendererStats::TriangleCount = 0;
+
     if (m_renderables.size() >= m_metrices.size())
         m_metrices.resize(m_renderables.size() + 1, Matrix4x4::identityMatrix);
 
@@ -104,8 +108,18 @@ void Renderer::render()
     
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    glBindVertexArray(0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LESS);
     draw();
+
+    glBindVertexArray(0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
     DebugDraw::Render();
@@ -130,6 +144,20 @@ void Renderer::draw()
         if (!instanceCount)
             continue;
 
+        auto& submesh = mesh->submeshes[submeshID];
+
+        GPUMesh& gpuMesh = mesh->gpuMesh;
+
+        if (gpuMesh.vertexarray == nullptr)
+            mesh->Build();
+
+        auto vao = gpuMesh.vertexarray;
+        if (vao != lastVao)
+        {
+            vao->Bind();
+            lastVao = vao;
+        }
+
         bool instancing = instanceCount > 1;
 
         auto shader =
@@ -150,7 +178,7 @@ void Renderer::draw()
             lastShader = shader;
         }
 
-        if (shader != material->shader)
+        if (lastMaterial != material)
         {
             material->shader = shader;
 
@@ -158,35 +186,21 @@ void Renderer::draw()
             material->Flush();
         }
 
-        auto& submesh = mesh->submeshes[submeshID];
-
-        GPUMesh& gpuMesh = mesh->gpuMesh;
-
-        if (gpuMesh.vertexarray == nullptr)
-            mesh->Build();
-
-        auto vao = gpuMesh.vertexarray;
-        if (vao != lastVao)
-        {
-            vao->Bind();
-            lastVao = vao;
-        }
-
         if (instancing)
         {
-            // auto pbo = gpuMesh.pbo;
-            // pbo->Bind();
-            //
-            // pbo->SetData(
-            //     instances,
-            //     instanceCount * sizeof(Matrix4x4));
-            //
-            // glDrawElementsInstanced(
-            //     GL_TRIANGLES,
-            //     submesh.indexCount,
-            //     GL_UNSIGNED_INT,
-            //     (void*)(submesh.indexOffset * sizeof(uint32_t)),
-            //     (GLsizei)instanceCount);
+            auto pbo = gpuMesh.pbo;
+            pbo->Bind();
+
+            pbo->SetData(
+                instances,
+                instanceCount * sizeof(Matrix4x4));
+
+            glDrawElementsInstanced(
+                GL_TRIANGLES,
+                submesh.indexCount,
+                GL_UNSIGNED_INT,
+                (void*)(submesh.indexOffset * sizeof(uint32_t)),
+                (GLsizei)instanceCount);
         }
         else
         {
@@ -201,7 +215,10 @@ void Renderer::draw()
                 (void*)(submesh.indexOffset * sizeof(uint32_t)));
         }
 
-        vao->Unbind();
+        RendererStats::TriangleCount +=
+            (submesh.indexCount / 3) * instanceCount;
+
+        // RendererStats::DrawCallCount++;
     }
 }
 
@@ -212,6 +229,12 @@ void Renderer::sorting()
     {
         return a.sortKey < b.sortKey;
     });
+
+    MaterialHandle lastMaterial = HANDLE_INVALID;
+    Material* material = nullptr;
+
+    MeshHandle lastMesh = HANDLE_INVALID;
+    Mesh* mesh = nullptr;
 
     size_t i = 0, matrixID = 0;
     while (i < m_renderables.size())
@@ -236,9 +259,23 @@ void Renderer::sorting()
 
         size_t count = start - i;
 
+        if (first.material != lastMaterial)
+        {
+            material = AssetsManager::GetMaterial(first.material);
+
+            lastMaterial = first.material;
+        }
+
+        if (first.mesh != lastMesh)
+        {
+            mesh = AssetsManager::GetMesh(first.mesh);
+
+            lastMesh = first.mesh;
+        }
+
         RenderCommand cmd;
-        cmd.material = AssetsManager::GetMaterial(first.material);
-        cmd.mesh = AssetsManager::GetMesh(first.mesh);
+        cmd.material = material;
+        cmd.mesh = mesh;
         cmd.submesh = first.submesh;
         cmd.instances = &m_metrices[matrixID - count];
         cmd.instanceCount = count;
@@ -247,6 +284,8 @@ void Renderer::sorting()
 
         i = start;
     }
+
+    RendererStats::BatchCount = m_commands.size();
 }
 
 
