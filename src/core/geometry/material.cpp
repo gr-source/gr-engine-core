@@ -21,6 +21,21 @@ const void* Material::GetInternal(const std::string &name) const
     return it->second.data();
 }
 
+void Material::Sync()
+{
+    static size_t i=0;
+    if (shader == lastShader)
+        return;
+
+    std::cout << "Material::Sync: " << i++ << std::endl;
+
+    lastShader = shader;
+
+    Build();
+
+    Flush();
+}
+
 void Material::Build()
 {
     buffer.resize(shader->GetUniformBufferSize());

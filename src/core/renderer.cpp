@@ -133,11 +133,12 @@ void Renderer::draw()
     bool enable[10] = {false};
     int textureID[10] = {0};
 
-    Material* lastMaterial = nullptr;
     gr::Shader* lastShader = nullptr;
     gr::vertex_array* lastVao = nullptr;
 
     UniformID model = 0;
+
+    // size_t el = 0;
 
     for (auto &&[material, mesh, submeshID, instances, instanceCount] : m_commands)
     {
@@ -175,16 +176,13 @@ void Renderer::draw()
 
             model = shader->findUniform("u_mat_model");
 
+            // el ++;
+
             lastShader = shader;
         }
 
-        if (lastMaterial != material)
-        {
-            material->shader = shader;
-
-            material->Build();
-            material->Flush();
-        }
+        material->shader = shader;
+        material->Sync();
 
         if (instancing)
         {
@@ -220,6 +218,8 @@ void Renderer::draw()
 
         // RendererStats::DrawCallCount++;
     }
+
+    // std::cout << el << std::endl;
 }
 
 void Renderer::sorting()

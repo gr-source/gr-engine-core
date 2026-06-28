@@ -16,6 +16,7 @@ struct Material
 
     ShaderPrefab *prefab;
 
+    gr::Shader* lastShader = nullptr;
     gr::Shader* shader = nullptr;
     
     template <typename T>
@@ -27,6 +28,8 @@ struct Material
     const T* Get(const std::string& name);
 
     const void* GetInternal(const std::string &name) const;
+
+    void Sync();
 
     void Build();
 
