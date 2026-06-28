@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gr-base/debug/debugLine.hpp"
+#include "gr-base/debug/debugBuffer.hpp"
 
 #include "gr-base/prefab/default.hpp"
 
@@ -22,14 +22,18 @@ public:
 
     static void Shutdown();
 
+    static void DrawPoint(const Vector3& position, const Color& color = COLOR_WHITE);
+
     static void DrawLine(const Vector3 &start, const Vector3 &end, const Color &color = COLOR_GREEN);
+
+    static void DrawSphere(const Vector3& center, float radius, const Color &color = COLOR_BLUE);
 
     static void Render();
 
 private:
     static DebugDraw *s_DebugDraw;
     
-    DebugLine debugLine;
+    DebugBuffer debugBuffer;
 
     DebugDraw();
     ~DebugDraw();

@@ -138,8 +138,8 @@ set(SPATIAL_SRC
 )
 
 set(DEBUG_SRC
+    src/debug/debugBuffer.cpp
     src/debug/debugDraw.cpp
-    src/debug/debugLine.cpp
 )
 
 set(MODULE_SRC
