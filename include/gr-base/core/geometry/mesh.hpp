@@ -19,6 +19,8 @@ struct GPUMesh
     gr::vertex_array* vertexarray = nullptr;
 
     gr::vertex_buffer* pbo = nullptr;
+
+    gr::index_buffer* ibo = nullptr;
 };
 
 struct Mesh

@@ -103,6 +103,7 @@ void Mesh::Build()
 
     gpuMesh.vertexarray = vertexarray;
     gpuMesh.pbo = pbo;
+    gpuMesh.ibo = ibo;
 }
 
 void Mesh_Normalize(Mesh* mesh)

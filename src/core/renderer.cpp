@@ -53,9 +53,9 @@ void Renderer::SetRenderTarget(RenderTarget* rt)
 void Renderer::Submit(const MaterialHandle& material, const MeshHandle& mesh, uint32_t submesh, const Matrix4x4* matrice)
 {
     uint64_t sortKey =
-          (uint64_t)handle_get_first(material) << 36  // Ocupa bits 36 a 63
-        | (uint64_t)handle_get_first(mesh) << 8       // Ocupa bits 8 a 35
-        | (uint64_t)submesh;                          // Ocupa bits 0 a 7
+          (uint64_t)handle_get_first(material) << 36
+        | (uint64_t)handle_get_first(mesh) << 8
+        | (uint64_t)submesh;
     
     s_Renderer->m_renderables.push_back({ sortKey, material, mesh, submesh, matrice });
 }
@@ -102,7 +102,7 @@ void Renderer::render()
     if (m_rendertarget == nullptr)
         return;
     
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LESS);
     draw();

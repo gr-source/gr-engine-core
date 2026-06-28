@@ -4,7 +4,6 @@
 #include "gr-base/system/camerasystem.hpp"
 #include "gr-base/system/renderSystem.hpp"
 #include "gr-base/system/transformsystem.hpp"
-#include "gr-base/system/worldsystem.hpp"
 
 #define REGISTER_SYSTEM(K, ...) \
     do{ \
@@ -15,7 +14,6 @@ void RegistryDefaultSystem()
 {
     REGISTER_SYSTEM(TransformSystem);
     REGISTER_SYSTEM(CameraSystem);
-    REGISTER_SYSTEM(WorldSystem);
 
     REGISTER_SYSTEM(RenderSystem, TransformSystem);
 }

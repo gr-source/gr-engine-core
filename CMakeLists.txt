@@ -121,7 +121,6 @@ set(SYSTEM_SRC
     src/system/transformsystem.cpp
     src/system/camerasystem.cpp
     src/system/renderSystem.cpp
-    src/system/worldsystem.cpp
     src/system/default.cpp
 )
 
