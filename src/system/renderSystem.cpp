@@ -1,26 +1,16 @@
 #include "gr-base/system/renderSystem.hpp"
 
-#include "gr-base/core/culling/frustum.hpp"
 #include "gr-base/core/renderer.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/ecs/world.hpp"
 
-#include "gr-base/externals/handle.h"
-#include "gr-base/managers/assetsManager.hpp"
-
-#include "gr-base/managers/default.hpp"
-#include "gr-base/prefab/shaderprefab.hpp"
-
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
-#include "gr-base/script/camera.hpp"
 #include "gr-base/script/light.hpp"
 
 #include "gr-base/spatial/bvhtree.hpp"
-
-#include <algorithm>
 
 void RenderSystem::Update(Scene* scene)
 {
@@ -30,38 +20,6 @@ void RenderSystem::Update(Scene* scene)
 
     auto world = scene->GetWorld();
     auto bvh = scene->GetBVHtree();
-
-    Transform* cameraTransform =
-        world->GetComponent<Transform>(cameraEntity);
-
-    Camera* camera =
-        world->GetComponent<Camera>(cameraEntity);
-
-    CameraData* cameraData =
-        world->GetComponent<CameraData>(cameraEntity);
-
-    Renderer::SetRenderTarget(
-        camera->rendertarget
-    );
-
-    Frustum::CalculateFrustum(cameraData->viewProjection);
-
-    for (auto prefab : AssetsManager::GetAllShader3D())
-    {
-        for (auto shader : prefab->GetShaders())
-        {
-            shader->bind();
-            shader->setUniform("u_mat_projection", &cameraData->projection);
-            shader->setUniform("u_mat_view",       &cameraData->view);
-            shader->setUniform("u_mat_eye",        &cameraTransform->position);
-
-            shader->set_uniform("u_mat_numLights", 0);
-
-            Setuplight(world, shader);
-
-            shader->unbind();
-        }
-    }
 
     std::vector<Entity> entities;
     bvh->queryFrustumAABB(entities);
@@ -90,37 +48,6 @@ void RenderSystem::Update(Scene* scene)
     }
 }
 
-void RenderSystem::Setuplight(World* world, gr::Shader* shader)
-{
-    int numLight = 0;
-    world->Query<Transform, Light>([&](Entity*, Transform* transforms, Light* lights, size_t count)
-    {
-        numLight += static_cast<int>(count);
 
-        for (size_t i=0;i<count;i++)
-        {
-            Transform& transform = transforms[i];
-            Light& light = lights[i];
-
-            auto position   = transform.position;
-            auto forward    = transform.rotation * Vector3::forward;
-            auto color      = light.color;
-            auto type       = light.type;
-
-            // auto attenuation = Vector3{light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()};
-            // auto params      = Vector3{light->getInnecone(), light->getOutercone(), (float)light->getType()};
-            // auto projection  = light->getProjetion();
-            
-            shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].position").c_str(),    &position);
-            shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].direction").c_str(),   &forward);
-            shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].color").c_str(),       &color);
-            // shader->setUniform(("lights[" + std::to_string(i) + "].attenuation").c_str(), &attenuation);
-            // shader->setUniform(("lights[" + std::to_string(i) + "].params").c_str(),      &params);
-            shader->setUniform(("u_mat_lights[" + std::to_string(i) + "].type").c_str(),       &type);
-        }
-    });
-
-    shader->set_uniform("u_mat_numLights", numLight);
-}
 
 

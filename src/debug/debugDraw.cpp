@@ -63,7 +63,7 @@ void DebugDraw::DrawSphere(const Vector3& center, float radius, const Color &col
     }
 }
 
-void DebugDraw::Render()
+void DebugDraw::Renderer()
 {
     s_DebugDraw->render();
 }

@@ -4,21 +4,22 @@
 
 #include <gr-math/gmath.hpp>
 
+enum class LightType : int
+{
+    eDirection,
+    ePoint,
+    eSpot
+};
+
 struct Light
 {
-    enum LightType : int {
-        eDirection = 0,
-        ePoint     = 1,
-        eSpot      = 2,
-    };
-
     LightType type = LightType::eDirection;
 
     Color color = COLOR_WHITE;
 
     float attenuationConstant = 1.0f;
-    float attenuationLinear = 0.0f;
-    float attenuationQuadratic = 0.0f;
+    float attenuationLinear = 0.70f;
+    float attenuationQuadratic = 1.80f;
 
     float angleInnerCone = 0.0f;
     float angleOuterCone = 0.0f;

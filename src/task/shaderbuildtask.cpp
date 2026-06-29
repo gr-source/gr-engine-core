@@ -27,7 +27,7 @@ void ShaderBuildTask::onPreExecute()
 {
     auto name = gfile::get_file_name(m_source.c_str());
 
-    Console::LogInfo("[ShaderBuildTask] Building shader file '%s'", name.c_str());
+    Console::LogInfo("[ ShaderBuildTask ] Building shader file '%s'", name.c_str());
 }
 
 ShaderAsset ShaderBuildTask::doInBackground()
@@ -39,8 +39,18 @@ void ShaderBuildTask::onPostExecute(Result<ShaderAsset> result)
 {
     auto name = gfile::get_file_name(m_source.c_str());
 
+    Console::LogInfo("[ ShaderBuildTask ] Compiling '%s'...", name.c_str());
+
     if (!result.success)
-        return Console::LogError("[ShaderBuildTask] falied in to build shader '%s'!!!", name.c_str());
+    {
+        Console::LogError("[ ShaderBuildTask ] falied in to build shader '%s'", name.c_str());
+        Console::LogError("%s", result.error.c_str());
+
+        return;
+    }
+
+    if (!compile(&result.value))
+        return;
 
     Console::LogInfo("[ShaderBuildTask] Shader building sucessfully '%s'", name.c_str());
 
@@ -49,6 +59,29 @@ void ShaderBuildTask::onPostExecute(Result<ShaderAsset> result)
     TaskManager::Add<ShaderSaveTask>(path, result.value);
 }
 
+bool ShaderBuildTask::compile(const ShaderAsset* asset)
+{
+    std::string fragment = "#version 420\n";
+    fragment += asset->fragment;
+
+    std::string vertex = "#version 420\n";
+    vertex += asset->vertex;
+
+    const char* fragment_src = fragment.c_str();
+    const char* vertex_src = vertex.c_str();
+
+    std::string error;
+
+    gr::Shader shader;
+    if (!shader.create(&fragment_src, 1, &vertex_src, 1, &error))
+    {
+        Console::LogError("[ ShaderBuildTask ] %s", error.c_str());
+        return false;
+    }
+    shader.destroy();
+
+    return true;
+}
 
 ShaderAsset ShaderBuildTask::onStartParceShader()
 {
@@ -56,96 +89,90 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
     std::array<std::string, 3> resultShaderSource;
 
     ShaderAsset asset;
-    try
+
+    auto&& [fragment, vertex, definations, shaderType] = ReadingSourceFileShader();
+
+    ShaderAssetFlags_ flags = ShaderAssetFlags_Shader3D;
+    if (shaderType == ShaderType::LINE)
+        flags |= ShaderAssetFlags_Line;
+
+    asset.flags = flags;
+
+    auto baseShaderSource = LoadShaderBase(shaderType);
+    for (auto defination : definations)
     {
-        auto&& [fragment, vertex, definations, shaderType] = ReadingSourceFileShader();
+        resultShaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))] += defination + '\n';
+        resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += defination + '\n';
+    }
 
-        ShaderAssetFlags_ flags = ShaderAssetFlags_Shader3D;
-        if (shaderType == ShaderType::LINE)
-            flags |= ShaderAssetFlags_Line;
+    resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] += baseShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)];
+    resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += baseShaderSource[static_cast<int>(ShaderBuildType::VERTEX)];
 
-        asset.flags = flags;
+    resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] += fragment;
+    resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += vertex;
 
-        auto baseShaderSource = LoadShaderBase(shaderType);
-        for (auto defination : definations)
-        {
-            resultShaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))] += defination + '\n';
-            resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += defination + '\n';
-        }
+    resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = remove_comment(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
+    resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = remove_comment(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
 
-        resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] += baseShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)];
-        resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += baseShaderSource[static_cast<int>(ShaderBuildType::VERTEX)];
-
-        resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] += fragment;
-        resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += vertex;
-
-        resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = remove_comment(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
-        resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = remove_comment(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
-
-        std::unordered_set<std::string> macro_map;
-        if (shaderType == ShaderType::SKY)
-        {
-            macro_map.emplace("ENABLE_SKYBOX");
-        }
-
-        /*
-        else
-        {
-            // if (!(m_shaderParams.flags & ShaderOptimize_static))
-            {
-                if (false)
-                {
-                    macro_map.emplace("USE_INSTANCED");
-                } else
-                {
-                    macro_map.emplace("USE_MODEL");
-                }
-                // if (m_shaderParams.flags & ShaderOptimize_animated)
-                {
-                    // macro_map.emplace("ENABLE_ANIMATION");
-                }
-                // if (m_shaderParams.flags & ShaderOptimize_instanced)
-                {
-                }
-            }
-        }
-        */
-
-
-        // resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)], macro_map);
-        // resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)], macro_map);
-
-        // fragment
-        {
-            auto structList = ReadStuct(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
-            auto uniformMap = ReadUniform(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
-
-            auto vector = GetRegistryField(structList, uniformMap);
-            if (!vector.empty())
-            {
-                s_shader_uniform_list.insert(s_shader_uniform_list.end(),
-                        std::make_move_iterator(vector.begin()),
-                        std::make_move_iterator(vector.end()));
-            }
-        }
-
-        // vertex
-        {
-            auto structList = ReadStuct(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
-            auto uniformMap = ReadUniform(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
-
-            auto vector = GetRegistryField(structList, uniformMap);
-            if (!vector.empty())
-            {
-                s_shader_uniform_list.insert(s_shader_uniform_list.end(),
-                        std::make_move_iterator(vector.begin()),
-                        std::make_move_iterator(vector.end()));
-            }
-        }
-
-    } catch (const std::exception& e)
+    std::unordered_set<std::string> macro_map;
+    if (shaderType == ShaderType::SKY)
     {
-        throw e;
+        macro_map.emplace("ENABLE_SKYBOX");
+    }
+
+    /*
+    else
+    {
+        // if (!(m_shaderParams.flags & ShaderOptimize_static))
+        {
+            if (false)
+            {
+                macro_map.emplace("USE_INSTANCED");
+            } else
+            {
+                macro_map.emplace("USE_MODEL");
+            }
+            // if (m_shaderParams.flags & ShaderOptimize_animated)
+            {
+                // macro_map.emplace("ENABLE_ANIMATION");
+            }
+            // if (m_shaderParams.flags & ShaderOptimize_instanced)
+            {
+            }
+        }
+    }
+    */
+
+
+    // resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)], macro_map);
+    // resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)] = process_macro(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)], macro_map);
+
+    // fragment
+    {
+        auto structList = ReadStuct(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
+        auto uniformMap = ReadUniform(resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)]);
+
+        auto vector = GetRegistryField(structList, uniformMap);
+        if (!vector.empty())
+        {
+            s_shader_uniform_list.insert(s_shader_uniform_list.end(),
+                    std::make_move_iterator(vector.begin()),
+                    std::make_move_iterator(vector.end()));
+        }
+    }
+
+    // vertex
+    {
+        auto structList = ReadStuct(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
+        auto uniformMap = ReadUniform(resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]);
+
+        auto vector = GetRegistryField(structList, uniformMap);
+        if (!vector.empty())
+        {
+            s_shader_uniform_list.insert(s_shader_uniform_list.end(),
+                    std::make_move_iterator(vector.begin()),
+                    std::make_move_iterator(vector.end()));
+        }
     }
 
     auto name = gfile::get_file_name(m_source.c_str());

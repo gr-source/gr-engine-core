@@ -84,7 +84,8 @@ void Renderer::beginFrame()
 
     m_renderables.clear();
 
-    m_rendertarget->bind();
+    if (m_rendertarget != nullptr)
+        m_rendertarget->bind();
 
     gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
     gr::gRender::SetEnable(GR_DEPTH, true);
@@ -96,7 +97,8 @@ void Renderer::beginFrame()
 
 void Renderer::endFrame()
 {
-    m_rendertarget->unbind();
+    if (m_rendertarget != nullptr)
+        m_rendertarget->unbind();
 
     m_commands.clear();
 }
@@ -106,7 +108,7 @@ void Renderer::render()
     if (m_rendertarget == nullptr)
         return;
     
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glBindVertexArray(0);
 
@@ -122,7 +124,7 @@ void Renderer::render()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
-    DebugDraw::Render();
+    DebugDraw::Renderer();
 
     // gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
     // m_skybox.render(camera);

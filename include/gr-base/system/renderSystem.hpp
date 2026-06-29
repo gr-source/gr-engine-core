@@ -14,10 +14,11 @@
 class RenderSystem : public ISystem
 {
 public:
-    void Update(Scene* scene) override;
+    RenderSystem() = default;
+    virtual ~RenderSystem() override = default;
 
 private:
-    void Setuplight(World* world, gr::Shader* shader);
+    void Update(Scene* scene) override;
 };
 
 template <>

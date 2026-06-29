@@ -28,7 +28,7 @@ public:
 
     static void DrawSphere(const Vector3& center, float radius, const Color &color = COLOR_BLUE);
 
-    static void Render();
+    static void Renderer();
 
 private:
     static DebugDraw *s_DebugDraw;

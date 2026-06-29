@@ -33,6 +33,8 @@ private:
 
     void onPostExecute(Result<ShaderAsset> result) override;
 
+    bool compile(const ShaderAsset* asset);
+
     ShaderAsset onStartParceShader();
 
     std::tuple<std::string, std::string, std::vector<std::string>, ShaderType> ReadingSourceFileShader();
