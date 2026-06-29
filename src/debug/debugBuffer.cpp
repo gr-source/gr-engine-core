@@ -66,7 +66,7 @@ bool DebugBuffer::initialize()
     ShaderPrefab* prefab = nullptr;
     try
     {
-        prefab = AssetsManager::LoadShader("shader/line.glsl");
+        prefab = AssetsManager::LoadShader("engine://shader/line");
     } catch (const std::exception& e)
     {
         Console::LogError("[DebugDraw] Fail in to load shader to line '%s'!!!", e.what());

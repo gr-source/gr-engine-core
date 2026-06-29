@@ -1,5 +1,6 @@
 #include "gr-base/task/shadersavetask.hpp"
 
+#include "gr-base/asset/assetResolver.hpp"
 #include "gr-base/core/assetDB.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
 
@@ -10,19 +11,19 @@
 #include "gr-base/externals/hash.hpp"
 #include <stdexcept>
 
-ShaderSaveTask::ShaderSaveTask(const std::string& path, const ShaderAsset& asset) : m_path(path), m_asset(asset)
+ShaderSaveTask::ShaderSaveTask(const URI& uri, const ShaderAsset& asset) : m_uri(uri), m_asset(asset)
 {}
 
 void ShaderSaveTask::onPreExecute()
 {
-    auto filename = gfile::get_file_name(m_path);
+    auto name = m_uri.toString();
 
-    Console::LogInfo("[ShaderSaveTask] Saving %s.", filename.c_str());
+    Console::LogInfo("[ShaderSaveTask] Saving %s.", name.c_str());
 }
 
 std::string ShaderSaveTask::doInBackground()
 {
-    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_path.c_str())));
+    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_uri.toString())));
 
     FileStream stream(file, StreamType::OUTPUT);
 
@@ -43,16 +44,14 @@ std::string ShaderSaveTask::doInBackground()
 
 void ShaderSaveTask::onPostExecute(Result<std::string> result)
 {
-    auto name = m_asset.name;
+    auto name = m_uri.toString();
 
     if (!result.success)
         return Console::LogError("[ShaderSaveTask] falied in to save asset '%s'!!!", name.c_str());
 
-    AssetHash hash = engine::hash::fnv1_str(m_path.c_str());
+    AssetHash hash = engine::hash::fnv1_str(name);
 
-    AssetDB::Registry(hash, m_path);
-
-    std::string dst = AssetDB::Resolve(hash) + HEADER_SHADER_EXTENSION;
+    std::string dst = AssetResolver::Resolve(m_uri) + HEADER_SHADER_EXTENSION;
     std::string src = result.value;
 
     if (gfile::exists(dst))
@@ -61,9 +60,10 @@ void ShaderSaveTask::onPostExecute(Result<std::string> result)
     if (!gfile::move(src.c_str(), dst.c_str()))
     {
         Console::LogError("[ShaderSaveTask] Failed to move file 'asset=%s from=%s to=%s'", name.c_str(), src.c_str(), dst.c_str());
-
-        return AssetDB::Unregistry(hash);
+        return;
     }
+
+    AssetDB::Registry(hash, name);
 
     Console::LogInfo("[ShaderSaveTask] Asset saved sucessfully '%s'", name.c_str());
 }

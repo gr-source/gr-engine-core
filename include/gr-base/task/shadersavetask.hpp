@@ -1,6 +1,8 @@
 #pragma once
 
 #include "gr-base/asset/shaderasset.hpp"
+#include "gr-base/asset/URI.hpp"
+
 #include "gr-base/core/thread/asynctask.hpp"
 
 #include <string>
@@ -8,12 +10,12 @@
 class ShaderSaveTask : public IAsyncTask<std::string>
 {
 public:
-    ShaderSaveTask(const std::string& path, const ShaderAsset& asset);
+    ShaderSaveTask(const URI& uri, const ShaderAsset& asset);
 
 private:
     const ShaderAsset m_asset;
 
-    const std::string m_path;
+    const URI m_uri;
 
     void onPreExecute() override;
 

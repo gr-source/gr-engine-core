@@ -1,6 +1,8 @@
 #pragma once
 
 #include "gr-base/asset/shaderasset.hpp"
+#include "gr-base/asset/URI.hpp"
+
 #include "gr-base/core/geometry/shaderData.hpp"
 
 #include "gr-base/core/thread/asynctask.hpp"
@@ -10,10 +12,11 @@
 #include <tuple>
 #include <unordered_set>
 
+
 class ShaderBuildTask : public IAsyncTask<ShaderAsset>
 {
 public:
-    ShaderBuildTask(const std::string& source);
+    ShaderBuildTask(const std::string& file, const URI& uri);
 
 private:
     typedef struct
@@ -25,7 +28,9 @@ private:
         u32 count;
     } ShaderUniformRaw;
 
-    std::string m_source;
+    const URI m_uri;
+
+    const std::string m_file;
 
     void onPreExecute() override;
 

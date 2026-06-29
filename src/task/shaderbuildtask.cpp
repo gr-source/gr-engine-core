@@ -20,12 +20,12 @@
 #include <fstream>
 #include <array>
 
-ShaderBuildTask::ShaderBuildTask(const std::string& source) : m_source(source)
+ShaderBuildTask::ShaderBuildTask(const std::string& file, const URI& uri) : m_file(file), m_uri(uri)
 {}
 
 void ShaderBuildTask::onPreExecute()
 {
-    auto name = gfile::get_file_name(m_source.c_str());
+    auto name = m_uri.toString();
 
     Console::LogInfo("[ ShaderBuildTask ] Building shader file '%s'", name.c_str());
 }
@@ -37,7 +37,7 @@ ShaderAsset ShaderBuildTask::doInBackground()
 
 void ShaderBuildTask::onPostExecute(Result<ShaderAsset> result)
 {
-    auto name = gfile::get_file_name(m_source.c_str());
+    auto name = m_uri.toString();
 
     Console::LogInfo("[ ShaderBuildTask ] Compiling '%s'...", name.c_str());
 
@@ -54,9 +54,7 @@ void ShaderBuildTask::onPostExecute(Result<ShaderAsset> result)
 
     Console::LogInfo("[ShaderBuildTask] Shader building sucessfully '%s'", name.c_str());
 
-    std::string path = "shader/" + name;
-
-    TaskManager::Add<ShaderSaveTask>(path, result.value);
+    TaskManager::Add<ShaderSaveTask>(m_uri, result.value);
 }
 
 bool ShaderBuildTask::compile(const ShaderAsset* asset)
@@ -175,7 +173,7 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
         }
     }
 
-    auto name = gfile::get_file_name(m_source.c_str());
+    auto name = m_uri.toString();
 
     asset.name = name;
     asset.fragment = resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)];
@@ -189,7 +187,7 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
 
 std::tuple<std::string, std::string, std::vector<std::string>, ShaderType> ShaderBuildTask::ReadingSourceFileShader()
 {
-    std::ifstream is(m_source, std::ios_base::in);
+    std::ifstream is(m_file, std::ios_base::in);
     if (!is.is_open())
         throw std::runtime_error(strerror(errno));
 
