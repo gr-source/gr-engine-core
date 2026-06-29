@@ -1,5 +1,8 @@
 #include "gr-base/runtime.hpp"
 
+#include "gr-base/asset/assetProvider.hpp"
+#include "gr-base/asset/assetResolver.hpp"
+#include "gr-base/core/assetDB.hpp"
 #include "gr-base/debug/debugDraw.hpp"
 
 #include "gr-base/core/mainthreaddispatcher.hpp"
@@ -15,6 +18,17 @@
 
 #include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/systemRegistry.hpp"
+
+#include "gr-base/core/file/file.hpp"
+
+class EngineAssetProvider : public IAssetProvider
+{
+public:
+    virtual std::string resolve(const std::string& path)
+    {
+        return gfile::get_data_directory() + "/assets/" + path;
+    }
+};
 
 void Runtime::initialize()
 {
@@ -35,12 +49,18 @@ void Runtime::initialize()
 
     Renderer::Initialize();
 
+    AssetDB::Initialize();
+
     DebugDraw::Initialize();
+
+    AssetResolver::Registry<EngineAssetProvider>(Scheme::Engine);
 }
 
 void Runtime::shutdown()
 {
     DebugDraw::Shutdown();
+
+    AssetDB::Shutdown();
 
     Renderer::Shutdown();
 

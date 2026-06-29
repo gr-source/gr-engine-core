@@ -1,4 +1,5 @@
 #include "gr-base/core/assetDB.hpp"
+#include "gr-base/asset/assetResolver.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/logger.hpp"
 #include "gr-base/core/string.hpp"
@@ -12,10 +13,10 @@
 
 AssetDB* AssetDB::s_AssetDB = nullptr;
 
-void AssetDB::Initialize(const AssetConfig& config)
+void AssetDB::Initialize()
 {
     if (s_AssetDB == nullptr)
-        s_AssetDB = new AssetDB(config);
+        s_AssetDB = new AssetDB();
 }
 
 void AssetDB::Shutdown()
@@ -52,10 +53,9 @@ std::string AssetDB::Resolve(Hash64 hash)
 }
 
 // private
-AssetDB::AssetDB(const AssetConfig& config) : m_config(config)
+AssetDB::AssetDB()
 {
     logger::info("[AssetDB] Initialize.");
-    logger::debug("[AssetDB] Directorries root=%s asset=%s", config.projectRoot.c_str(), config.assetFolder.c_str());
 }
 
 AssetDB::~AssetDB()
@@ -117,7 +117,7 @@ std::string AssetDB::resolve(Hash64 hash)
 {
     auto it = m_refMapped.find(hash);
     if (it != m_refMapped.end())
-        return m_config.projectRoot + m_config.assetFolder + it->second;
+        return AssetResolver::Resolve(URI::parse(it->second));
 
     throw std::runtime_error(String::format("reference '0x%lX' not found...", hash));
 }

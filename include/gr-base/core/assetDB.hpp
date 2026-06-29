@@ -8,16 +8,10 @@
 #include <unordered_map>
 #include <string>
 
-struct AssetConfig
-{
-    std::string projectRoot;
-    std::string assetFolder;
-};
-
 class AssetDB
 {
 public:
-    static void Initialize(const AssetConfig& config);
+    static void Initialize();
 
     static void Shutdown();
 
@@ -36,9 +30,7 @@ private:
 
     std::unordered_map<Hash64, std::string> m_refMapped;
 
-    AssetConfig m_config;
-
-    AssetDB(const AssetConfig& config);
+    AssetDB();
     ~AssetDB();
 
     void load(const std::string &file);

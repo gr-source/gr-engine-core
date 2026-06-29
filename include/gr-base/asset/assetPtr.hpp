@@ -6,7 +6,7 @@ template<typename T>
 class AssetPtr
 {
 public:
-    AssetPtr() = delete;
+    AssetPtr() = default;
     AssetPtr(Handle h) : handle(h) {}
 
     T* Get();

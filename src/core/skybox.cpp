@@ -17,7 +17,7 @@
 #include <gr-render/gl.h>
 #include <string>
 
-Skybox::Skybox() : m_cubemapTexture(nullptr), m_fbo(0), m_rbo(0), m_count(0), m_vbo(0), m_ebo(0), m_skyshader(nullptr)
+Skybox::Skybox() : m_cubemapTexture(HANDLE_INVALID), m_fbo(0), m_rbo(0), m_count(0), m_vbo(0), m_ebo(0), m_skyshader(nullptr)
 {}
 
 void Skybox::set_texture(gr::gTexture *texture)
@@ -33,10 +33,10 @@ void Skybox::set_skyshader(gr::Shader *shader)
 void Skybox::build(gr::gTexture *texture)
 {
     // configure texture cubemap
-    m_cubemapTexture = AssetsManager::CreateTexture("##skybox_cubemap");
-    m_cubemapTexture->set_texture(gTextureFlags_Cubemap);
-    m_cubemapTexture->set_clamping(gTextureFlags_Clamp_Edge);
-    m_cubemapTexture->set_filtering(gTextureFlags_Filter_Linear);
+    m_cubemapTexture = AssetsManager::CreateTexture();
+    // m_cubemapTexture->set_texture(gTextureFlags_Cubemap);
+    // m_cubemapTexture->set_clamping(gTextureFlags_Clamp_Edge);
+    // m_cubemapTexture->set_filtering(gTextureFlags_Filter_Linear);
 
     gTextureCubemapFace_ faceid[6] = {
         gTextureCubemapFace_Front, gTextureCubemapFace_Back,
@@ -46,8 +46,8 @@ void Skybox::build(gr::gTexture *texture)
 
     for (int i=0;i<6;i++)
     {
-        m_cubemapTexture->set_face(faceid[i]);
-        m_cubemapTexture->updateBuffer(512, 512, nullptr);
+        // m_cubemapTexture->set_face(faceid[i]);
+        // m_cubemapTexture->updateBuffer(512, 512, nullptr);
     }
 
     // configure rbo
@@ -152,7 +152,7 @@ void Skybox::upload_cubemap_texture(gr::gTexture *texture, gr::Shader *shader)
     for (auto i=0;i<6;i++) {
         shader->setUniform("u_view", &view[i]);
 
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, m_cubemapTexture->getTextureID(), 0);
+        // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, m_cubemapTexture->getTextureID(), 0);
 
         gr::gRender::SetBackgroundColor(COLOR_BLUE);
         gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_COLOR_BUFFER | gr::GR_DEPTH_BUFFER);

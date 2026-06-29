@@ -51,6 +51,9 @@ static const std::array<std::string, IHeaderType> HeaderName = {
 #define HEADER_MESH_SIGN        4838001395392124604ULL
 #define HEADER_MESH_EXTENSION ".msh"
 
+#define HEADER_TEXTURE_SIGN        126269861530532084ULL
+#define HEADER_TEXTURE_EXTENSION ".gtx"
+
 #define HEADER_ASSET_VERSION    65537U
 
 typedef struct FileHeader

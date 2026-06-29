@@ -70,18 +70,14 @@ set(culling
     src/core/culling/octree.cpp
 )
 
-set(task
-    src/core/task/runtime/textureloadtask.cpp
-
-    src/core/task/texturemanager.cpp
-)
-
 set(managers_src
     src/managers/materialmanager.cpp
     src/managers/eventManager.cpp
     src/managers/assetsManager.cpp
     src/managers/shadermanager.cpp
     src/managers/shaderprefabmanager.cpp
+
+    src/managers/textureManager.cpp
     src/managers/sceneManager.cpp
     src/managers/meshmanager.cpp
 )
@@ -100,10 +96,15 @@ set(EXTERNAL_SRC
 )
 
 set(ASSET_SRC
+    src/asset/assetResolver.cpp
+
     src/asset/materialasset.cpp
+    src/asset/textureAsset.cpp
     src/asset/shaderasset.cpp
     src/asset/modelasset.cpp
     src/asset/meshasset.cpp
+    src/asset/assetPtr.cpp
+    src/asset/URI.cpp
 )
 
 set(TASK_SRC
@@ -115,6 +116,9 @@ set(TASK_SRC
 
     src/task/materialsavetask.cpp
     src/task/meshsavetask.cpp
+
+    src/task/textureBuildTask.cpp
+    src/task/textureSaveTask.cpp
 )
 
 set(SYSTEM_SRC

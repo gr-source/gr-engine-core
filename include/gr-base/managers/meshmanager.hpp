@@ -32,9 +32,9 @@ private:
         AssetHash hash;
     };
 
-    std::unordered_map<AssetHash, MeshHandle> m_meshMap;
+    std::unordered_map<AssetHash, MeshHandle> m_hashmap;
 
-    Mesh* m_meshPool;
+    Mesh* m_pool;
 
     size_t m_capacity;
 

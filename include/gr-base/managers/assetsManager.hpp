@@ -2,6 +2,7 @@
 
 #include <gr-render/gRender.h>
 
+#include "gr-base/asset/textureAsset.hpp"
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
@@ -9,13 +10,14 @@
 
 #include "gr-base/core/default.hpp"
 
-#include "gr-base/core/task/texturemanager.hpp"
-
 #include "gr-base/managers/default.hpp"
 
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/prefab/default.hpp"
+
+#include <functional>
+#include <gr-render/gTexture.h>
 
 class AssetsManager
 {
@@ -24,10 +26,19 @@ public:
 
     static void Shutdown();
 
-    template <typename ...Args>
-    static void LoadTexture(const std::string &path, Args &&...args);
+    // ********** Texture ********** //
+    static TextureHandle LoadTexture(const std::string& name);
 
-    static std::string GetRefTextureName(gr::gTexture *texture);
+    static TextureHandle LoadTexture(AssetHash hash);
+
+    static TextureHandle CreateTexture(AssetHash hash = INVALID_HASH64);
+
+    static gr::Texture* GetTexture(TextureHandle h);
+
+    // template <typename ...Args>
+    // static void LoadTexture(const std::string &path, Args &&...args);
+
+    // static std::string GetRefTextureName(gr::gTexture *texture);
 
     // template <typename ...Args>
     // static std::shared_ptr<TaskInfo> LoadShaderAsync(ShaderParams shaderParams, Args &&...args);
@@ -46,9 +57,6 @@ public:
     template <typename ...Args>
     static void LoadGameObjectFromFile(const std::string &file, Args &&...args);
 
-    // ********** Texture ********** //
-    static gr::gTexture *CreateTexture(const std::string &name);
-
     // ********** Mesh ********** //
     static MeshHandle LoadMesh(const std::string& name);
 
@@ -57,8 +65,6 @@ public:
     static size_t GetMeshCount();
 
     // API Privada
-    static Mesh LoadMeshFromFile(const std::string& file);
-
     static MeshHandle CreateMesh(AssetHash hash = INVALID_HASH64);
 
     static MeshHandle FindMesh(AssetHash hash);
@@ -80,15 +86,11 @@ public:
     static MaterialHandle CreateMaterial(AssetHash hash = INVALID_HASH64);
 
     // ********** Material API privada ********** //
-    static Material LoadMaterialFromFile(const std::string& file);
-
     static MaterialHandle FindMaterial(AssetHash hash);
 
     static Material *GetMaterial(MaterialHandle h);
 
     static size_t GetMaterialCount();
-
-    static void RemoveTask(const std::string &name);
 
     static ShaderPrefab* FindShader(const std::string &name);
 
@@ -100,6 +102,12 @@ public:
 
     static ShaderPrefab* LoadShaderFromFile(const std::string& file);
 
+    static TextureAsset ImportTextureAssetFromFile(const std::string& file);
+
+    static Material LoadMaterialFromFile(const std::string& file);
+
+    static Mesh LoadMeshFromFile(const std::string& file);
+
 private:
     static AssetsManager* s_AssetsManager;
 
@@ -108,7 +116,7 @@ private:
     // fields
     MaterialManager* mMaterialManager;
 
-    TextureManager mTextureManager;
+    TextureManager* mTextureManager;
 
     // ShaderManager mShaderManager;
 
@@ -146,6 +154,7 @@ inline void AssetsManager::LoadGameObjectFromFile(const std::string &file, Args 
     s_AssetsManager->loadGameObjectFromFile(file, func);
 }
 
+/*
 template <typename ...Args>
 inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) {
     std::function<void(gr::gTexture *)> func = nullptr;
@@ -155,6 +164,7 @@ inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) 
 
     return s_AssetsManager->mTextureManager.load(path, func);
 }
+*/
 
 
 

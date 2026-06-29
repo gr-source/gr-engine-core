@@ -8,5 +8,6 @@ typedef uint32_t NodeID;
 
 class ShaderPrefabManager;
 
+class TextureManager;
 
 

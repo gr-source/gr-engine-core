@@ -5,6 +5,7 @@
 
 #include <gr-render/gCommon.h>
 
+#include "gr-base/core/default.hpp"
 #include "gr-base/core/file/default.hpp"
 
 #include "gr-base/script/default.hpp"
@@ -27,7 +28,7 @@ public:
     bool deserialize(Stream *stream);
 
 private:
-    gr::gTexture *m_cubemapTexture;
+    TextureHandle m_cubemapTexture;
 
     std::uint32_t m_fbo;
 

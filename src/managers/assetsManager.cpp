@@ -19,13 +19,16 @@
 #include "gr-base/core/thread/taskmanager.hpp"
 
 #include "gr-base/externals/hash.hpp"
-#include "gr-base/managers/meshmanager.hpp"
+
 #include "gr-base/managers/shaderprefabmanager.hpp"
+#include "gr-base/managers/materialmanager.hpp"
+#include "gr-base/managers/textureManager.hpp"
+#include "gr-base/managers/meshmanager.hpp"
+
 #include "gr-base/task/modelloadtask.hpp"
+
 #include <exception>
 #include <stdexcept>
-
-#include "gr-base/managers/materialmanager.hpp"
 
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
 
@@ -47,42 +50,69 @@ void AssetsManager::Shutdown()
     logger::info("[AssetsManager] Shutdown.");
 }
 
-std::string AssetsManager::GetRefTextureName(gr::gTexture *texture)
+TextureHandle AssetsManager::LoadTexture(const std::string& name)
 {
-    auto name = s_AssetsManager->mTextureManager.getname(texture);
-    if (name == nullptr)
-        throw std::runtime_error("texture has not reference.");
-    return name;
+    return LoadTexture(engine::hash::fnv1_str(name));
 }
 
-/*
-gr::Shader *AssetsManager::CreateShader(const std::string& name)
+TextureHandle AssetsManager::LoadTexture(AssetHash hash)
 {
-    return s_AssetsManager->mShaderManager.create(name);
+    TextureHandle h = s_AssetsManager->mTextureManager->find(hash);
+    if (h != HANDLE_INVALID)
+        return h;
+
+    TextureAsset asset = ImportTextureAssetFromFile(AssetDB::Resolve(hash));
+
+    h = CreateTexture(hash);
+
+    auto texture = GetTexture(h);
+    texture->width = asset.width;
+    texture->height = asset.height;
+
+    texture->filter = TEXTURE_FILTER_LINEAR;
+    texture->wrap = TEXTURE_WRAP_REPEAT;
+    texture->type = TEXTURE_TYPE_2D;
+
+    switch (asset.channels)
+    {
+        case 1:
+            texture->format = TEXTURE_FORMAT_RED;
+            break;
+
+        case 2:
+            texture->format = asset.hdr ? TEXTURE_FORMAT_RG16F : TEXTURE_FORMAT_RG;
+            break;
+
+        case 3:
+            texture->format = asset.hdr ? TEXTURE_FORMAT_RGB16F : TEXTURE_FORMAT_RGB;
+            break;
+
+        case 4:
+            texture->format = asset.hdr ? TEXTURE_FORMAT_RGBA16F : TEXTURE_FORMAT_RGBA;
+            break;
+        default:
+            throw std::runtime_error("Unsupported channel count: " + std::to_string(asset.channels));
+    }
+
+    texture->create();
+
+    gr::BindTexture(texture);
+    gr::ApplyTextureSettings(texture);
+    gr::ApplyTextureBuffer(texture, asset.raw.data());
+    gr::UnbindTexture(texture);
+
+    return h;
 }
 
-gr::Shader *AssetsManager::FindShader(const std::string &name)
+TextureHandle AssetsManager::CreateTexture(AssetHash hash)
 {
-    return s_AssetsManager->mShaderManager.find(name);
+    return s_AssetsManager->mTextureManager->create(hash);
 }
 
-std::string AssetsManager::GetShaderName(gr::Shader *shader)
-{
-    auto name = s_AssetsManager->mShaderManager.get_shader_name(shader);
-    if (name == nullptr)
-        throw std::runtime_error("[ AssetsManager.Shader ] Fail to get shader name, pointer is not valid.");
-    return name;
-}
 
-void AssetsManager::RemoveShader(gr::Shader *shader)
+gr::Texture* AssetsManager::GetTexture(TextureHandle h)
 {
-    return s_AssetsManager->mShaderManager.destroy(shader);
-}
-*/
-
-gr::gTexture *AssetsManager::CreateTexture(const std::string &name)
-{
-    return s_AssetsManager->mTextureManager.create(name);
+    return s_AssetsManager->mTextureManager->get(h);
 }
 
 // ********** Mesh ********** //
@@ -143,51 +173,6 @@ static AABB CalculateBounds(Mesh* mesh)
     }
 
     return bounds;
-}
-
-Mesh AssetsManager::LoadMeshFromFile(const std::string& file)
-{
-    MeshAsset asset;
-    if (!LoadFromFile(file + HEADER_MESH_EXTENSION, HEADER_MESH_SIGN, [&](Stream* stream)
-            {
-                return asset.deserialize(stream);
-            }))
-        throw std::runtime_error("[ AssetsManager ] Mesh load failed: " + file + HEADER_MESH_EXTENSION);
-
-    auto& submeshes = asset.submeshes;
-    auto& vertices = asset.vertices;
-    auto& indices = asset.indices;
-
-    Mesh mesh;
-    {
-        mesh.vertices = (Vertex3D*)malloc(vertices.size() * sizeof(Vertex3D));
-        mesh.numVertices = static_cast<uint32_t>(vertices.size());
-
-        memcpy(mesh.vertices, vertices.data(), vertices.size() * sizeof(Vertex3D));
-    }
-
-    {
-        mesh.indices = (uint32_t*)malloc(indices.size() * sizeof(uint32_t));
-        mesh.numIndices = static_cast<uint32_t>(indices.size());
-
-        memcpy(mesh.indices, indices.data(), indices.size() * sizeof(uint32_t));
-    }
-
-    mesh.submeshes = (Submesh*)malloc(submeshes.size() * sizeof(Submesh));
-    mesh.numSubmeshes = static_cast<uint32_t>(submeshes.size());
-
-    for (size_t i=0;i<mesh.numSubmeshes;i++)
-    {
-        auto& assetSubmesh = submeshes[i];
-
-        auto& submesh = mesh.submeshes[i];
-        submesh.indexOffset = assetSubmesh.indexOffset;
-        submesh.indexCount = assetSubmesh.indexCount;
-    }
-
-    mesh.localBounds = CalculateBounds(&mesh);
-
-    return mesh;
 }
 
 MeshHandle AssetsManager::CreateMesh(AssetHash hash)
@@ -299,24 +284,12 @@ size_t AssetsManager::GetMaterialCount()
 
 usize AssetsManager::GetTextureCount()
 {
-    return s_AssetsManager->mTextureManager.getcount();
+    return s_AssetsManager->mTextureManager->GetCount();
 }
 
 const std::vector<ShaderPrefab*>& AssetsManager::GetAllShader3D()
 {
     return s_AssetsManager->mShaderPrefabManager->GetAllShader3d();
-}
-
-void AssetsManager::RemoveTask(const std::string &name)
-{
-    // Check if task on the texture
-    if (s_AssetsManager->mTextureManager.remove_task(name))
-        return;
-
-    /*
-    if (s_AssetsManager->mShaderManager.remove_task(name))
-        return;
-    */
 }
 
 MaterialHandle AssetsManager::LoadMaterial(const std::string& name)
@@ -336,28 +309,6 @@ MaterialHandle AssetsManager::LoadMaterial(AssetHash hash)
     *GetMaterial(h) = std::move(material);
 
     return h;
-}
-
-Material AssetsManager::LoadMaterialFromFile(const std::string& file)
-{
-    MaterialAsset asset;
-    if (!LoadFromFile(file + HEADER_MATERIAL_EXTENSION, HEADER_MATERIAL_SIGN, [&](Stream* stream)
-            {
-                return asset.deserialize(stream);
-            }))
-        throw std::runtime_error("[ AssetsManager ] Material load failed: " + file + HEADER_MATERIAL_EXTENSION);
-
-    ShaderPrefab* prefab = s_AssetsManager->mShaderPrefabManager->find(engine::hash::fnv1_str(asset.GetShader()));
-    if (prefab == nullptr)
-        prefab = LoadShader(asset.GetShader());
-
-    Material material;
-    material.prefab = prefab;
-
-    for (auto&& [name, buffer] : asset.GetOverrides())
-        material.Set(name, buffer.data(), buffer.size());
-
-    return material;
 }
 
 ShaderPrefab* AssetsManager::FindShader(const std::string &name)
@@ -392,8 +343,87 @@ ShaderPrefab* AssetsManager::LoadShaderFromFile(const std::string& file)
     return s_AssetsManager->mShaderPrefabManager->create(&asset);
 }
 
+TextureAsset AssetsManager::ImportTextureAssetFromFile(const std::string& file)
+{
+    TextureAsset asset;
+    if (!LoadFromFile(file + HEADER_TEXTURE_EXTENSION, HEADER_TEXTURE_SIGN, [&](Stream* stream)
+            {
+                return asset.deserialize(stream);
+            }))
+        throw std::runtime_error("[ AssetsManager ] TextureAsset load failed: " + file + HEADER_TEXTURE_EXTENSION);
+
+    return asset;
+}
+
+Material AssetsManager::LoadMaterialFromFile(const std::string& file)
+{
+    MaterialAsset asset;
+    if (!LoadFromFile(file + HEADER_MATERIAL_EXTENSION, HEADER_MATERIAL_SIGN, [&](Stream* stream)
+            {
+                return asset.deserialize(stream);
+            }))
+        throw std::runtime_error("[ AssetsManager ] Material load failed: " + file + HEADER_MATERIAL_EXTENSION);
+
+    ShaderPrefab* prefab = s_AssetsManager->mShaderPrefabManager->find(engine::hash::fnv1_str(asset.GetShader()));
+    if (prefab == nullptr)
+        prefab = LoadShader(asset.GetShader());
+
+    Material material;
+    material.prefab = prefab;
+
+    for (auto&& [name, buffer] : asset.GetOverrides())
+        material.Set(name, buffer.data(), buffer.size());
+
+    return material;
+}
+
+Mesh AssetsManager::LoadMeshFromFile(const std::string& file)
+{
+    MeshAsset asset;
+    if (!LoadFromFile(file + HEADER_MESH_EXTENSION, HEADER_MESH_SIGN, [&](Stream* stream)
+            {
+                return asset.deserialize(stream);
+            }))
+        throw std::runtime_error("[ AssetsManager ] Mesh load failed: " + file + HEADER_MESH_EXTENSION);
+
+    auto& submeshes = asset.submeshes;
+    auto& vertices = asset.vertices;
+    auto& indices = asset.indices;
+
+    Mesh mesh;
+    {
+        mesh.vertices = (Vertex3D*)malloc(vertices.size() * sizeof(Vertex3D));
+        mesh.numVertices = static_cast<uint32_t>(vertices.size());
+
+        memcpy(mesh.vertices, vertices.data(), vertices.size() * sizeof(Vertex3D));
+    }
+
+    {
+        mesh.indices = (uint32_t*)malloc(indices.size() * sizeof(uint32_t));
+        mesh.numIndices = static_cast<uint32_t>(indices.size());
+
+        memcpy(mesh.indices, indices.data(), indices.size() * sizeof(uint32_t));
+    }
+
+    mesh.submeshes = (Submesh*)malloc(submeshes.size() * sizeof(Submesh));
+    mesh.numSubmeshes = static_cast<uint32_t>(submeshes.size());
+
+    for (size_t i=0;i<mesh.numSubmeshes;i++)
+    {
+        auto& assetSubmesh = submeshes[i];
+
+        auto& submesh = mesh.submeshes[i];
+        submesh.indexOffset = assetSubmesh.indexOffset;
+        submesh.indexCount = assetSubmesh.indexCount;
+    }
+
+    mesh.localBounds = CalculateBounds(&mesh);
+
+    return mesh;
+}
+
 // private
-AssetsManager::AssetsManager() : mMaterialManager(new MaterialManager()), mMeshManager(new MeshManager()), mShaderPrefabManager(new ShaderPrefabManager())
+AssetsManager::AssetsManager() : mMaterialManager(new MaterialManager()), mMeshManager(new MeshManager()), mShaderPrefabManager(new ShaderPrefabManager()), mTextureManager(new TextureManager())
 {}
 
 AssetsManager::~AssetsManager()
@@ -403,6 +433,8 @@ AssetsManager::~AssetsManager()
     delete mMeshManager;
 
     delete mShaderPrefabManager;
+
+    delete mTextureManager;
 }
 
 bool AssetsManager::LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func)

@@ -6,7 +6,7 @@
 #include <cassert>
 #include <cstdlib>
 
-MeshManager::MeshManager() : m_meshPool(nullptr), m_count(0), m_capacity(0), m_slots(nullptr), m_freeID(0)
+MeshManager::MeshManager() : m_pool(nullptr), m_count(0), m_capacity(0), m_slots(nullptr), m_freeID(0)
 {}
 
 MeshHandle MeshManager::create(AssetHash hash)
@@ -25,11 +25,11 @@ MeshHandle MeshManager::create(AssetHash hash)
 
     MeshHandle h = handle_create(id, slot.version);
 
-    Mesh* mesh = m_meshPool + id;
+    Mesh* mesh = m_pool + id;
     new (mesh) Mesh();
 
     if (hash != INVALID_HASH64)
-        m_meshMap.emplace(hash, h);
+        m_hashmap.emplace(hash, h);
 
     return h;
 }
@@ -43,7 +43,7 @@ Mesh *MeshManager::get(MeshHandle h) const
     if (slot.version != version)
         return nullptr;
 
-    return &m_meshPool[index];
+    return &m_pool[index];
 }
 
 void MeshManager::remove(MeshHandle h)
@@ -55,11 +55,11 @@ void MeshManager::remove(MeshHandle h)
     if (slot.version != version)
         return;
 
-    Mesh& mesh = m_meshPool[index];
+    Mesh& mesh = m_pool[index];
     mesh.~Mesh();
 
     if (slot.hash != INVALID_HASH64)
-        m_meshMap.erase(slot.hash);
+        m_hashmap.erase(slot.hash);
 
     slot.next = m_freeID;
     m_freeID = index;
@@ -71,8 +71,8 @@ void MeshManager::remove(MeshHandle h)
 
 MeshHandle MeshManager::find(AssetHash hash) const
 {
-    auto it = m_meshMap.find(hash);
-    if (it == m_meshMap.end())
+    auto it = m_hashmap.find(hash);
+    if (it == m_hashmap.end())
         return HANDLE_INVALID;
     return it->second;
 }
@@ -89,7 +89,7 @@ void MeshManager::resize()
 
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
-    m_meshPool = (Mesh*)realloc(m_meshPool, m_capacity * sizeof(Mesh));
+    m_pool = (Mesh*)realloc(m_pool, m_capacity * sizeof(Mesh));
     m_slots = (Slot*)realloc(m_slots, m_capacity * sizeof(Slot));
 
     addFreeID(oldCapacity);

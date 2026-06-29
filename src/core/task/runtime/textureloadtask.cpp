@@ -1,4 +1,5 @@
 #include "gr-base/core/task/runtime/textureloadtask.hpp"
+/*
 
 #include "gr-base/managers/assetsManager.hpp"
 
@@ -89,7 +90,7 @@ void TextureLoadTask::onPostExecute(Result<gr::gTexture*> result)
 }
 
 
-
+*/
 
 
 

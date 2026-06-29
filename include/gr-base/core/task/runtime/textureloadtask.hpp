@@ -1,4 +1,5 @@
 #pragma once
+/*
 
 #include <gr-render/gRender.h>
 
@@ -39,6 +40,6 @@ protected:
     void onPostExecute(Result<gr::gTexture*> result) override;
 };
 
-
+*/
 
 
