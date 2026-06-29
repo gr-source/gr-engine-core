@@ -282,14 +282,14 @@ MaterialHandle AssetsManager::CreateMaterial(AssetHash hash)
     return s_AssetsManager->mMaterialManager->create(hash);
 }
 
-Material *AssetsManager::GetMaterial(MaterialHandle h)
-{
-    return s_AssetsManager->mMaterialManager->get(h);
-}
-
 MaterialHandle AssetsManager::FindMaterial(AssetHash hash)
 {
     return s_AssetsManager->mMaterialManager->find(hash);
+}
+
+Material *AssetsManager::GetMaterial(MaterialHandle h)
+{
+    return s_AssetsManager->mMaterialManager->get(h);
 }
 
 size_t AssetsManager::GetMaterialCount()
@@ -321,52 +321,43 @@ void AssetsManager::RemoveTask(const std::string &name)
 
 MaterialHandle AssetsManager::LoadMaterial(const std::string& name)
 {
-    try
-    {
-        return LoadMaterialFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())));
-    } catch (const std::exception& e)
-    {
-        throw e;
-    }
-
-    return ID_INVALID;
+    return LoadMaterial(engine::hash::fnv1_str(name.c_str()));
 }
 
-MaterialHandle AssetsManager::LoadMaterial(Hash64 hash)
+MaterialHandle AssetsManager::LoadMaterial(AssetHash hash)
 {
-    try
-    {
-        return LoadMaterialFromFile(AssetDB::Resolve(hash));
-    } catch (const std::exception& e)
-    {
-        throw std::runtime_error(e.what());
-    }
+    MaterialHandle h = FindMaterial(hash);
+    if (h != HANDLE_INVALID)
+        return h;
 
-    return ID_INVALID;
+    Material material = LoadMaterialFromFile(AssetDB::Resolve(hash));
+
+    h = CreateMaterial(hash);
+    *GetMaterial(h) = std::move(material);
+
+    return h;
 }
 
-MaterialHandle AssetsManager::LoadMaterialFromFile(const std::string& file)
+Material AssetsManager::LoadMaterialFromFile(const std::string& file)
 {
     MaterialAsset asset;
     if (!LoadFromFile(file + HEADER_MATERIAL_EXTENSION, HEADER_MATERIAL_SIGN, [&](Stream* stream)
-                {
-                    return asset.deserialize(stream);
-                }))
-        return HANDLE_INVALID;
+            {
+                return asset.deserialize(stream);
+            }))
+        throw std::runtime_error("[ AssetsManager ] Material load failed: " + file + HEADER_MATERIAL_EXTENSION);
 
     ShaderPrefab* prefab = s_AssetsManager->mShaderPrefabManager->find(engine::hash::fnv1_str(asset.GetShader()));
     if (prefab == nullptr)
         prefab = LoadShader(asset.GetShader());
 
-    MaterialHandle h = CreateMaterial(asset.hash);
-
-    auto material = GetMaterial(h);
-    material->prefab = prefab;
+    Material material;
+    material.prefab = prefab;
 
     for (auto&& [name, buffer] : asset.GetOverrides())
-        material->Set(name, buffer.data(), buffer.size());
+        material.Set(name, buffer.data(), buffer.size());
 
-    return h;
+    return material;
 }
 
 ShaderPrefab* AssetsManager::FindShader(const std::string &name)

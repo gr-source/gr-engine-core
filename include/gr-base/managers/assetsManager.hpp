@@ -59,7 +59,7 @@ public:
     // API Privada
     static Mesh LoadMeshFromFile(const std::string& file);
 
-    static MeshHandle CreateMesh(AssetHash hash);
+    static MeshHandle CreateMesh(AssetHash hash = INVALID_HASH64);
 
     static MeshHandle FindMesh(AssetHash hash);
 
@@ -72,7 +72,15 @@ public:
 
     static const std::vector<ShaderPrefab*>& GetAllShader3D();
 
-    static MaterialHandle CreateMaterial(AssetHash hash);
+    // ********** Material API publica ********** //
+    static MaterialHandle LoadMaterial(const std::string& name);
+
+    static MaterialHandle LoadMaterial(AssetHash hash);
+
+    static MaterialHandle CreateMaterial(AssetHash hash = INVALID_HASH64);
+
+    // ********** Material API privada ********** //
+    static Material LoadMaterialFromFile(const std::string& file);
 
     static MaterialHandle FindMaterial(AssetHash hash);
 
@@ -81,12 +89,6 @@ public:
     static size_t GetMaterialCount();
 
     static void RemoveTask(const std::string &name);
-
-    static MaterialHandle LoadMaterial(const std::string& name);
-
-    static MaterialHandle LoadMaterial(Hash64 hash);
-
-    static MaterialHandle LoadMaterialFromFile(const std::string& file);
 
     static ShaderPrefab* FindShader(const std::string &name);
 

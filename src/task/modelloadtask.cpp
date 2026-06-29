@@ -103,29 +103,34 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
             Console::LogWarning("[ ModelLoadTask ] Mesh não carregada asset='0x%lX' error='%s'. ", asset->mesh, e.what());
         }
 
-        std::vector<MaterialHandle> materials;
-        for (auto& key : asset->materials)
+        try
         {
-            MaterialHandle material = AssetsManager::FindMaterial(key);
-            if (material == HANDLE_INVALID)
-                material = AssetsManager::LoadMaterial(key);
 
-            materials.push_back(material);
-        }
+            std::vector<MaterialHandle> materials;
+            for (auto& key : asset->materials)
+            {
+                MaterialHandle material = AssetsManager::LoadMaterial(key);
 
-        auto meshRender = go.GetOrAddComponent<MeshRender>();
-        meshRender->materials = (MaterialHandle*)malloc(materials.size() * sizeof(MaterialHandle));
-        meshRender->numMaterials = materials.size();
+                materials.push_back(material);
+            }
 
-        memcpy(meshRender->materials, materials.data(), materials.size() * sizeof(MaterialHandle));
+            auto meshRender = go.GetOrAddComponent<MeshRender>();
+            meshRender->materials = (MaterialHandle*)malloc(materials.size() * sizeof(MaterialHandle));
+            meshRender->numMaterials = materials.size();
 
-        auto materialRef = go.GetOrAddComponent<MaterialRef>();
-        if (materialRef != nullptr)
+            memcpy(meshRender->materials, materials.data(), materials.size() * sizeof(MaterialHandle));
+
+            auto materialRef = go.GetOrAddComponent<MaterialRef>();
+            if (materialRef != nullptr)
+            {
+                materialRef->materials = (AssetHash*)malloc(asset->materials.size() * sizeof(AssetHash));
+                materialRef->numMaterials = asset->materials.size();
+
+                memcpy(materialRef->materials, asset->materials.data(), asset->materials.size() * sizeof(AssetHash));
+            }
+        } catch (const std::exception& e)
         {
-            materialRef->materials = (MaterialHandle*)malloc(asset->materials.size() * sizeof(MaterialHandle));
-            materialRef->numMaterials = asset->materials.size();
-
-            memcpy(materialRef->materials, asset->materials.data(), asset->materials.size() * sizeof(MaterialHandle));
+            Console::LogWarning("[ ModelLoadTask ] Material não carregado: error='%s'.", e.what());
         }
     }
 

@@ -14,13 +14,13 @@ class MaterialManager
 public:
     MaterialManager();
 
-    MaterialHandle create(Hash64 hash);
+    MaterialHandle create(AssetHash hash);
+
+    MaterialHandle find(AssetHash hash) const;
 
     Material *get(MaterialHandle h);
 
     void destroy(MaterialHandle h);
-
-    MaterialHandle find(Hash64 hash) const;
 
     size_t GetCount() const;
 
@@ -29,9 +29,10 @@ private:
     {
         uint32_t next;
         uint32_t version;
+        AssetHash hash;
     };
 
-    std::unordered_map<Hash64, MaterialHandle> m_materialMap;
+    std::unordered_map<AssetHash, MaterialHandle> m_materialMap;
 
     std::vector<Material> m_materialPool;
 

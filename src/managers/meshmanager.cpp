@@ -28,7 +28,8 @@ MeshHandle MeshManager::create(AssetHash hash)
     Mesh* mesh = m_meshPool + id;
     new (mesh) Mesh();
 
-    m_meshMap.emplace(hash, h);
+    if (hash != INVALID_HASH64)
+        m_meshMap.emplace(hash, h);
 
     return h;
 }
@@ -57,7 +58,8 @@ void MeshManager::remove(MeshHandle h)
     Mesh& mesh = m_meshPool[index];
     mesh.~Mesh();
 
-    m_meshMap.erase(slot.hash);
+    if (slot.hash != INVALID_HASH64)
+        m_meshMap.erase(slot.hash);
 
     slot.next = m_freeID;
     m_freeID = index;
