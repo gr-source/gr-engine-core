@@ -55,6 +55,9 @@ void ShaderSaveTask::onPostExecute(Result<std::string> result)
     std::string dst = AssetDB::Resolve(hash) + HEADER_SHADER_EXTENSION;
     std::string src = result.value;
 
+    if (gfile::exists(dst))
+        gfile::remove(dst);
+
     if (!gfile::move(src.c_str(), dst.c_str()))
     {
         Console::LogError("[ShaderSaveTask] Failed to move file 'asset=%s from=%s to=%s'", name.c_str(), src.c_str(), dst.c_str());

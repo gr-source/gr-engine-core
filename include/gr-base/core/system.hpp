@@ -8,10 +8,9 @@ public:
     virtual ~ISystem() {}
 
     virtual void Update(Scene* scene) = 0;
+
+    virtual void OnGUI() {}
 };
 
-// template <typename T, typename... Systems>
-// class ISystemImp : public ISystem
-// {};
 
 

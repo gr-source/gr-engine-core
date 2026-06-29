@@ -28,7 +28,7 @@ gr::Shader* ShaderPrefab::Get(ShaderPrefabFlags_ flags)
 {
     auto it = m_shadervariant.find(flags);
     if (it != m_shadervariant.end())
-        return it->second.get();
+        return it->second != nullptr ? it->second.get() : nullptr;
     return create(flags);
 }
 
@@ -71,7 +71,7 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
         {
             Console::LogError("[ AssetsManager::LoadShaderFromFile ] Shader.Build Fail to build shader, %s, %s", m_asset.name.c_str(), "null");
 
-            m_shadervariant.erase(flags);
+            it->second = nullptr;
             return nullptr;
         }
 

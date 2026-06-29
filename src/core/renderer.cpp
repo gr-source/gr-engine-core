@@ -106,7 +106,7 @@ void Renderer::render()
     if (m_rendertarget == nullptr)
         return;
     
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glBindVertexArray(0);
 
@@ -185,9 +185,10 @@ void Renderer::draw()
         }
         else
         {
-            shader->SetUniform(
-                model,
-                instances);
+            if (model != GR_INVALID_ID)
+                shader->SetUniform(
+                    model,
+                    instances);
 
             glDrawElements(
                 GL_TRIANGLES,
@@ -281,7 +282,8 @@ void Renderer::sorting()
                         ? ShaderPrefabFlags_Instancing
                         : ShaderPrefabFlags_none);
 
-            m_commands.push_back(cmd);
+            if (cmd.shader != nullptr)
+                m_commands.push_back(cmd);
         }
 
         i = start;
