@@ -67,11 +67,14 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         if (type == nullptr)
             continue;
 
+        if (!type->serializable)
+            continue;
+
         auto component = go.GetOrAddComponent(type->index);
-        if (type->serializable)
+
+        if (type->globalCpy)
         {
-            if (type->globalCpy)
-                memcpy(component, buffer.data(), type->stride);
+            memcpy(component, buffer.data(), type->stride);
         } else if (type->deserialize != nullptr)
         {
             MemoryStream stream((uint8_t*)buffer.data(), buffer.size());
@@ -82,18 +85,22 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
 
     if (asset->mesh != INVALID_HASH64)
     {
-        MeshHandle meshHandle = AssetsManager::FindMesh(asset->mesh);
-        if (meshHandle == HANDLE_INVALID)
-            meshHandle = AssetsManager::LoadMesh(asset->mesh);
-
+        try
         {
-            auto meshFilter = go.GetOrAddComponent<MeshFilter>();
-            meshFilter->mesh = meshHandle;
-        }
+            MeshHandle mesh = AssetsManager::LoadMesh(asset->mesh);
 
+            {
+                auto meshFilter = go.GetOrAddComponent<MeshFilter>();
+                meshFilter->mesh = mesh;
+            }
+
+            {
+                auto meshRef = go.GetOrAddComponent<MeshRef>();
+                meshRef->hash = asset->mesh;
+            }
+        } catch (const std::exception& e)
         {
-            auto meshRef = go.GetOrAddComponent<MeshRef>();
-            meshRef->hash = asset->mesh;
+            Console::LogWarning("[ ModelLoadTask ] Mesh não carregada asset='0x%lX' error='%s'. ", asset->mesh, e.what());
         }
 
         std::vector<MaterialHandle> materials;

@@ -9,7 +9,7 @@
 MeshManager::MeshManager() : m_meshPool(nullptr), m_count(0), m_capacity(0), m_slots(nullptr), m_freeID(0)
 {}
 
-MeshHandle MeshManager::create(Hash64 hash)
+MeshHandle MeshManager::create(AssetHash hash)
 {
     if (m_count >= m_capacity)
         resize();
@@ -67,7 +67,7 @@ void MeshManager::remove(MeshHandle h)
     m_count--;
 }
 
-MeshHandle MeshManager::find(Hash64 hash) const
+MeshHandle MeshManager::find(AssetHash hash) const
 {
     auto it = m_meshMap.find(hash);
     if (it == m_meshMap.end())

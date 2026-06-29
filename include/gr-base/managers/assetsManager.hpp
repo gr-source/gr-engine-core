@@ -50,18 +50,25 @@ public:
     static gr::gTexture *CreateTexture(const std::string &name);
 
     // ********** Mesh ********** //
-    static MeshHandle CreateMesh(Hash64 hash);
+    static MeshHandle LoadMesh(const std::string& name);
+
+    static MeshHandle LoadMesh(AssetHash hash);
+
+    static size_t GetMeshCount();
+
+    // API Privada
+    static Mesh LoadMeshFromFile(const std::string& file);
+
+    static MeshHandle CreateMesh(AssetHash hash);
+
+    static MeshHandle FindMesh(AssetHash hash);
 
     static void RemoveMesh(MeshHandle handle);
 
     static Mesh *GetMesh(MeshHandle h);
 
-    static MeshHandle FindMesh(Hash64 hash);
-
     // shader property
     static usize GetTextureCount();
-
-    static size_t GetMeshCount();
 
     static const std::vector<ShaderPrefab*>& GetAllShader3D();
 
@@ -90,12 +97,6 @@ public:
     static ShaderPrefab* LoadShader(Hash64 hash);
 
     static ShaderPrefab* LoadShaderFromFile(const std::string& file);
-
-    static MeshHandle LoadMesh(const std::string& name);
-
-    static MeshHandle LoadMesh(Hash64 hash);
-
-    static MeshHandle LoadMeshFromFile(const std::string& file);
 
 private:
     static AssetsManager* s_AssetsManager;
