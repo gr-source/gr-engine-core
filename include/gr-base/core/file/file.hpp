@@ -25,7 +25,7 @@ namespace gfile
 
     bool remove(const std::string &path);
 
-    std::string get_parent(const std::string &path);
+    std::string parent(const std::string &path);
 
     std::string get_file_name(const std::string &path);
 

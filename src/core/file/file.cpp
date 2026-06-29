@@ -59,7 +59,8 @@ bool gfile::create_directory(const std::string &path)
 
 bool gfile::create_directories(const std::string &path)
 {
-    char buffer[1024];
+    std::string buffer(path.length(), 0);
+
     const char* ptr = path.c_str();
     size_t len = 0;
 
@@ -71,7 +72,7 @@ bool gfile::create_directories(const std::string &path)
         {
             buffer[len] = '\0';
             if (!exists(buffer))
-                if (!create_directory(buffer))
+                if (!create_directory(buffer.c_str()))
                     return false;
 
             buffer[len] = '/';
@@ -80,7 +81,7 @@ bool gfile::create_directories(const std::string &path)
         ptr++;
     }
 
-    if (len > 0 && !create_directory(buffer))
+    if (len > 0 && !create_directory(buffer.c_str()))
         return false;
 
     return true;
@@ -127,17 +128,15 @@ bool gfile::remove(const std::string &path)
     return result;
 }
 
-std::string gfile::get_parent(const std::string &path)
+std::string gfile::parent(const std::string &path)
 {
-    const char* str = strrchr(path.c_str(), '/');
-    if (str == NULL)
-        return NULL;
+    size_t start = path.rfind('/');
+    if (start == std::string::npos)
+        return "";
 
-    size_t length = str - path.c_str();
-    if (length == 0)
-        length = 1;
-
-    return std::string(path, length);
+    if (start == 0)
+        return "/";
+    return path.substr(0, start);
 }
 
 std::string gfile::get_file_name(const std::string &path)

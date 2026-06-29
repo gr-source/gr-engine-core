@@ -1,5 +1,6 @@
 #include "gr-base/task/modelsavetask.hpp"
 
+#include "gr-base/asset/assetResolver.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/core/console.hpp"
@@ -47,20 +48,24 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
         std::vector<uint8_t> buffer;
         if (type->serializable)
         {
-            buffer.resize(type->stride, 0);
+            if (type->globalCpy)
+            {
+                buffer.resize(type->stride, 0);
 
-            memcpy(buffer.data(), component, type->stride);
-        } else if (type->serialize != nullptr)
-        {
-            MemoryStream stream;
-            ((void (*)(Stream*, const void*))(type->serialize))(&stream, component);
+                memcpy(buffer.data(), component, type->stride);
+            } else if (type->serialize != nullptr)
+            {
+                MemoryStream stream;
+                ((void (*)(Stream*, const void*))(type->serialize))(&stream, component);
 
-            buffer.resize(stream.tellg(), 0);
+                buffer.resize(stream.tellg(), 0);
 
-            memcpy(buffer.data(), stream.data(), stream.tellg());
+                memcpy(buffer.data(), stream.data(), stream.tellg());
+            }
         }
 
-        asset.componentBuffer.emplace(type->hash, buffer);
+        if (!buffer.empty())
+            asset.componentBuffer.emplace(type->hash, buffer);
     }
 
     auto rel = gameObject.GetComponent<Relationship>();
@@ -80,23 +85,23 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
     return asset;
 }
 
-ModelSaveTask::ModelSaveTask(const std::string& path, const ModelAsset& asset) : m_path(path), m_asset(asset)
+ModelSaveTask::ModelSaveTask(const URI& uri, const ModelAsset& asset) : m_uri(uri), m_asset(asset)
 {}
 
-ModelSaveTask::ModelSaveTask(const std::string& path, Scene* scene, Entity entity) : m_path(path), m_asset(ConvertToAssetModel(scene, entity))
+ModelSaveTask::ModelSaveTask(const URI& uri, Scene* scene, Entity entity) : m_uri(uri), m_asset(ConvertToAssetModel(scene, entity))
 {}
 
 void ModelSaveTask::onPreExecute()
 {
-    auto& name = m_asset.name;
+    auto name = m_uri.toString();
 
-    Console::LogInfo("[Task] Saving '%s' model...", name.c_str());
+    Console::LogInfo("[ ModelSaveTask ] Saving '%s' model...", name.c_str());
 }
 
 // private
 std::string ModelSaveTask::doInBackground()
 {
-    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_path.c_str())));
+    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_uri.toString())));
 
     FileStream stream(file, StreamType::OUTPUT);
 
@@ -117,16 +122,14 @@ std::string ModelSaveTask::doInBackground()
 
 void ModelSaveTask::onPostExecute(Result<std::string> result)
 {
-    auto name = m_asset.name;
+    auto name = m_uri.toString();
 
     if (!result.success)
         return Console::LogError("[ModelSaveTask] falied in to save asset '%s'!!!", name.c_str());
 
-    AssetHash hash = engine::hash::fnv1_str(m_path.c_str());
+    AssetHash hash = engine::hash::fnv1_str(name);
 
-    AssetDB::Registry(hash, m_path);
-
-    std::string dst = AssetDB::Resolve(hash) + HEADER_MODEL_EXTENSION;
+    std::string dst = AssetResolver::Resolve(m_uri) + HEADER_MODEL_EXTENSION;
     if (gfile::exists(dst))
         gfile::remove(dst);
 
@@ -136,8 +139,10 @@ void ModelSaveTask::onPostExecute(Result<std::string> result)
     {
         Console::LogError("[ModelSaveTask] Failed to move file 'asset=%s from=%s to=%s'", name.c_str(), src.c_str(), dst.c_str());
 
-        return AssetDB::Unregistry(hash);
+        return;
     }
+
+    AssetDB::Registry(hash, name);
 
     Console::LogInfo("[ModelSaveTask] Asset saved sucessfully '%s'", name.c_str());
 }

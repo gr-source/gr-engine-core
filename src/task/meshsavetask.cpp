@@ -1,5 +1,6 @@
 #include "gr-base/task/meshsavetask.hpp"
 
+#include "gr-base/asset/assetResolver.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/core/assetDB.hpp"
@@ -10,20 +11,20 @@
 #include "gr-base/externals/hash.hpp"
 #include <string>
 
-MeshSaveTask::MeshSaveTask(const std::string& path, const MeshAsset& asset) : m_path(path), m_asset(asset)
+MeshSaveTask::MeshSaveTask(const URI& uri, const MeshAsset& asset) : m_uri(uri), m_asset(asset)
 {}
 
 // private
 void MeshSaveTask::onPreExecute()
 {
-    auto name = m_asset.name;
+    auto name = m_uri.toString();
 
-    Console::LogInfo("[MeshSaveTask] Saving asset '%s' in '%s'", name.c_str(), m_path.c_str());
+    Console::LogInfo("[ MeshSaveTask ] Saving asset '%s'.", name.c_str());
 }
 
 std::string MeshSaveTask::doInBackground()
 {
-    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_path.c_str())));
+    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_uri.toString())));
 
     FileStream stream(file, StreamType::OUTPUT);
 
@@ -44,16 +45,14 @@ std::string MeshSaveTask::doInBackground()
 
 void MeshSaveTask::onPostExecute(Result<std::string> result)
 {
-    auto name = m_asset.name;
+    auto name = m_uri.toString();
 
     if (!result.success)
-        return Console::LogError("[MeshSaveTask] falied in to save asset '%s'!!!", name.c_str());
+        return Console::LogError("[ MeshSaveTask ] falied in to save name='%s' error='%s'.", name.c_str(), result.error.c_str());
 
-    AssetHash hash = engine::hash::fnv1_str(m_path.c_str());
+    AssetHash hash = engine::hash::fnv1_str(name);
 
-    AssetDB::Registry(hash, m_path);
-
-    std::string dst = AssetDB::Resolve(hash) + HEADER_MESH_EXTENSION;
+    std::string dst = AssetResolver::Resolve(m_uri) + HEADER_MESH_EXTENSION;
     if (gfile::exists(dst))
         gfile::remove(dst);
 
@@ -61,10 +60,12 @@ void MeshSaveTask::onPostExecute(Result<std::string> result)
 
     if (!gfile::move(src.c_str(), dst.c_str()))
     {
-        Console::LogError("[MeshSaveTask] Failed to move file 'asset=%s from=%s to=%s'", name.c_str(), src.c_str(), dst.c_str());
+        Console::LogError("[ MeshSaveTask ] Failed to move file 'asset=%s from=%s to=%s'", name.c_str(), src.c_str(), dst.c_str());
 
-        return AssetDB::Unregistry(hash);
+        return;
     }
+
+    AssetDB::Registry(hash, name);
 
     Console::LogInfo("[MeshSaveTask] Asset saved sucessfully '%s'", name.c_str());
 }

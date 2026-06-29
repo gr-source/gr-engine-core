@@ -1,18 +1,19 @@
 #pragma once
 
 #include "gr-base/asset/materialasset.hpp"
+#include "gr-base/asset/URI.hpp"
 
 #include "gr-base/core/thread/asynctask.hpp"
 
 class MaterialSaveTask : public IAsyncTask<std::string>
 {
 public:
-    MaterialSaveTask(const std::string& path, const MaterialAsset& asset);
+    MaterialSaveTask(const URI& uri, const MaterialAsset& asset);
 
 private:
     const MaterialAsset m_asset;
 
-    const std::string m_path;
+    const URI m_uri;
 
     void onPreExecute() override;
 
