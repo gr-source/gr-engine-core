@@ -2,23 +2,17 @@
 
 #include "gr-base/asset/shaderasset.hpp"
 
-#include "gr-base/core/binary/gHeader.hpp"
-
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/assetDB.hpp"
 
-#include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/geometry/shaderData.hpp"
 
 #include "gr-base/core/file/file.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 #include "gr-base/task/shadersavetask.hpp"
 
-#include <exception>
-#include <stdexcept>
 #include <cstring>
 #include <fstream>
-#include <array>
+#include <cerrno>
 
 ShaderBuildTask::ShaderBuildTask(const std::string& file, const URI& uri) : m_file(file), m_uri(uri)
 {}

@@ -5,7 +5,7 @@
 
 #include "gr-base/core/default.hpp"
 
-#include "gr-base/externals/hash.hpp"
+#include "gr-base/asset/default.hpp"
 
 #include <unordered_map>
 

@@ -1,9 +1,9 @@
-#include "gr-base/core/assetDB.hpp"
+#include "gr-base/asset/assetDB.hpp"
+
 #include "gr-base/asset/assetResolver.hpp"
-#include "gr-base/core/console.hpp"
+
 #include "gr-base/core/logger.hpp"
 #include "gr-base/core/string.hpp"
-#include "gr-base/externals/hash.hpp"
 
 #include <cstring>
 #include <fstream>

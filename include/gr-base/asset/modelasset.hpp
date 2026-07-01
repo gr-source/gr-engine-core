@@ -1,10 +1,10 @@
 #pragma once
 
-#include "gr-base/core/assetDB.hpp"
 #include "gr-base/core/file/default.hpp"
 
 #include "gr-base/ecs/type_traits.hpp"
-#include "gr-base/ecs/default.hpp"
+
+#include "gr-base/asset/default.hpp"
 
 #include <unordered_map>
 #include <cstdint>

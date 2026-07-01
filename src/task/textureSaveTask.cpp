@@ -1,14 +1,15 @@
 #include "gr-base/asset/assetResolver.hpp"
+#include "gr-base/asset/assetDB.hpp"
+
 #include "gr-base/task/texureSaveTask.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
 
-#include "gr-base/core/assetDB.hpp"
 #include "gr-base/core/console.hpp"
 
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/file.hpp"
-#include "gr-base/externals/hash.hpp"
+
 #include <string>
 
 TextureSaveTask::TextureSaveTask(const URI& uri, const TextureAsset& asset) : m_uri(uri), m_asset(asset)

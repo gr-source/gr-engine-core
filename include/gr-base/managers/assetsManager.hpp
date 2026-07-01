@@ -3,6 +3,8 @@
 #include <gr-render/gRender.h>
 
 #include "gr-base/asset/textureAsset.hpp"
+#include "gr-base/asset/default.hpp"
+
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 

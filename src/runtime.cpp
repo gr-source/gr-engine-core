@@ -2,7 +2,8 @@
 
 #include "gr-base/asset/assetProvider.hpp"
 #include "gr-base/asset/assetResolver.hpp"
-#include "gr-base/core/assetDB.hpp"
+#include "gr-base/asset/assetDB.hpp"
+
 #include "gr-base/debug/debugDraw.hpp"
 
 #include "gr-base/core/mainthreaddispatcher.hpp"

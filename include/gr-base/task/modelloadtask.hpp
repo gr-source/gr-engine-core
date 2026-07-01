@@ -8,8 +8,6 @@
 
 #include "gr-base/ecs/default.hpp"
 
-#include "gr-base/spatial/bvhtree.hpp"
-
 #include <functional>
 #include <string>
 

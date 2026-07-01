@@ -36,7 +36,6 @@ set(thread
 
 set(core
     src/core/mainthreaddispatcher.cpp
-    src/core/assetDB.cpp
     src/core/rendertarget.cpp
     src/core/renderer.cpp
     src/core/gameObject.cpp
@@ -104,6 +103,7 @@ set(ASSET_SRC
     src/asset/modelasset.cpp
     src/asset/meshasset.cpp
     src/asset/assetPtr.cpp
+    src/asset/assetDB.cpp
     src/asset/URI.cpp
 )
 

@@ -2,7 +2,9 @@
 
 #include "gr-base/core/default.hpp"
 
-#include <gr-render/gTexture.h>
+#include "gr-base/asset/default.hpp"
+
+#include <gr-render/default.hpp>
 
 #include <unordered_map>
 

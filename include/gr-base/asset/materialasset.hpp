@@ -1,11 +1,13 @@
 #pragma once
 
-#include "gr-base/asset/asset.hpp"
-#include "gr-base/core/default.hpp"
+#include "gr-base/asset/default.hpp"
+
+#include "gr-base/core/file/default.hpp"
 
 #include <unordered_map>
 #include <cstdint>
 #include <vector>
+#include <string>
 
 class MaterialAsset
 {

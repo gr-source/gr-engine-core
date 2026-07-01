@@ -4,8 +4,8 @@
 
 #include "gr-base/ecs/componentRegistry.hpp"
 
-#include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/relationship.hpp"
+#include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"

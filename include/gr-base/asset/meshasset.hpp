@@ -1,9 +1,10 @@
 #pragma once
 
-#include "gr-base/core/default.hpp"
 #include "gr-base/core/geometry/vertex3D.hpp"
 
 #include "gr-base/core/file/default.hpp"
+
+#include "gr-base/asset/default.hpp"
 
 #include <vector>
 

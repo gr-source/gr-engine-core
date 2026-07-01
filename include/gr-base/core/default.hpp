@@ -1,12 +1,10 @@
 #pragma once
 
-#include "gr-base/externals/hash.hpp"
+#include <cstdint>
 
 typedef uint64_t MaterialHandle;
 typedef uint64_t MeshHandle;
 typedef uint64_t TextureHandle;
-
-typedef Hash64 AssetHash;
 
 struct GameObject;
 

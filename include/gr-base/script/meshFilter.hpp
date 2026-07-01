@@ -1,12 +1,12 @@
 #pragma once
 
-#include "gr-base/ecs/default.hpp"
+#include "gr-base/ecs/type_traits.hpp"
 
 #include "gr-base/core/default.hpp"
 
-#include "gr-base/externals/handle.h"
+#include "gr-base/asset/default.hpp"
 
-#include "gr-base/managers/default.hpp"
+#include "gr-base/externals/handle.h"
 
 struct MeshFilter
 {

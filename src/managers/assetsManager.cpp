@@ -2,6 +2,7 @@
 
 #include "gr-base/asset/materialasset.hpp"
 #include "gr-base/asset/shaderasset.hpp"
+#include "gr-base/asset/assetDB.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
 #include "gr-base/core/file/file.hpp"
@@ -9,7 +10,6 @@
 #include "gr-base/core/animation/animation.hpp"
 
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/assetDB.hpp"
 
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/geometry/default.hpp"

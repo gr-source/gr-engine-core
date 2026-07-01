@@ -1,8 +1,9 @@
 #include "gr-base/managers/textureManager.hpp"
 
-#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/externals/handle.h"
-#include "gr-base/externals/hash.hpp"
+
+#include <gr-render/gTexture.h>
+
 #include <cassert>
 #include <cstdlib>
 
