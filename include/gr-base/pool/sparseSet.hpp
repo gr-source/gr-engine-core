@@ -75,7 +75,7 @@ public:
         T* dst = m_dense + denseIndex;
 
         if (src != nullptr)
-            new (dst) T(std::move(*src));
+            new (dst) T(*src);
         else
             new (dst) T();
     }
@@ -142,7 +142,16 @@ private:
             T* src = m_dense + lastDenseIndex;
             T* dst = m_dense + removeDenseIndex;
 
-            new (dst) T(std::move(*src));
+            if constexpr (!std::is_trivially_copyable_v<T>)
+            {
+                new (dst) T(std::move(*src));
+
+                if constexpr (!std::is_trivially_destructible_v<T>)
+                    src->~T();
+            } else
+            {
+                memcpy(dst, src, sizeof(T));
+            }
 
             m_denseToSparse[removeDenseIndex] = m_denseToSparse[lastDenseIndex];
 

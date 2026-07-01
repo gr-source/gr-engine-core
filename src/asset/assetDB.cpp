@@ -112,12 +112,7 @@ void AssetDB::save(const std::string &file)
 
         os << info.hash << " " << info.id << " " << info.path << std::endl;
     }
-    /*
-    for (auto &&[hash, info] : m_refMapped)
-    {
-        os << info.hash << " " << info.id << " " << info.path << std::endl;
-    }
-    */
+
     os.close();
 }
 

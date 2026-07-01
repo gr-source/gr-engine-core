@@ -17,28 +17,43 @@ template <typename T>
 class ObjectPool
 {
 public:
-    ObjectPool() : m_slotCapacity(0), m_denseCount(0), m_denseCapacity(0), m_dense(NULL), m_generations(NULL), m_sparse(nullptr), m_freeList(nullptr), m_freeID(INVALID_ID), m_poolIDToDense(nullptr), m_denseIDToPoolID(nullptr)
+    ObjectPool() :
+        m_slotCapacity(0),
+        m_denseCount(0),
+        m_denseCapacity(0),
+        m_dense(nullptr),
+        m_generations(nullptr),
+        m_freeList(nullptr),
+        m_freeID(INVALID_ID),
+        m_sparseToDense(nullptr),
+        m_denseToSparse(nullptr)
     {}
 
     ~ObjectPool()
     {
+        if constexpr (!std::is_trivially_destructible_v<T>)
+        {
+            for (size_t i=0;i<m_denseCount;i++)
+            {
+                T& data = m_dense[i];
+                data.~T();
+            }
+        }
+
         if (m_dense != NULL)
             free(m_dense);
 
         if (m_generations != NULL)
             free(m_generations);
 
-        if (m_sparse != nullptr)
-            free(m_sparse);
-
         if (m_freeList != nullptr)
             free(m_freeList);
 
-        if (m_poolIDToDense != nullptr)
-            free(m_poolIDToDense);
+        if (m_sparseToDense != nullptr)
+            free(m_sparseToDense);
 
-        if (m_denseIDToPoolID != nullptr)
-            free(m_denseIDToPoolID);
+        if (m_denseToSparse != nullptr)
+            free(m_denseToSparse);
     }
 
     template <typename... Args>
@@ -54,29 +69,37 @@ public:
 
     void destroy(Handle h)
     {
-        // T* ptr = get(id);
-        // ptr->~T();
+        T* element = get(h);
+        if (element == nullptr)
+            return;
+
+        if constexpr (!std::is_trivially_destructible_v<T>)
+            element->~T();
 
         deallocate(h);
     }
 
     inline T* get(Handle h) const
     {
-        uint32_t slotID = handle_get_first(h);
+        uint32_t sparseID = handle_get_first(h);
         uint32_t gen = handle_get_second(h);
 
-        if (gen != m_generations[slotID])
+        if (gen != m_generations[sparseID])
             return nullptr;
 
-        return &m_dense[m_poolIDToDense[slotID]];
+        uint32_t denseID = m_sparseToDense[sparseID];
+        if (denseID == INVALID_ID)
+            return nullptr;
+
+        return &m_dense[denseID];
     }
 
-    inline T* getRaw() const
+    inline T* data() const
     {
         return m_dense;
     }
 
-    inline size_t getCount() const
+    inline size_t count() const
     {
         return m_denseCount;
     }
@@ -91,7 +114,6 @@ private:
     size_t m_slotCapacity;
 
     uint32_t* m_generations;
-    PoolID* m_sparse;
 
     size_t m_denseCapacity;
     size_t m_denseCount;
@@ -100,8 +122,8 @@ private:
     PoolID* m_freeList;
     PoolID m_freeID;
 
-    uint32_t* m_poolIDToDense;
-    uint32_t* m_denseIDToPoolID;
+    uint32_t* m_sparseToDense;
+    uint32_t* m_denseToSparse;
 
     Handle allocate()
     {
@@ -115,8 +137,8 @@ private:
         if (index >= m_denseCapacity)
             grow_dense();
 
-        m_poolIDToDense[slotID] = index;
-        m_denseIDToPoolID[index] = slotID;
+        m_sparseToDense[slotID] = index;
+        m_denseToSparse[index] = slotID;
 
         uint32_t gen = m_generations[slotID];
 
@@ -130,9 +152,7 @@ private:
         if (gen != m_generations[slotID])
             return;
 
-        PoolID id = m_poolIDToDense[slotID];
-        T& data = m_dense[id];
-        data.~T();
+        PoolID id = m_sparseToDense[slotID];
 
         PoolID last = static_cast<PoolID>(--m_denseCount);
         if (id != last)
@@ -140,12 +160,23 @@ private:
             T* src = m_dense + last;
             T* dst = m_dense + id;
 
-            new (dst) T(std::move(*src));
+            if constexpr (!std::is_trivially_copyable_v<T>)
+            {
+                new (dst) T(std::move(*src));
 
-            m_denseIDToPoolID[id] = m_denseIDToPoolID[last];
+                if constexpr (!std::is_trivially_destructible_v<T>)
+                    src->~T();
+            } else
+            {
+                memcpy(dst, src, sizeof(T));
+            }
 
-            m_poolIDToDense[m_denseIDToPoolID[last]] = id;
+            m_denseToSparse[id] = m_denseToSparse[last];
+
+            m_sparseToDense[m_denseToSparse[last]] = id;
         }
+
+        m_sparseToDense[slotID] = INVALID_ID;
 
         m_generations[slotID]++;
 
@@ -158,7 +189,7 @@ private:
         size_t oldCapacity = m_slotCapacity;
         m_slotCapacity = m_slotCapacity > 0 ? m_slotCapacity * 2 : 2;
 
-        m_poolIDToDense = (PoolID*)realloc(m_poolIDToDense, m_slotCapacity * sizeof(PoolID));
+        m_sparseToDense = (PoolID*)realloc(m_sparseToDense, m_slotCapacity * sizeof(PoolID));
         m_generations = (uint32_t*)realloc(m_generations, m_slotCapacity * sizeof(uint32_t));
 
         m_freeList = (PoolID*)realloc(m_freeList, m_slotCapacity * sizeof(PoolID));
@@ -175,26 +206,31 @@ private:
 
         m_denseCapacity = m_denseCapacity > 0 ? m_denseCapacity * 2 : 2;
 
-        if (m_dense != nullptr)
+        if constexpr (!std::is_trivially_copyable_v<T>)
         {
             T* array = (T*)malloc(m_denseCapacity * sizeof(T));
-            for (size_t i=0;i<m_denseCount;i++)
+            if (m_dense != nullptr)
             {
-                T* src = m_dense + i;
-                T* dst = array + i;
+                for (size_t i=0;i<m_denseCount;i++)
+                {
+                    T* src = m_dense + i;
+                    T* dst = array + i;
 
-                new (dst) T(std::move(*src));
-                src->~T();
+                    new (dst) T(std::move(*src));
+
+                    if constexpr (!std::is_trivially_destructible_v<T>)
+                        src->~T();
+                }
+
+                free(m_dense);
             }
-
-            free(m_dense);
             m_dense = array;
         } else
         {
-            m_dense = (T*)malloc(m_denseCapacity * sizeof(T));
+            m_dense = (T*)realloc(m_dense, m_denseCapacity * sizeof(T));
         }
 
-        m_denseIDToPoolID = (PoolID*)realloc(m_denseIDToPoolID, m_denseCapacity * sizeof(PoolID));
+        m_denseToSparse = (PoolID*)realloc(m_denseToSparse, m_denseCapacity * sizeof(PoolID));
     }
 
     void addFreeList(size_t oldCapacity)
