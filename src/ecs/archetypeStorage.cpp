@@ -6,116 +6,40 @@
 #include <cstdlib>
 #include <cstring>
 
-ArchetypeStorage::ArchetypeStorage(Signature _mask, TypeID typeID) :
-    mask(_mask),
-    typeOffset_capacity(0),
-    typeOffsets(nullptr),
-
-    freeID(INVALID_CHUNK),
-    freeList(nullptr),
-
-    chunk_capacity(0),
-    chunks(nullptr),
-
-    component_capacity(0),
-    component_stride(0)
+void ArchetypeLayout::Graphy::grow(size_t new_capacity)
 {
+    if (capacity >= new_capacity)
+        return;
 
-    if (typeID != INVALID_TYPE)
+    size_t oldCapacity = capacity;
+
+    capacity = new_capacity;
+
+    removeEdges = (ArchetypeID*)realloc(removeEdges, capacity * sizeof(ArchetypeID));
+    addEdges = (ArchetypeID*)realloc(addEdges, capacity * sizeof(ArchetypeID));
+
+    for (size_t i=oldCapacity;i<capacity;i++)
     {
-        m_removeEdges.resize(typeID + 1, INVALID_ARCHETYPE);
-        m_addEdges.resize(typeID + 1, INVALID_ARCHETYPE);
+        removeEdges[i] = INVALID_ARCHETYPE;
+        addEdges[i] = INVALID_ARCHETYPE;
     }
-
-    Signature temp = mask;
-    while (temp)
-    {
-        auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
-
-        component_stride += info->stride;
-
-        temp &= (temp - 1);
-    }
-
-    if (component_stride)
-        component_capacity = CHUNK_SIZE / component_stride;
-
-    size_t offset = 0;
-    temp = mask;
-    while (temp)
-    {
-        auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
-        
-        while (info->index >= typeOffset_capacity)
-            grow_type();
-
-        typeOffsets[info->index] = offset;
-
-        offset += info->stride * component_capacity;
-
-        temp &= (temp - 1);
-    }
-}
-
-
-ArchetypeStorage::ArchetypeStorage(ArchetypeStorage&& other) noexcept :
-    mask(other.mask)
-{
-    typeOffset_capacity = other.typeOffset_capacity;
-
-    typeOffsets = other.typeOffsets;
-    other.typeOffsets = nullptr;
-
-    component_capacity = other.component_capacity;
-
-    component_stride = other.component_stride;
-
-    freeID = other.freeID;
-
-    freeList = other.freeList;
-    other.freeList = nullptr;
-
-    chunk_capacity = other.chunk_capacity;
-
-    chunks = other.chunks;
-    other.chunks = nullptr;
-
-    stats = other.stats;
-
-    m_removeEdges = std::move(other.m_removeEdges);
-    m_addEdges = std::move(other.m_addEdges);
-}
-
-ArchetypeStorage::~ArchetypeStorage()
-{
-    if (typeOffsets != nullptr)
-        free(typeOffsets);
-
-    if (freeList != nullptr)
-        free(freeList);
-
-    if (chunks != nullptr)
-        free(chunks);
 }
 
 ArchetypeID ArchetypeStorage::addEdges(TypeID typeID)
 {
-    if (typeID >= m_addEdges.size())
-        m_addEdges.resize(typeID + 1, INVALID_ARCHETYPE);
+    if (typeID >= layout->graphy.capacity)
+        layout->graphy.grow(typeID + 1);
 
-    if (typeID >= m_removeEdges.size())
-        m_removeEdges.resize(typeID + 1, INVALID_ARCHETYPE);
-
-    return m_addEdges[typeID];
+    return layout->graphy.addEdges[typeID];
 }
 
-EntityLocation ArchetypeStorage::allocate(Entity entity)
+engine::ecs::detail::location ArchetypeStorage::allocate(Entity entity)
 {
-    if (freeID == INVALID_CHUNK)
+    if (freeChunk == INVALID_CHUNK)
         grow();
 
-    ChunkID chunkID = freeID;
-    assert(chunkID < chunk_capacity);
+    ChunkID chunkID = freeChunk;
+    assert(chunkID < chunkCapacity);
 
     Chunk& chunk = chunks[chunkID];
 
@@ -124,27 +48,27 @@ EntityLocation ArchetypeStorage::allocate(Entity entity)
 
     chunk.entities[row] = entity;
 
-    if (chunk.count >= chunk.capacity)
+    if (chunk.count >= layout->capacity)
     {
-        freeID = freeList[chunkID];
+        freeChunk = freeList[chunkID];
         freeList[chunkID] = INVALID_CHUNK;
     }
 
-    stats.entityCount++;
+    entityCount++;
 
     return {chunkID, row};
 }
 
-uint8_t* ArchetypeStorage::get(EntityLocation loc, const ComponentInfo* info) const
+uint8_t* ArchetypeStorage::get(engine::ecs::detail::location loc, const ComponentInfo* info) const
 {
     assert(info->index < typeOffset_capacity);
 
-    assert(loc.chunk < chunk_capacity);
+    assert(loc.chunk < chunkCapacity);
 
     Chunk& chunk = chunks[loc.chunk];
     assert(chunk.count >= loc.row);
 
-    uint8_t* array = chunk.data + typeOffsets[info->index];
+    uint8_t* array = chunk.array + layout->offsets[info->index];
 
     return array + (loc.row * info->stride);
 }
@@ -152,22 +76,22 @@ uint8_t* ArchetypeStorage::get(EntityLocation loc, const ComponentInfo* info) co
 uint8_t* ArchetypeStorage::getRaw(ChunkID chunkID, TypeID typeID) const
 {
     assert(typeID < typeOffset_capacity);
-    assert(chunkID < chunk_capacity);
+    assert(chunkID < chunkCapacity);
 
     Chunk& chunk = chunks[chunkID];
 
-    return chunk.data + typeOffsets[typeID];
+    return chunk.array + layout->offsets[typeID];
 }
 
-Entity ArchetypeStorage::deallocate(EntityLocation loc)
+Entity ArchetypeStorage::deallocate(engine::ecs::detail::location loc)
 {
-    assert(loc.chunk < chunk_capacity);
+    assert(loc.chunk < chunkCapacity);
 
     Chunk& chunk = chunks[loc.chunk];
     assert(chunk.count > 0);
     assert(loc.row < chunk.count);
 
-    bool wasFull = (chunk.count == chunk.capacity);
+    bool wasFull = (chunk.count == layout->capacity);
 
     uint32_t dst_row = loc.row;
     uint32_t src_row = --chunk.count;
@@ -181,7 +105,7 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
         {
             auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
 
-            uint8_t* array = chunk.data + typeOffsets[info->index];
+            uint8_t* array = chunk.array + layout->offsets[info->index];
 
             uint8_t* src = array + (info->stride * src_row);
             uint8_t* dst = array + (info->stride * dst_row);
@@ -201,7 +125,7 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
     {
         auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
 
-        uint8_t* array = chunk.data + typeOffsets[info->index];
+        uint8_t* array = chunk.array + layout->offsets[info->index];
 
         uint8_t* src = array + (info->stride * src_row);
 
@@ -212,32 +136,31 @@ Entity ArchetypeStorage::deallocate(EntityLocation loc)
 
     if (wasFull)
     {
-        freeList[loc.chunk] = freeID;
-        freeID = loc.chunk;
+        freeList[loc.chunk] = freeChunk;
+        freeChunk = loc.chunk;
     }
 
-    stats.entityCount--;
+    entityCount--;
 
     return moved;
 }
 
 void ArchetypeStorage::grow()
 {
-    size_t oldCapacity = chunk_capacity;
+    size_t oldCapacity = chunkCapacity;
 
-    chunk_capacity = chunk_capacity > 0 ? chunk_capacity * 2 : 2;
+    chunkCapacity = chunkCapacity > 0 ? chunkCapacity * 2 : 2;
 
-    freeList = (ChunkID*)realloc(freeList, chunk_capacity * sizeof(ChunkID));
-    chunks = (Chunk*)realloc(chunks, chunk_capacity * sizeof(Chunk));
+    freeList = (ChunkID*)realloc(freeList, chunkCapacity * sizeof(ChunkID));
+    chunks = (Chunk*)realloc(chunks, chunkCapacity * sizeof(Chunk));
 
-    for (size_t i=oldCapacity;i<chunk_capacity;i++)
+    for (size_t i=oldCapacity;i<chunkCapacity;i++)
     {
         Chunk& chunk = chunks[i];
-        chunk.capacity = component_capacity;
         chunk.count = 0;
 
-        chunk.entities = component_capacity > 0 ? ((Entity*)malloc(component_capacity * sizeof(Entity))) : nullptr;
-        chunk.data = component_capacity > 0 ? ((uint8_t*)malloc(component_capacity * component_stride)) : nullptr;
+        chunk.entities = layout->capacity > 0 ? ((Entity*)malloc(layout->capacity * sizeof(Entity))) : nullptr;
+        chunk.array = layout->capacity > 0 ? ((uint8_t*)malloc(layout->capacity * layout->stride)) : nullptr;
     }
 
     addFreeID(oldCapacity);
@@ -245,20 +168,14 @@ void ArchetypeStorage::grow()
 
 void ArchetypeStorage::addFreeID(size_t oldCapacity)
 {
-    size_t capacity = chunk_capacity - 1;
+    size_t capacity = chunkCapacity - 1;
     for (size_t i=oldCapacity;i<capacity;i++)
         freeList[i] = static_cast<ChunkID>(i + 1);
 
-    freeList[capacity] = freeID;
-    freeID = static_cast<ChunkID>(oldCapacity);
+    freeList[capacity] = freeChunk;
+    freeChunk = static_cast<ChunkID>(oldCapacity);
 }
 
-void ArchetypeStorage::grow_type()
-{
-    typeOffset_capacity = typeOffset_capacity > 0 ? typeOffset_capacity * 2 : 2;
-
-    typeOffsets = (size_t*)realloc(typeOffsets, typeOffset_capacity * sizeof(size_t));
-}
 
 /*
 ArchetypeStorage::ArchetypeStorage(Signature mask, TypeID typeID) :

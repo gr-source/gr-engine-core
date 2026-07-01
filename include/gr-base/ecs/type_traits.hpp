@@ -5,6 +5,8 @@
 #include <type_traits>
 #include <string_view>
 
+#define COMPONENT_CHUNK_SIZE (16 * 1024)
+
 class Stream;
 
 enum class TypeCategory
@@ -62,6 +64,13 @@ inline constexpr size_t size =
 template <typename T>
 inline constexpr size_t alignment =
     alignof(T);
+
+
+template <typename... T>
+constexpr size_t stride = (sizeof(T) + ...);
+
+template <typename... T>
+constexpr size_t capacity = (stride<T...> > 0) ? (COMPONENT_CHUNK_SIZE / stride<T...>) : 0;
 
 template<typename, typename = void>
 struct serialize : std::false_type {};

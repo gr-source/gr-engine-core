@@ -3,6 +3,7 @@
 #include "gr-base/core/logger.hpp"
 
 #include "gr-base/ecs/archetypeStorage.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/entityManager.hpp"
 
 #include "gr-base/externals/handle.h"
@@ -23,7 +24,31 @@ World::~World()
     logger::info("[ World ] Destroy '0x%lX'.", this);
 
     for (size_t i=0;i<m_count;i++)
-        m_archetypePool[i].~ArchetypeStorage();
+    {
+        auto& arche = m_archetypePool[i];
+
+        auto layout = arche.layout;
+        if (layout != nullptr)
+        {
+            if (layout->graphy.addEdges != nullptr)
+                free(layout->graphy.addEdges);
+
+            if (layout->graphy.removeEdges != nullptr)
+                free(layout->graphy.removeEdges);
+
+            if (layout->offsets != nullptr)
+                free(layout->offsets);
+
+            free(layout);
+        }
+
+        if (arche.freeList != nullptr)
+            free(arche.freeList);
+
+        /// TODO: Vai causa vazamentos de memoia em non-trivally
+        if (arche.chunks != nullptr)
+            free(arche.chunks);
+    }
 
     if (m_archetypePool != nullptr)
         free(m_archetypePool);
@@ -35,9 +60,9 @@ Entity World::Create()
     
     EntityID entityID = handle_get_first(e);
     if (entityID >= entityRecords.size())
-        entityRecords.resize(entityID + 1, { m_emptyArchetypeStorage, EntityLocation{ INVALID_CHUNK, INVALID_COMPONENT } });
+        entityRecords.resize(entityID + 1, { m_emptyArchetypeStorage, engine::ecs::detail::location{ INVALID_CHUNK, INVALID_COMPONENT } });
 
-    entityRecords[entityID] = { m_emptyArchetypeStorage, EntityLocation{ INVALID_CHUNK, INVALID_COMPONENT } };
+    entityRecords[entityID] = { m_emptyArchetypeStorage, engine::ecs::detail::location{ INVALID_CHUNK, INVALID_COMPONENT } };
 
     return e;
 }
@@ -57,7 +82,7 @@ void World::Destroy(Entity entity)
     if ((moved = arche.deallocate(rec.location)) != INVALID_ENTITY)
         entityRecords[handle_get_first(moved)].location = rec.location;
 
-    entityRecords[entityID] = { m_emptyArchetypeStorage, EntityLocation{ INVALID_CHUNK, INVALID_COMPONENT } };
+    entityRecords[entityID] = { m_emptyArchetypeStorage, engine::ecs::detail::location{ INVALID_CHUNK, INVALID_COMPONENT } };
 
     m_entityLocationMap->destroy(entity);
 }
@@ -76,10 +101,58 @@ ArchetypeID World::GetOrCreateArcheType(Signature mask, TypeID typeID)
     if (m_count >= m_capacity)
         resize();
 
+    TypeID maxTypeID = 0;
+
+    Signature temp = mask;
+    while (temp)
+    {
+        TypeID id = __builtin_ctzll(temp);
+        if (id >= maxTypeID)
+            maxTypeID = id + 1;
+        
+        temp &= (temp - 1);
+    }
+
     ArchetypeID id = static_cast<ArchetypeID>(m_count++);
 
-    ArchetypeStorage& arche = m_archetypePool[id];
-    new (&arche) ArchetypeStorage(mask, typeID);
+    ArchetypeLayout layout;
+    layout.offsets = (size_t*)malloc(maxTypeID * sizeof(size_t));
+
+    for (auto& type : ComponentRegistry::GetTypesOfMask(mask))
+    {
+        auto info = ComponentRegistry::GetComponentByID(type);
+
+        layout.stride += info->stride;
+    }
+    layout.capacity = layout.stride > 0 ? CHUNK_SIZE / layout.stride : 0;
+
+    size_t offset = 0;
+    for (auto& type : ComponentRegistry::GetTypesOfMask(mask))
+    {
+        auto info = ComponentRegistry::GetComponentByID(type);
+
+        layout.offsets[type] = offset;
+
+        offset += info->stride * layout.capacity;
+    }
+
+
+    ArchetypeStorage* arche = m_archetypePool + id;
+    new (arche) ArchetypeStorage();
+
+    arche->mask = mask;
+
+    // Define a layout para runtime
+    arche->layout = (ArchetypeLayout*)malloc(sizeof(ArchetypeLayout));
+    memcpy(arche->layout, &layout, sizeof(ArchetypeLayout));
+
+    if (typeID != INVALID_TYPE)
+    {
+        if (typeID >= arche->layout->graphy.capacity)
+            arche->layout->graphy.grow(typeID + 1);
+    }
+
+    // new (&arche) ArchetypeStorage();
 
     // logger::debug("[World] Create new ArcheType 'id=%d mask=%d ptr=0x%lX'.", id, mask, archeType);
 
@@ -227,7 +300,6 @@ ArchetypeStorage* World::GetArchetypeByMask(Signature mask) const
     return m_archetypePool + it->second;
 }
 
-#include <iostream>
 void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
 {
     EntityID entityID = handle_get_first(e);
@@ -235,8 +307,8 @@ void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
     ArchetypeStorage* src = GetArchetypeByID(srcID);
     ArchetypeStorage* dst = GetArchetypeByID(dstID);
 
-    EntityLocation src_loc = entityRecords[entityID].location;
-    EntityLocation dst_loc = dst->allocate(e);
+    engine::ecs::detail::location src_loc = entityRecords[entityID].location;
+    engine::ecs::detail::location dst_loc = dst->allocate(e);
 
     Signature common = src->mask & dst->mask;
     while (common)
@@ -287,40 +359,23 @@ void World::LinkAdd(TypeID typeID, ArchetypeID srcID, ArchetypeID dstID)
     auto src = GetArchetypeByID(srcID);
     auto dst = GetArchetypeByID(dstID);
 
-    if (typeID >= src->m_addEdges.size())
-        src->m_addEdges.resize(typeID + 1, INVALID_ARCHETYPE);
+    if (typeID >= src->layout->graphy.capacity)
+        src->layout->graphy.grow(typeID + 1);
 
-    if (typeID >= dst->m_removeEdges.size())
-        dst->m_removeEdges.resize(typeID + 1, INVALID_ARCHETYPE);
+    if (typeID >= dst->layout->graphy.capacity)
+        dst->layout->graphy.grow(typeID + 1);
 
     // logger::trace("[ World ] LinkAdd typeID=%d src_edges=%ld dst_rem=%ld", typeID, src->m_addEdges.size(), dst->m_removeEdges.size());
 
-    src->m_addEdges[typeID] = dstID;
-    dst->m_removeEdges[typeID] = srcID;
+    src->layout->graphy.addEdges[typeID] = dstID;
+    dst->layout->graphy.removeEdges[typeID] = srcID;
 }
 
 void World::resize()
 {
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
-    ArchetypeStorage* array = (ArchetypeStorage*)malloc(m_capacity * sizeof(ArchetypeStorage));
-
-    if (m_archetypePool != nullptr)
-    {
-        for (size_t i=0;i<m_count;i++)
-        {
-            ArchetypeStorage* src = m_archetypePool + i;
-            ArchetypeStorage* dst = array + i;
-
-            new (dst) ArchetypeStorage(std::move(*src));
-
-            src->~ArchetypeStorage();
-        }
-
-        free(m_archetypePool);
-    }
-
-    m_archetypePool = array;
+    m_archetypePool = (ArchetypeStorage*)realloc(m_archetypePool, m_capacity * sizeof(ArchetypeStorage));
 }
 
 

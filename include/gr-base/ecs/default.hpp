@@ -39,7 +39,14 @@ struct ComponentInfo;
 struct SystemInfo;
 
 
-
+namespace engine::ecs::detail
+{
+    typedef struct location
+    {
+        uint32_t chunk;
+        uint32_t row;
+    } location;
+}
 
 
 

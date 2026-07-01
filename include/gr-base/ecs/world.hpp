@@ -97,7 +97,7 @@ public:
             if ((arche.mask & requiredMask) != requiredMask)
                 continue;
 
-            size_t chunk_count = arche.component_capacity > 0 ? (arche.stats.entityCount + arche.component_capacity - 1) / arche.component_capacity : 0;
+            size_t chunk_count = arche.layout->capacity > 0 ? (arche.entityCount + arche.layout->capacity - 1) / arche.layout->capacity : 0;
             for (size_t j=0;j<chunk_count;j++)
             {
                 Chunk& chunk = arche.chunks[j];
@@ -126,7 +126,7 @@ private:
     {
         uint32_t archetype;
 
-        EntityLocation location;
+        engine::ecs::detail::location location;
     };
 
     std::unordered_map<Signature, ArchetypeID> m_signArcheTypeMap;
@@ -151,4 +151,6 @@ private:
 
     void resize();
 };
+
+
 
