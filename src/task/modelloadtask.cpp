@@ -72,7 +72,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
 
         auto component = go.GetOrAddComponent(type->index);
 
-        if (type->globalCpy)
+        if (type->isTriviallyCopyable)
         {
             memcpy(component, buffer.data(), type->stride);
         } else if (type->deserialize != nullptr)

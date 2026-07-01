@@ -141,7 +141,7 @@ inline void ComponentRegistry::Register(bool serializable)
     info.storage = engine::type_traits::storage<T>;
 
     // flags
-    info.globalCpy = std::is_trivially_copyable_v<T>;
+    info.isTriviallyCopyable = std::is_trivially_copyable_v<T>;
     info.serializable = serializable;
 
     // Methods

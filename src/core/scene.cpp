@@ -122,7 +122,7 @@ Entity Scene::create(Entity other)
         auto dst = go.AddComponent(typeID);
         auto src = otherGO.GetComponent(typeID);
 
-        if (type->globalCpy)
+        if (type->isTriviallyCopyable)
         {
             memcpy(dst, src, type->stride);
         } else

@@ -49,7 +49,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
         std::vector<uint8_t> buffer;
         if (type->serializable)
         {
-            if (type->globalCpy)
+            if (type->isTriviallyCopyable)
             {
                 buffer.resize(type->stride, 0);
 

@@ -227,6 +227,7 @@ ArchetypeStorage* World::GetArchetypeByMask(Signature mask) const
     return m_archetypePool + it->second;
 }
 
+#include <iostream>
 void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
 {
     EntityID entityID = handle_get_first(e);
@@ -247,7 +248,7 @@ void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
         void* dst_component = dst->get(dst_loc, info);
         void* src_component = src->get(src_loc, info);
 
-        if (info->globalCpy)
+        if (info->isTriviallyCopyable)
         {
             memcpy(
                 dst_component,
@@ -259,6 +260,9 @@ void World::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
         {
             ((void(*)(void*, const void*))(info->move))(dst_component, src_component);
         }
+
+        // TODO: Isso deve crasha com objetos do stl.
+        ((void (*)(void*))(info->destructor))(src_component);
 
         common &= (common - 1);
     }
@@ -297,28 +301,26 @@ void World::LinkAdd(TypeID typeID, ArchetypeID srcID, ArchetypeID dstID)
 
 void World::resize()
 {
-    size_t oldCapacity = m_capacity;
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
-    // logger::debug("[ World ] [ RESIZE ] 'm_archetypePool' of=0x%lX.", this);
+    ArchetypeStorage* array = (ArchetypeStorage*)malloc(m_capacity * sizeof(ArchetypeStorage));
 
-    // logger::trace("[ World ] oldSize='%ld' newSize='%ld' oldptr='0x%lX'.", oldCapacity, m_capacity, m_archetypePool);
-
-    ArchetypeStorage* newPool = (ArchetypeStorage*)malloc(m_capacity * sizeof(ArchetypeStorage));
-
-    for (size_t i=0;i<m_count;i++)
+    if (m_archetypePool != nullptr)
     {
-        ArchetypeStorage* src = m_archetypePool + i;
-        ArchetypeStorage* dst = newPool + i;
+        for (size_t i=0;i<m_count;i++)
+        {
+            ArchetypeStorage* src = m_archetypePool + i;
+            ArchetypeStorage* dst = array + i;
 
-        new (dst) ArchetypeStorage(std::move(*src));
-        src->~ArchetypeStorage();
+            new (dst) ArchetypeStorage(std::move(*src));
+
+            src->~ArchetypeStorage();
+        }
+
+        free(m_archetypePool);
     }
 
-    free(m_archetypePool);
-    m_archetypePool = newPool;
-
-    // logger::trace("[ World ] newptr='0x%lX'.", m_archetypePool);
+    m_archetypePool = array;
 }
 
 

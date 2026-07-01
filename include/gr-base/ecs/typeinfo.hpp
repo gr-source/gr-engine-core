@@ -30,7 +30,7 @@ struct ComponentInfo : TypeInfo
 
     StorageKind storage = StorageKind::Archetype;
 
-    bool globalCpy = false;
+    bool isTriviallyCopyable = false;
     bool serializable = false;
 };
 
