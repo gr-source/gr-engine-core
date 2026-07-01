@@ -22,7 +22,7 @@
 
 #include "gr-base/core/file/file.hpp"
 
-class EngineAssetProvider : public IAssetProvider
+class EngineFileProvider : public IAssetProvider
 {
 public:
     virtual std::string resolve(const std::string& path) override
@@ -54,7 +54,7 @@ void Runtime::initialize()
 
     DebugDraw::Initialize();
 
-    AssetResolver::Registry<EngineAssetProvider>(Scheme::Engine);
+    AssetResolver::Registry<EngineFileProvider>(Scheme::Engine);
 }
 
 void Runtime::shutdown()

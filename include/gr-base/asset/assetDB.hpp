@@ -27,6 +27,8 @@ private:
 
     std::unordered_map<Hash64, std::string> m_refMapped;
 
+    AssetID m_nextID;
+
     AssetDB();
     ~AssetDB();
 

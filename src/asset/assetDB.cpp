@@ -53,14 +53,14 @@ std::string AssetDB::Resolve(Hash64 hash)
 }
 
 // private
-AssetDB::AssetDB()
+AssetDB::AssetDB() : m_nextID(0)
 {
-    logger::info("[AssetDB] Initialize.");
+    logger::info("[ AssetDB ] Initialize.");
 }
 
 AssetDB::~AssetDB()
 {
-    logger::info("[AssetDB] Shutdown.");
+    logger::info("[ AssetDB ] Shutdown.");
 }
 
 void AssetDB::load(const std::string &file)
@@ -98,6 +98,10 @@ void AssetDB::save(const std::string &file)
 void AssetDB::registry(Hash64 hash, const std::string& path)
 {
     m_refMapped.emplace(hash, path);
+
+    AssetID id = m_nextID++;
+
+    std::cout << "ID: " << id << path << std::endl;
 
     // logger::trace("[AssetDB] register: '0x%lX' lookup: '%s'.", hash, path.c_str());
 }
