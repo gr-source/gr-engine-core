@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/ecs/detail.hpp"
 #include "type_traits.hpp"
 #include "default.hpp"
 
@@ -21,14 +22,8 @@ struct MultiStack : StackBase<N, T>...
 {
 };
 
-typedef struct EntityLocation
-{
-    uint32_t chunk;
-    uint32_t row;
-} EntityLocation;
-
 template <typename... Components>
-struct Archetype
+struct Archetype : engine::ecs::detail::archetype
 {
     static constexpr size_t CAPACITY = engine::type_traits::capacity<Components...>;
 
@@ -47,17 +42,9 @@ struct Archetype
     using ChunkID = uint32_t;
 
     // ========================================
-    ArchetypeLayout* layout = nullptr;
-
-    Signature mask = INVALID_SIGNATURE;
-
-    ChunkID freeChunk = INVALID_CHUNK;
-    ChunkID* freeList = nullptr;
 
     size_t chunkCapacity = 0;
     Chunk* chunks = nullptr;
-
-    size_t entityCount = 0;
 
     // ========================================
 
@@ -105,7 +92,7 @@ struct Archetype
         dst.~T();
     }
 
-    EntityLocation Add(Entity entity, const Components&... components)
+    engine::ecs::detail::location Add(Entity entity, const Components&... components)
     {
         if (freeChunk == INVALIDU32)
             grow();
@@ -132,7 +119,7 @@ struct Archetype
         return { chunkID, row };
     }
 
-    Entity Del(EntityLocation loc)
+    Entity Del(engine::ecs::detail::location loc)
     {
         assert(loc.chunk < capacity);
 
@@ -172,7 +159,7 @@ struct Archetype
     }
 
     template <typename T>
-    T& Get(EntityLocation loc)
+    T& Get(engine::ecs::detail::location loc)
     {
         assert(loc.chunk < capacity);
         

@@ -2,11 +2,25 @@
 
 #include "gr-base/ecs/default.hpp"
 
-class EntityManager
+namespace engine::ecs::manager
 {
-public:
-    EntityManager();
-    ~EntityManager();
+
+struct entity
+{
+    typedef struct EntityInfo
+    {
+        uint32_t next;
+        uint32_t generation = 1;
+    } EntityInfo;
+
+    EntityInfo *entities = nullptr;
+
+    size_t capacity = 0;
+    size_t count = 0;
+
+    EntityID freeID = 0;
+
+    ~entity();
 
     Entity create();
 
@@ -14,26 +28,9 @@ public:
 
     bool isAlive(Entity entity) const;
 
-    inline EntityID GetCount() const
-    {
-        return m_count;
-    }
-
-private:
-    struct EntityInfo
-    {
-        uint32_t next;
-        uint32_t generation;
-    };
-
-    EntityInfo *m_entities;
-
-    size_t m_capacity;
-    size_t m_count;
-
-    EntityID m_freeID;
-
-    void resize();
+    void grow();
 
     void addFreeID(size_t oldCapacity);
 };
+}
+

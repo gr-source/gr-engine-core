@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 
+/*
 ArchetypeID ArchetypeStorage::addEdges(TypeID typeID)
 {
     if (typeID >= layout->graphy.capacity)
@@ -156,6 +157,7 @@ void ArchetypeStorage::addFreeID(size_t oldCapacity)
     freeList[capacity] = freeChunk;
     freeChunk = static_cast<ChunkID>(oldCapacity);
 }
+*/
 
 
 /*

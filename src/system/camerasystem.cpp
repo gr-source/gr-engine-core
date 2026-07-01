@@ -10,7 +10,7 @@
 
 void CameraSystem::Update(Scene* scene)
 {
-    auto world = scene->GetWorld();
+    auto world = &scene->GetWorldDynamic();
 
     world->Query<Transform, Camera, CameraData>([](
                 const Entity* entities,

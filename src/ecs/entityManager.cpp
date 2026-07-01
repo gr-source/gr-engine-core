@@ -2,74 +2,74 @@
 
 #include <cstdlib>
 
-EntityManager::EntityManager() : m_freeID(0), m_count(0), m_capacity(0), m_entities(nullptr)
-{}
-
-EntityManager::~EntityManager()
+namespace engine::ecs::manager
 {
-    if (m_entities != nullptr)
-        free(m_entities);
+
+entity::~entity()
+{
+    if (entities != nullptr)
+        free(entities);
 }
 
-Entity EntityManager::create()
+Entity entity::create()
 {
-    if (m_count >= m_capacity)
-        resize();
+    if (count >= capacity)
+        grow();
 
-    EntityID id = m_freeID;
+    EntityID id = freeID;
 
-    EntityInfo& info = m_entities[id];
-    m_freeID = info.next;
+    EntityInfo& info = entities[id];
+    freeID = info.next;
 
-    m_count++;
+    count++;
 
     return handle_create(id, info.generation);
 }
 
-void EntityManager::destroy(Entity entity)
+void entity::destroy(Entity entity)
 {
     EntityID id = handle_get_first(entity);
     EntityID generation = handle_get_second(entity);
 
-    EntityInfo& info = m_entities[id];
+    EntityInfo& info = entities[id];
     if (info.generation != generation)
         return;
 
-    info.next = m_freeID;
-    m_freeID = id;
+    info.next = freeID;
+    freeID = id;
 
     info.generation++;
 
-    m_count--;
+    count--;
 }
 
-bool EntityManager::isAlive(Entity entity) const
+bool entity::isAlive(Entity entity) const
 {
     EntityID id = handle_get_first(entity);
     EntityID generation = handle_get_second(entity);
 
-    return entity != INVALID_ENTITY && m_entities[id].generation == generation;
+    return entity != INVALID_ENTITY && entities[id].generation == generation;
 }
 
 // private
-void EntityManager::resize()
+void entity::grow()
 {
-    size_t oldCapacity = m_capacity;
-    m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
+    size_t oldCapacity = capacity;
+    capacity = capacity > 0 ? capacity * 2 : 2;
 
-    m_entities = (EntityInfo*)realloc(m_entities, m_capacity * sizeof(EntityInfo));
+    entities = (EntityInfo*)realloc(entities, capacity * sizeof(EntityInfo));
 
     addFreeID(oldCapacity);
 }
 
-void EntityManager::addFreeID(size_t oldCapacity)
+void entity::addFreeID(size_t oldCapacity)
 {
-    size_t lastEntity = m_capacity - 1;
+    size_t lastEntity = capacity - 1;
     for (size_t i=oldCapacity;i<lastEntity;i++)
-        m_entities[i] = { static_cast<EntityID>(i) + 1, 1 };
+        entities[i] = { static_cast<EntityID>(i) + 1, 1 };
 
-    m_entities[lastEntity] = { m_freeID, 1 };
-    m_freeID = oldCapacity;
+    entities[lastEntity] = { freeID, 1 };
+    freeID = oldCapacity;
 }
 
-
+}

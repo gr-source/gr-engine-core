@@ -40,7 +40,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
             asset.materials.push_back(materialRef->materials[i]);
     }
 
-    for (auto& typeID : scene->GetWorld()->GetAllComponentType(entity))
+    for (auto& typeID : scene->GetWorldDynamic().GetAllComponentType(entity))
     {
         auto type = ComponentRegistry::GetComponentByID(typeID);
 
@@ -77,7 +77,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
         {
             asset.childrent.push_back(ConvertToAssetModel(scene, sibling));
 
-            auto siblingRel = scene->GetWorld()->GetComponent<Relationship>(sibling);
+            auto siblingRel = scene->GetWorldDynamic().GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;

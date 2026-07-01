@@ -4,12 +4,14 @@
 #include "gr-base/ecs/default.hpp"
 
 #include "gr-base/ecs/chunk.hpp"
+#include "gr-base/ecs/detail.hpp"
 
 #include <vector>
 
+/*
 struct ArchetypeStorage
 {
-    ArchetypeLayout* layout = nullptr;
+    engine::ecs::detail::layout* layout = nullptr;
 
     Signature mask = INVALID_SIGNATURE;
 
@@ -20,9 +22,6 @@ struct ArchetypeStorage
     Chunk* chunks = nullptr;
 
     size_t entityCount = 0;
-
-    // std::vector<ArchetypeID> m_removeEdges;
-    // std::vector<ArchetypeID> m_addEdges;
 
     ArchetypeID addEdges(TypeID typeID);
 
@@ -44,6 +43,6 @@ struct ArchetypeStorage
 
     void addFreeID(size_t oldCapacity);
 };
-
+*/
 
 

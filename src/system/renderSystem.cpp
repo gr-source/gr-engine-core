@@ -18,7 +18,7 @@ void RenderSystem::Update(Scene* scene)
     if (cameraEntity == INVALID_ENTITY)
         return;
 
-    auto world = scene->GetWorld();
+    auto world = &scene->GetWorldDynamic();
     auto bvh = scene->GetBVHtree();
 
     std::vector<Entity> entities;

@@ -6,7 +6,6 @@
 
 #include "gr-base/ecs/archetypeStorage.hpp"
 #include "gr-base/ecs/default.hpp"
-#include "gr-base/ecs/world.hpp"
 
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/script/meshFilter.hpp"
@@ -29,15 +28,14 @@ Scene* Scene::GetCurrent()
     return SceneManager::GetCurrent();
 }
 
-Scene::Scene() : m_bvhtree(nullptr), m_world(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_ENTITY), hierarchyDirty(false)
+Scene::Scene() : m_bvhtree(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_ENTITY), hierarchyDirty(false)
 {
     logger::info("[ Scene ] Create '%p'.", this);
 
     m_bvhtree = new BVHtree();
-    m_world = new World();
 
-    m_root = m_world->Create();
-    m_world->AddComponent<Relationship>(m_root);
+    m_root = GetWorldDynamic().Create();
+    GetWorldDynamic().AddComponent<Relationship>(m_root);
 }
 
 Scene::~Scene()
@@ -53,8 +51,6 @@ Scene::~Scene()
         free(system);
     }
 
-    delete m_world;
-
     delete m_bvhtree;
 
     logger::info("[ Scene ] Destroy '%p'.", this);
@@ -62,12 +58,12 @@ Scene::~Scene()
 
 Entity Scene::create(const char* name)
 {
-    Entity e = m_world->Create();
-    m_world->AddComponent<Transform>(e);
+    Entity e = GetWorldDynamic().Create();
+    GetWorldDynamic().AddComponent<Transform>(e);
     if (name != nullptr)
-        m_world->AddComponent<Name>(e, { strdup(name) });
+        GetWorldDynamic().AddComponent<Name>(e, { strdup(name) });
 
-    m_world->AddComponent<Relationship>(e);
+    GetWorldDynamic().AddComponent<Relationship>(e);
     SetParent(m_root, e);
 
     return e;
@@ -78,7 +74,7 @@ Entity Scene::create(Entity other)
     if (other == INVALID_ENTITY)
         return create(nullptr);
 
-    Entity entity = m_world->Create();
+    Entity entity = GetWorldDynamic().Create();
 
     auto go = Wrap(entity);
     const auto otherGO = Wrap(other);
@@ -101,7 +97,7 @@ Entity Scene::create(Entity other)
             Entity newChild = create(sibling);
             SetParent(entity, newChild);
 
-            auto siblingRel = m_world->GetComponent<Relationship>(sibling);
+            auto siblingRel = GetWorldDynamic().GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;
@@ -112,7 +108,7 @@ Entity Scene::create(Entity other)
     if (rel == nullptr || rel->parent == INVALID_ENTITY)
         SetParent(m_root, go.entity);
 
-    for (auto& typeID : m_world->GetAllComponentType(other))
+    for (auto& typeID : GetWorldDynamic().GetAllComponentType(other))
     {
         auto type = ComponentRegistry::GetComponentByID(typeID);
 
@@ -155,12 +151,12 @@ Entity Scene::create(Entity other)
 
 void Scene::destroy(Entity e)
 {
-    if (m_world->HasComponent<Transform, MeshFilter, MeshRender>(e))
+    if (GetWorldDynamic().HasComponent<Transform, MeshFilter, MeshRender>(e))
         m_bvhtree->remove(e);
 
     Unlink(e);
 
-    m_world->Destroy(e);
+    GetWorldDynamic().Destroy(e);
 }
 
 // ********** public ********** //
@@ -209,18 +205,18 @@ std::string Scene::GetName() const
     return m_name;
 }
 
-size_t Scene::GetEntityCount() const
+size_t Scene::GetEntityCount()
 {
-    return m_world->GetEntityCount();
+    return GetWorldDynamic().GetEntityCount();
 }
 
 void Scene::MarkChildrenDirty(Entity entity)
 {
-    auto transform = m_world->GetComponent<Transform>(entity);
+    auto transform = GetWorldDynamic().GetComponent<Transform>(entity);
     if (transform != nullptr)
         MarkChanged<Transform>(entity);
 
-    auto rel = m_world->GetComponent<Relationship>(entity);
+    auto rel = GetWorldDynamic().GetComponent<Relationship>(entity);
     if (rel != nullptr)
     {
         Entity sibling = rel->firstChild;
@@ -228,7 +224,7 @@ void Scene::MarkChildrenDirty(Entity entity)
         {
             MarkChildrenDirty(sibling);
 
-            auto siblingRel = m_world->GetComponent<Relationship>(sibling);
+            auto siblingRel = GetWorldDynamic().GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;
@@ -238,7 +234,7 @@ void Scene::MarkChildrenDirty(Entity entity)
 
 void Scene::Unlink(Entity entity)
 {
-    auto rel = m_world->GetComponent<Relationship>(entity);
+    auto rel = GetWorldDynamic().GetComponent<Relationship>(entity);
     if (rel == nullptr)
         return;
 
@@ -246,7 +242,7 @@ void Scene::Unlink(Entity entity)
 
     if (parent != INVALID_ENTITY)
     {
-        auto parentRel = m_world->GetComponent<Relationship>(parent);
+        auto parentRel = GetWorldDynamic().GetComponent<Relationship>(parent);
 
         // se era o primeiro filho
         if (parentRel->firstChild == entity)
@@ -255,7 +251,7 @@ void Scene::Unlink(Entity entity)
         // conecta anterior -> próximo
         if (rel->prevSibling != INVALID_ENTITY)
         {
-            auto prevRel = m_world->GetComponent<Relationship>(rel->prevSibling);
+            auto prevRel = GetWorldDynamic().GetComponent<Relationship>(rel->prevSibling);
 
             prevRel->nextSibling = rel->nextSibling;
         }
@@ -263,7 +259,7 @@ void Scene::Unlink(Entity entity)
         // conecta próximo -> anterior
         if (rel->nextSibling != INVALID_ENTITY)
         {
-            auto nextRel = m_world->GetComponent<Relationship>(rel->nextSibling);
+            auto nextRel = GetWorldDynamic().GetComponent<Relationship>(rel->nextSibling);
 
             nextRel->prevSibling = rel->prevSibling;
         }
@@ -281,11 +277,11 @@ void Scene::SetParent(Entity parent, Entity child)
     if (parent == child)
         return;
 
-    m_world->GetOrAddComponent<Relationship>(child);
-    m_world->GetOrAddComponent<Relationship>(parent);
+    GetWorldDynamic().GetOrAddComponent<Relationship>(child);
+    GetWorldDynamic().GetOrAddComponent<Relationship>(parent);
 
-    auto childRel  = m_world->GetComponent<Relationship>(child);
-    auto parentRel = m_world->GetComponent<Relationship>(parent);
+    auto childRel  = GetWorldDynamic().GetComponent<Relationship>(child);
+    auto parentRel = GetWorldDynamic().GetComponent<Relationship>(parent);
 
     if (childRel->parent != INVALID_ENTITY)
         Unlink(child);
@@ -302,7 +298,7 @@ void Scene::SetParent(Entity parent, Entity child)
     {
         Entity oldFirst = parentRel->firstChild;
 
-        auto oldFirstRel = m_world->GetComponent<Relationship>(oldFirst);
+        auto oldFirstRel = GetWorldDynamic().GetComponent<Relationship>(oldFirst);
 
         // novo filho aponta pro antigo primeiro
         childRel->nextSibling = oldFirst;
@@ -345,7 +341,7 @@ void Scene::Update()
 
 void Scene::MarkChanged(TypeID type, Entity e)
 {
-    if (!m_world->IsAlive(e))
+    if (!GetWorldDynamic().IsAlive(e))
         return;
 
     if (type >= changes.size())

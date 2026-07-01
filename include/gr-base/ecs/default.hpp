@@ -28,15 +28,12 @@ typedef uint32_t TypeID;
 
 typedef uint64_t Signature;
 
-class ArchetypeStorage;
-class EntityManager;
+// class ArchetypeStorage;
 class TypeRegistry;
-class World;
 
 struct TypeInfo;
 
 struct ComponentInfo;
 struct SystemInfo;
-
 
 

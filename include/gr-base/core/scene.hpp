@@ -6,7 +6,9 @@
 #include "gr-base/core/system.hpp"
 
 #include "gr-base/ecs/systemRegistry.hpp"
-#include "gr-base/ecs/default.hpp"
+#include "gr-base/ecs/dynamic/world.hpp"
+#include "gr-base/ecs/world.hpp"
+#include "gr-base/ecs/detail.hpp"
 
 #include "gr-base/spatial/default.hpp"
 
@@ -32,6 +34,13 @@ struct ChangeSet
 class Scene
 {
 public:
+    engine::ecs::dynamic::world world;
+
+    inline engine::ecs::dynamic::world& GetWorldDynamic()
+    {
+        return world;
+    }
+
     static Scene* GetCurrent();
 
     bool hierarchyDirty;
@@ -71,17 +80,12 @@ public:
 
     std::string GetName() const;
 
-    inline World* GetWorld() const
-    {
-        return m_world;
-    }
-
     inline BVHtree* GetBVHtree() const
     {
         return m_bvhtree;
     }
 
-    size_t GetEntityCount() const;
+    size_t GetEntityCount();
 
     void MarkChildrenDirty(Entity entity);
 
@@ -149,8 +153,6 @@ private:
     std::vector<ChangeSet> changes;
 
     BVHtree* m_bvhtree;
-
-    World* m_world;
 
     std::string m_name;
 
