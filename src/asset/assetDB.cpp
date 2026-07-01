@@ -74,14 +74,28 @@ void AssetDB::load(const std::string &file)
     std::string line;
     while (std::getline(is, line))
     {
-        std::string file;
+        std::string path;
+        AssetID id;
         Hash64 hash;
 
         std::stringstream iss(line);
-        if (!(iss >> hash >> file))
+        if (!(iss >> hash >> id >> path))
             continue;
 
-        registry(hash, file);
+        AssetInfo info;
+        info.hash = hash;
+        info.id = id;
+
+        size_t size = path.size();
+        size = size > ASSET_MAX_PATH_LENGHT ? ASSET_MAX_PATH_LENGHT : size;
+
+        strncpy(info.path, path.c_str(), size);
+        info.path[size] = '\0';
+
+        if (id >= m_nextID)
+            m_nextID = id + 1;
+
+        insert(info);
     }
 
     is.close();
@@ -90,20 +104,41 @@ void AssetDB::load(const std::string &file)
 void AssetDB::save(const std::string &file)
 {
     std::ofstream os(file);
-    for (auto &&[hash, file] : m_refMapped)
-        os << hash << " " << file << std::endl;
+
+    const auto infos = m_spaseSet.data();
+    for (size_t i=0;i<m_spaseSet.count();i++)
+    {
+        AssetInfo& info = infos[i];
+
+        os << info.hash << " " << info.id << " " << info.path << std::endl;
+    }
+    /*
+    for (auto &&[hash, info] : m_refMapped)
+    {
+        os << info.hash << " " << info.id << " " << info.path << std::endl;
+    }
+    */
     os.close();
 }
 
 void AssetDB::registry(Hash64 hash, const std::string& path)
 {
-    m_refMapped.emplace(hash, path);
+    if (m_refMapped.find(hash) != m_refMapped.end())
+        return;
 
-    AssetID id = m_nextID++;
+    AssetID id = static_cast<AssetID>(m_nextID++);
 
-    std::cout << "ID: " << id << path << std::endl;
+    AssetInfo info;
+    info.hash = hash;
+    info.id = id;
 
-    // logger::trace("[AssetDB] register: '0x%lX' lookup: '%s'.", hash, path.c_str());
+    size_t size = path.size();
+    size = size > ASSET_MAX_PATH_LENGHT ? ASSET_MAX_PATH_LENGHT : size;
+
+    strncpy(info.path, path.c_str(), size);
+    info.path[size] = '\0';
+
+    insert(info);
 }
 
 void AssetDB::unregistry(Hash64 hash)
@@ -112,18 +147,33 @@ void AssetDB::unregistry(Hash64 hash)
     if (it == m_refMapped.end())
         return;
 
-    logger::trace("[AssetDB] unregister: '0x%lX' lookup: '%s'.", hash, it->second.c_str());
+    auto info = m_spaseSet.get(it->second);
+
+    logger::trace("[ AssetDB ] unregister: '0x%lX' lookup: '%s'.", hash, info->path);
+
+    m_spaseSet.destroy(it->second);
 
     m_refMapped.erase(it);
+}
+
+void AssetDB::insert(const AssetInfo& info)
+{
+    m_spaseSet.insert(info.id, &info);
+
+    m_refMapped.emplace(info.hash, info.id);
 }
 
 std::string AssetDB::resolve(Hash64 hash)
 {
     auto it = m_refMapped.find(hash);
-    if (it != m_refMapped.end())
-        return AssetResolver::Resolve(URI::parse(it->second));
+    if (it == m_refMapped.end())
+        throw std::runtime_error(String::format("reference '0x%lX' not found...", hash));
 
-    throw std::runtime_error(String::format("reference '0x%lX' not found...", hash));
+    auto info = m_spaseSet.get(it->second);
+    if (info == nullptr)
+        throw std::runtime_error(String::format("this assetID is not valid id='%d'.", it->second));
+
+    return AssetResolver::Resolve(URI::parse(info->path));
 }
 
 
