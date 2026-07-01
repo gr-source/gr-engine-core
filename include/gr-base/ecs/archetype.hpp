@@ -47,13 +47,15 @@ struct Archetype
     using ChunkID = uint32_t;
 
     // ========================================
+    ArchetypeLayout* layout = nullptr;
+
     Signature mask = INVALID_SIGNATURE;
+
+    ChunkID freeChunk = INVALID_CHUNK;
+    ChunkID* freeList = nullptr;
 
     size_t chunkCapacity = 0;
     Chunk* chunks = nullptr;
-
-    ChunkID freeChunk = INVALIDU32;
-    ChunkID* freeList = nullptr;
 
     size_t entityCount = 0;
 

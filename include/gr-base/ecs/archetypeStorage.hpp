@@ -7,24 +7,6 @@
 
 #include <vector>
 
-typedef struct ArchetypeLayout
-{
-    size_t capacity = 0;
-    size_t stride = 0;
-
-    size_t* offsets = nullptr;
-
-    struct Graphy
-    {
-        size_t capacity = 0;
-
-        ArchetypeID* removeEdges = nullptr;
-        ArchetypeID* addEdges = nullptr;
-
-        void grow(size_t new_capacity);
-    } graphy;
-} ArchetypeLayout;
-
 struct ArchetypeStorage
 {
     ArchetypeLayout* layout = nullptr;
