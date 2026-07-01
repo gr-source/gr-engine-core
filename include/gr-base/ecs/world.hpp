@@ -4,15 +4,14 @@
 
 namespace engine::ecs
 {
-// struct world : engine::ecs::detail::world
-// {
-//
-//     template <typename T, typename... Args>
-//     T* AddComponent(Entity entity, Args&&... args)
-//     {
-//         return nullptr;
-//     }
-// };
+struct world : engine::ecs::detail::world_base<void*>
+{
+    template <typename T, typename... Args>
+    T* AddComponent(Entity entity, Args&&... args)
+    {
+        return nullptr;
+    }
+};
 }
 
 

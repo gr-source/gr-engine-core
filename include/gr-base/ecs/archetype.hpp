@@ -22,8 +22,10 @@ struct MultiStack : StackBase<N, T>...
 {
 };
 
+typedef struct Chunk Chunk;
+
 template <typename... Components>
-struct Archetype : engine::ecs::detail::archetype
+struct archetype : engine::ecs::detail::archetype_base<Chunk>
 {
     static constexpr size_t CAPACITY = engine::type_traits::capacity<Components...>;
 
@@ -48,7 +50,7 @@ struct Archetype : engine::ecs::detail::archetype
 
     // ========================================
 
-    ~Archetype()
+    ~archetype()
     {
         size_t chunk_count = CAPACITY > 0 ? (entityCount + CAPACITY - 1) / CAPACITY : 0;
 

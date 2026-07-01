@@ -18,7 +18,7 @@
 void TransformSystem::Update(Scene* scene)
 {
     BVHtree* bvh = scene->GetBVHtree();
-    auto world = &scene->GetWorldDynamic();
+    auto world = scene->GetWorldDynamic();
 
     auto entities = scene->Changed<Transform>();
     for (auto& entity : entities)
