@@ -114,7 +114,10 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
             return strcmp(a.name, b.name) < 0;
         });
 
-        memcpy(shader->GetUniforms(), uniforms.data(), uniforms.size() * sizeof(gr::ShaderUniform));
+        void* dst = (void*)shader->GetUniforms();
+        void* src = (void*)uniforms.data();
+
+        // memcpy(dst, src, uniforms.size() * sizeof(gr::ShaderUniform));
 
         m_shaders.push_back(shader);
     }

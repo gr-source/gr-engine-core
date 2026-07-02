@@ -20,7 +20,7 @@ template <>
 inline constexpr TypeCategory engine::type_traits::category<Camera> =
     TypeCategory::Component;
 
-struct CameraData
+struct alignas(16) CameraData
 {
     Matrix4x4 projection      = Matrix4x4::identityMatrix;
     Matrix4x4 view            = Matrix4x4::identityMatrix;

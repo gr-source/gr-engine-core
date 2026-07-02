@@ -91,7 +91,6 @@ struct world : engine::ecs::detail::world_base<engine::ecs::dynamic::archetype>
     template<typename... Components, typename Func>
     void Query(Func&& func)
     {
-        return;
         Signature requiredMask = ComponentRegistry::GetMask<Components...>();
 
         for (size_t i=0;i<m_count;i++)
@@ -106,7 +105,9 @@ struct world : engine::ecs::detail::world_base<engine::ecs::dynamic::archetype>
             {
                 Chunk* chunk = arche.chunks[j];
 
-                Entity* entities = (Entity*)(chunk + 1);
+                Entity* entities = reinterpret_cast<Entity*>(
+                    reinterpret_cast<uint8_t*>(chunk)
+                );
 
                 func(entities, arche.getRaw<Components>(static_cast<ChunkID>(j))..., chunk->count);
             }

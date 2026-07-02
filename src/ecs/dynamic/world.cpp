@@ -95,11 +95,6 @@ bool world::IsAlive(Entity entity) const
     return entityManager.isAlive(entity);
 }
 
-static inline size_t align_up(size_t value, size_t alignment)
-{
-    return (value + alignment - 1) & ~(alignment - 1);
-}
-
 ArchetypeID world::GetOrCreateArcheType(Signature mask, TypeID typeID)
 {
     auto it = signatureToArchetype.find(mask);
@@ -167,7 +162,7 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask, TypeID typeID)
         maxAlign
     ) : 0;
 
-    layout.aligment = maxAlign;
+    layout.alignment = maxAlign;
 
 
     engine::ecs::dynamic::archetype* arche = GetArchetypeByID(id);
@@ -243,7 +238,7 @@ void* world::AddComponent(Entity e, TypeID typeID, const void* component)
 
     void* ptr = (void*)dst->get(entityRecords[entityID].location, type);
 
-    ((void(*)(void*, const void*))(type->constructor))(ptr, component);
+    type->constructor(ptr, component);
 
     return ptr;
 }

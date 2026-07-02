@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+#define align_up(value, alignment) (((value) + ((alignment) - 1)) & ~((alignment) - 1))   
+
 namespace engine::ecs::detail
 {
 typedef struct location
@@ -19,7 +21,7 @@ typedef struct layout
 {
     size_t capacity = 0;
     size_t stride = 0;
-    size_t aligment = 0;
+    size_t alignment = 0;
 
     size_t payloadSize = 0;
 

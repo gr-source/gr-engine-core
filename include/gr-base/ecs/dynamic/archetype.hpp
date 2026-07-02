@@ -12,6 +12,8 @@ namespace engine::ecs::dynamic
 
     struct archetype : engine::ecs::detail::archetype_base<Chunk*>
     {
+        uint8_t* base = nullptr;
+
         ArchetypeID addEdges(TypeID typeID);
 
         engine::ecs::detail::location allocate(Entity entity);

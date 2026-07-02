@@ -41,16 +41,17 @@ Scene::~Scene()
 {
     for (auto& id : m_systemIDs)
     {
-        ISystem* system = m_typeIDToSystem[id];
+        void* system = m_typeIDToSystem[id];
 
         auto info = SystemRegistry::GetSystemByID(id);
 
-        ((void (*)(ISystem*))(info->destructor))(system);
+        ((void (*)(void*))(info->destructor))(system);
 
         free(system);
     }
 
     delete m_bvhtree;
+    delete world;
 
     logger::info("[ Scene ] Destroy '%p'.", this);
 }
@@ -61,8 +62,8 @@ Entity Scene::create(const char* name)
     GetWorldDynamic()->AddComponent<Transform>(e);
     if (name != nullptr)
         GetWorldDynamic()->AddComponent<Name>(e, { strdup(name) });
-
-    GetWorldDynamic()->AddComponent<Relationship>(e);
+    //
+    // GetWorldDynamic()->AddComponent<Relationship>(e);
     SetParent(m_root, e);
 
     return e;
@@ -114,8 +115,8 @@ Entity Scene::create(Entity other)
         if (go.GetComponent(typeID) != nullptr)
             continue;
 
-        auto dst = go.AddComponent(typeID);
-        auto src = otherGO.GetComponent(typeID);
+        void* dst = go.AddComponent(typeID);
+        void* src = otherGO.GetComponent(typeID);
 
         if (type->isTriviallyCopyable)
         {
@@ -413,7 +414,7 @@ void Scene::DelSystemByID(TypeID systemID)
 
     m_systems.erase(std::remove(m_systems.begin(), m_systems.end(), system), m_systems.end());
 
-    ((void(*)(ISystem*))(info->destructor))(system);
+    info->destructor(system);
     free(system);
 
     sortSystems();
@@ -422,7 +423,7 @@ void Scene::DelSystemByID(TypeID systemID)
 ISystem* Scene::createSystem(const SystemInfo* info)
 {
     void* system = malloc(info->stride);
-    ((void(*)(void*, const void*))(info->constructor))(system, nullptr);
+    info->constructor(system, nullptr);
 
     return (ISystem*)system;
 }
