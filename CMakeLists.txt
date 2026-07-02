@@ -83,7 +83,6 @@ set(managers_src
 
 set(ECS_SRC
     src/ecs/componentRegistry.cpp
-    src/ecs/archetypeStorage.cpp
     src/ecs/systemRegistry.cpp
     src/ecs/entityManager.cpp
     src/ecs/detail.cpp
@@ -186,6 +185,17 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     ${BULLET_INCLUDE_DIRS}
 )
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        -fsanitize=address,undefined
+        -fno-omit-frame-pointer
+    )
+
+    target_link_options(${PROJECT_NAME} PRIVATE
+        -fsanitize=address,undefined
+    )
+endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${BULLET_LIBRARIES} imgui)
 

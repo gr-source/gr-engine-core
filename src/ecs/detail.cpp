@@ -1,7 +1,5 @@
 #include "gr-base/ecs/detail.hpp"
 
-#include "gr-base/ecs/archetypeStorage.hpp"
-
 #include <cstdlib>
 
 namespace engine::ecs::detail

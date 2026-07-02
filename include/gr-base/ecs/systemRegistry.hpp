@@ -143,11 +143,11 @@ inline void SystemRegistry::Register()
     info.alignment = engine::type_traits::alignment<T>;
     
     // Methods
-    info.constructor = (MethodPointer)SystemRegistry::Constructor<T>;
-    info.destructor = (MethodPointer)SystemRegistry::Destructor<T>;
+    info.constructor = &SystemRegistry::Constructor<T>;
+    info.destructor = &SystemRegistry::Destructor<T>;
 
-    info.copy = (MethodPointer)SystemRegistry::Copy<T>;
-    info.move = (MethodPointer)SystemRegistry::Move<T>;
+    info.copy = &SystemRegistry::Copy<T>;
+    info.move = &SystemRegistry::Move<T>;
 
     info.depends_on = GetMask<Systems...>();
 
@@ -195,7 +195,7 @@ template <typename T>
 inline void SystemRegistry::Constructor(void* dst, const void* src)
 {
     if (src != nullptr)
-        new (dst) T(*static_cast<const T*>(src));
+        new (dst) T(*reinterpret_cast<const T*>(src));
     else
         new (dst) T();
 }

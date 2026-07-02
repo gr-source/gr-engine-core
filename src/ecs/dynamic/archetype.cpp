@@ -1,6 +1,8 @@
 #include "gr-base/ecs/dynamic/archetype.hpp"
 #include <cstdlib>
 
+#include <iostream>
+
 namespace engine::ecs::dynamic
 {
 ArchetypeID archetype::addEdges(TypeID typeID)
@@ -19,14 +21,18 @@ engine::ecs::detail::location archetype::allocate(Entity entity)
     ChunkID chunkID = freeChunk;
     assert(chunkID < chunkCapacity);
 
-    Chunk& chunk = chunks[chunkID];
+    Chunk* chunk = chunks[chunkID];
 
-    uint32_t row = static_cast<uint32_t>(chunk.count++);
-    assert(row < chunk.capacity);
+    Entity* entities = reinterpret_cast<Entity*>(
+        reinterpret_cast<uint8_t*>(chunk) + sizeof(Chunk)
+    );
 
-    chunk.entities[row] = entity;
+    uint32_t row = static_cast<uint32_t>(chunk->count++);
+    assert(row < layout->capacity);
 
-    if (chunk.count >= layout->capacity)
+    entities[row] = entity;
+
+    if (chunk->count >= layout->capacity)
     {
         freeChunk = freeList[chunkID];
         freeList[chunkID] = INVALID_CHUNK;
@@ -39,51 +45,83 @@ engine::ecs::detail::location archetype::allocate(Entity entity)
 
 uint8_t* archetype::get(engine::ecs::detail::location loc, const ComponentInfo* info) const
 {
-    assert(info->index < typeOffset_capacity);
-
     assert(loc.chunk < chunkCapacity);
 
-    Chunk& chunk = chunks[loc.chunk];
-    assert(chunk.count >= loc.row);
+    Chunk* chunk = chunks[loc.chunk];
+    assert(chunk != nullptr);
+    assert(loc.row < chunk->count);
 
-    uint8_t* array = chunk.array + layout->offsets[info->index];
+    assert(info->index < layout->numOffsets);
 
+    Entity* entities = reinterpret_cast<Entity*>(
+        reinterpret_cast<uint8_t*>(chunk) + sizeof(Chunk)
+    );
+
+    uint8_t* buffer = reinterpret_cast<uint8_t*>(
+        entities + layout->capacity
+    );
+
+    size_t offset = layout->offsets[info->index];
+
+    assert((offset % info->alignment) == 0);
+
+    uint8_t* array = buffer + offset;
+
+    // ✔ acesso final
     return array + (loc.row * info->stride);
 }
 
 uint8_t* archetype::getRaw(ChunkID chunkID, TypeID typeID) const
 {
-    assert(typeID < typeOffset_capacity);
     assert(chunkID < chunkCapacity);
 
-    Chunk& chunk = chunks[chunkID];
+    Chunk* chunk = chunks[chunkID];
+    assert(chunk != nullptr);
 
-    return chunk.array + layout->offsets[typeID];
+    Entity* entities = reinterpret_cast<Entity*>(
+        reinterpret_cast<uint8_t*>(chunk) + sizeof(Chunk)
+    );
+
+    uint8_t* buffer = reinterpret_cast<uint8_t*>(
+        entities + layout->capacity
+    );
+
+    size_t offset = layout->offsets[typeID];
+
+    assert((offset % layout->aligment) == 0);
+
+    uint8_t* array = buffer + offset;
+
+    // ✔ acesso final
+    return array;
 }
 
 Entity archetype::deallocate(engine::ecs::detail::location loc)
 {
     assert(loc.chunk < chunkCapacity);
 
-    Chunk& chunk = chunks[loc.chunk];
-    assert(chunk.count > 0);
-    assert(loc.row < chunk.count);
+    Chunk* chunk = chunks[loc.chunk];
+    // assert(chunk->count > 0);
+    // assert(loc.row < chunk.count);
 
-    bool wasFull = (chunk.count == layout->capacity);
+    bool wasFull = (chunk->count == layout->capacity);
 
     uint32_t dst_row = loc.row;
-    uint32_t src_row = --chunk.count;
+    uint32_t src_row = --chunk->count;
 
     Entity moved = INVALID_ENTITY;
 
     if (dst_row != src_row)
     {
+        Entity* entities = (Entity*)(chunk + 1);
+        uint8_t* buffer = (uint8_t*)(entities + layout->capacity);
+
         Signature temp = mask;
         while (temp)
         {
             auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
 
-            uint8_t* array = chunk.array + layout->offsets[info->index];
+            uint8_t* array = buffer + layout->offsets[info->index];
 
             uint8_t* src = array + (info->stride * src_row);
             uint8_t* dst = array + (info->stride * dst_row);
@@ -93,21 +131,24 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
             temp &= (temp - 1);
         }
 
-        moved = chunk.entities[src_row];
+        moved = entities[src_row];
 
-        chunk.entities[dst_row] = moved;
+        entities[dst_row] = moved;
     }
+
+    Entity* entities = (Entity*)(chunk + 1);
+    uint8_t* buffer = (uint8_t*)(entities + layout->capacity);
 
     Signature temp = mask;
     while (temp)
     {
         auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
 
-        uint8_t* array = chunk.array + layout->offsets[info->index];
+        uint8_t* array = buffer + layout->offsets[info->index];
 
         uint8_t* src = array + (info->stride * src_row);
 
-        ((void (*)(uint8_t*))(info->destructor))(src);
+        ((void (*)(void*))(info->destructor))(src);
         
         temp &= (temp - 1);
     }
@@ -129,20 +170,17 @@ void archetype::grow()
 
     chunkCapacity = chunkCapacity > 0 ? chunkCapacity * 2 : 2;
 
-    size_t chunkDataSize =
-        layout->capacity * sizeof(Entity) +
-        layout->capacity * layout->stride;
-
     freeList = (ChunkID*)realloc(freeList, chunkCapacity * sizeof(ChunkID));
-    chunks = (Chunk*)realloc(chunks, chunkCapacity * (sizeof(Chunk) + chunkDataSize));
+    chunks = (Chunk**)realloc(chunks, chunkCapacity * sizeof(Chunk*));
+
+    size_t alignedSize = (layout->payloadSize + layout->aligment - 1) & ~(layout->aligment - 1);
 
     for (size_t i=oldCapacity;i<chunkCapacity;i++)
     {
-        Chunk& chunk = chunks[i];
-        chunk.count = 0;
+        Chunk* ptr = (Chunk*)std::aligned_alloc(layout->aligment, alignedSize);;
+        ptr->count = 0;
 
-        chunk.entities = layout->capacity > 0 ? ((Entity*)malloc(layout->capacity * sizeof(Entity))) : nullptr;
-        chunk.array = layout->capacity > 0 ? ((uint8_t*)malloc(layout->capacity * layout->stride)) : nullptr;
+        chunks[i] = ptr;
     }
 
     addFreeID(oldCapacity);

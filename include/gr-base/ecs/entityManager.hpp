@@ -10,16 +10,17 @@ struct entity
     typedef struct EntityInfo
     {
         uint32_t next;
-        uint32_t generation = 1;
+        uint32_t generation;
     } EntityInfo;
 
-    EntityInfo *entities = nullptr;
+    EntityInfo *entities;
 
-    size_t capacity = 0;
-    size_t count = 0;
+    size_t capacity;
+    size_t count;
 
-    EntityID freeID = 0;
+    EntityID freeID;
 
+    entity();
     ~entity();
 
     Entity create();

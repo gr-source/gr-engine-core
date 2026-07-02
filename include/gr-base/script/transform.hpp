@@ -5,7 +5,7 @@
 
 #include <gr-math/gmath.hpp>
 
-struct Transform
+struct alignas(16) Transform
 {
     Vector3 position = Vector3::zero;
     Quaternion rotation = Quaternion::identity;

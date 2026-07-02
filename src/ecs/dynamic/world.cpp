@@ -2,15 +2,20 @@
 
 #include "gr-base/core/logger.hpp"
 
-#include "gr-base/ecs/archetypeStorage.hpp"
 #include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/entityManager.hpp"
 
 #include "gr-base/externals/handle.h"
+#include "gr-base/script/camera.hpp"
 
 #include <assert.h>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
+
+#define CHUNK_SIZE (1024 * 16)
+
+#include <iostream>
 
 namespace engine::ecs::dynamic
 {
@@ -74,10 +79,10 @@ void world::Destroy(Entity entity)
 
     auto& rec = entityRecords[entityID];
 
-    auto& arche = m_archetypePool[rec.archetype];
+    auto arche = GetArchetypeByID(rec.archetype);
 
     Entity moved = INVALID_ENTITY;
-    if ((moved = arche.deallocate(rec.location)) != INVALID_ENTITY)
+    if ((moved = arche->deallocate(rec.location)) != INVALID_ENTITY)
         entityRecords[handle_get_first(moved)].location = rec.location;
 
     entityRecords[entityID] = { m_emptyArchetypeStorage, engine::ecs::detail::location{ INVALID_CHUNK, INVALID_COMPONENT } };
@@ -88,6 +93,11 @@ void world::Destroy(Entity entity)
 bool world::IsAlive(Entity entity) const
 {
     return entityManager.isAlive(entity);
+}
+
+static inline size_t align_up(size_t value, size_t alignment)
+{
+    return (value + alignment - 1) & ~(alignment - 1);
 }
 
 ArchetypeID world::GetOrCreateArcheType(Signature mask, TypeID typeID)
@@ -114,28 +124,53 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask, TypeID typeID)
     ArchetypeID id = static_cast<ArchetypeID>(m_count++);
 
     engine::ecs::detail::layout layout;
-    layout.offsets = (size_t*)malloc(maxTypeID * sizeof(size_t));
+    if (maxTypeID > 0)
+    {
+        layout.numOffsets = maxTypeID;
+        layout.offsets = (size_t*)malloc(maxTypeID * sizeof(size_t));
+    }
 
-    for (auto& type : ComponentRegistry::GetTypesOfMask(mask))
+    size_t stride = 0;
+    size_t maxAlign = 1;
+
+    for (auto type : ComponentRegistry::GetTypesOfMask(mask))
     {
         auto info = ComponentRegistry::GetComponentByID(type);
 
-        layout.stride += info->stride;
+        stride += info->stride;
+        maxAlign = std::max(maxAlign, info->alignment);
     }
-    layout.capacity = layout.stride > 0 ? CHUNK_SIZE / layout.stride : 0;
+
+    layout.stride = stride;
+
+    layout.capacity = (stride > 0)
+        ? (CHUNK_SIZE / stride)
+        : 0;
 
     size_t offset = 0;
-    for (auto& type : ComponentRegistry::GetTypesOfMask(mask))
+
+    for (auto type : ComponentRegistry::GetTypesOfMask(mask))
     {
         auto info = ComponentRegistry::GetComponentByID(type);
+
+        offset = align_up(offset, info->alignment);
 
         layout.offsets[type] = offset;
 
         offset += info->stride * layout.capacity;
     }
 
+    layout.payloadSize = stride > 0 ? align_up(
+        sizeof(Chunk) +
+        sizeof(Entity) * layout.capacity +
+        stride * layout.capacity,
+        maxAlign
+    ) : 0;
 
-    engine::ecs::dynamic::archetype* arche = m_archetypePool + id;
+    layout.aligment = maxAlign;
+
+
+    engine::ecs::dynamic::archetype* arche = GetArchetypeByID(id);
     new (arche) engine::ecs::dynamic::archetype();
 
     arche->mask = mask;
@@ -144,10 +179,10 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask, TypeID typeID)
     arche->layout = (engine::ecs::detail::layout*)malloc(sizeof(engine::ecs::detail::layout));
     memcpy(arche->layout, &layout, sizeof(engine::ecs::detail::layout));
 
-    if (typeID != INVALID_TYPE)
+    // if (typeID != INVALID_TYPE)
     {
-        if (typeID >= arche->layout->graphy.capacity)
-            arche->layout->graphy.grow(typeID + 1);
+        if (maxTypeID >= arche->layout->graphy.capacity)
+            arche->layout->graphy.grow(maxTypeID + 1);
     }
 
     // new (&arche) engine::ecs::dynamic::archetype();
@@ -170,9 +205,11 @@ Signature world::GetMask(Entity e) const
 
     auto& loc = entityRecords[entityID];
 
-    auto& arche = m_archetypePool[loc.archetype];
+    auto arche = GetArchetypeByID(loc.archetype);
+    if (arche == nullptr)
+        return 0;
 
-    return arche.mask;
+    return arche->mask;
 }
 
 void* world::AddComponent(Entity e, TypeID typeID, const void* component)
@@ -203,6 +240,7 @@ void* world::AddComponent(Entity e, TypeID typeID, const void* component)
     MoveEntity(srcID, dstID, e);
 
     auto dst = GetArchetypeByID(dstID);
+
     void* ptr = (void*)dst->get(entityRecords[entityID].location, type);
 
     ((void(*)(void*, const void*))(type->constructor))(ptr, component);
@@ -290,14 +328,6 @@ size_t world::GetEntityCount() const
     return entityManager.count;
 }
 
-engine::ecs::dynamic::archetype* world::GetArchetypeByMask(Signature mask) const
-{
-    auto it = signatureToArchetype.find(mask);
-    if (it == signatureToArchetype.end())
-        return nullptr;
-    return m_archetypePool + it->second;
-}
-
 void world::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
 {
     EntityID entityID = handle_get_first(e);
@@ -348,8 +378,9 @@ void world::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
 
 engine::ecs::dynamic::archetype* world::GetArchetypeByID(ArchetypeID id) const
 {
-    assert(id < m_count);
-    return m_archetypePool + id;
+    if (id >= m_count)
+        return nullptr;
+    return &m_archetypePool[id];
 }
 
 void world::LinkAdd(TypeID typeID, ArchetypeID srcID, ArchetypeID dstID)
@@ -373,7 +404,11 @@ void world::resize()
 {
     m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
 
-    m_archetypePool = (engine::ecs::dynamic::archetype*)realloc(m_archetypePool, m_capacity * sizeof(engine::ecs::dynamic::archetype));
+    m_archetypePool =
+        (engine::ecs::dynamic::archetype*)realloc(
+            m_archetypePool,
+            m_capacity * sizeof(engine::ecs::dynamic::archetype)
+        );
 }
 }
 

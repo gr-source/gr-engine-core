@@ -49,7 +49,7 @@ struct world : engine::ecs::detail::world_base<engine::ecs::dynamic::archetype>
     template <typename T>
     T* GetComponent(Entity e)
     {
-        return static_cast<T*>(GetComponent(e, ComponentRegistry::GetTypeID<T>()));
+        return reinterpret_cast<T*>(GetComponent(e, ComponentRegistry::GetTypeID<T>()));
     }
 
     void* GetOrAddComponent(Entity e, TypeID typeID);
@@ -91,6 +91,7 @@ struct world : engine::ecs::detail::world_base<engine::ecs::dynamic::archetype>
     template<typename... Components, typename Func>
     void Query(Func&& func)
     {
+        return;
         Signature requiredMask = ComponentRegistry::GetMask<Components...>();
 
         for (size_t i=0;i<m_count;i++)
@@ -103,9 +104,9 @@ struct world : engine::ecs::detail::world_base<engine::ecs::dynamic::archetype>
             size_t chunk_count = arche.layout->capacity > 0 ? (arche.entityCount + arche.layout->capacity - 1) / arche.layout->capacity : 0;
             for (size_t j=0;j<chunk_count;j++)
             {
-                Chunk* chunk = arche.chunks + j;
+                Chunk* chunk = arche.chunks[j];
 
-                Entity* entities = (Entity*)chunk + 1;
+                Entity* entities = (Entity*)(chunk + 1);
 
                 func(entities, arche.getRaw<Components>(static_cast<ChunkID>(j))..., chunk->count);
             }
@@ -127,8 +128,6 @@ struct world : engine::ecs::detail::world_base<engine::ecs::dynamic::archetype>
     }
 
 private:
-
-    engine::ecs::dynamic::archetype* GetArchetypeByMask(Signature mask) const;
 
     void MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e);
 

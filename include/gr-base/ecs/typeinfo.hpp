@@ -5,6 +5,11 @@
 #include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
 
+using ConstructorFn = void(*)(void*, const void*);
+using DestructorFn  = void(*)(void*);
+using CopyFn        = void(*)(void*, const void*);
+using MoveFn        = void(*)(void*, void*);
+
 typedef void (*MethodPointer)();
 
 struct TypeInfo
@@ -16,11 +21,11 @@ struct TypeInfo
     size_t stride = 0;
     size_t alignment = 0;
 
-    MethodPointer constructor = nullptr;
-    MethodPointer destructor = nullptr;
+    ConstructorFn constructor;
+    DestructorFn destructor;
 
-    MethodPointer copy = nullptr;
-    MethodPointer move = nullptr;
+    CopyFn copy;
+    MoveFn move;
 };
 
 struct ComponentInfo : TypeInfo

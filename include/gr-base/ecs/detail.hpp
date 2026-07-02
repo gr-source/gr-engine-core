@@ -19,9 +19,11 @@ typedef struct layout
 {
     size_t capacity = 0;
     size_t stride = 0;
+    size_t aligment = 0;
 
     size_t payloadSize = 0;
 
+    size_t numOffsets = 0;
     size_t* offsets = nullptr;
 
     struct Graphy

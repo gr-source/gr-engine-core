@@ -34,11 +34,11 @@ struct ChangeSet
 class Scene
 {
 public:
-    engine::ecs::dynamic::world world;
+    engine::ecs::dynamic::world* world;
 
     inline engine::ecs::dynamic::world* GetWorldDynamic()
     {
-        return &world;
+        return world;
     }
 
     static Scene* GetCurrent();

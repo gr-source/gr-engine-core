@@ -5,16 +5,12 @@
 
 namespace engine::ecs::dynamic
 {
-    typedef struct Chunk
+    struct alignas(16) Chunk
     {
         size_t count = 0;
+    };
 
-        Entity* entities;
-
-        uint8_t* array;
-    } Chunk;
-
-    struct archetype : engine::ecs::detail::archetype_base<Chunk>
+    struct archetype : engine::ecs::detail::archetype_base<Chunk*>
     {
         ArchetypeID addEdges(TypeID typeID);
 

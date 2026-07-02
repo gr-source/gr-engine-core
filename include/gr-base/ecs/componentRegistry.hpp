@@ -145,11 +145,11 @@ inline void ComponentRegistry::Register(bool serializable)
     info.serializable = serializable;
 
     // Methods
-    info.constructor = (MethodPointer)ComponentRegistry::Constructor<T>;
-    info.destructor = (MethodPointer)ComponentRegistry::Destructor<T>;
+    info.constructor = &ComponentRegistry::Constructor<T>;
+    info.destructor = &ComponentRegistry::Destructor<T>;
 
-    info.copy = (MethodPointer)ComponentRegistry::Copy<T>;
-    info.move = (MethodPointer)ComponentRegistry::Move<T>;
+    info.copy = &ComponentRegistry::Copy<T>;
+    info.move = &ComponentRegistry::Move<T>;
 
     if constexpr (engine::type_traits::serialize<T>::value)
     {

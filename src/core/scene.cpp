@@ -4,9 +4,6 @@
 
 #include "gr-base/core/logger.hpp"
 
-#include "gr-base/ecs/archetypeStorage.hpp"
-#include "gr-base/ecs/default.hpp"
-
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
@@ -33,6 +30,8 @@ Scene::Scene() : m_bvhtree(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_EN
     logger::info("[ Scene ] Create '%p'.", this);
 
     m_bvhtree = new BVHtree();
+
+    world = new engine::ecs::dynamic::world();
 
     m_root = GetWorldDynamic()->Create();
     GetWorldDynamic()->AddComponent<Relationship>(m_root);
@@ -422,10 +421,10 @@ void Scene::DelSystemByID(TypeID systemID)
 
 ISystem* Scene::createSystem(const SystemInfo* info)
 {
-    ISystem* system = (ISystem*)malloc(info->stride);
-    ((void(*)(ISystem*, const ISystem*))(info->constructor))(system, nullptr);
+    void* system = malloc(info->stride);
+    ((void(*)(void*, const void*))(info->constructor))(system, nullptr);
 
-    return system;
+    return (ISystem*)system;
 }
 
 void Scene::sortSystems()

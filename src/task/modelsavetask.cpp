@@ -13,13 +13,9 @@
 
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/ecs/archetypeStorage.hpp"
-#include "gr-base/ecs/world.hpp"
-
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/relationship.hpp"
-#include "gr-base/script/transform.hpp"
 
 ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
 {
