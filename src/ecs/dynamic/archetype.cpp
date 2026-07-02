@@ -83,8 +83,20 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
     assert(loc.chunk < chunkCapacity);
 
     Chunk* chunk = chunks[loc.chunk];
-    // assert(chunk->count > 0);
-    // assert(loc.row < chunk.count);
+
+    Entity* entities = reinterpret_cast<Entity*>(
+        reinterpret_cast<uint8_t*>(chunk) + sizeof(Chunk)
+    );
+
+    uint8_t* ptr = reinterpret_cast<uint8_t*>(
+        entities + layout->capacity
+    );
+
+    uint64_t p = reinterpret_cast<uint64_t>(ptr);
+
+    uint64_t aligned = (p + layout->alignment - 1) & ~(layout->alignment - 1);
+
+    uint8_t* buffer = reinterpret_cast<uint8_t*>(aligned);
 
     bool wasFull = (chunk->count == layout->capacity);
 
@@ -93,11 +105,9 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
 
     Entity moved = INVALID_ENTITY;
 
+
     if (dst_row != src_row)
     {
-        Entity* entities = (Entity*)(chunk + 1);
-        uint8_t* buffer = (uint8_t*)(entities + layout->capacity);
-
         Signature temp = mask;
         while (temp)
         {
@@ -117,9 +127,6 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
 
         entities[dst_row] = moved;
     }
-
-    Entity* entities = (Entity*)(chunk + 1);
-    uint8_t* buffer = (uint8_t*)(entities + layout->capacity);
 
     Signature temp = mask;
     while (temp)

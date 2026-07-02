@@ -180,10 +180,6 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask, TypeID typeID)
             arche->layout->graphy.grow(maxTypeID + 1);
     }
 
-    // new (&arche) engine::ecs::dynamic::archetype();
-
-    // logger::debug("[world] Create new ArcheType 'id=%d mask=%d ptr=0x%lX'.", id, mask, archeType);
-
     signatureToArchetype.emplace(mask, id);
 
     return id;
