@@ -1,5 +1,6 @@
 #include "gr-base/system/transformsystem.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/core/geometry/mesh.hpp"
@@ -18,30 +19,35 @@
 void TransformSystem::Update(Scene* scene)
 {
     BVHtree* bvh = scene->GetBVHtree();
-    auto world = scene->GetWorldDynamic();
 
     auto entities = scene->Changed<Transform>();
     for (auto& entity : entities)
     {
-        auto transform = world->GetComponent<Transform>(entity);
-        if (transform == nullptr)
+        GameObject gameObject(scene, entity);
+        if (!gameObject.HasComponent<Transform>())
             continue;
 
+        auto transform = gameObject.GetComponent<Transform>();
         transform->localMatrix = Math::CreateTRS(transform->position, transform->rotation, transform->scale);
-
         transform->worldMatrix = transform->localMatrix;
 
-        auto rel = world->GetComponent<Relationship>(entity);
-        if (rel != nullptr && rel->parent != INVALID_ENTITY)
+        if (gameObject.HasComponent<Relationship>())
         {
-            Transform* parentTransform = world->GetComponent<Transform>(rel->parent);
-            if (parentTransform != nullptr)
-                transform->worldMatrix = parentTransform->worldMatrix * transform->localMatrix;
+            auto rel = gameObject.GetComponent<Relationship>();
+            if (rel->parent != INVALID_ENTITY)
+            {
+                GameObject parent(scene, rel->parent);
+                if (parent.HasComponent<Transform>())
+                {
+                    auto parentTransform = parent.GetComponent<Transform>();
+                    transform->worldMatrix = parentTransform->worldMatrix * transform->localMatrix;
+                }
+            }
         }
 
-        if (world->HasComponent<Transform, MeshFilter, MeshRender>(entity))
+        if (gameObject.HasComponent<Transform, MeshFilter, MeshRender>())
         {
-            auto meshFilter = world->GetComponent<MeshFilter>(entity);
+            auto meshFilter = gameObject.GetComponent<MeshFilter>();
             if (meshFilter != nullptr)
             {
                 auto mesh = AssetsManager::GetMesh(meshFilter->mesh);

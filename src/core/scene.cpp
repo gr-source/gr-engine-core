@@ -1,7 +1,7 @@
 #include "gr-base/core/scene.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/default.hpp"
-
 #include "gr-base/core/logger.hpp"
 
 #include "gr-base/managers/assetsManager.hpp"
@@ -25,13 +25,14 @@ Scene* Scene::GetCurrent()
     return SceneManager::GetCurrent();
 }
 
-Scene::Scene() : m_bvhtree(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_ENTITY), hierarchyDirty(false)
+Scene::Scene() :
+    world(new engine::ecs::dynamic::world()),
+    m_bvhtree(new BVHtree()),
+    m_root(INVALID_ENTITY),
+    m_camera(INVALID_ENTITY),
+    hierarchyDirty(false)
 {
     logger::info("[ Scene ] Create '%p'.", this);
-
-    m_bvhtree = new BVHtree();
-
-    world = new engine::ecs::dynamic::world();
 
     m_root = GetWorldDynamic()->Create();
     GetWorldDynamic()->AddComponent<Relationship>(m_root);
@@ -39,6 +40,8 @@ Scene::Scene() : m_bvhtree(nullptr), m_root(INVALID_ENTITY), m_camera(INVALID_EN
 
 Scene::~Scene()
 {
+    logger::info("[ Scene ] Destroy '%p'.", this);
+
     for (auto& id : m_systemIDs)
     {
         void* system = m_typeIDToSystem[id];
@@ -50,10 +53,11 @@ Scene::~Scene()
         free(system);
     }
 
-    delete m_bvhtree;
-    delete world;
+    if (m_bvhtree != nullptr)
+        delete m_bvhtree;
 
-    logger::info("[ Scene ] Destroy '%p'.", this);
+    if (world != nullptr)
+        delete world;
 }
 
 Entity Scene::create(const char* name)
@@ -61,7 +65,7 @@ Entity Scene::create(const char* name)
     Entity e = GetWorldDynamic()->Create();
     GetWorldDynamic()->AddComponent<Transform>(e);
     if (name != nullptr)
-        GetWorldDynamic()->AddComponent<Name>(e, { strdup(name) });
+        GetWorldDynamic()->AddComponent<Name>(e, strdup(name));
     //
     // GetWorldDynamic()->AddComponent<Relationship>(e);
     SetParent(m_root, e);
@@ -72,12 +76,10 @@ Entity Scene::create(const char* name)
 Entity Scene::create(Entity other)
 {
     if (other == INVALID_ENTITY)
-        return create(nullptr);
+        return INVALID_ENTITY;
 
-    Entity entity = GetWorldDynamic()->Create();
-
-    auto go = Wrap(entity);
-    const auto otherGO = Wrap(other);
+    GameObject go(this, GetWorldDynamic()->Create());
+    const GameObject otherGO(this, other);
     // m_isStatic = otherGO->m_isStatic;
 
     auto otherTrans = otherGO.GetComponent<Transform>();
@@ -95,7 +97,7 @@ Entity Scene::create(Entity other)
         while (sibling != INVALID_ENTITY)
         {
             Entity newChild = create(sibling);
-            SetParent(entity, newChild);
+            SetParent(go.entity, newChild);
 
             auto siblingRel = GetWorldDynamic()->GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
@@ -112,11 +114,11 @@ Entity Scene::create(Entity other)
     {
         auto type = ComponentRegistry::GetComponentByID(typeID);
 
-        if (go.GetComponent(typeID) != nullptr)
+        if (go.HasComponentByID(typeID))
             continue;
 
-        void* dst = go.AddComponent(typeID);
-        void* src = otherGO.GetComponent(typeID);
+        void* dst = go.GetOrAddComponentByID(typeID);
+        void* src = otherGO.GetComponentByID(typeID);
 
         if (type->isTriviallyCopyable)
         {
@@ -146,7 +148,7 @@ Entity Scene::create(Entity other)
         }
     }
 
-    return entity;
+    return go.entity;
 }
 
 void Scene::destroy(Entity e)
@@ -272,28 +274,28 @@ void Scene::Unlink(Entity entity)
     hierarchyDirty = true;
 }
 
-void Scene::SetParent(Entity parent, Entity child)
+void Scene::SetParent(Entity parentEntity, Entity childEntity)
 {
-    if (parent == child)
+    if (parentEntity == childEntity)
         return;
 
-    GetWorldDynamic()->GetOrAddComponent<Relationship>(child);
-    GetWorldDynamic()->GetOrAddComponent<Relationship>(parent);
+    GameObject parent(this, parentEntity);
+    GameObject child(this, childEntity);
 
-    auto childRel  = GetWorldDynamic()->GetComponent<Relationship>(child);
-    auto parentRel = GetWorldDynamic()->GetComponent<Relationship>(parent);
+    auto childRel  = child.GetOrAddComponent<Relationship>();
+    auto parentRel = parent.GetOrAddComponent<Relationship>();
 
     if (childRel->parent != INVALID_ENTITY)
-        Unlink(child);
+        Unlink(child.entity);
 
-    childRel->parent = parent;
+    childRel->parent = parent.entity;
     childRel->nextSibling = INVALID_ENTITY;
     childRel->prevSibling = INVALID_ENTITY;
 
     // Caso seja o primeiro filho
     if (parentRel->firstChild == INVALID_ENTITY)
     {
-        parentRel->firstChild = child;
+        parentRel->firstChild = child.entity;
     } else
     {
         Entity oldFirst = parentRel->firstChild;
@@ -304,31 +306,15 @@ void Scene::SetParent(Entity parent, Entity child)
         childRel->nextSibling = oldFirst;
 
         // antigo primeiro aponta de volta
-        oldFirstRel->prevSibling = child;
+        oldFirstRel->prevSibling = child.entity;
 
         // parent agora aponta pro novo
-        parentRel->firstChild = child;
+        parentRel->firstChild = child.entity;
     }
 
     hierarchyDirty = true;
 
-    MarkChildrenDirty(child);
-}
-
-std::string Scene::GetEntityName(Entity entity)
-{
-    GameObject go = Wrap(entity);
-
-    Name* name = go.GetComponent<Name>();
-    if (name != nullptr)
-    {
-        return name->value;
-    } else
-    {
-        EntityID entityID = handle_get_first(entity);
-
-        return "Entity " + std::to_string(entityID);
-    }
+    MarkChildrenDirty(child.entity);
 }
 
 void Scene::Update()

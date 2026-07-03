@@ -8,6 +8,7 @@
 
 #include "gr-base/spatial/bvhtree.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/scene.hpp"
 
@@ -59,7 +60,7 @@ void ModelLoadTask::onPostExecute(Result<ModelAsset> result)
 
 Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
 {
-    auto go = m_scene->Wrap(m_scene->create(asset->name.c_str()));
+    GameObject go(m_scene, m_scene->create(asset->name.c_str()));
 
     for (auto &&[hash, buffer] : asset->componentBuffer)
     {
@@ -67,10 +68,12 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         if (type == nullptr)
             continue;
 
-        if (!type->serializable)
+        void* component = go.GetOrAddComponentByID(type->index);
+        if (component == nullptr)
             continue;
 
-        auto component = go.GetOrAddComponent(type->index);
+        if (!type->serializable)
+            continue;
 
         if (type->isTriviallyCopyable)
         {

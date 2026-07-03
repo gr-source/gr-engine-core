@@ -4,6 +4,7 @@
 
 #include "gr-base/ecs/detail.hpp"
 #include "gr-base/ecs/default.hpp"
+#include "gr-base/externals/handle.h"
 
 #include <unordered_map>
 #include <memory>
@@ -11,8 +12,22 @@
 
 namespace engine::ecs::dynamic
 {
-struct world : engine::ecs::detail::world_base<engine::ecs::dynamic::archetype>
+struct world
 {
+    std::unordered_map<Signature, ArchetypeID> signatureToArchetype;
+
+    std::vector<engine::ecs::detail::records> entityRecords;
+
+    engine::ecs::manager::entity entityManager;
+
+    ArchetypeID m_emptyArchetypeStorage = INVALID_ARCHETYPE;
+
+    engine::ecs::dynamic::archetype* m_archetypePool = nullptr;
+    
+    size_t m_capacity = 0;
+
+    size_t m_count = 0;
+
     world();
     ~world();
 
@@ -26,65 +41,87 @@ struct world : engine::ecs::detail::world_base<engine::ecs::dynamic::archetype>
 
     Signature GetMask(Entity e) const;
 
-    void* AddComponent(Entity e, TypeID typeID, const void* component);
+    engine::ecs::detail::records Allocate(Entity entity, TypeID type);
 
-    inline void* AddComponent(Entity e, const char* name, const void* src)
+    template <typename T, typename... Args>
+    T* AddComponent(Entity entity, Args&&... args)
     {
-        return AddComponent(e, ComponentRegistry::GetTypeIDByName(name), src);
+        assert(entityManager.isAlive(entity));
+
+        TypeID type = ComponentRegistry::GetTypeID<T>();
+        assert(type != INVALID_TYPE);
+
+        auto record = Allocate(entity, type);
+
+        auto arche = GetArchetypeByID(record.archetype);
+
+        T* component = arche->get<T>(record.location);
+        new (component) T { std::forward<Args>(args)... };
+
+        return component;
     }
 
     template <typename T>
-    T* AddComponent(Entity e, T temp ={})
+    T* GetComponent(Entity entity) const
     {
-        return static_cast<T*>(AddComponent(e, ComponentRegistry::GetTypeID<T>(), &temp));
+        if (!entityManager.isAlive(entity))
+            return nullptr;
+
+        TypeID type = ComponentRegistry::GetTypeID<T>();
+        if (type == INVALID_TYPE)
+            return nullptr;
+
+        uint32_t entityID = handle_get_first(entity);
+        if (entityID > entityRecords.size())
+            return nullptr;
+
+        auto& record = entityRecords[entityID];
+        assert(record.archetype != INVALID_ARCHETYPE);
+        assert(record.mask != INVALID_SIGNATURE);
+
+        Signature requiredMask =
+            ComponentRegistry::GetMask<T>();
+        if (
+                record.archetype == INVALID_ARCHETYPE ||
+                record.mask == INVALID_SIGNATURE ||
+                ((record.mask & requiredMask) != requiredMask)
+            )
+            return nullptr;
+
+        auto arche = GetArchetypeByID(record.archetype);
+
+        return arche->get<T>(record.location);
     }
-
-    void* GetComponent(Entity e, TypeID typeID) const;
-
-    inline void* GetComponent(Entity e, const char* name) const
-    {
-        return GetComponent(e, ComponentRegistry::GetTypeIDByName(name));
-    }
-
-    template <typename T>
-    T* GetComponent(Entity e)
-    {
-        return reinterpret_cast<T*>(GetComponent(e, ComponentRegistry::GetTypeID<T>()));
-    }
-
-    void* GetOrAddComponent(Entity e, TypeID typeID);
-
-    inline void* GetOrAddComponent(Entity e, const char* name)
-    {
-        return GetOrAddComponent(e, ComponentRegistry::GetTypeIDByName(name));
-    }
-
-    template <typename T>
-    inline T* GetOrAddComponent(Entity e)
-    {
-        return static_cast<T*>(GetOrAddComponent(e, ComponentRegistry::GetTypeID<T>()));
-    }
-
-    bool HasComponent(Entity entity, Signature mask) const;
 
     template <typename... Components>
     bool HasComponent(Entity entity) const
     {
-        return HasComponent(entity, ComponentRegistry::GetMask<Components...>());
+        if (!entityManager.isAlive(entity))
+            return false;
+
+        Signature requiredMask =
+            ComponentRegistry::GetMask<Components...>();
+
+        uint32_t entityID = handle_get_first(entity);
+        assert(entityID < entityRecords.size());
+
+        auto& record = entityRecords[entityID];
+        assert(record.archetype != INVALID_ARCHETYPE);
+
+        return record.mask != INVALID_SIGNATURE && (record.mask & requiredMask) == requiredMask;
     }
 
-    void DelComponent(Entity e, Hash64 hash);
+    void* AddComponentByID(Entity entity, TypeID type);
 
-    void DelComponent(Entity e, const char* name)
-    {
-        DelComponent(e, engine::hash::fnv1_str(name));
-    }
+    void* GetComponentByID(Entity entity, TypeID type) const;
 
+    /*
     template <typename T>
     void DelComponent(Entity e)
     {
         DelComponent(e, engine::type_traits::hash<T>);
     }
+    */
 
     std::vector<TypeID> GetAllComponentType(Entity e) const;
 
@@ -105,11 +142,7 @@ struct world : engine::ecs::detail::world_base<engine::ecs::dynamic::archetype>
             {
                 Chunk* chunk = arche.chunks[j];
 
-                Entity* entities = reinterpret_cast<Entity*>(
-                    reinterpret_cast<uint8_t*>(chunk)
-                );
-
-                func(entities, arche.getRaw<Components>(static_cast<ChunkID>(j))..., chunk->count);
+                func(chunk->entities, arche.getRaw<Components>(static_cast<ChunkID>(j))..., chunk->count);
             }
         }
     }

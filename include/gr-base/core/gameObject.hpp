@@ -1,76 +1,71 @@
 #pragma once
 
-#include "gr-base/core/default.hpp"
+#include "gr-base/core/scene.hpp"
 
-#include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/default.hpp"
 
 struct GameObject
 {
+    engine::ecs::dynamic::world* world;
+
     Scene* scene;
 
     Entity entity;
 
-    bool IsAlive() const;
+    inline GameObject(Scene* scene, Entity entity) :
+        scene(scene), entity(entity), world(scene->GetWorldDynamic())
+    {}
 
-    void* AddComponent(TypeID typeID, const void* src = nullptr);
-
-    inline void* AddComponent(const char* name)
+    inline bool IsAlive() const
     {
-        return AddComponent(ComponentRegistry::GetTypeIDByName(name));
+        return world != nullptr && world->IsAlive(entity);
     }
 
-    template <typename T>
-    inline T* AddComponent(T temp = {})
+    std::string GetName() const;
+
+    template <typename T, typename... Args>
+    inline T* AddComponent(Args&&... args)
     {
-        return static_cast<T*>(AddComponent(ComponentRegistry::GetTypeID<T>(), &temp));
+        return world->AddComponent<T>(entity, std::forward<Args>(args)...);
     }
 
-    void* GetComponent(TypeID typeID) const;
-
-    inline void* GetComponent(const char* name) const
-    {
-        return GetComponent(ComponentRegistry::GetTypeIDByName(name));
-    }
+    void* AddComponentByID(TypeID type);
 
     template <typename T>
     inline T* GetComponent() const
     {
-        return static_cast<T*>(GetComponent(ComponentRegistry::GetTypeID<T>()));
+        return world->GetComponent<T>(entity);
     }
 
-    void* GetOrAddComponent(TypeID typeID);
-
-    inline void* GetOrAddComponent(const char* name)
-    {
-        return GetOrAddComponent(ComponentRegistry::GetTypeIDByName(name));
-    }
+    void* GetComponentByID(TypeID type) const;
 
     template <typename T>
     inline T* GetOrAddComponent()
     {
-        return static_cast<T*>(GetOrAddComponent(ComponentRegistry::GetTypeID<T>()));
+        return HasComponent<T>() ? GetComponent<T>() : AddComponent<T>();
     }
 
-    bool HasComponent(Signature mask) const;
+    inline void* GetOrAddComponentByID(TypeID type)
+    {
+        return HasComponentByID(type) ? GetComponentByID(type) : AddComponentByID(type);
+    }
 
     template <typename... Components>
     bool HasComponent() const
     {
-        return HasComponent(ComponentRegistry::GetMask<Components...>());
+        return world->HasComponent<Components...>(entity);
     }
 
-    void DelComponent(TypeID typeID);
+    bool HasComponentByID(TypeID type) const;
 
-    inline void DelComponent(const char* name)
-    {
-        DelComponent(ComponentRegistry::GetTypeIDByName(name));
-    }
+    std::vector<TypeID> GetAllComponentIDs() const;
 
+    /*
     template <typename T>
     inline void DelComponent()
     {
         DelComponent(ComponentRegistry::GetTypeID<T>());
     }
+    */
 };
 

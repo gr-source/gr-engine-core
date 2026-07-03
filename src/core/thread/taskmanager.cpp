@@ -27,23 +27,24 @@ void TaskManager::Shutdown()
 }
 
 // private
-void TaskManager::update(std::shared_ptr<ITask> task)
+void TaskManager::update(std::shared_ptr<TaskInfo> info)
 {
-    task->run();
+    info->task->run();
 
-    MainThreadDispatcher::Add(Priority::NORMAL, &TaskManager::finish, this, task);
+    MainThreadDispatcher::Add(Priority::NORMAL, &TaskManager::finish, this, info);
 }
 
-void TaskManager::finish(std::shared_ptr<ITask> task)
+void TaskManager::finish(std::shared_ptr<TaskInfo> info)
 {
-    task->finish();
-
+    auto task = info->task.get();
     {
         std::lock_guard<std::mutex> lock(task->mutex);
         task->finished = true;
     }
 
     task->cv.notify_all();
+
+    task->finish();
 }
 
 

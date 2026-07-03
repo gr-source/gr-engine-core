@@ -94,8 +94,6 @@ TextureHandle AssetsManager::LoadTexture(AssetHash hash)
             throw std::runtime_error("Unsupported channel count: " + std::to_string(asset.channels));
     }
 
-    texture->create();
-
     gr::BindTexture(texture);
     gr::ApplyTextureSettings(texture);
     gr::ApplyTextureBuffer(texture, asset.raw.data());
@@ -108,7 +106,6 @@ TextureHandle AssetsManager::CreateTexture(AssetHash hash)
 {
     return s_AssetsManager->mTextureManager->create(hash);
 }
-
 
 gr::Texture* AssetsManager::GetTexture(TextureHandle h)
 {

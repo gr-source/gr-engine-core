@@ -49,6 +49,9 @@ SystemRegistry::SystemRegistry() :
 SystemRegistry::~SystemRegistry()
 {
     logger::info("[ SystemRegistry ] Shutdown '%p'.", this);
+
+    if (m_systems != nullptr)
+        free(m_systems);
 }
 
 void SystemRegistry::register_info(SystemInfo* src)

@@ -1,36 +1,39 @@
 #include "gr-base/core/gameObject.hpp"
 
-#include "gr-base/core/scene.hpp"
+#include "gr-base/script/name.hpp"
 
-bool GameObject::IsAlive() const
+std::string GameObject::GetName() const
 {
-    return scene->GetWorldDynamic()->IsAlive(entity);
+    Name* name = GetComponent<Name>();
+    if (name != nullptr)
+        return name->value;
+
+    EntityID entityID = handle_get_first(entity);
+
+    return "Entity " + std::to_string(entityID);
 }
 
-void* GameObject::AddComponent(TypeID typeID, const void* src)
+void* GameObject::AddComponentByID(TypeID type)
 {
-    return scene->GetWorldDynamic()->AddComponent(entity, typeID, src);
+    return world->AddComponentByID(entity, type);
 }
 
-void* GameObject::GetComponent(TypeID typeID) const
+void* GameObject::GetComponentByID(TypeID type) const
 {
-    return scene->GetWorldDynamic()->GetComponent(entity, typeID);
+    return world->GetComponentByID(entity, type);
 }
 
-void* GameObject::GetOrAddComponent(TypeID typeID)
+bool GameObject::HasComponentByID(TypeID type) const
 {
-    return scene->GetWorldDynamic()->GetOrAddComponent(entity, typeID);
+    assert(world != nullptr);
+
+    Signature mask = (1ull << type);
+
+    return (world->GetMask(entity) & mask) == mask;
 }
 
-bool GameObject::HasComponent(Signature mask) const
+std::vector<TypeID> GameObject::GetAllComponentIDs() const
 {
-    return scene->GetWorldDynamic()->HasComponent(entity, mask);
+    return world->GetAllComponentType(entity);
 }
-
-void GameObject::DelComponent(TypeID typeID)
-{
-    scene->GetWorldDynamic()->DelComponent(entity, typeID);
-}
-
-
 

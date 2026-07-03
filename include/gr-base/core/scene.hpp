@@ -1,6 +1,5 @@
 #pragma once
 
-#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/default.hpp"
 
 #include "gr-base/core/system.hpp"
@@ -57,11 +56,6 @@ public:
 
     Entity create(Entity other);
 
-    inline GameObject Wrap(Entity e)
-    {
-        return {this, e};
-    }
-
     void destroy(Entity e);
 
     void select(Handle id);
@@ -102,8 +96,6 @@ public:
     {
         return m_camera;
     }
-
-    std::string GetEntityName(Entity entity);
 
     void Update();
 

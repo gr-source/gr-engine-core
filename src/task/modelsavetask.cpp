@@ -11,18 +11,17 @@
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/file.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/scene.hpp"
 
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/relationship.hpp"
 
-ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
+ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
 {
-    auto gameObject = scene->Wrap(entity);
-
     ModelAsset asset;
-    asset.name = scene->GetEntityName(entity);
+    asset.name = gameObject.GetName();
     asset.isStatic = false;
 
     auto meshRef = gameObject.GetComponent<MeshRef>();
@@ -36,11 +35,11 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
             asset.materials.push_back(materialRef->materials[i]);
     }
 
-    for (auto& typeID : scene->GetWorldDynamic()->GetAllComponentType(entity))
+    for (auto& typeID : gameObject.GetAllComponentIDs())
     {
         auto type = ComponentRegistry::GetComponentByID(typeID);
 
-        auto component = gameObject.GetComponent(typeID);
+        auto component = gameObject.GetComponentByID(typeID);
 
         std::vector<uint8_t> buffer;
         if (type->serializable)
@@ -71,9 +70,11 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
         Entity sibling = rel->firstChild;
         while (sibling != INVALID_ENTITY)
         {
-            asset.childrent.push_back(ConvertToAssetModel(scene, sibling));
+            GameObject siblingGo(gameObject.scene, sibling);
 
-            auto siblingRel = scene->GetWorldDynamic()->GetComponent<Relationship>(sibling);
+            asset.childrent.push_back(ConvertToAssetModel(siblingGo));
+
+            auto siblingRel = siblingGo.GetComponent<Relationship>();
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;
@@ -85,7 +86,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(Scene* scene, Entity entity)
 ModelSaveTask::ModelSaveTask(const URI& uri, const ModelAsset& asset) : m_uri(uri), m_asset(asset)
 {}
 
-ModelSaveTask::ModelSaveTask(const URI& uri, Scene* scene, Entity entity) : m_uri(uri), m_asset(ConvertToAssetModel(scene, entity))
+ModelSaveTask::ModelSaveTask(const URI& uri, const GameObject& gameObject) : m_uri(uri), m_asset(ConvertToAssetModel(gameObject))
 {}
 
 void ModelSaveTask::onPreExecute()

@@ -1,4 +1,5 @@
 #include "gr-base/ecs/dynamic/archetype.hpp"
+#include <cassert>
 #include <cstdlib>
 
 #include <iostream>
@@ -23,14 +24,10 @@ engine::ecs::detail::location archetype::allocate(Entity entity)
 
     Chunk* chunk = chunks[chunkID];
 
-    Entity* entities = reinterpret_cast<Entity*>(
-        reinterpret_cast<uint8_t*>(chunk) + sizeof(Chunk)
-    );
-
     uint32_t row = static_cast<uint32_t>(chunk->count++);
     assert(row < layout->capacity);
 
-    entities[row] = entity;
+    chunk->entities[row] = entity;
 
     if (chunk->count >= layout->capacity)
     {
@@ -40,42 +37,18 @@ engine::ecs::detail::location archetype::allocate(Entity entity)
 
     entityCount++;
 
-    return {chunkID, row};
+    return { chunkID, row };
 }
 
-uint8_t* archetype::get(engine::ecs::detail::location loc, const ComponentInfo* info) const
-{
-    return getRaw(loc.chunk, info->index) + (loc.row * info->stride);
-}
-
-uint8_t* archetype::getRaw(ChunkID chunkID, TypeID typeID) const
+void* archetype::getRaw(ChunkID chunkID, TypeID typeID) const
 {
     assert(chunkID < chunkCapacity);
+    assert(typeID < layout->numOffsets);
 
     Chunk* chunk = chunks[chunkID];
     assert(chunk != nullptr);
 
-    Entity* entities = reinterpret_cast<Entity*>(
-        reinterpret_cast<uint8_t*>(chunk) + sizeof(Chunk)
-    );
-
-    uint8_t* ptr = reinterpret_cast<uint8_t*>(
-        entities + layout->capacity
-    );
-
-    uint64_t p = reinterpret_cast<uint64_t>(ptr);
-
-    uint64_t aligned = (p + layout->alignment - 1) & ~(layout->alignment - 1);
-
-    uint8_t* buffer = reinterpret_cast<uint8_t*>(aligned);
-
-    size_t offset = layout->offsets[typeID];
-
-    assert((offset % layout->alignment) == 0);
-
-    uint8_t* array = buffer + offset;
-
-    return array;
+    return static_cast<void*>(chunk->base + layout->offsets[typeID]);
 }
 
 Entity archetype::deallocate(engine::ecs::detail::location loc)
@@ -83,20 +56,6 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
     assert(loc.chunk < chunkCapacity);
 
     Chunk* chunk = chunks[loc.chunk];
-
-    Entity* entities = reinterpret_cast<Entity*>(
-        reinterpret_cast<uint8_t*>(chunk) + sizeof(Chunk)
-    );
-
-    uint8_t* ptr = reinterpret_cast<uint8_t*>(
-        entities + layout->capacity
-    );
-
-    uint64_t p = reinterpret_cast<uint64_t>(ptr);
-
-    uint64_t aligned = (p + layout->alignment - 1) & ~(layout->alignment - 1);
-
-    uint8_t* buffer = reinterpret_cast<uint8_t*>(aligned);
 
     bool wasFull = (chunk->count == layout->capacity);
 
@@ -113,7 +72,7 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
         {
             auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
 
-            uint8_t* array = buffer + layout->offsets[info->index];
+            uint8_t* array = chunk->base + layout->offsets[info->index];
 
             void* src = array + (info->stride * src_row);
             void* dst = array + (info->stride * dst_row);
@@ -123,9 +82,9 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
             temp &= (temp - 1);
         }
 
-        moved = entities[src_row];
+        moved = chunk->entities[src_row];
 
-        entities[dst_row] = moved;
+        chunk->entities[dst_row] = moved;
     }
 
     Signature temp = mask;
@@ -133,7 +92,7 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
     {
         auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
 
-        uint8_t* array = buffer + layout->offsets[info->index];
+        uint8_t* array = chunk->base + layout->offsets[info->index];
 
         void* src = array + (info->stride * src_row);
 
@@ -162,17 +121,45 @@ void archetype::grow()
     freeList = (ChunkID*)realloc(freeList, chunkCapacity * sizeof(ChunkID));
     chunks = (Chunk**)realloc(chunks, chunkCapacity * sizeof(Chunk*));
 
-    size_t alignedSize = (layout->payloadSize + layout->alignment - 1) & ~(layout->alignment - 1);
-
     for (size_t i=oldCapacity;i<chunkCapacity;i++)
-    {
-        Chunk* ptr = (Chunk*)std::aligned_alloc(layout->alignment, alignedSize);;
-        ptr->count = 0;
-
-        chunks[i] = ptr;
-    }
+        chunks[i] = create();
 
     addFreeID(oldCapacity);
+}
+
+
+Chunk* archetype::create() const
+{
+    Chunk* chunk = (Chunk*)std::aligned_alloc(layout->alignment, layout->payloadSize);;
+    new (chunk) Chunk;
+
+    chunk->entities =
+        reinterpret_cast<Entity*>(
+            reinterpret_cast<uint8_t*>(chunk) + sizeof(Chunk)
+        );
+
+    size_t headerAndEntitiesSize =
+        sizeof(Chunk) +
+        (sizeof(Entity) * layout->capacity);
+
+    size_t baseOffset = align_up(headerAndEntitiesSize, layout->alignment);
+
+    chunk->base = reinterpret_cast<uint8_t*>(
+        chunk
+    ) + baseOffset;
+
+    /*
+    uint64_t p = reinterpret_cast<uint64_t>(
+            chunk->entities +
+            layout->capacity
+        );
+
+    uint64_t aligned = (p + layout->alignment - 1) & ~(layout->alignment - 1);
+
+    chunk->base = reinterpret_cast<uint8_t*>(aligned);
+    */
+
+    return chunk;
 }
 
 void archetype::addFreeID(size_t oldCapacity)
@@ -185,3 +172,5 @@ void archetype::addFreeID(size_t oldCapacity)
     freeChunk = static_cast<ChunkID>(oldCapacity);
 }
 }
+
+

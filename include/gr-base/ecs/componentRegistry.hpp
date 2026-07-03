@@ -203,8 +203,8 @@ inline TypeID ComponentRegistry::GetTypeID()
     static_assert(engine::type_traits::category<T> == TypeCategory::Component,
         "TypeTraits must be specialized for T");
 
-    static TypeID id = s_ComponentRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
-    return id;
+    static TypeID cacheID = s_ComponentRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
+    return cacheID;
 }
 
 template <typename T>

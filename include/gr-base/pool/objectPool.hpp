@@ -12,7 +12,6 @@
 
 typedef uint32_t PoolID;
 
-#include <iostream>
 template <typename T>
 class ObjectPool
 {

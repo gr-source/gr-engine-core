@@ -12,10 +12,10 @@
 class ModelSaveTask : public IAsyncTask<std::string>
 {
 public:
-    static ModelAsset ConvertToAssetModel(Scene* scene, Entity entity);
+    static ModelAsset ConvertToAssetModel(const GameObject& gameObject);
 
     ModelSaveTask(const URI& uri, const ModelAsset& asset);
-    ModelSaveTask(const URI& uri, Scene* scene, Entity entity);
+    ModelSaveTask(const URI& uri, const GameObject& gameObject);
 
 private:
     const ModelAsset m_asset;

@@ -54,6 +54,9 @@ ComponentRegistry::ComponentRegistry() :
 ComponentRegistry::~ComponentRegistry()
 {
     logger::info("[ ComponentRegistry ] Shutdown '%p'.", this);
+
+    if (m_components != nullptr)
+        free(m_components);
 }
 
 void ComponentRegistry::register_info(ComponentInfo* src)

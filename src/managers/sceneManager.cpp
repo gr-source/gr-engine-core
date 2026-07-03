@@ -75,8 +75,6 @@ Scene *SceneManager::create(const std::string &name)
         m_sceneList.push_back(it->second.get());
 
         m_scenenamemap.emplace(it->second.get(), name);
-
-        set_active(it->second.get());
     }
 
     return it->second.get();
@@ -111,13 +109,13 @@ void SceneManager::remove(Scene *scene)
 {
     auto it = m_scenenamemap.find(scene);
     if (it == m_scenenamemap.end())
-    {
         return;
-    }
+
+    m_sceneList.erase(std::remove(m_sceneList.begin(), m_sceneList.end(), scene), m_sceneList.end());
+    
+    m_scenemap.erase(it->second);
 
     m_scenenamemap.erase(it);
-    m_sceneList.erase(std::remove(m_sceneList.begin(), m_sceneList.end(), scene), m_sceneList.end());
-    m_scenemap.erase(it->second);
 }
 
 void SceneManager::set_active(Scene *scene)

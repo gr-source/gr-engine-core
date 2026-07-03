@@ -6,12 +6,15 @@
 
 #include <gr-render/default.hpp>
 
+#include "gr-base/pool/objectPool.hpp"
+
 #include <unordered_map>
 
 class TextureManager
 {
 public:
     TextureManager();
+    ~TextureManager();
 
     TextureHandle create(AssetHash hash);
 
@@ -24,27 +27,9 @@ public:
     size_t GetCount() const;
 
 private:
-    struct Slot
-    {
-        uint32_t next;
-        uint32_t version;
-        AssetHash hash;
-    };
-
     std::unordered_map<AssetHash, TextureHandle> m_hashmap;
 
-    gr::Texture* m_pool;
-
-    size_t m_capacity;
-
-    size_t m_count;
-
-    Slot *m_slots;
-    uint32_t m_freeID;
-
-    void resize();
-
-    void addFreeID(size_t oldCapacity);
+    ObjectPool<gr::Texture> m_pool;
 };
 
 
