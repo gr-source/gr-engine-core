@@ -29,15 +29,11 @@ struct GameObject
         return world->AddComponent<T>(entity, std::forward<Args>(args)...);
     }
 
-    void* AddComponentByID(TypeID type);
-
     template <typename T>
     inline T* GetComponent() const
     {
         return world->GetComponent<T>(entity);
     }
-
-    void* GetComponentByID(TypeID type) const;
 
     template <typename T>
     inline T* GetOrAddComponent()
@@ -45,16 +41,26 @@ struct GameObject
         return HasComponent<T>() ? GetComponent<T>() : AddComponent<T>();
     }
 
-    inline void* GetOrAddComponentByID(TypeID type)
-    {
-        return HasComponentByID(type) ? GetComponentByID(type) : AddComponentByID(type);
-    }
-
     template <typename... Components>
     bool HasComponent() const
     {
         return world->HasComponent<Components...>(entity);
     }
+
+    inline void* GetOrAddComponentByID(TypeID type)
+    {
+        return HasComponentByID(type) ? GetComponentByID(type) : AddComponentByID(type);
+    }
+
+    void* AddComponentByName(const std::string& name);
+
+    void* AddComponentByID(TypeID type);
+
+    void* GetComponentByName(const std::string& name) const;
+
+    void* GetComponentByID(TypeID type) const;
+
+    bool HasComponentByName(const std::string& name) const;
 
     bool HasComponentByID(TypeID type) const;
 
