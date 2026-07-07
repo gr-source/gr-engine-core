@@ -85,12 +85,9 @@ set(ECS_SRC
     src/ecs/componentRegistry.cpp
     src/ecs/systemRegistry.cpp
     src/ecs/entityManager.cpp
+    src/ecs/archetype.cpp
     src/ecs/detail.cpp
     src/ecs/world.cpp
-
-
-    src/ecs/dynamic/archetype.cpp
-    src/ecs/dynamic/world.cpp
 )
 
 set(EXTERNAL_SRC

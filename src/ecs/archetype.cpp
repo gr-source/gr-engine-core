@@ -1,10 +1,8 @@
-#include "gr-base/ecs/dynamic/archetype.hpp"
+#include "gr-base/ecs/archetype.hpp"
 #include <cassert>
 #include <cstdlib>
 
-#include <iostream>
-
-namespace engine::ecs::dynamic
+namespace engine::ecs
 {
 ArchetypeID archetype::addEdges(TypeID typeID)
 {

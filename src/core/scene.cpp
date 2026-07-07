@@ -26,7 +26,7 @@ Scene* Scene::GetCurrent()
 }
 
 Scene::Scene() :
-    world(new engine::ecs::dynamic::world()),
+    world(new engine::ecs::world()),
     m_bvhtree(new BVHtree()),
     m_root(INVALID_ENTITY),
     m_camera(INVALID_ENTITY),

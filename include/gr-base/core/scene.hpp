@@ -5,9 +5,7 @@
 #include "gr-base/core/system.hpp"
 
 #include "gr-base/ecs/systemRegistry.hpp"
-#include "gr-base/ecs/dynamic/world.hpp"
 #include "gr-base/ecs/world.hpp"
-#include "gr-base/ecs/detail.hpp"
 
 #include "gr-base/spatial/default.hpp"
 
@@ -33,9 +31,9 @@ struct ChangeSet
 class Scene
 {
 public:
-    engine::ecs::dynamic::world* world;
+    engine::ecs::world* world;
 
-    inline engine::ecs::dynamic::world* GetWorldDynamic()
+    inline engine::ecs::world* GetWorldDynamic()
     {
         return world;
     }

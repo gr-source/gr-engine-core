@@ -1,219 +1,58 @@
 #pragma once
 
+#include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/detail.hpp"
-#include "type_traits.hpp"
-#include "default.hpp"
-
-#include <cstdlib>
-
-#define INVALIDU32 UINT32_MAX
-#define INVALIDU64 UINT64_MAX
 
 namespace engine::ecs
 {
-template <size_t N, typename T>
-struct StackBase
-{
-    T data[N];
-};
-
-template <size_t N, typename... T>
-struct MultiStack : StackBase<N, T>...
-{
-};
-
-typedef struct Chunk Chunk;
-
-template <typename... Components>
-struct archetype : engine::ecs::detail::archetype_base<Chunk>
-{
-    static constexpr size_t CAPACITY = engine::type_traits::capacity<Components...>;
-
-    template <typename T>
-    using Component = StackBase<CAPACITY, T>;
-
-    typedef struct Chunk
+    struct alignas(16) Chunk
     {
         size_t count = 0;
 
-        Entity entities[CAPACITY];
+        Entity* entities = nullptr;
 
-        MultiStack<CAPACITY, Components...> array;
-    } Chunk;
+        uint8_t* base = nullptr;
+    };
 
-    using ChunkID = uint32_t;
-
-    // ========================================
-
-    size_t chunkCapacity = 0;
-    Chunk* chunks = nullptr;
-
-    // ========================================
-
-    ~archetype()
+    struct archetype
     {
-        size_t chunk_count = CAPACITY > 0 ? (entityCount + CAPACITY - 1) / CAPACITY : 0;
+        engine::ecs::detail::layout* layout = nullptr;
 
-        for (size_t i=0;i<chunk_count;i++)
+        Signature mask = INVALID_SIGNATURE;
+
+        ChunkID freeChunk = INVALID_CHUNK;
+        ChunkID* freeList = nullptr;
+
+        size_t entityCount = 0;
+
+        size_t chunkCapacity = 0;
+        Chunk** chunks = nullptr;
+
+        ArchetypeID addEdges(TypeID typeID);
+
+        engine::ecs::detail::location allocate(Entity entity);
+
+        template <typename T>
+        inline T* get(engine::ecs::detail::location loc) const
         {
-            Chunk& chunk = chunks[i];
-
-            for (size_t j=0;j<chunk.count;j++)
-            {
-                (apply_destructor(
-                       static_cast<Component<Components>&>(chunk.array).data[j]), ...);
-            }
+            return getRaw<T>(loc.chunk) + loc.row;
         }
 
-        if (chunks != nullptr)
-            free(chunks);
-
-        if (freeList != nullptr)
-            free(freeList);
-    }
-
-    template <typename T>
-    void apply_construtor(T& dst, const T& src)
-    {
-        new (&dst) T(src);
-    }
-
-    template <typename T>
-    void apply_construtor_move(T& dst, const T& src)
-    {
-        dst = std::move(src);
-
-        apply_destructor(src);
-
-        // new (&dst) T(std::move(src));
-    }
-
-    template <typename T>
-    void apply_destructor(T& dst)
-    {
-        dst.~T();
-    }
-
-    engine::ecs::detail::location Add(Entity entity, const Components&... components)
-    {
-        if (freeChunk == INVALIDU32)
-            grow();
-
-        ChunkID chunkID = freeChunk;
-        assert(chunkID < capacity);
-
-        Chunk& chunk = chunks[chunkID];
-        assert(chunk.count < CAPACITY);
-
-        uint32_t row = static_cast<uint32_t>(chunk.count++);
-        chunk.entities[row] = entity;
-
-        if (chunk.count >= CAPACITY)
+        template <typename T>
+        inline T* getRaw(ChunkID chunkID) const
         {
-            freeChunk = freeList[chunkID];
-            freeList[chunkID] = INVALIDU32;
+            return reinterpret_cast<T*>(getRaw(chunkID, ComponentRegistry::GetTypeID<T>()));
         }
 
-        (apply_construtor(static_cast<StackBase<CAPACITY, Components>&>(chunk.array).data[row], components), ...);
+        void* getRaw(ChunkID chunkID, TypeID typeID) const;
 
-        entityCount++;
+        Entity deallocate(engine::ecs::detail::location loc);
 
-        return { chunkID, row };
-    }
+        void grow();
 
-    Entity Del(engine::ecs::detail::location loc)
-    {
-        assert(loc.chunk < capacity);
+        Chunk* create() const;
 
-        Chunk& chunk = chunks[loc.chunk];
-        assert(loc.row < chunk.count);
-
-        bool wasFull = (chunk.count == CAPACITY);
-
-        uint32_t dst_row = loc.row;
-        uint32_t src_row = --chunk.count;
-
-        Entity moved = INVALIDU64;
-
-        if (dst_row != src_row)
-        {
-            (apply_construtor_move(
-                   static_cast<Component<Components>&>(chunk.array).data[dst_row],
-                   static_cast<Component<Components>&>(chunk.array).data[src_row]), ...);
-
-            moved = chunk.entities[src_row];
-
-            chunk.entities[dst_row] = moved;
-        }
-
-        (apply_destructor(
-               static_cast<Component<Components>&>(chunk.array).data[src_row]), ...);
-
-        if (wasFull)
-        {
-            freeList[loc.chunk] = freeChunk;
-            freeChunk = loc.chunk;
-        }
-
-        entityCount--;
-
-        return moved;
-    }
-
-    template <typename T>
-    T& Get(engine::ecs::detail::location loc)
-    {
-        assert(loc.chunk < capacity);
-        
-        Chunk& chunk = chunks[loc.chunk];
-        assert(chunk.count < CAPACITY);
-
-        Component<T>& components = chunk.array;
-
-        return components.data[loc.row];
-    }
-
-    void grow()
-    {
-        size_t oldCapacity = chunkCapacity;
-
-        chunkCapacity = chunkCapacity > 0 ? chunkCapacity * 2 : 2;
-
-        chunks = (Chunk*)realloc(chunks, chunkCapacity * sizeof(Chunk));
-        freeList = (ChunkID*)realloc(freeList, chunkCapacity * sizeof(ChunkID));
-
-        for (size_t i=oldCapacity;i<chunkCapacity;i++)
-            new (chunks + i) Chunk();
-
-        addFreeList(oldCapacity);
-    }
-
-    void addFreeList(size_t oldCapacity)
-    {
-        for (size_t i=oldCapacity;i<chunkCapacity - 1;i++)
-            freeList[i] = static_cast<ChunkID>(i + 1);
-
-        freeList[chunkCapacity - 1] = freeChunk;
-        freeChunk = static_cast<ChunkID>(oldCapacity);
-    }
-
-    template <typename Func>
-    void each(Func&& func)
-    {
-        size_t chunk_count = CAPACITY > 0 ? (entityCount + CAPACITY - 1) / CAPACITY : 0;
-
-        for (size_t i=0;i<chunk_count;i++)
-        {
-            Chunk& chunk = chunks[i];
-
-            func(chunk.count, chunk.entities, static_cast<StackBase<CAPACITY, Components>&>(chunk.array).data...);
-        }
-    }
-};
-
+        void addFreeID(size_t oldCapacity);
+    };
 }
-
-#undef INVALIDU32
-#undef INVALIDU64
-
 

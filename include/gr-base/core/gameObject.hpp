@@ -6,7 +6,7 @@
 
 struct GameObject
 {
-    engine::ecs::dynamic::world* world;
+    engine::ecs::world* world;
 
     Scene* scene;
 
