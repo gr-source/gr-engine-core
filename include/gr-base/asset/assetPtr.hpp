@@ -6,14 +6,13 @@ template<typename T>
 class AssetPtr
 {
 public:
+    Handle handle = HANDLE_INVALID;
+
     AssetPtr() = default;
     AssetPtr(Handle h) : handle(h) {}
 
-    T* Get();
+    T* get();
     T* operator->();
-
-private:
-    Handle handle = HANDLE_INVALID;
 };
 
 

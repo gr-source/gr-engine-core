@@ -12,7 +12,7 @@ struct Material
 {
     std::unordered_map<std::string, std::vector<uint8_t>> overrides;
 
-    std::vector<uint8_t> buffer;
+    std::vector<uint8_t> GPUbuffer;
 
     ShaderPrefab *prefab;
 
@@ -25,7 +25,7 @@ struct Material
     void Set(const std::string &name, const void *data, size_t size);
 
     template <typename T>
-    const T* Get(const std::string& name);
+    const T* Get(const std::string& name) const;
 
     const void* GetInternal(const std::string &name) const;
 
@@ -33,11 +33,11 @@ struct Material
 
     void Build();
 
-    void Flush();
+    void Flush() const;
 };
 
 template <typename T>
-inline const T *Material::Get(const std::string &name)
+inline const T *Material::Get(const std::string &name) const
 {
     return reinterpret_cast<const T*>(GetInternal(name.c_str()));
 }

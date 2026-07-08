@@ -1,5 +1,6 @@
 #include "gr-base/core/geometry/material.hpp"
 
+#include <gr-render/gl.h>
 #include <gr-render/shader.hpp>
 
 #include <string.h>
@@ -7,7 +8,7 @@
 void Material::Set(const std::string &name, const void *data, size_t size)
 {
     auto& buffer = overrides[name];
-    if (buffer.size() != size)
+    if (size > buffer.size())
         buffer.resize(size);
 
     memcpy(buffer.data(), data, size);
@@ -33,24 +34,30 @@ void Material::Sync()
 
 void Material::Build()
 {
-    buffer.resize(shader->GetUniformBufferSize());
+    size_t bufferSize = shader->GetUniformBufferSize();
+    if (bufferSize >= GPUbuffer.size())
+    {
+        GPUbuffer.resize(bufferSize + 1);
+
+        memset(GPUbuffer.data(), 0, bufferSize);
+    } 
 
     for (size_t i=0;i<shader->GetUniformCount();i++)
     {
         auto& uniform = shader->GetUniforms()[i];
 
-        const void* data = GetInternal(uniform.name);
-        if (data != nullptr)
-            memcpy(buffer.data() + uniform.offset, data, uniform.stride);
+        const void* src = GetInternal(uniform.name);
+        if (src != nullptr)
+            memcpy(&GPUbuffer[uniform.offset], src, uniform.size);
     }
 }
 
-void Material::Flush()
+void Material::Flush() const
 {
-    if (buffer.empty())
+    if (GPUbuffer.empty())
         return;
 
-    auto base = buffer.data();
+    size_t textureActive = 0;
 
     auto uniforms = shader->GetUniforms();
     for (size_t i=0;i<shader->GetUniformCount();i++)
@@ -60,7 +67,21 @@ void Material::Flush()
         if (strstr(uniform.name, "u_mat_") != nullptr)
             break;
 
-        shader->SetUniform(i, base + uniform.offset);
+        const void* data = static_cast<const void*>(&GPUbuffer[uniform.offset]);
+
+        if (uniform.type == UniformType::SAMPLER2D)
+        {
+            int textureID = *(const int*)(data);
+            int active = textureActive++;
+
+            glActiveTexture(GL_TEXTURE0 + active);
+            glBindTexture(GL_TEXTURE_2D, textureID);
+
+            shader->SetUniform(i, &active);
+        } else
+        {
+            shader->SetUniform(i, data);
+        }
     }
 }
 

@@ -4,8 +4,9 @@
 
 #include <gr-render/gTexture.h>
 
+// ===== Texture ===== //
 template <>
-gr::Texture* AssetPtr<gr::Texture>::Get()
+gr::Texture* AssetPtr<gr::Texture>::get()
 {
     return AssetsManager::GetTexture(handle);
 }
@@ -13,7 +14,20 @@ gr::Texture* AssetPtr<gr::Texture>::Get()
 template <>
 gr::Texture* AssetPtr<gr::Texture>::operator->()
 {
-    return Get();
+    return get();
+}
+
+// ===== Material ===== //
+template <>
+Material* AssetPtr<Material>::get()
+{
+    return AssetsManager::GetMaterial(handle);
+}
+
+template <>
+Material* AssetPtr<Material>::operator->()
+{
+    return get();
 }
 
 

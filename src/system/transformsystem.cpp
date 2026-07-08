@@ -12,8 +12,6 @@
 
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/ecs/world.hpp"
-
 #include "gr-base/spatial/bvhtree.hpp"
 
 void TransformSystem::Update(Scene* scene)

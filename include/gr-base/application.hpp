@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+#include <string>
 
 class Application
 {
@@ -15,7 +17,7 @@ public:
 
     virtual void run() = 0;
 
-    virtual void dropPath(const char* path) {}
+    virtual void dropPath(const std::vector<std::string>& entries) {}
 };
 
 

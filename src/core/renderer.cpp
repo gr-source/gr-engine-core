@@ -132,9 +132,6 @@ void Renderer::render()
 
 void Renderer::draw()
 {
-    bool enable[10] = {false};
-    int textureID[10] = {0};
-
     Material* lastMaterial = nullptr;
     gr::Shader* lastShader = nullptr;
     gr::vertex_array* lastVao = nullptr;
@@ -153,9 +150,6 @@ void Renderer::draw()
         {
             shader->bind();
 
-            shader->setUniform("u_mat_texture", textureID);
-            shader->setUniform("u_mat_enable", enable);
-
             model = shader->findUniform("u_mat_model");
 
             lastShader = shader;
@@ -163,6 +157,9 @@ void Renderer::draw()
 
         material->shader = shader;
         material->Sync();
+
+
+        // auto m = AssetsManager::GetMaterial(chunk->material);
 
         if (material != lastMaterial)
         {

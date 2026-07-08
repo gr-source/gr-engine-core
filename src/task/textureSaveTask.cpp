@@ -53,7 +53,18 @@ void TextureSaveTask::onPostExecute(Result<std::string> result)
 
     AssetHash hash = engine::hash::fnv1_str(name);
 
-    std::string dst = AssetResolver::Resolve(m_uri) + HEADER_TEXTURE_EXTENSION;
+    std::string realPath = AssetResolver::Resolve(m_uri);
+    {
+        if (gfile::exists(realPath))
+            gfile::remove(realPath);
+
+        std::string parent = gfile::parent(realPath);
+
+        if (!gfile::create_directories(parent))
+            return;
+    }
+
+    std::string dst = realPath + HEADER_TEXTURE_EXTENSION;
     if (gfile::exists(dst))
         gfile::remove(dst);
 
