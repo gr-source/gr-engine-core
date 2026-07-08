@@ -13,11 +13,11 @@ void CameraSystem::Update(Scene* scene)
     auto world = scene->GetWorldDynamic();
 
     world->Query<Transform, Camera, CameraData>([](
+                size_t count,
                 const Entity* entities,
                 Transform* transforms,
                 Camera* cameras,
-                CameraData* datas,
-                size_t count)
+                CameraData* datas)
     {
         for (size_t i=0;i<count;i++)
         {

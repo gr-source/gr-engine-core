@@ -141,7 +141,7 @@ struct world
             {
                 Chunk* chunk = arche.chunks[j];
 
-                func(chunk->entities, arche.getRaw<Components>(static_cast<ChunkID>(j))..., chunk->count);
+                func(chunk->count, chunk->entities, arche.getRaw<Components>(static_cast<ChunkID>(j))...);
             }
         }
     }
