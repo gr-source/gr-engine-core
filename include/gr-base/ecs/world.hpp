@@ -137,8 +137,7 @@ struct world
             if ((arche.mask & requiredMask) != requiredMask)
                 continue;
 
-            size_t chunk_count = arche.layout->capacity > 0 ? (arche.entityCount + arche.layout->capacity - 1) / arche.layout->capacity : 0;
-            for (size_t j=0;j<chunk_count;j++)
+            for (size_t j=0;j<arche.chunkCount;j++)
             {
                 Chunk* chunk = arche.chunks[j];
 

@@ -14,7 +14,26 @@ ArchetypeID archetype::addEdges(TypeID typeID)
 
 engine::ecs::detail::location archetype::allocate(Entity entity)
 {
-    if (freeChunk == INVALID_CHUNK)
+    uint32_t id = static_cast<uint32_t>(entityCount++);
+
+    uint32_t chunkIndex = id / layout->capacity;
+    uint32_t row = id % layout->capacity;
+
+    if (chunkIndex >= chunkCapacity)
+        grow();
+
+    Chunk* chunk = chunks[chunkIndex];
+    if (chunk->count == 0 && chunkIndex >= chunkCount)
+        chunkCount++;
+
+    chunk->count++;
+
+    chunk->entities[row] = entity;
+
+    return { chunkIndex, row };
+
+    /*
+    if (chunkCount >= chunkCapacity)
         grow();
 
     ChunkID chunkID = freeChunk;
@@ -38,10 +57,55 @@ engine::ecs::detail::location archetype::allocate(Entity entity)
     entityCount++;
 
     return { chunkID, row };
+    */
 }
 
 Entity archetype::deallocate(engine::ecs::detail::location loc)
 {
+    uint32_t lastGlobal = static_cast<uint32_t>(--entityCount);
+
+    uint32_t dstChunk = loc.chunk;
+    uint32_t dstIndex = loc.row;
+
+    uint32_t srcChunk = lastGlobal / layout->capacity;
+    uint32_t srcIndex = lastGlobal % layout->capacity;
+
+    Entity moved = INVALID_ENTITY;
+
+    if (dstChunk != srcChunk || dstIndex != srcIndex)
+    {
+        Chunk* dst_chunk = chunks[dstChunk];
+        Chunk* src_chunk = chunks[srcChunk];
+
+        Signature temp = mask;
+        while (temp)
+        {
+            auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
+
+            uint8_t* dst_array = dst_chunk->base + layout->offsets[info->index];
+            uint8_t* src_array = src_chunk->base + layout->offsets[info->index];
+
+            void* dst = dst_array + (info->stride * dstIndex);
+            void* src = src_array + (info->stride * srcIndex);
+
+            info->move(dst, src);
+            
+            temp &= (temp - 1);
+        }
+
+        moved = src_chunk->entities[srcIndex];
+
+        dst_chunk->entities[dstIndex] = moved;
+    }
+
+    Chunk* lastChunk = chunks[srcChunk];
+    lastChunk->count--;
+
+    if (lastChunk->count == 0 && srcChunk == chunkCount - 1)
+        chunkCount--;
+
+    return moved;
+    /*
     assert(loc.chunk < chunkCapacity);
 
     Chunk* chunk = chunks[loc.chunk];
@@ -101,6 +165,7 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
     entityCount--;
 
     return moved;
+    */
 }
 
 void* archetype::getRaw(ChunkID chunkID, TypeID typeID) const
