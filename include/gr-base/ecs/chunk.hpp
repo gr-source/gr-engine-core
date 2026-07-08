@@ -12,7 +12,8 @@ typedef struct Chunk
     size_t count = 0;
 
     Entity* entities = nullptr;
-    uint8_t* array = nullptr;
+
+    uint8_t* base = nullptr;
 } Chunk;
 
 

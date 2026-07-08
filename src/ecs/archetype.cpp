@@ -31,22 +31,13 @@ engine::ecs::detail::location archetype::allocate(Entity entity)
     {
         freeChunk = freeList[chunkID];
         freeList[chunkID] = INVALID_CHUNK;
+
+        chunkCount++;
     }
 
     entityCount++;
 
     return { chunkID, row };
-}
-
-void* archetype::getRaw(ChunkID chunkID, TypeID typeID) const
-{
-    assert(chunkID < chunkCapacity);
-    assert(typeID < layout->numOffsets);
-
-    Chunk* chunk = chunks[chunkID];
-    assert(chunk != nullptr);
-
-    return static_cast<void*>(chunk->base + layout->offsets[typeID]);
 }
 
 Entity archetype::deallocate(engine::ecs::detail::location loc)
@@ -103,11 +94,24 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
     {
         freeList[loc.chunk] = freeChunk;
         freeChunk = loc.chunk;
+
+        chunkCount--;
     }
 
     entityCount--;
 
     return moved;
+}
+
+void* archetype::getRaw(ChunkID chunkID, TypeID typeID) const
+{
+    assert(chunkID < chunkCapacity);
+    assert(typeID < layout->numOffsets);
+
+    Chunk* chunk = chunks[chunkID];
+    assert(chunk != nullptr);
+
+    return static_cast<void*>(chunk->base + layout->offsets[typeID]);
 }
 
 void archetype::grow()
@@ -168,6 +172,8 @@ void archetype::addFreeID(size_t oldCapacity)
 
     freeList[capacity] = freeChunk;
     freeChunk = static_cast<ChunkID>(oldCapacity);
+
+    chunkCount++;
 }
 }
 

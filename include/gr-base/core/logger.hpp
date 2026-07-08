@@ -13,7 +13,7 @@ struct logger_config
 class logger
 {
 public:
-    static void Initialize(const logger_config& config);
+    static void Initialize(const logger_config* config = nullptr);
 
     static void Shutdown();
 
@@ -49,7 +49,7 @@ private:
     std::mutex m_mutex;
     int m_handle;
 
-    logger(const logger_config &config);
+    logger(const logger_config* config);
     ~logger();
 
     void vlog(const char* prefix, const char* fmt, va_list ap);

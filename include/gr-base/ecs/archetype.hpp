@@ -2,9 +2,11 @@
 
 #include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/detail.hpp"
+#include "gr-base/ecs/chunk.hpp"
 
 namespace engine::ecs
 {
+    /*
     struct alignas(16) Chunk
     {
         size_t count = 0;
@@ -13,6 +15,7 @@ namespace engine::ecs
 
         uint8_t* base = nullptr;
     };
+    */
 
     struct archetype
     {
@@ -26,11 +29,14 @@ namespace engine::ecs
         size_t entityCount = 0;
 
         size_t chunkCapacity = 0;
+        size_t chunkCount = 0;
         Chunk** chunks = nullptr;
 
         ArchetypeID addEdges(TypeID typeID);
 
         engine::ecs::detail::location allocate(Entity entity);
+
+        Entity deallocate(engine::ecs::detail::location loc);
 
         template <typename T>
         inline T* get(engine::ecs::detail::location loc) const
@@ -45,8 +51,6 @@ namespace engine::ecs
         }
 
         void* getRaw(ChunkID chunkID, TypeID typeID) const;
-
-        Entity deallocate(engine::ecs::detail::location loc);
 
         void grow();
 

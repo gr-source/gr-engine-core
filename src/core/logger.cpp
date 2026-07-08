@@ -12,7 +12,7 @@
 
 logger* logger::s_logger = nullptr;
 
-void logger::Initialize(const logger_config &config)
+void logger::Initialize(const logger_config* config)
 {
     if (s_logger == nullptr)
         s_logger = new logger(config);
@@ -26,16 +26,19 @@ void logger::Shutdown()
 }
 
 // private
-logger::logger(const logger_config &config)
+logger::logger(const logger_config* config) : m_handle(STDOUT_FILENO)
 {
-    if (!gfile::exists(config.path))
-        gfile::create_directory(config.path);
+    if (config != nullptr)
+    {
+        if (!gfile::exists(config->path))
+            gfile::create_directory(config->path);
 
-    std::string file = config.path + "/" + __DATE__ + ".txt";
+        std::string file = config->path + "/" + __DATE__ + ".txt";
 
-    m_handle = open(file.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-    if (m_handle == -1)
-        perror("open failed");
+        m_handle = open(file.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+        if (m_handle == -1)
+            perror("open failed");
+    }
 }
 
 logger::~logger()

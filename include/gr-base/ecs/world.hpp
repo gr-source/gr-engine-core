@@ -163,7 +163,7 @@ struct world
 
 private:
 
-    void MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e);
+    engine::ecs::detail::records MoveEntity(engine::ecs::detail::records src_rec, ArchetypeID dstID, Entity e);
 
     void LinkAdd(TypeID typeID, ArchetypeID srcID, ArchetypeID dstID);
 

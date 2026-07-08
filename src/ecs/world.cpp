@@ -1,20 +1,16 @@
 #include "gr-base/ecs/world.hpp"
 
-#include "gr-base/core/logger.hpp"
-
 #include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/detail.hpp"
 #include "gr-base/ecs/entityManager.hpp"
 
 #include "gr-base/externals/handle.h"
-#include "gr-base/script/camera.hpp"
 
 #include <assert.h>
 #include <cstdlib>
 #include <cstring>
-#include <memory>
 
-#define CHUNK_SIZE (1024 * 16)
+#include <iostream>
 
 namespace engine::ecs
 {
@@ -245,9 +241,9 @@ engine::ecs::detail::records world::Allocate(Entity entity, TypeID type)
 
     uint32_t entityID = handle_get_first(entity);
 
-    ArchetypeID srcID = entityRecords[entityID].archetype;
+    auto& rec = entityRecords[entityID];
 
-    auto lastArcheType = GetArchetypeByID(srcID);
+    auto lastArcheType = GetArchetypeByID(rec.archetype);
     if ((lastArcheType->mask & mask) == mask)
         std::cout << "Has be" << std::endl;
         // return srcID;
@@ -259,10 +255,11 @@ engine::ecs::detail::records world::Allocate(Entity entity, TypeID type)
 
         dstID = GetOrCreateArcheType(newMask, type);
 
-        LinkAdd(type, srcID, dstID);
+        LinkAdd(type, rec.archetype, dstID);
     }
 
-    MoveEntity(srcID, dstID, entity);
+    auto new_rec = MoveEntity(rec, dstID, entity);
+    entityRecords[entityID] = new_rec;
 
     // auto dst = GetArchetypeByID(dstID);
 
@@ -270,7 +267,7 @@ engine::ecs::detail::records world::Allocate(Entity entity, TypeID type)
 
     // type->constructor(ptr, component);
 
-    return entityRecords[entityID];
+    return new_rec;
 }
 
 void* world::AddComponentByID(Entity entity, TypeID type)
@@ -416,14 +413,14 @@ size_t world::GetEntityCount() const
     return entityManager.count;
 }
 
-void world::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
+engine::ecs::detail::records world::MoveEntity(engine::ecs::detail::records src_rec, ArchetypeID dstID, Entity e)
 {
-    EntityID entityID = handle_get_first(e);
+    // EntityID entityID = handle_get_first(e);
 
-    archetype* src = GetArchetypeByID(srcID);
+    archetype* src = GetArchetypeByID(src_rec.archetype);
     archetype* dst = GetArchetypeByID(dstID);
 
-    engine::ecs::detail::location src_loc = entityRecords[entityID].location;
+    // engine::ecs::detail::location src_loc = entityRecords[entityID].location;
     engine::ecs::detail::location dst_loc = dst->allocate(e);
 
     Signature common = src->mask & dst->mask;
@@ -434,10 +431,10 @@ void world::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
         auto info = ComponentRegistry::GetComponentByID(typeID);
 
         uint8_t* dst_raw = (uint8_t*)dst->getRaw(dst_loc.chunk, typeID);
-        uint8_t* src_raw = (uint8_t*)src->getRaw(src_loc.chunk, typeID);
+        uint8_t* src_raw = (uint8_t*)src->getRaw(src_rec.location.chunk, typeID);
 
         void* dst_component = (void*)(dst_raw + dst_loc.row * info->stride);
-        void* src_component = (void*)(src_raw + src_loc.row * info->stride);
+        void* src_component = (void*)(src_raw + src_rec.location.row * info->stride);
 
         if (info->isTriviallyCopyable)
         {
@@ -449,6 +446,7 @@ void world::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
 
         } else
         {
+            std::cout << "ss" << std::endl;
             ((void(*)(void*, const void*))(info->move))(dst_component, src_component);
         }
 
@@ -459,12 +457,13 @@ void world::MoveEntity(ArchetypeID srcID, ArchetypeID dstID, Entity e)
     }
 
     Entity moved = INVALID_ENTITY;
-    if (src_loc.chunk != INVALID_CHUNK && (moved = src->deallocate(src_loc)) != INVALID_ENTITY)
+    if (src_rec.location.chunk != INVALID_CHUNK && (moved = src->deallocate(src_rec.location)) != INVALID_ENTITY)
     {
-        entityRecords[handle_get_first(moved)].location = src_loc;
+        entityRecords[handle_get_first(moved)].location = src_rec.location;
     }
 
-    entityRecords[entityID] = {
+    return
+    {
         .mask = dst->mask,
         .archetype = dstID,
         .location = dst_loc
