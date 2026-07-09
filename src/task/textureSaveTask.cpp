@@ -60,7 +60,7 @@ void TextureSaveTask::onPostExecute(Result<std::string> result)
 
         std::string parent = gfile::parent(realPath);
 
-        if (!gfile::create_directories(parent))
+        if (!gfile::exists(parent) && !gfile::create_directories(parent))
             return;
     }
 
