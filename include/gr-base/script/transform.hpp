@@ -7,13 +7,13 @@
 
 struct alignas(16) Transform
 {
-    Vector3 position = Vector3::zero;
-    Quaternion rotation = Quaternion::identity;
-    Vector3 scale = Vector3::one;
+    Vector3 position = type_traits<Vector3>::zero;
+    Quaternion rotation = type_traits<Quaternion>::identity;
+    Vector3 scale = type_traits<Vector3>::one;
 
-    Matrix4x4 localMatrix = Matrix4x4::identityMatrix;
+    Matrix4x4 localMatrix = type_traits<Matrix4x4>::identity;
 
-    Matrix4x4 worldMatrix = Matrix4x4::identityMatrix;
+    Matrix4x4 worldMatrix = type_traits<Matrix4x4>::identity;
 };
 
 template <>

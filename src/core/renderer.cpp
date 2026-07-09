@@ -78,7 +78,7 @@ void Renderer::beginFrame()
     RendererStats::TriangleCount = 0;
 
     if (m_renderables.size() >= m_metrices.size())
-        m_metrices.resize(m_renderables.size() + 1, Matrix4x4::identityMatrix);
+        m_metrices.resize(m_renderables.size() + 1, type_traits<Matrix4x4>::identity);
 
     sorting();
 

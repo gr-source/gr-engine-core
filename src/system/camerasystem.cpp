@@ -36,13 +36,13 @@ void CameraSystem::Update(Scene* scene)
                 );
 
             data.forward =
-                transform.rotation * Vector3::forward;
+                transform.rotation * type_traits<Vector3>::forward;
 
             data.right =
-                transform.rotation * Vector3::right;
+                transform.rotation * type_traits<Vector3>::right;
 
             data.up =
-                transform.rotation * Vector3::up;
+                transform.rotation * type_traits<Vector3>::up;
 
             data.view = Math::lookAt(transform.position, transform.position + data.forward, data.up);
 

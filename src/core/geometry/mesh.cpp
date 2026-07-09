@@ -134,7 +134,7 @@ void Mesh_Normalize(Mesh* mesh)
         return;
 
     for (size_t i=0;i<mesh->numVertices;i++)
-        mesh->vertices[i].normal = Vector3::zero;
+        mesh->vertices[i].normal = type_traits<Vector3>::zero;
 
     auto vertices = mesh->vertices;
 

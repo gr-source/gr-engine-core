@@ -125,7 +125,7 @@ void Octree::subdivide()
 
 void Octree::drawWireCube(const Vector3 &center, float size)
 {
-    DebugDraw::DrawLine(center, center + (Vector3::up * 2.0f));
+    DebugDraw::DrawLine(center, center + (type_traits<Vector3>::up * 2.0f));
 
     float half = size;
 

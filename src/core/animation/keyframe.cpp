@@ -38,17 +38,17 @@ Matrix4x4 Keyframe::getLocalMatrix(float time) const {
 
 Key<Vector3> Keyframe::getPositionFromTime(float t) const
 {
-    return t == 0.0f ? Key<Vector3>(0.0f, Vector3::zero) : m_keyPosition[GetIndexFromTime(t, m_keyPosition)];
+    return t == 0.0f ? Key<Vector3>(0.0f, type_traits<Vector3>::zero) : m_keyPosition[GetIndexFromTime(t, m_keyPosition)];
 }
 
 Key<Quaternion> Keyframe::getRotationFromTime(float t) const
 {
-    return t == 0.0f ? Key<Quaternion>(0.0f, Quaternion::identity) : m_keyRotation[GetIndexFromTime(t, m_keyRotation)];
+    return t == 0.0f ? Key<Quaternion>(0.0f, type_traits<Quaternion>::identity) : m_keyRotation[GetIndexFromTime(t, m_keyRotation)];
 }
 
 Key<Vector3> Keyframe::getScaleFromTime(float t) const
 {
-    return t == 0.0f ? Key<Vector3>(0.0f, Vector3::zero) : m_keyScale[GetIndexFromTime(t, m_keyScale)];
+    return t == 0.0f ? Key<Vector3>(0.0f, type_traits<Vector3>::zero) : m_keyScale[GetIndexFromTime(t, m_keyScale)];
 }
 
 bool Keyframe::serialize(Stream *stream) const
@@ -107,7 +107,7 @@ bool Keyframe::deserialize(Stream *stream)
             return false;
         }
 
-        m_keyPosition.resize(ksize, Key<Vector3>(0.0f, Vector3::zero));
+        m_keyPosition.resize(ksize, Key<Vector3>(0.0f, type_traits<Vector3>::zero));
         if (!stream->read(reinterpret_cast<char *>(m_keyPosition.data()), ksize * sizeof(Key<Vector3>)))
         {
             return false;
@@ -122,7 +122,7 @@ bool Keyframe::deserialize(Stream *stream)
             return false;
         }
 
-        m_keyRotation.resize(ksize, Key<Quaternion>(0.0f, Quaternion::identity));
+        m_keyRotation.resize(ksize, Key<Quaternion>(0.0f, type_traits<Quaternion>::identity));
         if (!stream->read(reinterpret_cast<char *>(m_keyRotation.data()), ksize * sizeof(Key<Quaternion>)))
         {
             return false;
@@ -137,7 +137,7 @@ bool Keyframe::deserialize(Stream *stream)
             return false;
         }
 
-        m_keyScale.resize(ksize, Key<Vector3>(0.0f, Vector3::zero));
+        m_keyScale.resize(ksize, Key<Vector3>(0.0f, type_traits<Vector3>::zero));
         if (!stream->read(reinterpret_cast<char *>(m_keyScale.data()), ksize * sizeof(Key<Vector3>)))
         {
             return false;

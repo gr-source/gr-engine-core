@@ -142,7 +142,7 @@ size_t AssetsManager::GetMeshCount()
 static AABB CalculateBounds(Mesh* mesh)
 {
     if (!mesh->numVertices)
-        return { Vector3::zero, Vector3::zero };
+        return { type_traits<Vector3>::zero, type_traits<Vector3>::zero };
 
     AABB bounds;
 

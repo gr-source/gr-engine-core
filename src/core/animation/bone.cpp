@@ -2,7 +2,12 @@
 
 #include "gr-base/core/file/stream.hpp"
 
-Bone::Bone() : m_position(Vector3::zero), m_rotation(Quaternion::identity), m_scale(Vector3::one), m_localMatrix(Matrix4x4::identityMatrix), m_parentID(0)
+Bone::Bone() :
+    m_position(type_traits<Vector3>::zero),
+    m_rotation(type_traits<Quaternion>::identity),
+    m_scale(type_traits<Vector3>::one),
+    m_localMatrix(type_traits<Matrix4x4>::identity),
+    m_parentID(0)
 {
     updateMatrix();
 }

@@ -33,7 +33,11 @@ struct Mesh
     Submesh* submeshes = nullptr;
     size_t numSubmeshes = 0;
 
-    AABB localBounds = {Vector3::zero, Vector3::zero};
+    AABB localBounds =
+        {
+            type_traits<Vector3>::zero,
+            type_traits<Vector3>::zero
+        };
 
     GPUMesh gpuMesh;
 
