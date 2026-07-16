@@ -25,7 +25,7 @@ void TextureSaveTask::onPreExecute()
 
 std::string TextureSaveTask::doInBackground()
 {
-    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_uri.path.c_str())));
+    std::string file = gfile::create_temp_file(std::to_string(engine::hash::fnv1_str(m_uri.path)));
 
     FileStream stream(file, StreamType::OUTPUT);
 

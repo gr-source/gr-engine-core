@@ -17,7 +17,7 @@ TextureBuildTask::TextureBuildTask(const std::string& file, const URI& uri) : m_
 
 void TextureBuildTask::onPreExecute()
 {
-    auto name = gfile::get_file_name(m_uri.path.c_str());
+    auto name = gfile::get_file_name(m_uri.path);
 
     Console::LogInfo("[ TextureBuildTask ] Building texture '%s'.", name.c_str());
 }
@@ -63,7 +63,7 @@ TextureAsset TextureBuildTask::doInBackground()
 
 void TextureBuildTask::onPostExecute(Result<TextureAsset> result)
 {
-    auto name = gfile::get_file_name(m_uri.path.c_str());
+    auto name = gfile::get_file_name(m_uri.path);
 
     if (!result.success)
         return Console::LogError("[ TextureBuildTask ] erro in build texture name='%s' error='%s'.", name.c_str(), result.error.c_str());

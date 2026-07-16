@@ -3907,7 +3907,7 @@ void ImGuiInputTextState::OnKeyPressed(int key)
 
 ImGuiInputTextCallbackData::ImGuiInputTextCallbackData()
 {
-    memset(this, 0, sizeof(*this));
+    memset((void*)this, 0, sizeof(*this));
 }
 
 // Public API to manipulate UTF-8 text
@@ -7242,10 +7242,10 @@ void ImGui::Value(const char* prefix, float v, const char* float_format)
 void ImGuiMenuColumns::Update(float spacing, bool window_reappearing)
 {
     if (window_reappearing)
-        memset(Widths, 0, sizeof(Widths));
+        memset((void*)Widths, 0, sizeof(Widths));
     Spacing = (ImU16)spacing;
     CalcNextTotalWidth(true);
-    memset(Widths, 0, sizeof(Widths));
+    memset((void*)Widths, 0, sizeof(Widths));
     TotalWidth = NextTotalWidth;
     NextTotalWidth = 0;
 }
@@ -7807,7 +7807,7 @@ struct ImGuiTabBarSection
     float               Width;                  // Sum of width of tabs in this section (after shrinking down)
     float               Spacing;                // Horizontal spacing at the end of the section.
 
-    ImGuiTabBarSection() { memset(this, 0, sizeof(*this)); }
+    ImGuiTabBarSection() { memset((void*)this, 0, sizeof(*this)); }
 };
 
 namespace ImGui
@@ -7823,7 +7823,7 @@ namespace ImGui
 
 ImGuiTabBar::ImGuiTabBar()
 {
-    memset(this, 0, sizeof(*this));
+    memset((void*)this, 0, sizeof(*this));
     CurrFrameVisible = PrevFrameVisible = -1;
     LastTabItemIdx = -1;
 }

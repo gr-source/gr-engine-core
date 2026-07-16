@@ -1,5 +1,6 @@
 #include "gr-base/asset/assetDB.hpp"
 
+#include "gr-base/asset/URI.hpp"
 #include "gr-base/asset/assetResolver.hpp"
 
 #include "gr-base/core/logger.hpp"
@@ -50,6 +51,16 @@ void AssetDB::Unregistry(Hash64 hash)
 std::string AssetDB::Resolve(Hash64 hash)
 {
     return s_AssetDB->resolve(hash);
+}
+
+std::vector<AssetID> AssetDB::GetAssets(Scheme scheme)
+{
+    return s_AssetDB->m_assets[static_cast<size_t>(scheme)];
+}
+
+AssetInfo* AssetDB::GetAsset(AssetID id)
+{
+    return s_AssetDB->m_spaseSet.get(id);
 }
 
 // private
@@ -153,6 +164,9 @@ void AssetDB::unregistry(Hash64 hash)
 
 void AssetDB::insert(const AssetInfo& info)
 {
+    URI uri = URI::parse(info.path);
+    m_assets[static_cast<size_t>(uri.scheme)].push_back(info.id);
+
     m_spaseSet.insert(info.id, &info);
 
     m_refMapped.emplace(info.hash, info.id);
