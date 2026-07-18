@@ -17,12 +17,13 @@ void EventManager::Shutdown()
     s_EventManager = nullptr;
 }
 
-void EventManager::Notify(const std::string &name, IEvent* event)
+// private
+EventID EventManager::GenEventID()
 {
-    s_EventManager->notify(name, event);
+    static EventID nextID = 0;
+    return nextID++;
 }
 
-// private
 EventManager::EventManager()
 {
     logger::info("[ EventManager ] Initialized '%p'.", this);
@@ -33,19 +34,25 @@ EventManager::~EventManager()
     logger::info("[ EventManager ] Shutdown '%p'.", this);
 }
 
-void EventManager::attach(const std::string &name, std::function<void (IEvent*)> func)
+void EventManager::attach(EventID id, std::function<void (IEvent*)> func)
 {
-    m_listener[name].push_back(func);
+    if (id >= m_listener.size())
+        m_listener.resize(id + 1);
 
-    logger::debug("[ EventManager ] Attached function: %s", name.c_str());
+    m_listener[id].push_back(func);
+
+    logger::debug("[ EventManager ] Attached event '%d'.", id);
 }
 
-void EventManager::notify(const std::string &name, IEvent* event)
+void EventManager::notify(EventID id, IEvent* event)
 {
-    for (auto& func : m_listener[name])
+    if (id >= m_listener.size())
+        return;
+
+    for (auto& func : m_listener[id])
         func(event);
 
-    logger::debug("[ EventManager ] Calling function: %s", name.c_str());
+    logger::debug("[ EventManager ] Call event '%d'.", id);
 }
 
 

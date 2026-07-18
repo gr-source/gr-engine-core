@@ -84,8 +84,6 @@ void AssetDB::load(const std::string &file)
 
     logger::info("[AssetDB] loading ref: '%s'.", file.c_str());
 
-    EventManager::Notify(ASSET_EVENT_LOADING_DB, nullptr);
-
     std::string line;
     while (std::getline(is, line))
     {
@@ -115,7 +113,7 @@ void AssetDB::load(const std::string &file)
         insert(info);
     }
 
-    EventManager::Notify(ASSET_EVENT_LOADED_DB, nullptr);
+    EventManager::Notify<AssetEventOnLoaded>(nullptr);
 
     is.close();
 }
@@ -172,7 +170,7 @@ void AssetDB::unregistry(Hash64 hash)
     AssetEventOnRemove event;
     event.value = it->second;
 
-    EventManager::Notify(ASSET_EVENT_REMOVE, &event);
+    EventManager::Notify<AssetEventOnRemove>(&event);
 
     auto info = m_spaseSet.get(it->second);
 
@@ -186,6 +184,7 @@ void AssetDB::unregistry(Hash64 hash)
 void AssetDB::insert(const AssetInfo& info)
 {
     URI uri = URI::parse(info.path);
+
     m_assets[static_cast<size_t>(uri.scheme)].push_back(info.id);
 
     m_spaseSet.insert(info.id, &info);
@@ -195,7 +194,7 @@ void AssetDB::insert(const AssetInfo& info)
     AssetEventOnCreated event;
     event.value = info.id;
 
-    EventManager::Notify(ASSET_EVENT_CREATED, &event);
+    EventManager::Notify<AssetEventOnCreated>(&event);
 }
 
 std::string AssetDB::resolve(Hash64 hash)
