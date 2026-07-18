@@ -83,6 +83,9 @@ public:
         uint32_t sparseID = handle_get_first(h);
         uint32_t gen = handle_get_second(h);
 
+        if (sparseID >= m_slotCapacity)
+            return nullptr;
+
         if (gen != m_generations[sparseID])
             return nullptr;
 

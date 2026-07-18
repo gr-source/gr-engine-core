@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gr-base/core/ievent.hpp"
+
 #include <functional>
 #include <string>
 
@@ -13,7 +15,7 @@ public:
     template <typename... Args>
     static void Attach(const std::string& name, Args&&...args);
 
-    static void Notify(const std::string& name);
+    static void Notify(const std::string& name, IEvent* event);
 
 private:
     static EventManager* s_EventManager;
@@ -21,18 +23,17 @@ private:
     EventManager();
     ~EventManager();
 
-    std::unordered_map<std::string, std::vector<std::function<void ()>>> m_listener;
+    std::unordered_map<std::string, std::vector<std::function<void (IEvent*)>>> m_listener;
 
-    void attach(const std::string& name, std::function<void ()> func);
+    void attach(const std::string& name, std::function<void (IEvent*)> func);
 
-    void notify(const std::string& name);
+    void notify(const std::string& name, IEvent* event);
 };
 
 template <typename... Args>
 inline void EventManager::Attach(const std::string& name, Args&&...args)
 {
-    if constexpr (sizeof...(Args) > 0)
-        s_EventManager->attach(name, std::bind(std::forward<Args>(args)...));
+    s_EventManager->attach(name, std::bind(std::forward<Args>(args)..., std::placeholders::_1));
 }
 
 

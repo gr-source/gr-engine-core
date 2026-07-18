@@ -6,6 +6,7 @@
 #include "gr-base/core/logger.hpp"
 #include "gr-base/core/string.hpp"
 #include "gr-base/externals/hash.hpp"
+#include "gr-base/managers/eventManager.hpp"
 
 #include <cstring>
 #include <fstream>
@@ -83,6 +84,8 @@ void AssetDB::load(const std::string &file)
 
     logger::info("[AssetDB] loading ref: '%s'.", file.c_str());
 
+    EventManager::Notify(ASSET_EVENT_LOADING_DB, nullptr);
+
     std::string line;
     while (std::getline(is, line))
     {
@@ -111,6 +114,8 @@ void AssetDB::load(const std::string &file)
 
         insert(info);
     }
+
+    EventManager::Notify(ASSET_EVENT_LOADED_DB, nullptr);
 
     is.close();
 }
@@ -164,6 +169,11 @@ void AssetDB::unregistry(Hash64 hash)
     if (it == m_refMapped.end())
         return;
 
+    AssetEventOnRemove event;
+    event.value = it->second;
+
+    EventManager::Notify(ASSET_EVENT_REMOVE, &event);
+
     auto info = m_spaseSet.get(it->second);
 
     logger::trace("[ AssetDB ] unregister: '0x%lX' lookup: '%s'.", hash, info->path);
@@ -181,6 +191,11 @@ void AssetDB::insert(const AssetInfo& info)
     m_spaseSet.insert(info.id, &info);
 
     m_refMapped.emplace(info.hash, info.id);
+
+    AssetEventOnCreated event;
+    event.value = info.id;
+
+    EventManager::Notify(ASSET_EVENT_CREATED, &event);
 }
 
 std::string AssetDB::resolve(Hash64 hash)
