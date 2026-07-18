@@ -54,10 +54,7 @@ public:
     // static void RemoveShader(gr::Shader *shader);
 
     template <typename ...Args>
-    static void LoadGameObject(const std::string &name, Args &&...args);
-
-    template <typename ...Args>
-    static void LoadGameObjectFromFile(const std::string &file, Args &&...args);
+    static void LoadGameObjectAsync(const std::string &name, Args &&...args);
 
     // ********** Mesh ********** //
     static MeshHandle LoadMesh(const std::string& name);
@@ -131,44 +128,20 @@ private:
 
     static bool LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func);
 
-    void loadGameObject(const std::string &name, std::function<void(Entity)> func);
+    void loadGameObjectAsync(const std::string &name, std::function<void(Entity)> func);
 
-    void loadGameObjectFromFile(const std::string &file, std::function<void(Entity)> func);
+    void loadGameObjectFromFileAsync(const std::string &file, std::function<void(Entity)> func);
 };
 
 template <typename... Args>
-inline void AssetsManager::LoadGameObject(const std::string &name, Args &&...args)
+inline void AssetsManager::LoadGameObjectAsync(const std::string &name, Args &&...args)
 {
     std::function<void(Entity)> func = nullptr;
     if constexpr (sizeof...(Args) > 0)
         func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
 
-    s_AssetsManager->loadGameObject(name, func);
+    s_AssetsManager->loadGameObjectAsync(name, func);
 }
-
-template <typename... Args>
-inline void AssetsManager::LoadGameObjectFromFile(const std::string &file, Args &&...args)
-{
-    std::function<void(Entity)> func = nullptr;
-    if constexpr (sizeof...(Args) > 0)
-        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
-
-    s_AssetsManager->loadGameObjectFromFile(file, func);
-}
-
-/*
-template <typename ...Args>
-inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) {
-    std::function<void(gr::gTexture *)> func = nullptr;
-    if constexpr (sizeof...(Args) > 0) {
-        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
-    }
-
-    return s_AssetsManager->mTextureManager.load(path, func);
-}
-*/
-
-
 
 
 

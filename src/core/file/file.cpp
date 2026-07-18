@@ -143,7 +143,7 @@ std::string gfile::get_file_name(const std::string &path)
 {
     const char* token = strrchr(path.c_str(), '/');
     if (token == NULL)
-        return "";
+        return path;
 
     return token + 1;
 }

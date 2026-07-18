@@ -3,6 +3,7 @@
 #include "gr-base/asset/URI.hpp"
 #include "gr-base/asset/default.hpp"
 
+#include "gr-base/externals/hash.hpp"
 #include "gr-base/pool/sparseSet.hpp"
 
 #include <unordered_map>
@@ -13,10 +14,11 @@
 
 typedef struct AssetInfo
 {
-    AssetHash hash;
-    AssetID id;
+    AssetHash hash = INVALID_HASH64;
+    AssetID id = INVALID_ASSET;
+    AssetFlags_ flags = 0;
 
-    char path[ASSET_MAX_PATH_LENGHT];
+    char path[ASSET_MAX_PATH_LENGHT] = {0};
 } AssetInfo;
 
 class AssetDB
@@ -30,7 +32,7 @@ public:
 
     static void Save(const std::string &file);
 
-    static void Registry(AssetHash hash, const std::string& path);
+    static void Registry(const std::string& path, AssetFlags_ flags);
 
     static void Unregistry(AssetHash hash);
 
@@ -58,7 +60,7 @@ private:
 
     void save(const std::string &file);
 
-    void registry(Hash64 hash, const std::string& path);
+    void registry(const std::string& path, AssetFlags_ flags);
 
     void unregistry(Hash64 hash);
 

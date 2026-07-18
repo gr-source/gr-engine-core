@@ -5,6 +5,7 @@
 
 #include "gr-base/core/logger.hpp"
 #include "gr-base/core/string.hpp"
+#include "gr-base/externals/hash.hpp"
 
 #include <cstring>
 #include <fstream>
@@ -38,9 +39,9 @@ void AssetDB::Save(const std::string &file)
     s_AssetDB->save(file);
 }
 
-void AssetDB::Registry(Hash64 hash, const std::string& path)
+void AssetDB::Registry(const std::string& path, AssetFlags_ flags)
 {
-    s_AssetDB->registry(hash, path);
+    s_AssetDB->registry(path, flags);
 }
 
 void AssetDB::Unregistry(Hash64 hash)
@@ -88,14 +89,16 @@ void AssetDB::load(const std::string &file)
         std::string path;
         AssetID id;
         Hash64 hash;
+        AssetFlags_ flags;
 
         std::stringstream iss(line);
-        if (!(iss >> hash >> id >> path))
+        if (!(iss >> hash >> id >> path >> flags))
             continue;
 
         AssetInfo info;
         info.hash = hash;
         info.id = id;
+        info.flags = flags;
 
         size_t size = path.size();
         size = size > ASSET_MAX_PATH_LENGHT ? ASSET_MAX_PATH_LENGHT : size;
@@ -121,14 +124,21 @@ void AssetDB::save(const std::string &file)
     {
         AssetInfo& info = infos[i];
 
-        os << info.hash << " " << info.id << " " << info.path << std::endl;
+        os
+            << info.hash  << " "
+            << info.id    << " "
+            << info.path  << " "
+            << info.flags
+            << std::endl;
     }
 
     os.close();
 }
 
-void AssetDB::registry(Hash64 hash, const std::string& path)
+void AssetDB::registry(const std::string& path, AssetFlags_ flags)
 {
+    AssetHash hash = engine::hash::fnv1_str(path);
+
     if (m_refMapped.find(hash) != m_refMapped.end())
         return;
 
@@ -137,6 +147,7 @@ void AssetDB::registry(Hash64 hash, const std::string& path)
     AssetInfo info;
     info.hash = hash;
     info.id = id;
+    info.flags = flags;
 
     size_t size = path.size();
     size = size > ASSET_MAX_PATH_LENGHT ? ASSET_MAX_PATH_LENGHT : size;

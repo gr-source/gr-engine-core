@@ -1,5 +1,6 @@
 #include "gr-base/managers/assetsManager.hpp"
 
+#include "gr-base/asset/assetResolver.hpp"
 #include "gr-base/asset/materialasset.hpp"
 #include "gr-base/asset/shaderasset.hpp"
 #include "gr-base/asset/assetDB.hpp"
@@ -448,12 +449,14 @@ bool AssetsManager::LoadFromFile(const std::string& file, Hash64 sign, std::func
     return func(&stream);
 }
 
-void AssetsManager::loadGameObject(const std::string &name, std::function<void(Entity)> func)
+void AssetsManager::loadGameObjectAsync(const std::string &name, std::function<void(Entity)> func)
 {
-    loadGameObjectFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())) + HEADER_MODEL_EXTENSION, func);
+    std::string file = AssetResolver::Resolve(URI::parse(name));
+
+    loadGameObjectFromFileAsync(file + HEADER_MODEL_EXTENSION, func);
 }
 
-void AssetsManager::loadGameObjectFromFile(const std::string &file, std::function<void(Entity)> func)
+void AssetsManager::loadGameObjectFromFileAsync(const std::string &file, std::function<void(Entity)> func)
 {
     auto scene = Scene::GetCurrent();
     if (scene != nullptr)

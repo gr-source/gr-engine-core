@@ -51,8 +51,6 @@ void MeshSaveTask::onPostExecute(Result<std::string> result)
     if (!result.success)
         return Console::LogError("[ MeshSaveTask ] falied in to save name='%s' error='%s'.", name.c_str(), result.error.c_str());
 
-    AssetHash hash = engine::hash::fnv1_str(name);
-
     std::string dst = AssetResolver::Resolve(m_uri) + HEADER_MESH_EXTENSION;
     if (gfile::exists(dst))
         gfile::remove(dst);
@@ -66,7 +64,7 @@ void MeshSaveTask::onPostExecute(Result<std::string> result)
         return;
     }
 
-    AssetDB::Registry(hash, name);
+    AssetDB::Registry(name, AssetFlags_AssetMesh);
 
     Console::LogInfo("[MeshSaveTask] Asset saved sucessfully '%s'", name.c_str());
 }

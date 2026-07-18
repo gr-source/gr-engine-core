@@ -5,6 +5,7 @@
 #include "gr-base/core/file/memoryStream.hpp"
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/file/stream.hpp"
+#include "gr-base/core/file/file.hpp"
 
 #include "gr-base/spatial/bvhtree.hpp"
 
@@ -17,6 +18,7 @@
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
+#include <cerrno>
 
 void ModelLoadTask::onPreExecute()
 {
@@ -25,6 +27,9 @@ void ModelLoadTask::onPreExecute()
 
 ModelAsset ModelLoadTask::doInBackground()
 {
+    if (!gfile::exists(m_file))
+        throw std::runtime_error(strerror(ENOENT));
+
     FileStream stream(m_file, StreamType::INPUT);
     
     FileHeader header;

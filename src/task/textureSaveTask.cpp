@@ -51,11 +51,9 @@ void TextureSaveTask::onPostExecute(Result<std::string> result)
     if (!result.success)
         return Console::LogError("[ TextureSaveTask ] falied in to save asset name='%s' error='%s'.", name.c_str(), result.error.c_str());
 
-    AssetHash hash = engine::hash::fnv1_str(name);
-
     std::string realPath = AssetResolver::Resolve(m_uri);
     {
-        if (gfile::exists(realPath))
+        if (gfile::exists(realPath) && !gfile::is_directory(realPath))
             gfile::remove(realPath);
 
         std::string parent = gfile::parent(realPath);
@@ -77,7 +75,7 @@ void TextureSaveTask::onPostExecute(Result<std::string> result)
         return;
     }
 
-    AssetDB::Registry(hash, name);
+    AssetDB::Registry(name, AssetFlags_AssetTexture);
 
     Console::LogInfo("[TextureSaveTask] Asset saved sucessfully '%s'", name.c_str());
 }

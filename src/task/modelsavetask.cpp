@@ -125,7 +125,16 @@ void ModelSaveTask::onPostExecute(Result<std::string> result)
     if (!result.success)
         return Console::LogError("[ModelSaveTask] falied in to save asset '%s'!!!", name.c_str());
 
-    AssetHash hash = engine::hash::fnv1_str(name);
+    std::string realPath = AssetResolver::Resolve(m_uri);
+    {
+        if (gfile::exists(realPath) && !gfile::is_directory(realPath))
+            gfile::remove(realPath);
+
+        std::string parent = gfile::parent(realPath);
+
+        if (!gfile::exists(parent) && !gfile::create_directories(parent))
+            return;
+    }
 
     std::string dst = AssetResolver::Resolve(m_uri) + HEADER_MODEL_EXTENSION;
     if (gfile::exists(dst))
@@ -140,7 +149,7 @@ void ModelSaveTask::onPostExecute(Result<std::string> result)
         return;
     }
 
-    AssetDB::Registry(hash, name);
+    AssetDB::Registry(name, AssetFlags_AssetModel);
 
     Console::LogInfo("[ModelSaveTask] Asset saved sucessfully '%s'", name.c_str());
 }

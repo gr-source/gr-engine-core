@@ -50,7 +50,16 @@ void ShaderSaveTask::onPostExecute(Result<std::string> result)
     if (!result.success)
         return Console::LogError("[ShaderSaveTask] falied in to save asset '%s'!!!", name.c_str());
 
-    AssetHash hash = engine::hash::fnv1_str(name);
+    std::string realPath = AssetResolver::Resolve(m_uri);
+    {
+        if (gfile::exists(realPath) && !gfile::is_directory(realPath))
+            gfile::remove(realPath);
+
+        std::string parent = gfile::parent(realPath);
+
+        if (!gfile::exists(parent) && !gfile::create_directories(parent))
+            return;
+    }
 
     std::string dst = AssetResolver::Resolve(m_uri) + HEADER_SHADER_EXTENSION;
     std::string src = result.value;
@@ -64,7 +73,7 @@ void ShaderSaveTask::onPostExecute(Result<std::string> result)
         return;
     }
 
-    AssetDB::Registry(hash, name);
+    AssetDB::Registry(name, AssetFlags_AssetShader);
 
     Console::LogInfo("[ShaderSaveTask] Asset saved sucessfully '%s'", name.c_str());
 }
