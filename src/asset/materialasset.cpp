@@ -4,22 +4,27 @@
 
 #include <cstring>
 
+void MaterialAsset::Set(const std::string& name, const void* data, size_t size)
+{
+    auto& cache = overrides[name];
+    cache.resize(size, 0);
+
+    memcpy(cache.data(), data, size);
+}
+
 bool MaterialAsset::serialize(Stream* stream) const
 {
     if (!stream->write(name))
         return false;
 
-    if (!stream->write(hash))
+    if (!stream->write(shader))
         return false;
 
-    if (!stream->write(m_shader))
-        return false;
-
-    uint64_t count = static_cast<uint64_t>(m_overrides.size());
+    uint64_t count = static_cast<uint64_t>(overrides.size());
     if (!stream->write(count))
         return false;
 
-    for (auto&& [name, buffer] : m_overrides)
+    for (auto&& [name, buffer] : overrides)
     {
         if (!stream->write(name))
             return false;
@@ -40,10 +45,7 @@ bool MaterialAsset::deserialize(Stream* stream)
     if (!stream->read(name))
         return false;
 
-    if (!stream->read(hash))
-        return false;
-
-    if (!stream->read(m_shader))
+    if (!stream->read(shader))
         return false;
 
     uint64_t count = 0;
@@ -64,18 +66,9 @@ bool MaterialAsset::deserialize(Stream* stream)
         if (!stream->read(buffer.data(), length))
             return false;
 
-        m_overrides.emplace(name, buffer);
+        overrides.emplace(name, buffer);
     }
 
     return true;
-}
-
-// private
-void MaterialAsset::Set(const std::string& name, const void* data, size_t size)
-{
-    auto& cache = m_overrides[name];
-    cache.resize(size, 0);
-
-    memcpy(cache.data(), data, size);
 }
 

@@ -362,14 +362,14 @@ Material AssetsManager::LoadMaterialFromFile(const std::string& file)
             }))
         throw std::runtime_error("[ AssetsManager ] Material load failed: " + file + HEADER_MATERIAL_EXTENSION);
 
-    ShaderPrefab* prefab = s_AssetsManager->mShaderPrefabManager->find(engine::hash::fnv1_str(asset.GetShader()));
+    ShaderPrefab* prefab = s_AssetsManager->mShaderPrefabManager->find(engine::hash::fnv1_str(asset.shader));
     if (prefab == nullptr)
-        prefab = LoadShader(asset.GetShader());
+        prefab = LoadShader(asset.shader);
 
     Material material;
     material.prefab = prefab;
 
-    for (auto&& [name, buffer] : asset.GetOverrides())
+    for (auto&& [name, buffer] : asset.overrides)
         material.Set(name, buffer.data(), buffer.size());
 
     return material;

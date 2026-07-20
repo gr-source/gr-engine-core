@@ -26,8 +26,6 @@ struct MeshAsset
 
     std::string name;
 
-    AssetHash hash = INVALID_HASH64;
-
     bool serialize(Stream* stream) const;
 
     bool deserialize(Stream* stream);

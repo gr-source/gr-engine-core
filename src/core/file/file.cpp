@@ -40,6 +40,18 @@ const std::string& gfile::get_cache_directory()
     return dir;
 }
 
+static std::string GetCWD()
+{
+    char path[512]{0};
+    return getcwd(path, sizeof(path)) == path ? path : gfile::get_home_directory();
+}
+
+const std::string& gfile::get_current_source_dir()
+{
+    static std::string dir = GetCWD();
+    return dir;
+}
+
 bool gfile::exists(const std::string &path)
 {
     struct stat sb;

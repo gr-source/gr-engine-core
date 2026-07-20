@@ -15,6 +15,8 @@ namespace gfile
 
     const std::string& get_cache_directory();
 
+    const std::string& get_current_source_dir();
+
     bool exists(const std::string &path);
 
     bool is_directory(const std::string &path);
