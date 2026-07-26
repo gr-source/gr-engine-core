@@ -4,7 +4,6 @@
 
 #include <functional>
 #include <cstdint>
-#include <string>
 
 typedef uint32_t EventID;
 
@@ -15,8 +14,8 @@ public:
 
     static void Shutdown();
 
-    template <typename T, typename... Args>
-    static void Attach(Args&&...args);
+    template <typename T, typename Callback, typename... Args>
+    static void Attach(Callback&& callback, Args&&...args);
 
     template <typename T>
     static void Notify(T* event);
@@ -39,10 +38,31 @@ private:
     void notify(EventID id, IEvent* event);
 };
 
-template <typename T, typename... Args>
-inline void EventManager::Attach(Args&&...args)
+template <typename T, typename Callback, typename... Args>
+inline void EventManager::Attach(Callback&& callback, Args&&...args)
 {
-    s_EventManager->attach(GetEventIDByType<T>(), std::bind(std::forward<Args>(args)..., std::placeholders::_1));
+    static_assert(
+        std::is_invocable_v<Callback, Args..., T*>,
+        "Callback must be invocable with (..., T*)"
+    );
+
+    auto arguments = std::make_tuple(std::forward<Args>(args)...);
+
+    std::function<void(IEvent*)> function =
+        [callback = std::forward<Callback>(callback),
+         arguments = std::move(arguments)](IEvent* event) mutable
+        {
+            std::apply(
+                [&](auto&&... unpacked)
+                {
+                    std::invoke(callback, unpacked..., static_cast<T*>(event));
+                },
+                arguments
+            );
+        };
+
+    s_EventManager->attach(
+        GetEventIDByType<T>(), function);
 }
 
 template <typename T>
