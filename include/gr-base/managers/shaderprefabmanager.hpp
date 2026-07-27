@@ -10,19 +10,12 @@
 class ShaderPrefabManager
 {
 public:
-    ShaderPrefab* create(const ShaderAsset* src);
+    ShaderPrefab* create(AssetID id, const ShaderAsset* src);
 
-    ShaderPrefab* find(Hash64 hash) const;
-
-    inline const std::vector<ShaderPrefab*>& GetAllShader3d() const
-    {
-        return m_shaders3d;
-    }
+    ShaderPrefab* find(AssetID id) const;
 
 private:
-    std::unordered_map<Hash64, std::unique_ptr<ShaderPrefab>> m_prefabmap;
-
-    std::vector<ShaderPrefab*> m_shaders3d;
+    std::unordered_map<AssetID, std::unique_ptr<ShaderPrefab>> m_prefabmap;
 };
 
 

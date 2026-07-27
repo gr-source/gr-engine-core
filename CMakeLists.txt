@@ -120,6 +120,8 @@ set(TASK_SRC
 
     src/task/textureBuildTask.cpp
     src/task/textureSaveTask.cpp
+
+    src/task/assetSaveTask.cpp
 )
 
 set(SYSTEM_SRC

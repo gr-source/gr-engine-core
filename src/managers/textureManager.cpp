@@ -20,15 +20,15 @@ TextureManager::~TextureManager()
     }
 }
 
-TextureHandle TextureManager::create(AssetHash hash)
+TextureHandle TextureManager::create(AssetHash hashCache)
 {
     TextureHandle h = m_pool.create();
 
     gr::Texture* texture = m_pool.get(h);
     texture->create();
 
-    if (hash != INVALID_HASH64)
-        m_hashmap.emplace(hash, h);
+    if (hashCache != INVALID_HASH64)
+        m_hashmap.emplace(hashCache, h);
 
     return h;
 }

@@ -14,9 +14,7 @@ class MaterialManager
 public:
     MaterialManager();
 
-    MaterialHandle create(AssetHash hash);
-
-    MaterialHandle find(AssetHash hash) const;
+    MaterialHandle create();
 
     Material *get(MaterialHandle h);
 
@@ -29,10 +27,7 @@ private:
     {
         uint32_t next;
         uint32_t version;
-        AssetHash hash;
     };
-
-    std::unordered_map<AssetHash, MaterialHandle> m_materialMap;
 
     std::vector<Material> m_materialPool;
 

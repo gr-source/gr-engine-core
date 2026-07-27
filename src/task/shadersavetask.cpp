@@ -45,6 +45,7 @@ std::string ShaderSaveTask::doInBackground()
 
 void ShaderSaveTask::onPostExecute(Result<std::string> result)
 {
+    /*
     auto name = m_uri.toString();
 
     if (!result.success)
@@ -76,6 +77,7 @@ void ShaderSaveTask::onPostExecute(Result<std::string> result)
     AssetDB::Registry(name, AssetFlags_AssetShader);
 
     Console::LogInfo("[ShaderSaveTask] Asset saved sucessfully '%s'", name.c_str());
+    */
 }
 
 

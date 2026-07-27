@@ -45,6 +45,7 @@ std::string MaterialSaveTask::doInBackground()
 
 void MaterialSaveTask::onPostExecute(Result<std::string> result)
 {
+    /*
     auto name = m_uri.toString();
 
     if (!result.success)
@@ -66,6 +67,7 @@ void MaterialSaveTask::onPostExecute(Result<std::string> result)
     AssetDB::Registry(name, AssetFlags_AssetMaterial);
 
     Console::LogInfo("[ MaterialSaveTask ] Asset saved sucessfully '%s'", name.c_str());
+    */
 }
 
 

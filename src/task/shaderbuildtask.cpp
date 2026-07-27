@@ -1,5 +1,7 @@
 #include "gr-base/task/shaderbuildtask.hpp"
 
+#include "gr-base/asset/assetDB.hpp"
+#include "gr-base/asset/assetResolver.hpp"
 #include "gr-base/asset/shaderasset.hpp"
 
 #include "gr-base/core/console.hpp"
@@ -8,9 +10,12 @@
 
 #include "gr-base/core/file/file.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
+#include "gr-base/externals/hash.hpp"
+#include "gr-base/task/assetSaveTask.hpp"
 #include "gr-base/task/shadersavetask.hpp"
 
 #include <cstring>
+#include <exception>
 #include <fstream>
 #include <cerrno>
 
@@ -48,7 +53,17 @@ void ShaderBuildTask::onPostExecute(Result<ShaderAsset> result)
 
     Console::LogInfo("[ShaderBuildTask] Shader building sucessfully '%s'", name.c_str());
 
-    TaskManager::Add<ShaderSaveTask>(m_uri, result.value);
+    AssetID assetID = AssetDB::FindByHash(engine::hash::fnv1_str(name));
+    if (assetID == INVALID_ASSET)
+        assetID = AssetDB::CreateID();
+
+    AssetSaveInfo info;
+    info.uri = m_uri;
+    info.id = assetID;
+    info.type = AssetType_Shader;
+    info.asset = std::make_shared<ShaderAsset>(result.value);
+
+    TaskManager::Add<AssetSaveTask>(info);
 }
 
 bool ShaderBuildTask::compile(const ShaderAsset* asset)

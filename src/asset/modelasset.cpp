@@ -22,12 +22,16 @@ bool ModelAsset::serialize(Stream* stream) const
     if (!stream->write(mesh))
         return false;
 
-    uint64_t materialCount = static_cast<uint64_t>(materials.size());
-    if (!stream->write(materialCount))
-        return false;
+    {
+        uint64_t count =
+            static_cast<uint64_t>(materials.size());
 
-    if (!stream->write(materials.data(), materialCount * sizeof(AssetHash)))
-        return false;
+        if (!stream->write(count))
+            return false;
+
+        if (!stream->write(materials.data(), count * sizeof(AssetID)))
+            return false;
+    }
 
     uint64_t componentCount = static_cast<uint64_t>(componentBuffer.size());
     if (!stream->write(componentCount))
@@ -46,11 +50,11 @@ bool ModelAsset::serialize(Stream* stream) const
             return false;
     }
 
-    uint64_t count = static_cast<uint64_t>(childrent.size());
+    uint64_t count = static_cast<uint64_t>(children.size());
     if (!stream->write(count))
         return false;
 
-    for (auto& child : childrent)
+    for (auto& child : children)
     {
         if (!child.serialize(stream))
             return false;
@@ -70,13 +74,15 @@ bool ModelAsset::deserialize(Stream* stream)
     if (!stream->read(mesh))
         return false;
 
-    uint64_t materialCount = 0;
-    if (!stream->read(materialCount))
-        return false;
+    {
+        uint64_t count;
+        if (!stream->read(count))
+            return false;
 
-    materials.resize(materialCount, 0);
-    if (!stream->read(materials.data(), materialCount * sizeof(AssetHash)))
-        return false;
+        materials.resize(count);
+        if (!stream->read(materials.data(), count * sizeof(AssetID)))
+            return false;
+    }
 
     uint64_t componentCount = 0;
     if (!stream->read(componentCount))
@@ -105,7 +111,7 @@ bool ModelAsset::deserialize(Stream* stream)
 
     for (uint64_t i=0;i<count;i++)
     {
-        auto& child = childrent.emplace_back();
+        auto& child = children.emplace_back();
 
         if (!child.deserialize(stream))
             return false;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/asset/iasset.hpp"
 #include "gr-base/core/geometry/vertex3D.hpp"
 
 #include "gr-base/core/file/default.hpp"
@@ -10,13 +11,11 @@
 
 struct SubMeshAsset
 {
-    std::string materialName;
-
     uint32_t indexCount;
     uint32_t indexOffset;
 };
 
-struct MeshAsset
+struct MeshAsset : IAsset
 {
     std::vector<SubMeshAsset> submeshes;
 
@@ -26,9 +25,9 @@ struct MeshAsset
 
     std::string name;
 
-    bool serialize(Stream* stream) const;
+    bool serialize(Stream* stream) const override;
 
-    bool deserialize(Stream* stream);
+    bool deserialize(Stream* stream) override;
 };
 
 

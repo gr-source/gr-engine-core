@@ -46,6 +46,7 @@ std::string TextureSaveTask::doInBackground()
 
 void TextureSaveTask::onPostExecute(Result<std::string> result)
 {
+    /*
     auto name = m_uri.toString();
 
     if (!result.success)
@@ -78,6 +79,7 @@ void TextureSaveTask::onPostExecute(Result<std::string> result)
     AssetDB::Registry(name, AssetFlags_AssetTexture);
 
     Console::LogInfo("[TextureSaveTask] Asset saved sucessfully '%s'", name.c_str());
+    */
 }
 
 

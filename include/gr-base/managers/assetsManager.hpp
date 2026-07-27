@@ -2,6 +2,7 @@
 
 #include <gr-render/gRender.h>
 
+#include "gr-base/asset/shaderasset.hpp"
 #include "gr-base/asset/textureAsset.hpp"
 #include "gr-base/asset/default.hpp"
 
@@ -57,16 +58,16 @@ public:
     static void LoadGameObjectAsync(const std::string &name, Args &&...args);
 
     // ********** Mesh ********** //
-    static MeshHandle LoadMesh(const std::string& name);
+    // static MeshHandle LoadMesh(const std::string& name);
 
-    static MeshHandle LoadMesh(AssetHash hash);
+    static MeshHandle LoadMesh(AssetID id);
 
     static size_t GetMeshCount();
 
     // API Privada
-    static MeshHandle CreateMesh(AssetHash hash = INVALID_HASH64);
+    static MeshHandle CreateMesh();
 
-    static MeshHandle FindMesh(AssetHash hash);
+    static MeshHandle FindMesh(AssetID id);
 
     static void RemoveMesh(MeshHandle handle);
 
@@ -75,31 +76,29 @@ public:
     // shader property
     static usize GetTextureCount();
 
-    static const std::vector<ShaderPrefab*>& GetAllShader3D();
-
     // ********** Material API publica ********** //
-    static MaterialHandle LoadMaterial(const std::string& name);
+    // static MaterialHandle LoadMaterial(const std::string& name);
 
-    static MaterialHandle LoadMaterial(AssetHash hash);
+    static MaterialHandle LoadMaterial(AssetID id);
 
-    static MaterialHandle CreateMaterial(AssetHash hash = INVALID_HASH64);
+    static MaterialHandle CreateMaterial();
 
     // ********** Material API privada ********** //
-    static MaterialHandle FindMaterial(AssetHash hash);
+    static MaterialHandle FindMaterial(AssetID id);
 
     static Material *GetMaterial(MaterialHandle h);
 
     static size_t GetMaterialCount();
 
-    static ShaderPrefab* FindShader(const std::string &name);
+    // static ShaderPrefab* FindShader(const std::string &name);
 
-    static ShaderPrefab* FindShader(Hash64 hash);
+    static ShaderPrefab* FindShader(AssetID id);
 
-    static ShaderPrefab* LoadShader(const std::string& name);
+    // static ShaderPrefab* LoadShader(const std::string& name);
 
-    static ShaderPrefab* LoadShader(Hash64 hash);
+    static ShaderPrefab* LoadShader(AssetID id);
 
-    static ShaderPrefab* LoadShaderFromFile(const std::string& file);
+    static ShaderAsset ImportShaderAssetFromFile(const std::string& file);
 
     static TextureAsset ImportTextureAssetFromFile(const std::string& file);
 
@@ -109,6 +108,8 @@ public:
 
 private:
     static AssetsManager* s_AssetsManager;
+
+    std::unordered_map<AssetID, Handle> m_hashmap;
 
     ShaderPrefabManager *mShaderPrefabManager;
 
@@ -121,10 +122,10 @@ private:
 
     MeshManager* mMeshManager;
 
-    std::string mAssetDir;
-
     AssetsManager();
     ~AssetsManager();
+
+    Handle findInCache(AssetID id) const;
 
     static bool LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func);
 

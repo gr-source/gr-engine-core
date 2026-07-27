@@ -14,13 +14,11 @@ class MeshManager
 public:
     MeshManager();
 
-    MeshHandle create(AssetHash hash);
+    MeshHandle create();
 
     Mesh *get(MeshHandle h) const;
 
     void remove(MeshHandle h);
-
-    MeshHandle find(AssetHash hash) const;
 
     size_t GetCount() const;
 
@@ -29,10 +27,7 @@ private:
     {
         uint32_t next;
         uint32_t version;
-        AssetHash hash;
     };
-
-    std::unordered_map<AssetHash, MeshHandle> m_hashmap;
 
     Mesh* m_pool;
 

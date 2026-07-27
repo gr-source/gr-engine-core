@@ -1,6 +1,8 @@
 #include "gr-base/debug/debugBuffer.hpp"
 
+#include "gr-base/asset/assetDB.hpp"
 #include "gr-base/core/console.hpp"
+#include "gr-base/externals/hash.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/prefab/shaderprefab.hpp"
@@ -66,7 +68,8 @@ bool DebugBuffer::initialize()
     ShaderPrefab* prefab = nullptr;
     try
     {
-        prefab = AssetsManager::LoadShader("engine://shader/line");
+        prefab =
+            AssetsManager::LoadShader(AssetDB::FindByHash(engine::hash::fnv1_str("engine://shader/line")));
     } catch (const std::exception& e)
     {
         Console::LogError("[DebugDraw] Fail in to load shader to line '%s'!!!", e.what());

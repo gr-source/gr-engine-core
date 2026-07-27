@@ -12,6 +12,8 @@ public:
     template <typename T, typename... Args>
     static void Registry(Scheme scheme, Args&&...args);
 
+    static std::string Resolve(const std::string& uri);
+
     static std::string Resolve(const URI& uri);
 
 private:
@@ -27,12 +29,6 @@ template <typename T, typename... Args>
 inline void AssetResolver::Registry(Scheme scheme, Args&&...args)
 {
     GetInstance().m_providers[static_cast<int>(scheme)] = std::make_shared<T>(std::forward<Args>(args)...);
-}
-
-
-inline std::string AssetResolver::Resolve(const URI& uri)
-{
-    return GetInstance().resolve(uri);
 }
 
 

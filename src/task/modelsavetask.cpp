@@ -24,6 +24,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
     asset.name = gameObject.GetName();
     asset.isStatic = false;
 
+    /*
     auto meshRef = gameObject.GetComponent<MeshRef>();
     if (meshRef != nullptr)
         asset.mesh = meshRef->hash;
@@ -34,6 +35,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
         for (size_t i=0;i<materialRef->numMaterials;i++)
             asset.materials.push_back(materialRef->materials[i]);
     }
+    */
 
     for (auto& typeID : gameObject.GetAllComponentIDs())
     {
@@ -72,7 +74,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
         {
             GameObject siblingGo(gameObject.scene, sibling);
 
-            asset.childrent.push_back(ConvertToAssetModel(siblingGo));
+            asset.children.push_back(ConvertToAssetModel(siblingGo));
 
             auto siblingRel = siblingGo.GetComponent<Relationship>();
             if (siblingRel == nullptr)
@@ -120,6 +122,7 @@ std::string ModelSaveTask::doInBackground()
 
 void ModelSaveTask::onPostExecute(Result<std::string> result)
 {
+    /*
     auto name = m_uri.toString();
 
     if (!result.success)
@@ -152,6 +155,7 @@ void ModelSaveTask::onPostExecute(Result<std::string> result)
     AssetDB::Registry(name, AssetFlags_AssetModel);
 
     Console::LogInfo("[ModelSaveTask] Asset saved sucessfully '%s'", name.c_str());
+    */
 }
 
 

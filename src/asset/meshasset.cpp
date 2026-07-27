@@ -31,9 +31,6 @@ bool MeshAsset::serialize(Stream* stream) const
 
     for (auto& sub : submeshes)
     {
-        if (!stream->write(sub.materialName))
-            return false;
-
         if (!stream->write(sub.indexCount))
             return false;
 
@@ -76,9 +73,6 @@ bool MeshAsset::deserialize(Stream* stream)
     submeshes.resize(subcount, {});
     for (auto& sub : submeshes)
     {
-        if (!stream->read(sub.materialName))
-            return false;
-
         if (!stream->read(sub.indexCount))
             return false;
 

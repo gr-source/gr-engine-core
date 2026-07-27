@@ -40,7 +40,12 @@ void AssetDB::Save(const std::string &file)
     s_AssetDB->save(file);
 }
 
-void AssetDB::Registry(const std::string& path, AssetFlags_ flags)
+void AssetDB::Registry(const AssetInfo& info)
+{
+    s_AssetDB->registry(info);
+}
+/*
+void AssetDB::Registry(const std::string& path, AssetType flags)
 {
     s_AssetDB->registry(path, flags);
 }
@@ -49,15 +54,21 @@ void AssetDB::Unregistry(Hash64 hash)
 {
     s_AssetDB->unregistry(hash);
 }
+*/
 
 std::string AssetDB::Resolve(Hash64 hash)
 {
     return s_AssetDB->resolve(hash);
 }
 
-std::vector<AssetID> AssetDB::GetAssets(Scheme scheme)
+AssetID AssetDB::FindByHash(AssetHash hash)
 {
-    return s_AssetDB->m_assets[static_cast<size_t>(scheme)];
+    return s_AssetDB->findByHash(hash);
+}
+
+AssetID AssetDB::CreateID()
+{
+    return s_AssetDB->createID();
 }
 
 AssetInfo* AssetDB::GetAsset(AssetID id)
@@ -90,27 +101,30 @@ void AssetDB::load(const std::string &file)
         std::string path;
         AssetID id;
         Hash64 hash;
-        AssetFlags_ flags;
+        int type;
 
         std::stringstream iss(line);
-        if (!(iss >> hash >> id >> path >> flags))
+        if (!(iss >> hash >> id >> path >> type))
             continue;
 
         AssetInfo info;
         info.hash = hash;
         info.id = id;
-        info.flags = flags;
+        info.type = static_cast<AssetType>(type);
 
         size_t size = path.size();
         size = size > ASSET_MAX_PATH_LENGHT ? ASSET_MAX_PATH_LENGHT : size;
 
-        strncpy(info.path, path.c_str(), size);
-        info.path[size] = '\0';
+        strncpy(info.uri, path.c_str(), size);
+        info.uri[size] = '\0';
 
-        if (id >= m_nextID)
-            m_nextID = id + 1;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (id >= m_nextID)
+                m_nextID = id + 1;
+        }
 
-        insert(info);
+        registry(info);
     }
 
     EventManager::Notify<AssetEventOnLoaded>(nullptr);
@@ -130,33 +144,34 @@ void AssetDB::save(const std::string &file)
         os
             << info.hash  << " "
             << info.id    << " "
-            << info.path  << " "
-            << info.flags
+            << info.uri  << " "
+            << static_cast<int>(info.type)
             << std::endl;
     }
 
     os.close();
 }
 
-void AssetDB::registry(const std::string& path, AssetFlags_ flags)
+/*
+void AssetDB::registry(const std::string& path, AssetType type)
 {
     AssetHash hash = engine::hash::fnv1_str(path);
 
     if (m_refMapped.find(hash) != m_refMapped.end())
         return;
 
-    AssetID id = static_cast<AssetID>(m_nextID++);
+    AssetID id = createID();
 
     AssetInfo info;
     info.hash = hash;
     info.id = id;
-    info.flags = flags;
+    info.type = type;
 
     size_t size = path.size();
     size = size > ASSET_MAX_PATH_LENGHT ? ASSET_MAX_PATH_LENGHT : size;
 
-    strncpy(info.path, path.c_str(), size);
-    info.path[size] = '\0';
+    strncpy(info.uri, path.c_str(), size);
+    info.uri[size] = '\0';
 
     insert(info);
 }
@@ -174,22 +189,24 @@ void AssetDB::unregistry(Hash64 hash)
 
     auto info = m_spaseSet.get(it->second);
 
-    logger::trace("[ AssetDB ] unregister: '0x%lX' lookup: '%s'.", hash, info->path);
+    logger::trace("[ AssetDB ] unregister: '0x%lX' lookup: '%s'.", hash, info->uri);
 
     m_spaseSet.destroy(it->second);
 
     m_refMapped.erase(it);
 }
+*/
 
-void AssetDB::insert(const AssetInfo& info)
+void AssetDB::registry(const AssetInfo& info)
 {
-    URI uri = URI::parse(info.path);
-
-    m_assets[static_cast<size_t>(uri.scheme)].push_back(info.id);
+    URI uri = URI::parse(info.uri);
 
     m_spaseSet.insert(info.id, &info);
 
-    m_refMapped.emplace(info.hash, info.id);
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_refMapped.emplace(info.hash, info.id);
+    }
 
     AssetEventOnCreated event;
     event.value = info.id;
@@ -199,15 +216,34 @@ void AssetDB::insert(const AssetInfo& info)
 
 std::string AssetDB::resolve(Hash64 hash)
 {
-    auto it = m_refMapped.find(hash);
-    if (it == m_refMapped.end())
+    AssetID id = findByHash(hash);
+    if (id == INVALID_ASSET)
         throw std::runtime_error(String::format("reference '0x%lX' not found...", hash));
 
-    auto info = m_spaseSet.get(it->second);
+    auto info = m_spaseSet.get(id);
     if (info == nullptr)
-        throw std::runtime_error(String::format("this assetID is not valid id='%d'.", it->second));
+        throw std::runtime_error(String::format("this assetID is not valid id='%d'.", id));
 
-    return AssetResolver::Resolve(URI::parse(info->path));
+    return AssetResolver::Resolve(URI::parse(info->uri));
+}
+
+AssetID AssetDB::findByHash(AssetHash hash)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    auto it = m_refMapped.find(hash);
+    if (it != m_refMapped.end())
+        return it->second;
+    return INVALID_ASSET;
+}
+
+AssetID AssetDB::createID()
+{
+    AssetID id;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        id = m_nextID++;
+    }
+    return id;
 }
 
 

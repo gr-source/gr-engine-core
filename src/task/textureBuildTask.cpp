@@ -1,10 +1,14 @@
 #include "gr-base/task/textureBuildTask.hpp"
 
+#include "gr-base/asset/assetDB.hpp"
+#include "gr-base/asset/textureAsset.hpp"
 #include "gr-base/core/console.hpp"
 
 #include "gr-base/core/file/file.hpp"
+
 #include "gr-base/core/thread/taskmanager.hpp"
-#include "gr-base/task/texureSaveTask.hpp"
+
+#include "gr-base/task/assetSaveTask.hpp"
 
 #include <vector>
 #include <cerrno>
@@ -63,13 +67,23 @@ TextureAsset TextureBuildTask::doInBackground()
 
 void TextureBuildTask::onPostExecute(Result<TextureAsset> result)
 {
-    auto name = gfile::get_file_name(m_uri.path);
+    auto name = m_uri.toString();
 
     if (!result.success)
         return Console::LogError("[ TextureBuildTask ] erro in build texture name='%s' error='%s'.", name.c_str(), result.error.c_str());
 
     Console::LogInfo("[ TextureBuildTask ] Texture '%s' build sucessfully!", name.c_str());
 
-    TaskManager::Add<TextureSaveTask>(m_uri, result.value);
+    AssetID assetID = AssetDB::FindByHash(engine::hash::fnv1_str(name));
+    if (assetID == INVALID_ASSET)
+        assetID = AssetDB::CreateID();
+
+    AssetSaveInfo info;
+    info.uri = m_uri;
+    info.id = assetID;
+    info.type = AssetType_Texture;
+    info.asset = std::make_shared<TextureAsset>(result.value);
+
+    TaskManager::Add<AssetSaveTask>(info);
 }
 

@@ -6,12 +6,8 @@
 #include "gr-base/asset/assetDB.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
+
 #include "gr-base/core/file/file.hpp"
-
-#include "gr-base/core/animation/animation.hpp"
-
-#include "gr-base/core/console.hpp"
-
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/geometry/default.hpp"
 
@@ -19,6 +15,7 @@
 #include "gr-base/core/scene.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
+#include "gr-base/externals/handle.h"
 #include "gr-base/externals/hash.hpp"
 
 #include "gr-base/managers/shaderprefabmanager.hpp"
@@ -28,17 +25,12 @@
 
 #include "gr-base/task/modelloadtask.hpp"
 
-#include <exception>
-#include <stdexcept>
-
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
 
 void AssetsManager::Initialize()
 {
     if (s_AssetsManager == nullptr)
         s_AssetsManager = new AssetsManager();
-
-    logger::info("[AssetsManager] Initialize.");
 }
 
 void AssetsManager::Shutdown()
@@ -47,8 +39,6 @@ void AssetsManager::Shutdown()
         delete s_AssetsManager;
 
     s_AssetsManager = nullptr;
-
-    logger::info("[AssetsManager] Shutdown.");
 }
 
 TextureHandle AssetsManager::LoadTexture(const std::string& name)
@@ -58,15 +48,19 @@ TextureHandle AssetsManager::LoadTexture(const std::string& name)
 
 TextureHandle AssetsManager::LoadTexture(AssetHash hash)
 {
-    TextureHandle h = s_AssetsManager->mTextureManager->find(hash);
+    TextureHandle h =
+        s_AssetsManager->mTextureManager->find(hash);
     if (h != HANDLE_INVALID)
         return h;
 
-    TextureAsset asset = ImportTextureAssetFromFile(AssetDB::Resolve(hash));
+    TextureAsset asset =
+        ImportTextureAssetFromFile(AssetDB::Resolve(hash));
 
-    h = CreateTexture(hash);
+    h =
+        CreateTexture(hash);
 
-    auto texture = GetTexture(h);
+    auto texture =
+        GetTexture(h);
     texture->width = asset.width;
     texture->height = asset.height;
 
@@ -114,23 +108,35 @@ gr::Texture* AssetsManager::GetTexture(TextureHandle h)
 }
 
 // ********** Mesh ********** //
+/*
 MeshHandle AssetsManager::LoadMesh(const std::string& name)
 {
     return LoadMesh(engine::hash::fnv1_str(name.c_str()));
 }
+*/
 
-MeshHandle AssetsManager::LoadMesh(AssetHash hash)
+MeshHandle AssetsManager::LoadMesh(AssetID id)
 {
-    MeshHandle h = FindMesh(hash);
+    MeshHandle h = FindMesh(id);
     if (h != HANDLE_INVALID)
         return h;
 
-    Mesh mesh = LoadMeshFromFile(AssetDB::Resolve(hash));
+    auto info = AssetDB::GetAsset(id);
+    if (info == nullptr)
+        throw std::runtime_error("Asset not found");
 
-    h = CreateMesh(hash);
-    *GetMesh(h) = std::move(mesh);
+    auto path = AssetResolver::Resolve(info->uri) + HEADER_MESH_EXTENSION;
+    if (!gfile::exists(path))
+        throw std::runtime_error("File not found");
 
-    return h;
+    Mesh mesh = LoadMeshFromFile(path);
+
+    MeshHandle handle = CreateMesh();
+    *GetMesh(handle) = std::move(mesh);
+
+    s_AssetsManager->m_hashmap.emplace(id, handle);
+
+    return handle;
 }
 
 size_t AssetsManager::GetMeshCount()
@@ -173,14 +179,14 @@ static AABB CalculateBounds(Mesh* mesh)
     return bounds;
 }
 
-MeshHandle AssetsManager::CreateMesh(AssetHash hash)
+MeshHandle AssetsManager::CreateMesh()
 {
-    return s_AssetsManager->mMeshManager->create(hash);
+    return s_AssetsManager->mMeshManager->create();
 }
 
-MeshHandle AssetsManager::FindMesh(AssetHash hash)
+MeshHandle AssetsManager::FindMesh(AssetID id)
 {
-    return s_AssetsManager->mMeshManager->find(hash);
+    return s_AssetsManager->findInCache(id);
 }
 
 void AssetsManager::RemoveMesh(MeshHandle handle)
@@ -260,14 +266,38 @@ std::vector<gr::Shader *> AssetsManager::GetShaderList(ShaderType type)
 }
 */
 
-MaterialHandle AssetsManager::CreateMaterial(AssetHash hash)
+MaterialHandle AssetsManager::LoadMaterial(AssetID id)
 {
-    return s_AssetsManager->mMaterialManager->create(hash);
+    MaterialHandle h = FindMaterial(id);
+    if (h != HANDLE_INVALID)
+        return h;
+
+    auto info = AssetDB::GetAsset(id);
+    if (info == nullptr)
+        throw std::runtime_error("Asset not found");
+
+    auto path = AssetResolver::Resolve(info->uri) + HEADER_MATERIAL_EXTENSION;
+    if (!gfile::exists(path))
+        throw std::runtime_error("File not found");
+
+    Material material = LoadMaterialFromFile(path);
+
+    MaterialHandle handle = CreateMaterial();
+    *GetMaterial(handle) = std::move(material);
+
+    s_AssetsManager->m_hashmap.emplace(id, handle);
+
+    return handle;
 }
 
-MaterialHandle AssetsManager::FindMaterial(AssetHash hash)
+MaterialHandle AssetsManager::CreateMaterial()
 {
-    return s_AssetsManager->mMaterialManager->find(hash);
+    return s_AssetsManager->mMaterialManager->create();
+}
+
+MaterialHandle AssetsManager::FindMaterial(AssetID id)
+{
+    return s_AssetsManager->findInCache(id);
 }
 
 Material *AssetsManager::GetMaterial(MaterialHandle h)
@@ -285,60 +315,57 @@ usize AssetsManager::GetTextureCount()
     return s_AssetsManager->mTextureManager->GetCount();
 }
 
-const std::vector<ShaderPrefab*>& AssetsManager::GetAllShader3D()
-{
-    return s_AssetsManager->mShaderPrefabManager->GetAllShader3d();
-}
-
+/*
 MaterialHandle AssetsManager::LoadMaterial(const std::string& name)
 {
     return LoadMaterial(engine::hash::fnv1_str(name.c_str()));
-}
-
-MaterialHandle AssetsManager::LoadMaterial(AssetHash hash)
-{
-    MaterialHandle h = FindMaterial(hash);
-    if (h != HANDLE_INVALID)
-        return h;
-
-    Material material = LoadMaterialFromFile(AssetDB::Resolve(hash));
-
-    h = CreateMaterial(hash);
-    *GetMaterial(h) = std::move(material);
-
-    return h;
 }
 
 ShaderPrefab* AssetsManager::FindShader(const std::string &name)
 {
     return FindShader(engine::hash::fnv1_str(name.c_str()));
 }
+*/
 
-ShaderPrefab* AssetsManager::FindShader(Hash64 hash)
+ShaderPrefab* AssetsManager::FindShader(AssetID id)
 {
-    return s_AssetsManager->mShaderPrefabManager->find(hash);
+    return s_AssetsManager->mShaderPrefabManager->find(id);
 }
 
+/*
 ShaderPrefab* AssetsManager::LoadShader(const std::string& name)
 {
     return LoadShaderFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())));
 }
+*/
 
-ShaderPrefab* AssetsManager::LoadShader(Hash64 hash)
+ShaderPrefab* AssetsManager::LoadShader(AssetID id)
 {
-    return LoadShaderFromFile(AssetDB::Resolve(hash));
+    if (auto prefab = FindShader(id))
+        return prefab;
+
+    auto info = AssetDB::GetAsset(id);
+    if (info == nullptr)
+        return nullptr;
+
+    std::cout << "Create: " << info->uri << std::endl;
+
+    auto asset =
+        ImportShaderAssetFromFile(AssetResolver::Resolve(info->uri));
+
+    return s_AssetsManager->mShaderPrefabManager->create(id, &asset);
 }
 
-ShaderPrefab* AssetsManager::LoadShaderFromFile(const std::string& file)
+ShaderAsset AssetsManager::ImportShaderAssetFromFile(const std::string& file)
 {
     ShaderAsset asset;
     if (!LoadFromFile(file + HEADER_SHADER_EXTENSION, HEADER_SHADER_SIGN, [&](Stream* stream)
                 {
                     return asset.deserialize(stream);
                 }))
-        return nullptr;
+        throw std::runtime_error("[ AssetsManager ] ShaderAsset load failed: " + file + HEADER_TEXTURE_EXTENSION);
 
-    return s_AssetsManager->mShaderPrefabManager->create(&asset);
+    return asset;
 }
 
 TextureAsset AssetsManager::ImportTextureAssetFromFile(const std::string& file)
@@ -356,13 +383,13 @@ TextureAsset AssetsManager::ImportTextureAssetFromFile(const std::string& file)
 Material AssetsManager::LoadMaterialFromFile(const std::string& file)
 {
     MaterialAsset asset;
-    if (!LoadFromFile(file + HEADER_MATERIAL_EXTENSION, HEADER_MATERIAL_SIGN, [&](Stream* stream)
+    if (!LoadFromFile(file, HEADER_MATERIAL_SIGN, [&](Stream* stream)
             {
                 return asset.deserialize(stream);
             }))
-        throw std::runtime_error("[ AssetsManager ] Material load failed: " + file + HEADER_MATERIAL_EXTENSION);
+        throw std::runtime_error("[ AssetsManager ] Material load failed: " + file);
 
-    ShaderPrefab* prefab = s_AssetsManager->mShaderPrefabManager->find(engine::hash::fnv1_str(asset.shader));
+    ShaderPrefab* prefab = FindShader(asset.shader);
     if (prefab == nullptr)
         prefab = LoadShader(asset.shader);
 
@@ -378,7 +405,7 @@ Material AssetsManager::LoadMaterialFromFile(const std::string& file)
 Mesh AssetsManager::LoadMeshFromFile(const std::string& file)
 {
     MeshAsset asset;
-    if (!LoadFromFile(file + HEADER_MESH_EXTENSION, HEADER_MESH_SIGN, [&](Stream* stream)
+    if (!LoadFromFile(file, HEADER_MESH_SIGN, [&](Stream* stream)
             {
                 return asset.deserialize(stream);
             }))
@@ -422,10 +449,14 @@ Mesh AssetsManager::LoadMeshFromFile(const std::string& file)
 
 // private
 AssetsManager::AssetsManager() : mMaterialManager(new MaterialManager()), mMeshManager(new MeshManager()), mShaderPrefabManager(new ShaderPrefabManager()), mTextureManager(new TextureManager())
-{}
+{
+    logger::info("[ AssetsManager ] Initialize %p.", this);
+}
 
 AssetsManager::~AssetsManager()
 {
+    logger::info("[ AssetsManager ] Shutdown %p.", this);
+
     delete mMaterialManager;
 
     delete mMeshManager;
@@ -433,6 +464,14 @@ AssetsManager::~AssetsManager()
     delete mShaderPrefabManager;
 
     delete mTextureManager;
+}
+
+Handle AssetsManager::findInCache(AssetID id) const
+{
+    auto it = m_hashmap.find(id);
+    if (it != m_hashmap.end())
+        return it->second;
+    return HANDLE_INVALID;
 }
 
 bool AssetsManager::LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func)

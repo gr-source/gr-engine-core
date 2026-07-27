@@ -1,11 +1,13 @@
 #pragma once
 
+#include "gr-base/asset/iasset.hpp"
+
 #include "gr-base/core/file/default.hpp"
 
 #include <cstdint>
 #include <vector>
 
-struct TextureAsset
+struct TextureAsset : IAsset
 {
     uint32_t width = 0;
     uint32_t height = 0;
@@ -16,8 +18,8 @@ struct TextureAsset
 
     std::vector<uint8_t> raw;
 
-    bool serialize(Stream* stream) const;
+    bool serialize(Stream* stream) const override;
 
-    bool deserialize(Stream* stream);
+    bool deserialize(Stream* stream) override;
 };
 

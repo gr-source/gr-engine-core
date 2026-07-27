@@ -1,15 +1,21 @@
 #include "gr-base/managers/meshmanager.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
+
 #include "gr-base/externals/handle.h"
-#include "gr-base/externals/hash.hpp"
+
 #include <cassert>
 #include <cstdlib>
 
-MeshManager::MeshManager() : m_pool(nullptr), m_count(0), m_capacity(0), m_slots(nullptr), m_freeID(0)
+MeshManager::MeshManager() :
+    m_pool(nullptr),
+    m_count(0),
+    m_capacity(0),
+    m_slots(nullptr),
+    m_freeID(0)
 {}
 
-MeshHandle MeshManager::create(AssetHash hash)
+MeshHandle MeshManager::create()
 {
     if (m_count >= m_capacity)
         resize();
@@ -17,7 +23,6 @@ MeshHandle MeshManager::create(AssetHash hash)
     uint32_t id = m_freeID;
 
     Slot& slot = m_slots[id];
-    slot.hash = hash;
 
     m_freeID = slot.next;
 
@@ -27,9 +32,6 @@ MeshHandle MeshManager::create(AssetHash hash)
 
     Mesh* mesh = m_pool + id;
     new (mesh) Mesh();
-
-    if (hash != INVALID_HASH64)
-        m_hashmap.emplace(hash, h);
 
     return h;
 }
@@ -58,23 +60,12 @@ void MeshManager::remove(MeshHandle h)
     Mesh& mesh = m_pool[index];
     mesh.~Mesh();
 
-    if (slot.hash != INVALID_HASH64)
-        m_hashmap.erase(slot.hash);
-
     slot.next = m_freeID;
     m_freeID = index;
 
     slot.version++;
 
     m_count--;
-}
-
-MeshHandle MeshManager::find(AssetHash hash) const
-{
-    auto it = m_hashmap.find(hash);
-    if (it == m_hashmap.end())
-        return HANDLE_INVALID;
-    return it->second;
 }
 
 size_t MeshManager::GetCount() const
@@ -99,9 +90,9 @@ void MeshManager::addFreeID(size_t oldCapacity)
 {
     size_t lastElement = m_capacity - 1;
     for (size_t i=oldCapacity;i<lastElement;i++)
-        m_slots[i] = { static_cast<uint32_t>(i) + 1, 1, INVALID_HASH64 };
+        m_slots[i] = { static_cast<uint32_t>(i) + 1, 1 };
 
-    m_slots[lastElement] = { m_freeID, 1, INVALID_HASH64 };
+    m_slots[lastElement] = { m_freeID, 1 };
     m_freeID = static_cast<uint32_t>(oldCapacity);
 }
 

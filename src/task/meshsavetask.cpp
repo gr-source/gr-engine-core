@@ -46,6 +46,7 @@ std::string MeshSaveTask::doInBackground()
 
 void MeshSaveTask::onPostExecute(Result<std::string> result)
 {
+    /*
     auto name = m_uri.toString();
 
     if (!result.success)
@@ -67,6 +68,7 @@ void MeshSaveTask::onPostExecute(Result<std::string> result)
     AssetDB::Registry(name, AssetFlags_AssetMesh);
 
     Console::LogInfo("[MeshSaveTask] Asset saved sucessfully '%s'", name.c_str());
+    */
 }
 
 

@@ -1,7 +1,10 @@
 #pragma once
 
-#include "gr-base/core/ievent.hpp"
+#include "gr-base/asset/iasset.hpp"
+
 #include "gr-base/externals/hash.hpp"
+
+#include "gr-base/core/ievent.hpp"
 
 #include <stdint.h>
 
@@ -10,15 +13,15 @@
 typedef Hash64 AssetHash;
 
 typedef uint32_t AssetID;
-typedef uint32_t AssetFlags_;
 
-enum AssetFlags
+enum AssetType
 {
-    AssetFlags_AssetModel     = 1 << 1,
-    AssetFlags_AssetTexture   = 1 << 2,
-    AssetFlags_AssetMesh      = 1 << 3,
-    AssetFlags_AssetMaterial  = 1 << 4,
-    AssetFlags_AssetShader    = 1 << 5
+    AssetType_Unknown   = 0,
+    AssetType_Model     = 1,
+    AssetType_Texture   = 2,
+    AssetType_Mesh      = 3,
+    AssetType_Material  = 4,
+    AssetType_Shader    = 5
 };
 
 class MeshAsset;

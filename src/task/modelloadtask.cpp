@@ -1,5 +1,6 @@
 #include "gr-base/task/modelloadtask.hpp"
 
+#include "gr-base/asset/assetDB.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
 
 #include "gr-base/core/file/memoryStream.hpp"
@@ -19,6 +20,7 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include <cerrno>
+#include <exception>
 
 void ModelLoadTask::onPreExecute()
 {
@@ -91,21 +93,25 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         }
     }
 
-    if (asset->mesh != INVALID_HASH64)
+    if (asset->mesh != INVALID_ASSET)
     {
         try
         {
-            MeshHandle mesh = AssetsManager::LoadMesh(asset->mesh);
+            MeshHandle mesh =
+                AssetsManager::LoadMesh(asset->mesh);
 
+            if (mesh != HANDLE_INVALID)
             {
                 auto meshFilter = go.GetOrAddComponent<MeshFilter>();
                 meshFilter->mesh = mesh;
             }
 
+            /*
             {
                 auto meshRef = go.GetOrAddComponent<MeshRef>();
                 meshRef->hash = asset->mesh;
             }
+            */
         } catch (const std::exception& e)
         {
             Console::LogWarning("[ ModelLoadTask ] Mesh não carregada asset='0x%lX' error='%s'. ", asset->mesh, e.what());
@@ -115,9 +121,10 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         {
 
             std::vector<MaterialHandle> materials;
-            for (auto& key : asset->materials)
+            for (auto& assetID : asset->materials)
             {
-                MaterialHandle material = AssetsManager::LoadMaterial(key);
+                MaterialHandle material =
+                    AssetsManager::LoadMaterial(assetID);
 
                 materials.push_back(material);
             }
@@ -128,6 +135,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
 
             memcpy(meshRender->materials, materials.data(), materials.size() * sizeof(MaterialHandle));
 
+            /*
             auto materialRef = go.GetOrAddComponent<MaterialRef>();
             if (materialRef != nullptr)
             {
@@ -136,6 +144,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
 
                 memcpy(materialRef->materials, asset->materials.data(), asset->materials.size() * sizeof(AssetHash));
             }
+            */
         } catch (const std::exception& e)
         {
             Console::LogWarning("[ ModelLoadTask ] Material não carregado: error='%s'.", e.what());
@@ -159,7 +168,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         }
     }
 
-    for (auto& assetChild : asset->childrent)
+    for (auto& assetChild : asset->children)
     {
         Entity child = CreateFromAsset(&assetChild);
 

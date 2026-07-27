@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/asset/iasset.hpp"
 #include "gr-base/core/file/default.hpp"
 
 #include "gr-base/ecs/type_traits.hpp"
@@ -11,31 +12,33 @@
 #include <vector>
 #include <string>
 
-struct ModelAsset
+struct ModelAsset : IAsset
 {
     std::unordered_map<Hash64, std::vector<uint8_t>> componentBuffer;
 
-    std::vector<ModelAsset> childrent;
+    std::vector<ModelAsset> children;
 
-    std::vector<AssetHash> materials;
+    std::vector<AssetID> materials;
+
+    AssetID mesh = INVALID_ASSET;
     
     std::string name;
-
-    AssetHash mesh = INVALID_HASH64;
 
     bool isStatic = false;
 
     template <typename T>
-    inline void AddComponent(const T& pref)
-    {
-        AddComponent(engine::type_traits::hash<T>, &pref, sizeof(T));
-    }
+    void AddComponent(const T& pref);
 
     void AddComponent(Hash64 hash, const void* data, size_t size);
 
-    bool serialize(Stream* stream) const;
+    bool serialize(Stream* stream) const override;
 
-    bool deserialize(Stream* stream);
+    bool deserialize(Stream* stream) override;
 };
 
+template <typename T>
+inline void ModelAsset::AddComponent(const T& pref)
+{
+    AddComponent(engine::type_traits::hash<T>, &pref, sizeof(T));
+}
 

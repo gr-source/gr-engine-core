@@ -16,7 +16,7 @@ public:
     TextureManager();
     ~TextureManager();
 
-    TextureHandle create(AssetHash hash);
+    TextureHandle create(AssetHash hashCache = INVALID_HASH64);
 
     gr::Texture *get(TextureHandle h) const;
 

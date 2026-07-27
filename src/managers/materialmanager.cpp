@@ -9,7 +9,7 @@
 MaterialManager::MaterialManager() : m_count(0), m_capacity(0), m_slots(nullptr), m_freeID(0)
 {}
 
-MaterialHandle MaterialManager::create(AssetHash hash)
+MaterialHandle MaterialManager::create()
 {
     if (m_count >= m_capacity)
         resize();
@@ -17,7 +17,6 @@ MaterialHandle MaterialManager::create(AssetHash hash)
     uint32_t id = m_freeID;
 
     Slot& slot = m_slots[id];
-    slot.hash = hash;
 
     m_freeID = slot.next;
 
@@ -28,18 +27,7 @@ MaterialHandle MaterialManager::create(AssetHash hash)
     Material* material = &m_materialPool[id];
     new (material) Material();
 
-    if (hash != INVALID_HASH64)
-        m_materialMap.emplace(hash, h);
-
     return h;
-}
-
-MaterialHandle MaterialManager::find(AssetHash hash) const
-{
-    auto it = m_materialMap.find(hash);
-    if (it == m_materialMap.end())
-        return HANDLE_INVALID;
-    return it->second;
 }
 
 Material *MaterialManager::get(MaterialHandle h)
@@ -65,9 +53,6 @@ void MaterialManager::destroy(MaterialHandle h)
 
     Material& material = m_materialPool[index];
     material.~Material();
-
-    if (slot.hash != INVALID_HASH64)
-        m_materialMap.erase(slot.hash);
 
     m_freeID = index;
 
