@@ -12,16 +12,16 @@ void CameraSystem::Update(Scene* scene)
 {
     auto world = scene->GetWorldDynamic();
 
-    world->Query<Transform, Camera, CameraData>([](
+    world->Query<TransformLocal, Camera, CameraData>([](
                 size_t count,
                 const Entity* entities,
-                Transform* transforms,
+                TransformLocal* locals,
                 Camera* cameras,
                 CameraData* datas)
     {
         for (size_t i=0;i<count;i++)
         {
-            Transform& transform = transforms[i];
+            TransformLocal& local = locals[i];
             CameraData& data = datas[i];
             Camera& camera = cameras[i];
 
@@ -36,15 +36,15 @@ void CameraSystem::Update(Scene* scene)
                 );
 
             data.forward =
-                transform.rotation * type_traits<Vector3>::forward;
+                local.rotation * type_traits<Vector3>::forward;
 
             data.right =
-                transform.rotation * type_traits<Vector3>::right;
+                local.rotation * type_traits<Vector3>::right;
 
             data.up =
-                transform.rotation * type_traits<Vector3>::up;
+                local.rotation * type_traits<Vector3>::up;
 
-            data.view = Math::lookAt(transform.position, transform.position + data.forward, data.up);
+            data.view = Math::lookAt(local.position, local.position + data.forward, data.up);
 
             // data.view = Math::Inverse(transform.worldMatrix);
 

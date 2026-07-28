@@ -1,4 +1,5 @@
 #pragma once
+/*
 
 #include "gr-base/script/default.hpp"
 
@@ -18,5 +19,5 @@ private:
 
     bool contains(const Rect &rect, const Vector2 &point);
 };
-
+*/
 

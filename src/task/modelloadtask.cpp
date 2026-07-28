@@ -145,7 +145,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         }
     }
 
-    if (go.HasComponent<Transform, MeshFilter, MeshRender>())
+    if (go.HasComponent<MeshFilter, MeshRender>())
     {
         auto meshFilter = go.GetComponent<MeshFilter>();
         if (meshFilter->mesh != HANDLE_INVALID)
@@ -156,6 +156,10 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
             if (mesh != nullptr)
             {
                 auto& bounds = mesh->localBounds;
+
+                go.AddComponent<RenderBounds>(bounds);
+                go.AddComponent<RenderCache>();
+
                 if (bounds.Volume() > 0.0f)
                     bvh->insert(go.entity, bounds);
             }

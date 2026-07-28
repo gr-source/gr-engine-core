@@ -18,25 +18,33 @@ void TransformSystem::Update(Scene* scene)
 {
     BVHtree* bvh = scene->GetBVHtree();
 
-    scene->world->Query<Transform>
+    scene->world->Query<TransformLocal, TransformWorld, TransformDirty, TransformCache>
         (
-            [&](size_t count, Entity* entities, Transform* transforms)
+            [&](
+                size_t count,
+                Entity* entities,
+                TransformLocal* locals,
+                TransformWorld* worlds,
+                TransformDirty* dirty,
+                TransformCache* cache
+
+            )
             {
                 for (size_t i=0;i<count;i++)
                 {
-                    Transform& transform = transforms[i];
-                    if (!transform.dirty)
+                    if (dirty[i].version == cache[i].version)
                         continue;
-                    transform.dirty = false;
 
+                    auto& local = locals[i];
+                    auto& world = worlds[i];
 
-                    // GameObject gameObject(scene, entity);
-                    // if (!gameObject.HasComponent<Transform>())
-                    //     continue;
-
-                    // auto transform = gameObject.GetComponent<Transform>();
-                    transform.localMatrix = Math::CreateTRS(transform.position, transform.rotation, transform.scale);
-                    transform.worldMatrix = transform.localMatrix;
+                    world.localMatrix =
+                        Math::CreateTRS(
+                                local.position,
+                                local.rotation,
+                                local.scale
+                            );
+                    world.worldMatrix = world.localMatrix;
 
                     /*
                     if (gameObject.HasComponent<Relationship>())
@@ -45,17 +53,16 @@ void TransformSystem::Update(Scene* scene)
                         if (rel->parent != INVALID_ENTITY)
                         {
                             GameObject parent(scene, rel->parent);
-                            if (parent.HasComponent<Transform>())
+                            if (parent.HasComponent<TransformWorld>())
                             {
-                                auto parentTransform = parent.GetComponent<Transform>();
-                                transform->worldMatrix = parentTransform->worldMatrix * transform->localMatrix;
+                                auto parentTransform = parent.GetComponent<TransformWorld>();
+                                world.worldMatrix = parentTransform->worldMatrix * world.localMatrix;
                             }
                         }
                     }
-                    */
 
                     GameObject gameObject(scene, entities[i]);
-                    if (gameObject.HasComponent<Transform, MeshFilter, MeshRender>())
+                    if (gameObject.HasComponent<MeshFilter, MeshRender>())
                     {
                         auto meshFilter = gameObject.GetComponent<MeshFilter>();
                         if (meshFilter != nullptr)
@@ -64,13 +71,16 @@ void TransformSystem::Update(Scene* scene)
                             if (mesh != nullptr)
                             {
                                 AABB bounds = mesh->localBounds;
-                                bounds.min = transform.worldMatrix * bounds.min;
-                                bounds.max = transform.worldMatrix * bounds.max;
+                                bounds.min = world.worldMatrix * bounds.min;
+                                bounds.max = world.worldMatrix * bounds.max;
 
                                 bvh->sync(entities[i], bounds);
                             }
                         }
                     }
+                    */
+
+                    cache[i].version = dirty[i].version;
                 }
             }
         );

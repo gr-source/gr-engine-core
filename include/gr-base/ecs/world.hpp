@@ -82,6 +82,12 @@ struct world
         return component;
     }
 
+    template <typename... Components>
+    void AddComponentByMask(Entity entity)
+    {
+        AddComponentByMask(entity, ComponentRegistry::GetMask<Components...>());
+    }
+
     template <typename T>
     T* GetComponent(Entity entity) const
     {

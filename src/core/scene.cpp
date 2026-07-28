@@ -62,15 +62,15 @@ Scene::~Scene()
 
 Entity Scene::create(const char* name)
 {
-    Entity e = GetWorldDynamic()->Create();
-    GetWorldDynamic()->AddComponent<Transform>(e);
-    if (name != nullptr)
-        GetWorldDynamic()->AddComponent<Name>(e, strdup(name));
-    //
-    // GetWorldDynamic()->AddComponent<Relationship>(e);
-    SetParent(m_root, e);
+    Entity entity = world->Create();
+    world->AddComponentByMask<TRANSFORM_MAKS>(entity);
 
-    return e;
+    if (name != nullptr)
+        world->AddComponent<Name>(entity, strdup(name));
+    //
+    SetParent(m_root, entity);
+
+    return entity;
 }
 
 Entity Scene::create(Entity other)
@@ -78,17 +78,16 @@ Entity Scene::create(Entity other)
     if (other == INVALID_ENTITY)
         return INVALID_ENTITY;
 
-    GameObject go(this, GetWorldDynamic()->Create());
+    GameObject go(this, create(nullptr));
     const GameObject otherGO(this, other);
     // m_isStatic = otherGO->m_isStatic;
 
-    auto otherTrans = otherGO.GetComponent<Transform>();
+    auto otherTrans = otherGO.GetComponent<TransformLocal>();
 
-    auto myTrans = go.GetOrAddComponent<Transform>();
+    auto myTrans = go.GetComponent<TransformLocal>();
     myTrans->position = otherTrans->position;
     myTrans->rotation = otherTrans->rotation;
     myTrans->scale = otherTrans->scale;
-    MarkChanged<Transform>(go.entity);
 
     auto otherRel = otherGO.GetComponent<Relationship>();
     if (otherRel != nullptr)
@@ -99,7 +98,7 @@ Entity Scene::create(Entity other)
             Entity newChild = create(sibling);
             SetParent(go.entity, newChild);
 
-            auto siblingRel = GetWorldDynamic()->GetComponent<Relationship>(sibling);
+            auto siblingRel = world->GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;
@@ -133,7 +132,7 @@ Entity Scene::create(Entity other)
         }
     }
 
-    if (go.HasComponent<Transform, MeshFilter, MeshRender>())
+    if (go.HasComponent<MeshFilter, MeshRender>())
     {
         auto meshFilter = go.GetComponent<MeshFilter>();
         if (meshFilter->mesh != HANDLE_INVALID)
@@ -153,7 +152,7 @@ Entity Scene::create(Entity other)
 
 void Scene::destroy(Entity e)
 {
-    if (GetWorldDynamic()->HasComponent<Transform, MeshFilter, MeshRender>(e))
+    if (world->HasComponent<TransformLocal, MeshFilter, MeshRender>(e))
         m_bvhtree->remove(e);
 
     Unlink(e);
@@ -214,9 +213,9 @@ size_t Scene::GetEntityCount()
 
 void Scene::MarkChildrenDirty(Entity entity)
 {
-    auto transform = GetWorldDynamic()->GetComponent<Transform>(entity);
+    auto transform = world->GetComponent<TransformDirty>(entity);
     if (transform != nullptr)
-        MarkChanged<Transform>(entity);
+        transform->version++;
 
     auto rel = GetWorldDynamic()->GetComponent<Relationship>(entity);
     if (rel != nullptr)

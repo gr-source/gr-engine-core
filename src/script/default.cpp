@@ -31,10 +31,18 @@ void RegistryDefaultComponent()
     REGISTER_COMPONENT(MeshRef, false);
     
     REGISTER_COMPONENT(CameraData, false);
-    REGISTER_COMPONENT(Transform, true);
     REGISTER_COMPONENT(Camera, true);
     REGISTER_COMPONENT(Light, true);
     REGISTER_COMPONENT(Name, false);
+
+    REGISTER_COMPONENT(TransformLocal, true);
+    REGISTER_COMPONENT(TransformWorld, true);
+
+    REGISTER_COMPONENT(TransformDirty, false);
+    REGISTER_COMPONENT(TransformCache, false);
+
+    REGISTER_COMPONENT(RenderBounds, false);
+    REGISTER_COMPONENT(RenderCache, false);
 }
 
 #undef REGISTER_COMPONENT

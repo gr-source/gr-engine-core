@@ -19,6 +19,8 @@ public:
 
 private:
     void Update(Scene* scene) override;
+
+    void UpdateBVH(Scene* scene);
 };
 
 template <>
