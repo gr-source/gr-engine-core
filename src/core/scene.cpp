@@ -317,10 +317,24 @@ void Scene::SetParent(Entity parentEntity, Entity childEntity)
     MarkChildrenDirty(child.entity);
 }
 
+#include "gr-base/scopeTimer.hpp"
+
 void Scene::Update()
 {
     for (auto& sys : m_systems)
         sys->Update(this);
+    /*
+    for (auto& systemID : m_systemIDs)
+    {
+        ISystem* sys = m_typeIDToSystem[systemID];
+
+        auto info = SystemRegistry::GetSystemByID(systemID);
+
+        ScopeTimer scope(info->name);
+
+        sys->Update(this);
+    }
+    */
 
     // m_bvhtree->renderer();
 }

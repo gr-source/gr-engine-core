@@ -49,6 +49,8 @@ set(core
     src/core/clock.cpp
     src/core/scene.cpp
     src/core/input.cpp
+
+    src/scopeTimer.cpp
 )
 
 set(binary
