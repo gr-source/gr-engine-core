@@ -9,6 +9,10 @@
 
 #include <unordered_map>
 
+#define INVALID_MESHID UINT32_MAX
+
+typedef uint32_t MeshID;
+
 class MeshManager
 {
 public:
@@ -25,7 +29,7 @@ public:
 private:
     struct Slot
     {
-        uint32_t next;
+        MeshID next;
         uint32_t version;
     };
 
@@ -36,7 +40,7 @@ private:
     size_t m_count;
 
     Slot *m_slots;
-    uint32_t m_freeID;
+    MeshID m_freeID;
 
     void resize();
 

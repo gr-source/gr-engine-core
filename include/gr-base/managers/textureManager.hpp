@@ -18,7 +18,7 @@ public:
 
     TextureHandle create(AssetHash hashCache = INVALID_HASH64);
 
-    gr::Texture *get(TextureHandle h) const;
+    gr::texture *get(TextureHandle h) const;
 
     void remove(TextureHandle h);
 
@@ -29,7 +29,7 @@ public:
 private:
     std::unordered_map<AssetHash, TextureHandle> m_hashmap;
 
-    ObjectPool<gr::Texture> m_pool;
+    ObjectPool<gr::texture> m_pool;
 };
 
 

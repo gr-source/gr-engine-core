@@ -12,12 +12,13 @@ MeshManager::MeshManager() :
     m_count(0),
     m_capacity(0),
     m_slots(nullptr),
-    m_freeID(0)
-{}
+    m_freeID(INVALID_MESHID)
+{
+}
 
 MeshHandle MeshManager::create()
 {
-    if (m_count >= m_capacity)
+    if (m_freeID == INVALID_MESHID)
         resize();
 
     uint32_t id = m_freeID;
@@ -41,6 +42,9 @@ Mesh *MeshManager::get(MeshHandle h) const
     uint32_t index = handle_get_first(h);
     uint32_t version = handle_get_second(h);
 
+    if (index >= m_capacity)
+        return nullptr;
+
     Slot& slot = m_slots[index];
     if (slot.version != version)
         return nullptr;
@@ -52,6 +56,9 @@ void MeshManager::remove(MeshHandle h)
 {
     uint32_t index = handle_get_first(h);
     uint32_t version = handle_get_second(h);
+
+    if (index >= m_capacity)
+        return;
 
     Slot& slot = m_slots[index];
     if (slot.version != version)
@@ -90,7 +97,7 @@ void MeshManager::addFreeID(size_t oldCapacity)
 {
     size_t lastElement = m_capacity - 1;
     for (size_t i=oldCapacity;i<lastElement;i++)
-        m_slots[i] = { static_cast<uint32_t>(i) + 1, 1 };
+        m_slots[i] = { static_cast<MeshID>(i) + 1, 1 };
 
     m_slots[lastElement] = { m_freeID, 1 };
     m_freeID = static_cast<uint32_t>(oldCapacity);

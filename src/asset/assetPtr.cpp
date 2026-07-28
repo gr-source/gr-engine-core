@@ -2,17 +2,17 @@
 
 #include "gr-base/managers/assetsManager.hpp"
 
-#include <gr-render/gTexture.h>
+#include <gr-render/texture.h>
 
 // ===== Texture ===== //
 template <>
-gr::Texture* AssetPtr<gr::Texture>::get()
+gr::texture* AssetPtr<gr::texture>::get()
 {
     return AssetsManager::GetTexture(handle);
 }
 
 template <>
-gr::Texture* AssetPtr<gr::Texture>::operator->()
+gr::texture* AssetPtr<gr::texture>::operator->()
 {
     return get();
 }

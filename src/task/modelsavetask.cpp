@@ -40,26 +40,30 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
     for (auto& typeID : gameObject.GetAllComponentIDs())
     {
         auto type = ComponentRegistry::GetComponentByID(typeID);
+        if (type == nullptr)
+            continue;
 
         auto component = gameObject.GetComponentByID(typeID);
+        if (component == nullptr)
+            continue;
+
+        if (!type->serializable)
+            continue;
 
         std::vector<uint8_t> buffer;
-        if (type->serializable)
+        if (type->isTriviallyCopyable)
         {
-            if (type->isTriviallyCopyable)
-            {
-                buffer.resize(type->stride, 0);
+            buffer.resize(type->stride, 0);
 
-                memcpy(buffer.data(), component, type->stride);
-            } else if (type->serialize != nullptr)
-            {
-                MemoryStream stream;
-                ((void (*)(Stream*, const void*))(type->serialize))(&stream, component);
+            memcpy(buffer.data(), component, type->stride);
+        } else if (type->serialize != nullptr)
+        {
+            MemoryStream stream;
+            ((void (*)(Stream*, const void*))(type->serialize))(&stream, component);
 
-                buffer.resize(stream.tellg(), 0);
+            buffer.resize(stream.tellg(), 0);
 
-                memcpy(buffer.data(), stream.data(), stream.tellg());
-            }
+            memcpy(buffer.data(), stream.data(), stream.tellg());
         }
 
         if (!buffer.empty())
@@ -84,9 +88,6 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
     }
     return asset;
 }
-
-ModelSaveTask::ModelSaveTask(const URI& uri, const ModelAsset& asset) : m_uri(uri), m_asset(asset)
-{}
 
 ModelSaveTask::ModelSaveTask(const URI& uri, const GameObject& gameObject) : m_uri(uri), m_asset(ConvertToAssetModel(gameObject))
 {}

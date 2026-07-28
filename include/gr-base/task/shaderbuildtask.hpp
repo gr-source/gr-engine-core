@@ -7,10 +7,10 @@
 
 #include "gr-base/core/thread/asynctask.hpp"
 
-#include <memory>
+#include <unordered_set>
+#include <vector>
 #include <string>
 #include <tuple>
-#include <unordered_set>
 
 
 class ShaderBuildTask : public IAsyncTask<ShaderAsset>
@@ -25,7 +25,7 @@ private:
 
         std::string variable;
 
-        u32 count;
+        uint32_t count;
     } ShaderUniformRaw;
 
     const URI m_uri;

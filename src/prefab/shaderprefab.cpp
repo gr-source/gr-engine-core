@@ -1,10 +1,9 @@
 #include "gr-base/prefab/shaderprefab.hpp"
+
 #include "gr-base/core/console.hpp"
 
-
 #include <algorithm>
-
-#include <string.h>
+#include <cstring>
 
 static std::unordered_map<std::string, UniformType> mTypeMapping =
 {

@@ -4,6 +4,7 @@
 #include <mutex>
 #include <list>
 
+#include "gr-base/core/ievent.hpp"
 #include "gr-base/core/string.hpp"
 
 struct Log {
@@ -16,6 +17,11 @@ struct Log {
 
     LogType type;
     std::string message;
+};
+
+struct Console_onAddMessage : IEvent
+{
+    Log log;
 };
 
 class Console
@@ -57,7 +63,7 @@ private:
     template <typename ...Args>
     void message(Log::LogType type, const std::string &format, Args &&...args);
 
-    const std::list<Log> &getLogs();
+    std::list<Log> getLogs();
 
     bool isChanged();
 

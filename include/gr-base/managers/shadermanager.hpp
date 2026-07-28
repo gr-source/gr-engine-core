@@ -5,6 +5,9 @@
 #include "gr-base/core/geometry/shaderData.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 
+#include <unordered_map>
+#include <vector>
+
 class ShaderManager
 {
 public:

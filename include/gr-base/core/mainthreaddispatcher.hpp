@@ -23,10 +23,13 @@ public:
     static void Process();
 
     template <typename ...Args>
-    static void AddDelayed(float seconds, Args &&...args);
+    static void Queue(float seconds, Args&&...args);
 
     template <typename ...Args>
-    static void Add(Priority priority, Args &&...args);
+    static void Queue(Priority p, Args&&...args);
+
+    template <typename ...Args>
+    static void Queue(Args&&...args);
 
 private:
     static MainThreadDispatcher* s_MainThreadDispatcher;
@@ -46,21 +49,32 @@ private:
 
     void process();
 
-    void addDelayed(float seconds, std::function<void()> func);
-
-    void add(Priority priority, std::function<void()> func);
+    void queue(std::function<void()> func, float seconds = 0.0f, Priority priority = Priority::NORMAL);
 };
 
 template <typename... Args>
-inline void MainThreadDispatcher::AddDelayed(float seconds, Args&&... args)
+inline void MainThreadDispatcher::Queue(float seconds, Args&&... args)
 {
-    return s_MainThreadDispatcher->addDelayed(seconds, std::move(std::bind(std::forward<Args>(args)...)));
+    return s_MainThreadDispatcher->queue(
+            std::move(std::bind(std::forward<Args>(args)...)),
+            seconds
+        );
 }
 
 template <typename... Args>
-inline void MainThreadDispatcher::Add(Priority priority, Args&&... args)
+inline void MainThreadDispatcher::Queue(Priority p, Args&&... args)
 {
-    return s_MainThreadDispatcher->add(priority, std::move(std::bind(std::forward<Args>(args)...)));
+    return s_MainThreadDispatcher->queue(
+            std::move(std::bind(std::forward<Args>(args)...)),
+            0.0f,
+            p
+        );
+}
+
+template <typename... Args>
+inline void MainThreadDispatcher::Queue(Args&&... args)
+{
+    return s_MainThreadDispatcher->queue(std::move(std::bind(std::forward<Args>(args)...)));
 }
 
 

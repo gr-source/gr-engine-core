@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 #include <cstddef>
 #include <cstdint>
 
@@ -50,6 +51,6 @@ private:
 
     static std::uint32_t create_renderbuffer();
 };
-
+*/
 
 

@@ -1,6 +1,8 @@
 #include "gr-base/managers/eventManager.hpp"
 
 #include "gr-base/core/logger.hpp"
+#include "gr-base/core/mainthreaddispatcher.hpp"
+#include <atomic>
 
 EventManager* EventManager::s_EventManager = nullptr;
 
@@ -20,7 +22,7 @@ void EventManager::Shutdown()
 // private
 EventID EventManager::GenEventID()
 {
-    static EventID nextID = 0;
+    static std::atomic<EventID> nextID = 0;
     return nextID++;
 }
 
@@ -36,23 +38,36 @@ EventManager::~EventManager()
 
 void EventManager::attach(EventID id, std::function<void (IEvent*)> func)
 {
-    if (id >= m_listener.size())
-        m_listener.resize(id + 1);
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (id >= m_listener.size())
+            m_listener.resize(id + 1);
 
-    m_listener[id].push_back(func);
+        m_listener[id].push_back(func);
+    }
 
     logger::debug("[ EventManager ] Attached event '%d'.", id);
 }
 
-void EventManager::notify(EventID id, IEvent* event)
+void EventManager::notify(EventID id, std::shared_ptr<IEvent> event)
 {
-    if (id >= m_listener.size())
-        return;
+    std::vector<std::function<void (IEvent*)>> execute;
 
-    for (auto& func : m_listener[id])
-        func(event);
+    {
+        std::scoped_lock<std::mutex> lock(m_mutex);
+        if (id >= m_listener.size())
+            return;
 
-    logger::debug("[ EventManager ] Call event '%d'.", id);
+        execute = m_listener[id];
+    }
+
+    for (auto& func : execute)
+        func(event.get());
+}
+
+void EventManager::notifyAsync(EventID id, std::shared_ptr<IEvent> event)
+{
+    MainThreadDispatcher::Queue(&EventManager::notify, this, id, event);
 }
 
 

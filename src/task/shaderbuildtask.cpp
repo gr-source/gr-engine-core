@@ -560,7 +560,7 @@ void ShaderBuildTask::SetUniformList(std::unordered_map<std::string, std::vector
         }
 
 
-        vector.emplace_back(ShaderUniformRaw{field_name, type, static_cast<u32>(count)});
+        vector.emplace_back(ShaderUniformRaw{field_name, type, static_cast<uint32_t>(count)});
         
         return;
     }

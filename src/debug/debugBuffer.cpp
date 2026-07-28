@@ -6,7 +6,7 @@
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/prefab/shaderprefab.hpp"
-#include <gr-render/gVertexArray.h>
+
 #include <gr-render/gl.h>
 
 DebugBuffer::DebugBuffer() :

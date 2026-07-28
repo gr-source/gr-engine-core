@@ -7,8 +7,6 @@
 #include <gr-math/gmath.hpp>
 #include <gr-math/vector3.hpp>
 
-#include <gr-render/gVertexArray.h>
-
 #include <memory>
 #include <vector>
 

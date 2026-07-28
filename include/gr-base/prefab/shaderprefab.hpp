@@ -4,6 +4,7 @@
 #include <gr-render/shader.hpp>
 
 #include <unordered_map>
+#include <vector>
 #include <memory>
 
 typedef uint8_t ShaderPrefabFlags_;

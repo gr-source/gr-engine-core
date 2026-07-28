@@ -1,4 +1,5 @@
 #include "gr-base/core/skybox.hpp"
+/*
 
 #include "gr-base/managers/assetsManager.hpp"
 
@@ -71,7 +72,6 @@ void Skybox::build(gr::gTexture *texture)
 
     create_cube_mesh();
 
-    /*
     ShaderParams shaderParams;
     shaderParams.name = "skybox";
     shaderParams.base = gfile::get_data_directory() + "/assets/shader/skybox/skybox.glsl";
@@ -84,12 +84,10 @@ void Skybox::build(gr::gTexture *texture)
         this,
         texture
     );
-    */
 }
 
 void Skybox::render(const Camera *camera) const
 {
-    /*
     if (m_skyshader == nullptr)
         return;
 
@@ -111,7 +109,6 @@ void Skybox::render(const Camera *camera) const
     m_vertexarray->unbind();
     m_skyshader->unbind();
     m_cubemapTexture->unbind();
-    */
 }
 
 bool Skybox::serialize(Stream *stream) const
@@ -130,7 +127,7 @@ void Skybox::upload_cubemap_texture(gr::gTexture *texture, gr::Shader *shader)
     auto projection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
 
     // cubefraembuffer a ta usando id 0
-    texture->bind(0);
+    // texture->bind(0);
     shader->set_uniform("u_texture", 0);
 
     shader->setUniform("u_projection", &projection);
@@ -164,10 +161,9 @@ void Skybox::upload_cubemap_texture(gr::gTexture *texture, gr::Shader *shader)
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    texture->unbind();
+    // texture->unbind();
     shader->unbind();
 
-    /*
     ShaderParams shaderParams;
     shaderParams.name = "background";
     shaderParams.base = gfile::get_data_directory() + "/assets/shader/skybox/background.glsl";
@@ -177,7 +173,6 @@ void Skybox::upload_cubemap_texture(gr::gTexture *texture, gr::Shader *shader)
     AssetsManager::LoadShaderAsync(shaderParams,
             &Skybox::set_skyshader, this
             );
-    */
 }
 
 void Skybox::create_cube_mesh()
@@ -241,5 +236,5 @@ std::uint32_t Skybox::create_renderbuffer()
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
     return renderbufferID;
 }
-
+*/
 

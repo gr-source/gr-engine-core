@@ -83,7 +83,7 @@ void MainThreadDispatcher::process()
                 event();
             } catch (const std::exception& e)
             {
-                Console::LogError("[MainThreadDispatcher] Exception detected '%s'.", e.what());
+                Console::LogError("[ MainThread ] %s", e.what());
             }
         }
 
@@ -91,24 +91,13 @@ void MainThreadDispatcher::process()
     }
 }
 
-void MainThreadDispatcher::addDelayed(float seconds, std::function<void()> func)
+void MainThreadDispatcher::queue(std::function<void()> func, float seconds, Priority priority)
 {
-    if (func == nullptr)
-        return;
-
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_timerHeap.insert({Clock::time + seconds, func});
-
-    m_hasEvent.store(true, std::memory_order_release);
-}
-
-void MainThreadDispatcher::add(Priority priority, std::function<void()> func)
-{
-    if (func == nullptr)
-        return;
-
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_events[static_cast<int>(priority)].push_back(std::move(func));
+    if (seconds > 0.0f)
+        m_timerHeap.insert({Clock::time + seconds, func});
+    else
+        m_events[static_cast<int>(priority)].push_back(std::move(func));
 
     m_hasEvent.store(true, std::memory_order_release);
 }

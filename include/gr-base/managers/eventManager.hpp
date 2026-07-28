@@ -4,6 +4,8 @@
 
 #include <functional>
 #include <cstdint>
+#include <memory>
+#include <mutex>
 
 typedef uint32_t EventID;
 
@@ -20,6 +22,9 @@ public:
     template <typename T>
     static void Notify(T* event);
 
+    template <typename T>
+    static void NotifyAsync(T* event);
+
 private:
     static EventManager* s_EventManager;
 
@@ -33,9 +38,13 @@ private:
 
     std::vector<std::vector<std::function<void (IEvent*)>>> m_listener;
 
+    std::mutex m_mutex;
+
     void attach(EventID id, std::function<void (IEvent*)> func);
 
-    void notify(EventID id, IEvent* event);
+    void notify(EventID id, std::shared_ptr<IEvent> event);
+
+    void notifyAsync(EventID id, std::shared_ptr<IEvent> event);
 };
 
 template <typename T, typename Callback, typename... Args>
@@ -68,7 +77,13 @@ inline void EventManager::Attach(Callback&& callback, Args&&...args)
 template <typename T>
 inline void EventManager::Notify(T* event)
 {
-    s_EventManager->notify(GetEventIDByType<T>(), event);
+    s_EventManager->notify(GetEventIDByType<T>(), std::make_shared<T>(*event));
+}
+
+template <typename T>
+inline void EventManager::NotifyAsync(T* event)
+{
+    s_EventManager->notifyAsync(GetEventIDByType<T>(), std::make_shared<T>(*event));
 }
 
 template <typename T>

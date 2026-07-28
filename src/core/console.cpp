@@ -1,4 +1,5 @@
 #include "gr-base/core/console.hpp"
+#include "gr-base/managers/eventManager.hpp"
 
 // public
 std::list<Log> Console::GetLogs()
@@ -28,7 +29,16 @@ Console::Console() : m_maxLog(500), m_changed(false)
 
 void Console::log(Log::LogType type, const std::string &msg)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    Console_onAddMessage event;
+    event.log = {
+        .type = type,
+        .message = msg
+    };
+
+    EventManager::Notify(&event);
+
+    /*
+    std::unique_lock<std::mutex> lock(m_mutex);
     m_logs.push_back({type, msg});
 
     if (m_logs.size() >= m_maxLog)
@@ -36,9 +46,10 @@ void Console::log(Log::LogType type, const std::string &msg)
         m_logs.pop_front();
     }
     m_changed = true;
+    */
 }
 
-const std::list<Log> &Console::getLogs()
+std::list<Log> Console::getLogs()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_logs;

@@ -115,7 +115,7 @@ void Renderer::render()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LESS);
+    gr::gRender::SetDepthFunc(GR_DEPTH_FUNC_LESS);
     draw();
 
     glBindVertexArray(0);
@@ -123,7 +123,7 @@ void Renderer::render()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
+    gr::gRender::SetDepthFunc(GR_DEPTH_FUNC_LEQUAL);
     DebugDraw::Renderer();
 
     // gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);

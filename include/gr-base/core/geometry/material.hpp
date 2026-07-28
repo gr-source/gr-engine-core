@@ -2,9 +2,12 @@
 
 #include "gr-base/prefab/default.hpp"
 
+#include <gr-render/default.hpp>
+
+#include <unordered_map>
+#include <vector>
 #include <cstdint>
 #include <string>
-#include <array>
 
 #include <gr-render/gRender.h>
 

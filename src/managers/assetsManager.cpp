@@ -25,6 +25,8 @@
 
 #include "gr-base/task/modelloadtask.hpp"
 
+#include <gr-render/texture.h>
+
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
 
 void AssetsManager::Initialize()
@@ -64,7 +66,7 @@ TextureHandle AssetsManager::LoadTexture(AssetHash hash)
     texture->width = asset.width;
     texture->height = asset.height;
 
-    texture->filter = TEXTURE_FILTER_LINEAR;
+    texture->filter = TEXTURE_FILTER_LINEAR_MIPMAP;
     texture->wrap = TEXTURE_WRAP_REPEAT;
     texture->type = TEXTURE_TYPE_2D;
 
@@ -89,10 +91,10 @@ TextureHandle AssetsManager::LoadTexture(AssetHash hash)
             throw std::runtime_error("Unsupported channel count: " + std::to_string(asset.channels));
     }
 
-    gr::BindTexture(texture);
-    gr::ApplyTextureSettings(texture);
-    gr::ApplyTextureBuffer(texture, asset.raw.data());
-    gr::UnbindTexture(texture);
+    texture->bind();
+    texture->applyTextureSettings();
+    texture->applyTextureBuffer(asset.raw.data());
+    texture->unbind();
 
     return h;
 }
@@ -102,7 +104,7 @@ TextureHandle AssetsManager::CreateTexture(AssetHash hash)
     return s_AssetsManager->mTextureManager->create(hash);
 }
 
-gr::Texture* AssetsManager::GetTexture(TextureHandle h)
+gr::texture* AssetsManager::GetTexture(TextureHandle h)
 {
     return s_AssetsManager->mTextureManager->get(h);
 }

@@ -20,7 +20,8 @@
 #include "gr-base/prefab/default.hpp"
 
 #include <functional>
-#include <gr-render/gTexture.h>
+
+#include <gr-render/default.hpp>
 
 class AssetsManager
 {
@@ -36,7 +37,7 @@ public:
 
     static TextureHandle CreateTexture(AssetHash hash = INVALID_HASH64);
 
-    static gr::Texture* GetTexture(TextureHandle h);
+    static gr::texture* GetTexture(TextureHandle h);
 
     // template <typename ...Args>
     // static void LoadTexture(const std::string &path, Args &&...args);

@@ -30,10 +30,10 @@ RenderTarget::RenderTarget(int width, int height) : textureColor(0), textureDept
     */
     // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbufferDepth);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        std::cerr << "Erro ao configurar o framebuffer!" << std::endl;
-    }
+    // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    // {
+    //     std::cerr << "Erro ao configurar o framebuffer!" << std::endl;
+    // }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
