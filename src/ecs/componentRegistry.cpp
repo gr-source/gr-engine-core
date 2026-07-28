@@ -89,7 +89,6 @@ void ComponentRegistry::register_info(ComponentInfo* src)
         dst->name, dst->hash, dst->index, dst->stride, dst->alignment);
 }
 
-#include <iostream>
 void ComponentRegistry::unregister(TypeID id)
 {
     if (id >= m_typeIDToIndex.size())
@@ -116,8 +115,6 @@ void ComponentRegistry::unregister(TypeID id)
 
         m_typeIDToIndex[movedTypeID] = index;
         m_indexToTypeID[index] = movedTypeID;
-
-        std::cout << "Swap" << std::endl;
     }
 
     logger::debug("[ ComponentRegistry ] unregistered: name=%s, hash=0x%llX, index=%d, stride=%ld alignment=%ld",

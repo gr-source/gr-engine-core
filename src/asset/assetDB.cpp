@@ -54,12 +54,12 @@ void AssetDB::Unregistry(Hash64 hash)
 {
     s_AssetDB->unregistry(hash);
 }
-*/
 
 std::string AssetDB::Resolve(Hash64 hash)
 {
     return s_AssetDB->resolve(hash);
 }
+*/
 
 AssetID AssetDB::FindByHash(AssetHash hash)
 {
@@ -214,6 +214,7 @@ void AssetDB::registry(const AssetInfo& info)
     EventManager::Notify<AssetEventOnCreated>(&event);
 }
 
+/*
 std::string AssetDB::resolve(Hash64 hash)
 {
     AssetID id = findByHash(hash);
@@ -226,6 +227,7 @@ std::string AssetDB::resolve(Hash64 hash)
 
     return AssetResolver::Resolve(URI::parse(info->uri));
 }
+*/
 
 AssetID AssetDB::findByHash(AssetHash hash)
 {

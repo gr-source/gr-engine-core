@@ -31,11 +31,11 @@ public:
     static void Shutdown();
 
     // ********** Texture ********** //
-    static TextureHandle LoadTexture(const std::string& name);
+    static TextureHandle LoadTexture(const std::string& uri);
 
-    static TextureHandle LoadTexture(AssetHash hash);
+    static TextureHandle LoadTexture(AssetID id);
 
-    static TextureHandle CreateTexture(AssetHash hash = INVALID_HASH64);
+    static TextureHandle CreateTexture();
 
     static gr::texture* GetTexture(TextureHandle h);
 
@@ -68,8 +68,6 @@ public:
     // API Privada
     static MeshHandle CreateMesh();
 
-    static MeshHandle FindMesh(AssetID id);
-
     static void RemoveMesh(MeshHandle handle);
 
     static Mesh *GetMesh(MeshHandle h);
@@ -85,8 +83,6 @@ public:
     static MaterialHandle CreateMaterial();
 
     // ********** Material API privada ********** //
-    static MaterialHandle FindMaterial(AssetID id);
-
     static Material *GetMaterial(MaterialHandle h);
 
     static size_t GetMaterialCount();
@@ -107,10 +103,16 @@ public:
 
     static Mesh LoadMeshFromFile(const std::string& file);
 
+    static Handle FindHandleInCache(AssetID id);
+
+    static AssetID FindAssetIDInCache(Handle handle);
+
 private:
     static AssetsManager* s_AssetsManager;
 
-    std::unordered_map<AssetID, Handle> m_hashmap;
+    // Cache
+    std::unordered_map<AssetID, Handle> m_idToHandle;
+    std::unordered_map<Handle, AssetID> m_handleToId;
 
     ShaderPrefabManager *mShaderPrefabManager;
 
@@ -126,7 +128,11 @@ private:
     AssetsManager();
     ~AssetsManager();
 
-    Handle findInCache(AssetID id) const;
+    void addInCache(AssetID id, Handle handle);
+
+    Handle findHandleInCache(AssetID id) const;
+
+    AssetID findAssetIDInCache(Handle handle) const;
 
     static bool LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func);
 

@@ -14,6 +14,7 @@
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/scene.hpp"
 
+#include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/relationship.hpp"
@@ -24,18 +25,20 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
     asset.name = gameObject.GetName();
     asset.isStatic = false;
 
-    /*
-    auto meshRef = gameObject.GetComponent<MeshRef>();
-    if (meshRef != nullptr)
-        asset.mesh = meshRef->hash;
+    auto meshFilter = gameObject.GetComponent<MeshFilter>();
+    if (meshFilter != nullptr)
+        asset.mesh = AssetsManager::FindAssetIDInCache(meshFilter->mesh);
 
-    auto materialRef = gameObject.GetComponent<MaterialRef>();
-    if (materialRef != nullptr)
+    auto meshRender = gameObject.GetComponent<MeshRender>();
+    if (meshRender != nullptr)
     {
-        for (size_t i=0;i<materialRef->numMaterials;i++)
-            asset.materials.push_back(materialRef->materials[i]);
+        std::vector<AssetID> materials;
+
+        for (size_t i=0;i<meshRender->numMaterials;i++)
+            materials.push_back(AssetsManager::FindAssetIDInCache(meshRender->materials[i]));
+
+        asset.materials = materials;
     }
-    */
 
     for (auto& typeID : gameObject.GetAllComponentIDs())
     {

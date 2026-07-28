@@ -1,7 +1,5 @@
 #include "gr-base/managers/textureManager.hpp"
 
-#include "gr-base/externals/handle.h"
-
 #include <gr-render/texture.h>
 
 #include <cassert>
@@ -20,15 +18,12 @@ TextureManager::~TextureManager()
     }
 }
 
-TextureHandle TextureManager::create(AssetHash hashCache)
+TextureHandle TextureManager::create()
 {
     TextureHandle h = m_pool.create();
 
     gr::texture* texture = m_pool.get(h);
     texture->create();
-
-    if (hashCache != INVALID_HASH64)
-        m_hashmap.emplace(hashCache, h);
 
     return h;
 }
@@ -49,15 +44,7 @@ void TextureManager::remove(TextureHandle h)
     m_pool.destroy(h);
 }
 
-TextureHandle TextureManager::find(AssetHash hash) const
-{
-    auto it = m_hashmap.find(hash);
-    if (it == m_hashmap.end())
-        return HANDLE_INVALID;
-    return it->second;
-}
-
-size_t TextureManager::GetCount() const
+size_t TextureManager::count() const
 {
     return m_pool.count();
 }

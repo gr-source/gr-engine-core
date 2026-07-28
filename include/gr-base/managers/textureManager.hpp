@@ -16,19 +16,15 @@ public:
     TextureManager();
     ~TextureManager();
 
-    TextureHandle create(AssetHash hashCache = INVALID_HASH64);
+    TextureHandle create();
 
     gr::texture *get(TextureHandle h) const;
 
     void remove(TextureHandle h);
 
-    TextureHandle find(AssetHash hash) const;
-
-    size_t GetCount() const;
+    size_t count() const;
 
 private:
-    std::unordered_map<AssetHash, TextureHandle> m_hashmap;
-
     ObjectPool<gr::texture> m_pool;
 };
 

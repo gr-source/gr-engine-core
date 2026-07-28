@@ -43,13 +43,73 @@ void AssetsManager::Shutdown()
     s_AssetsManager = nullptr;
 }
 
-TextureHandle AssetsManager::LoadTexture(const std::string& name)
+TextureHandle AssetsManager::LoadTexture(const std::string& uri)
 {
-    return LoadTexture(engine::hash::fnv1_str(name));
+    AssetID assetID = AssetDB::FindByHash(engine::hash::fnv1_str(uri));
+    if (assetID != INVALID_ASSET)
+        return LoadTexture(assetID);
+    return HANDLE_INVALID;
 }
 
-TextureHandle AssetsManager::LoadTexture(AssetHash hash)
+TextureHandle AssetsManager::LoadTexture(AssetID id)
 {
+    TextureHandle h = s_AssetsManager->findHandleInCache(id);
+    if (h != HANDLE_INVALID)
+        return h;
+
+    auto info = AssetDB::GetAsset(id);
+    if (info == nullptr)
+        throw std::runtime_error("Asset not found");
+
+    auto path = AssetResolver::Resolve(info->uri) + HEADER_TEXTURE_EXTENSION;
+    if (!gfile::exists(path))
+        throw std::runtime_error("File not found");
+
+    TextureAsset asset =
+        ImportTextureAssetFromFile(path);
+
+    TextureHandle handle =
+        CreateTexture();
+
+    auto texture =
+        GetTexture(handle);
+    texture->width = asset.width;
+    texture->height = asset.height;
+
+    texture->filter = TEXTURE_FILTER_LINEAR_MIPMAP;
+    texture->wrap = TEXTURE_WRAP_REPEAT;
+    texture->type = TEXTURE_TYPE_2D;
+
+    switch (asset.channels)
+    {
+        case 1:
+            texture->format = TEXTURE_FORMAT_RED;
+            break;
+
+        case 2:
+            texture->format = asset.hdr ? TEXTURE_FORMAT_RG16F : TEXTURE_FORMAT_RG;
+            break;
+
+        case 3:
+            texture->format = asset.hdr ? TEXTURE_FORMAT_RGB16F : TEXTURE_FORMAT_RGB;
+            break;
+
+        case 4:
+            texture->format = asset.hdr ? TEXTURE_FORMAT_RGBA16F : TEXTURE_FORMAT_RGBA;
+            break;
+        default:
+            throw std::runtime_error("Unsupported channel count: " + std::to_string(asset.channels));
+    }
+
+    texture->bind();
+    texture->applyTextureSettings();
+    texture->applyTextureBuffer(asset.raw.data());
+    texture->unbind();
+
+    s_AssetsManager->addInCache(id, handle);
+
+    return handle;
+    /*
     TextureHandle h =
         s_AssetsManager->mTextureManager->find(hash);
     if (h != HANDLE_INVALID)
@@ -59,7 +119,7 @@ TextureHandle AssetsManager::LoadTexture(AssetHash hash)
         ImportTextureAssetFromFile(AssetDB::Resolve(hash));
 
     h =
-        CreateTexture(hash);
+        CreateTexture();
 
     auto texture =
         GetTexture(h);
@@ -97,11 +157,12 @@ TextureHandle AssetsManager::LoadTexture(AssetHash hash)
     texture->unbind();
 
     return h;
+    */
 }
 
-TextureHandle AssetsManager::CreateTexture(AssetHash hash)
+TextureHandle AssetsManager::CreateTexture()
 {
-    return s_AssetsManager->mTextureManager->create(hash);
+    return s_AssetsManager->mTextureManager->create();
 }
 
 gr::texture* AssetsManager::GetTexture(TextureHandle h)
@@ -119,7 +180,7 @@ MeshHandle AssetsManager::LoadMesh(const std::string& name)
 
 MeshHandle AssetsManager::LoadMesh(AssetID id)
 {
-    MeshHandle h = FindMesh(id);
+    MeshHandle h = s_AssetsManager->findHandleInCache(id);
     if (h != HANDLE_INVALID)
         return h;
 
@@ -136,7 +197,7 @@ MeshHandle AssetsManager::LoadMesh(AssetID id)
     MeshHandle handle = CreateMesh();
     *GetMesh(handle) = std::move(mesh);
 
-    s_AssetsManager->m_hashmap.emplace(id, handle);
+    s_AssetsManager->addInCache(id, handle);
 
     return handle;
 }
@@ -184,11 +245,6 @@ static AABB CalculateBounds(Mesh* mesh)
 MeshHandle AssetsManager::CreateMesh()
 {
     return s_AssetsManager->mMeshManager->create();
-}
-
-MeshHandle AssetsManager::FindMesh(AssetID id)
-{
-    return s_AssetsManager->findInCache(id);
 }
 
 void AssetsManager::RemoveMesh(MeshHandle handle)
@@ -270,7 +326,7 @@ std::vector<gr::Shader *> AssetsManager::GetShaderList(ShaderType type)
 
 MaterialHandle AssetsManager::LoadMaterial(AssetID id)
 {
-    MaterialHandle h = FindMaterial(id);
+    MaterialHandle h = s_AssetsManager->findHandleInCache(id);
     if (h != HANDLE_INVALID)
         return h;
 
@@ -287,7 +343,7 @@ MaterialHandle AssetsManager::LoadMaterial(AssetID id)
     MaterialHandle handle = CreateMaterial();
     *GetMaterial(handle) = std::move(material);
 
-    s_AssetsManager->m_hashmap.emplace(id, handle);
+    s_AssetsManager->addInCache(id, handle);
 
     return handle;
 }
@@ -295,11 +351,6 @@ MaterialHandle AssetsManager::LoadMaterial(AssetID id)
 MaterialHandle AssetsManager::CreateMaterial()
 {
     return s_AssetsManager->mMaterialManager->create();
-}
-
-MaterialHandle AssetsManager::FindMaterial(AssetID id)
-{
-    return s_AssetsManager->findInCache(id);
 }
 
 Material *AssetsManager::GetMaterial(MaterialHandle h)
@@ -314,7 +365,7 @@ size_t AssetsManager::GetMaterialCount()
 
 usize AssetsManager::GetTextureCount()
 {
-    return s_AssetsManager->mTextureManager->GetCount();
+    return s_AssetsManager->mTextureManager->count();
 }
 
 /*
@@ -371,7 +422,7 @@ ShaderAsset AssetsManager::ImportShaderAssetFromFile(const std::string& file)
 TextureAsset AssetsManager::ImportTextureAssetFromFile(const std::string& file)
 {
     TextureAsset asset;
-    if (!LoadFromFile(file + HEADER_TEXTURE_EXTENSION, HEADER_TEXTURE_SIGN, [&](Stream* stream)
+    if (!LoadFromFile(file, HEADER_TEXTURE_SIGN, [&](Stream* stream)
             {
                 return asset.deserialize(stream);
             }))
@@ -447,6 +498,16 @@ Mesh AssetsManager::LoadMeshFromFile(const std::string& file)
     return mesh;
 }
 
+Handle AssetsManager::FindHandleInCache(AssetID id)
+{
+    return s_AssetsManager->findHandleInCache(id);
+}
+
+AssetID AssetsManager::FindAssetIDInCache(Handle handle)
+{
+    return s_AssetsManager->findAssetIDInCache(handle);
+}
+
 // private
 AssetsManager::AssetsManager() : mMaterialManager(new MaterialManager()), mMeshManager(new MeshManager()), mShaderPrefabManager(new ShaderPrefabManager()), mTextureManager(new TextureManager())
 {
@@ -466,12 +527,27 @@ AssetsManager::~AssetsManager()
     delete mTextureManager;
 }
 
-Handle AssetsManager::findInCache(AssetID id) const
+
+void AssetsManager::addInCache(AssetID id, Handle handle)
 {
-    auto it = m_hashmap.find(id);
-    if (it != m_hashmap.end())
+    m_idToHandle[id] = handle;
+    m_handleToId[handle] = id;
+}
+
+Handle AssetsManager::findHandleInCache(AssetID id) const
+{
+    auto it = m_idToHandle.find(id);
+    if (it != m_idToHandle.end())
         return it->second;
     return HANDLE_INVALID;
+}
+
+AssetID AssetsManager::findAssetIDInCache(Handle handle) const
+{
+    auto it = m_handleToId.find(handle);
+    if (it != m_handleToId.end())
+        return it->second;
+    return INVALID_ASSET;
 }
 
 bool AssetsManager::LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func)

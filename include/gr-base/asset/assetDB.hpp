@@ -39,7 +39,7 @@ public:
 
     // static void Unregistry(AssetHash hash);
 
-    static std::string Resolve(Hash64 hash);
+    // static std::string Resolve(Hash64 hash);
 
     static AssetID FindByHash(AssetHash hash);
 
@@ -71,7 +71,7 @@ private:
 
     void registry(const AssetInfo& info);
 
-    std::string resolve(Hash64 hash);
+    // std::string resolve(Hash64 hash);
 
 
     AssetID findByHash(AssetHash hash);
