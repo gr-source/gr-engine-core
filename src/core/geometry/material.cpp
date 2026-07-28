@@ -34,17 +34,16 @@ void Material::Sync()
 
 void Material::Build()
 {
-    size_t bufferSize = shader->GetUniformBufferSize();
-    if (bufferSize >= GPUbuffer.size())
+    if (shader->bufferSize >= GPUbuffer.size())
     {
-        GPUbuffer.resize(bufferSize + 1);
+        GPUbuffer.resize(shader->bufferSize + 1);
 
-        memset(GPUbuffer.data(), 0, bufferSize);
+        memset(GPUbuffer.data(), 0, shader->bufferSize);
     } 
 
-    for (size_t i=0;i<shader->GetUniformCount();i++)
+    for (size_t i=0;i<shader->count;i++)
     {
-        auto& uniform = shader->GetUniforms()[i];
+        auto& uniform = shader->uniforms[i];
 
         const void* src = GetInternal(uniform.name);
         if (src != nullptr)
@@ -59,17 +58,16 @@ void Material::Flush() const
 
     size_t textureActive = 0;
 
-    auto uniforms = shader->GetUniforms();
-    for (size_t i=0;i<shader->GetUniformCount();i++)
+    for (size_t i=0;i<shader->count;i++)
     {
-        auto& uniform = uniforms[i];
+        auto& uniform = shader->uniforms[i];
 
         if (strstr(uniform.name, "u_mat_") != nullptr)
             break;
 
         const void* data = static_cast<const void*>(&GPUbuffer[uniform.offset]);
 
-        if (uniform.type == UniformType::SAMPLER2D)
+        if (uniform.type == gr::UniformType::SAMPLER2D)
         {
             int textureID = *(const int*)(data);
             int active = textureActive++;

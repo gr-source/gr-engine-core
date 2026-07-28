@@ -350,8 +350,6 @@ ShaderPrefab* AssetsManager::LoadShader(AssetID id)
     if (info == nullptr)
         return nullptr;
 
-    std::cout << "Create: " << info->uri << std::endl;
-
     auto asset =
         ImportShaderAssetFromFile(AssetResolver::Resolve(info->uri));
 

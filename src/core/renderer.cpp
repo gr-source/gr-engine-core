@@ -8,7 +8,8 @@
 
 #include "gr-base/managers/assetsManager.hpp"
 #include <algorithm>
-#include <gr-render/gRender.h>
+
+#include <gr-render/shader.hpp>
 #include <gr-render/gl.h>
 
 #include "gr-base/core/geometry/material.hpp"
@@ -133,7 +134,7 @@ void Renderer::render()
 void Renderer::draw()
 {
     Material* lastMaterial = nullptr;
-    gr::Shader* lastShader = nullptr;
+    gr::shader* lastShader = nullptr;
     gr::vertex_array* lastVao = nullptr;
 
     UniformID model = 0;

@@ -2,28 +2,30 @@
 
 #include "gr-base/core/console.hpp"
 
+#include <gr-render/shader.hpp>
+
 #include <algorithm>
 #include <cstring>
 
-static std::unordered_map<std::string, UniformType> mTypeMapping =
+static std::unordered_map<std::string, gr::UniformType> mTypeMapping =
 {
-    {"float",       UniformType::FLOAT},
-    {"int",         UniformType::INT},
-    {"bool",        UniformType::BOOL},
-    {"samplerCube", UniformType::SAMPLERCUBE},
-    {"sampler2D",   UniformType::SAMPLER2D},
-    {"mat3",        UniformType::MAT3},
-    {"mat4",        UniformType::MAT4},
-    {"vec2",        UniformType::VEC2},
-    {"vec3",        UniformType::VEC3},
-    {"vec4",        UniformType::VEC4},
+    {"float",       gr::UniformType::FLOAT},
+    {"int",         gr::UniformType::INT},
+    {"bool",        gr::UniformType::BOOL},
+    {"samplerCube", gr::UniformType::SAMPLERCUBE},
+    {"sampler2D",   gr::UniformType::SAMPLER2D},
+    {"mat3",        gr::UniformType::MAT3},
+    {"mat4",        gr::UniformType::MAT4},
+    {"vec2",        gr::UniformType::VEC2},
+    {"vec3",        gr::UniformType::VEC3},
+    {"vec4",        gr::UniformType::VEC4},
 };
 
 
 ShaderPrefab::ShaderPrefab(const ShaderAsset& asset) : m_asset(asset)
 {}
 
-gr::Shader* ShaderPrefab::Get(ShaderPrefabFlags_ flags)
+gr::shader* ShaderPrefab::Get(ShaderPrefabFlags_ flags)
 {
     auto it = m_shadervariant.find(flags);
     if (it != m_shadervariant.end())
@@ -32,7 +34,7 @@ gr::Shader* ShaderPrefab::Get(ShaderPrefabFlags_ flags)
 }
 
 // private
-gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
+gr::shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
 {
     std::string fragment = "#version 420\n";
     if ((m_asset.flags & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
@@ -55,9 +57,9 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
     const char* fragment_src = fragment.c_str();
     const char* vertex_src = vertex.c_str();
 
-    auto&& [it, inserted] = m_shadervariant.emplace(flags, std::make_unique<gr::Shader>());
+    auto&& [it, inserted] = m_shadervariant.emplace(flags, std::make_shared<gr::shader>());
 
-    gr::Shader* shader = it->second.get();
+    gr::shader* shader = it->second.get();
     if (inserted)
     {
         // std::cout << "[ ===== " << m_asset.GetName() << " ===== ]" << std::endl;
@@ -92,17 +94,17 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
             }
 
             if (shader->registry(name.c_str(), count, it->second) == GR_INVALID_ID)
-                Console::LogWarning("[ShaderLoadTask] fail in to registry: %s", name.c_str());
+                Console::LogWarning("[ ShaderLoadTask ] uniform '%s' not found!", name.c_str());
         }
 
-        std::vector<gr::ShaderUniform> uniforms(shader->GetUniformCount());
-        for (size_t i=0;i<shader->GetUniformCount();i++)
+        std::vector<gr::uniform> uniforms(shader->count);
+        for (size_t i=0;i<shader->count;i++)
         {
-            uniforms[i] = shader->GetUniforms()[i];
+            uniforms[i] = shader->uniforms[i];
         }
 
         std::sort(uniforms.begin(), uniforms.end(),
-        [](const gr::ShaderUniform& a, const gr::ShaderUniform& b)
+        [](const gr::uniform& a, const gr::uniform& b)
         {
             bool aMat = strncmp(a.name, "u_mat_", 6) != 0;
             bool bMat = strncmp(b.name, "u_mat_", 6) != 0;
@@ -113,10 +115,10 @@ gr::Shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
             return strcmp(a.name, b.name) < 0;
         });
 
-        void* dst = (void*)shader->GetUniforms();
+        void* dst = (void*)shader->uniforms;
         void* src = (void*)uniforms.data();
 
-        // memcpy(dst, src, uniforms.size() * sizeof(gr::ShaderUniform));
+        // memcpy(dst, src, uniforms.size() * sizeof(gr::uniform));
 
         m_shaders.push_back(shader);
     }

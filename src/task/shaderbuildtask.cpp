@@ -79,7 +79,7 @@ bool ShaderBuildTask::compile(const ShaderAsset* asset)
 
     std::string error;
 
-    gr::Shader shader;
+    gr::shader shader;
     if (!shader.create(&fragment_src, 1, &vertex_src, 1, &error))
     {
         Console::LogError("[ ShaderBuildTask ] %s", error.c_str());

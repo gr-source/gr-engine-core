@@ -7,15 +7,16 @@
 
 #include <gr-math/types.hpp>
 
-#include <gr-render/shader.hpp>
 #include <gr-render/vertex_array.hpp>
+#include <gr-render/default.hpp>
+
 #include <vector>
 
 struct RenderCommand
 {
     Material* material;
 
-    gr::Shader* shader;
+    gr::shader* shader;
 
     gr::vertex_array* vao;
     gr::vertex_buffer* pbo;

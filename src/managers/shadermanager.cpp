@@ -2,6 +2,8 @@
 
 #include "gr-base/core/thread/taskmanager.hpp"
 
+#include <gr-render/shader.hpp>
+
 #include <algorithm>
 
 ShaderManager::ShaderManager()
@@ -10,7 +12,7 @@ ShaderManager::ShaderManager()
 ShaderManager::~ShaderManager()
 {}
 
-gr::Shader *ShaderManager::create(const std::string& name)
+gr::shader *ShaderManager::create(const std::string& name)
 {
     std::unique_lock<std::mutex> lock(s_Mutex);
     {
@@ -21,7 +23,7 @@ gr::Shader *ShaderManager::create(const std::string& name)
         }
     }
 
-    s_ShaderMap.emplace(name, std::make_unique<gr::Shader>());
+    s_ShaderMap.emplace(name, std::make_shared<gr::shader>());
 
     auto shader = s_ShaderMap[name].get();
 
@@ -32,7 +34,7 @@ gr::Shader *ShaderManager::create(const std::string& name)
     return shader;
 }
 
-void ShaderManager::destroy(gr::Shader *shader)
+void ShaderManager::destroy(gr::shader *shader)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
     auto it = s_ShaderNameMap.find(shader);
@@ -45,7 +47,7 @@ void ShaderManager::destroy(gr::Shader *shader)
     s_ShaderNameMap.erase(it);
 }
 
-const char *ShaderManager::get_shader_name(const gr::Shader *shader)
+const char *ShaderManager::get_shader_name(const gr::shader *shader)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
     auto it = s_ShaderNameMap.find(shader);
@@ -56,7 +58,7 @@ const char *ShaderManager::get_shader_name(const gr::Shader *shader)
     return it->second.c_str();
 }
 
-gr::Shader *ShaderManager::find(const std::string &name)
+gr::shader *ShaderManager::find(const std::string &name)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
     auto it = s_ShaderMap.find(name);
@@ -67,7 +69,7 @@ gr::Shader *ShaderManager::find(const std::string &name)
     return it->second.get();
 }
 
-std::vector<gr::Shader *> ShaderManager::get_shader(ShaderType type)
+std::vector<gr::shader *> ShaderManager::get_shader(ShaderType type)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
     return s_ShaderTypeList;

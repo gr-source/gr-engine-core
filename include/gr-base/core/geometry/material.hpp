@@ -9,8 +9,6 @@
 #include <cstdint>
 #include <string>
 
-#include <gr-render/gRender.h>
-
 struct Material
 {
     std::unordered_map<std::string, std::vector<uint8_t>> overrides;
@@ -19,8 +17,8 @@ struct Material
 
     ShaderPrefab *prefab;
 
-    gr::Shader* lastShader = nullptr;
-    gr::Shader* shader = nullptr;
+    gr::shader* lastShader = nullptr;
+    gr::shader* shader = nullptr;
     
     template <typename T>
     void Set(const std::string &name, const T &value);

@@ -14,24 +14,24 @@ public:
     ShaderManager();
     ~ShaderManager();
 
-    gr::Shader *create(const std::string& name);
+    gr::shader *create(const std::string& name);
 
-    void destroy(gr::Shader *shader);
+    void destroy(gr::shader *shader);
 
-    const char *get_shader_name(const gr::Shader *shader);
+    const char *get_shader_name(const gr::shader *shader);
 
-    gr::Shader *find(const std::string &name);
+    gr::shader *find(const std::string &name);
 
-    std::vector<gr::Shader *>get_shader(ShaderType type);
+    std::vector<gr::shader *>get_shader(ShaderType type);
 
     std::mutex s_Mutex;
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<gr::Shader>> s_ShaderMap;
+    std::unordered_map<std::string, std::shared_ptr<gr::shader>> s_ShaderMap;
 
-    std::unordered_map<const gr::Shader *, const std::string> s_ShaderNameMap;
+    std::unordered_map<const gr::shader *, const std::string> s_ShaderNameMap;
 
-    std::vector<gr::Shader *> s_ShaderTypeList;
+    std::vector<gr::shader *> s_ShaderTypeList;
 };
 
 

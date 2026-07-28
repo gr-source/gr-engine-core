@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gr-render/shader.hpp>
+#include <gr-render/default.hpp>
 
 #include <gr-render/vertex_array.hpp>
 
@@ -40,7 +40,7 @@ private:
 
     gr::vertex_buffer* m_vbo;
 
-    gr::Shader* m_shader;
+    gr::shader* m_shader;
 
     void drawLineList();
 

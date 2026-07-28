@@ -7,6 +7,7 @@
 
 #include "gr-base/prefab/shaderprefab.hpp"
 
+#include <gr-render/shader.hpp>
 #include <gr-render/gl.h>
 
 DebugBuffer::DebugBuffer() :
