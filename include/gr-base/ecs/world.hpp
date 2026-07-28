@@ -41,15 +41,36 @@ struct world
 
     Signature GetMask(Entity e) const;
 
-    engine::ecs::detail::records Allocate(Entity entity, TypeID type);
+    detail::records Allocate(Entity entity, Signature mask);
+
+    detail::records Allocate(Entity entity, TypeID type);
 
     template <typename T, typename... Args>
     T* AddComponent(Entity entity, Args&&... args)
     {
-        assert(entityManager.isAlive(entity));
+        if (!entityManager.isAlive(entity))
+            return nullptr;
 
         TypeID type = ComponentRegistry::GetTypeID<T>();
-        assert(type != INVALID_TYPE);
+        if (type == INVALID_TYPE)
+            return nullptr;
+
+        uint32_t entityID = handle_get_first(entity);
+        if (entityID >= entityRecords.size())
+            return nullptr;
+
+        Signature requiredMask = ComponentRegistry::GetMask<T>();
+
+        auto& current = entityRecords[entityID];
+        if (
+                current.mask != INVALID_SIGNATURE &&
+                ((current.mask & requiredMask) == requiredMask)
+           )
+        {
+            auto arche = GetArchetypeByID(current.archetype);
+
+            return arche->get<T>(current.location);
+        }
 
         auto record = Allocate(entity, type);
 
@@ -72,7 +93,7 @@ struct world
             return nullptr;
 
         uint32_t entityID = handle_get_first(entity);
-        if (entityID > entityRecords.size())
+        if (entityID >= entityRecords.size())
             return nullptr;
 
         auto& record = entityRecords[entityID];

@@ -209,8 +209,8 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask)
     arche->mask = mask;
 
     // Define a layout para runtime
-    arche->layout = (engine::ecs::detail::layout*)malloc(sizeof(engine::ecs::detail::layout));
-    memcpy(arche->layout, &layout, sizeof(engine::ecs::detail::layout));
+    arche->layout = (detail::layout*)malloc(sizeof(detail::layout));
+    memcpy(arche->layout, &layout, sizeof(detail::layout));
 
     // if (typeID != INVALID_TYPE)
     {
@@ -235,7 +235,28 @@ Signature world::GetMask(Entity e) const
     return entityRecords[entityID].mask;
 }
 
-engine::ecs::detail::records world::Allocate(Entity entity, TypeID type)
+detail::records world::Allocate(Entity entity, Signature mask)
+{
+    uint32_t entityID = handle_get_first(entity);
+
+    auto& currentRecord = entityRecords[entityID];
+
+    auto currentArchetype = GetArchetypeByID(currentRecord.archetype);
+    if ((currentArchetype->mask & mask) == mask)
+        std::cout << "Has be" << std::endl;
+
+    Signature newMask = currentArchetype->mask | mask;
+
+    ArchetypeID archeID =
+        GetOrCreateArcheType(newMask);
+
+    auto newRecord = MoveEntity(currentRecord, archeID, entity);
+    entityRecords[entityID] = newRecord;
+
+    return newRecord;
+}
+
+detail::records world::Allocate(Entity entity, TypeID type)
 {
     Signature mask = (1ull << type);
 
@@ -261,23 +282,43 @@ engine::ecs::detail::records world::Allocate(Entity entity, TypeID type)
     auto new_rec = MoveEntity(rec, dstID, entity);
     entityRecords[entityID] = new_rec;
 
-    // auto dst = GetArchetypeByID(dstID);
-
-    // void* ptr = (void*)dst->get(entityRecords[entityID].location, type);
-
-    // type->constructor(ptr, component);
-
     return new_rec;
 }
 
 
 void world::AddComponentByMask(Entity entity, Signature requiredMask)
 {
+    if (!entityManager.isAlive(entity))
+        return;
+
+    uint32_t entityID = handle_get_first(entity);
+    if (entityID >= entityRecords.size())
+        return;
+
+    auto& current = entityRecords[entityID];
+    if (current.mask != INVALID_SIGNATURE)
+    {
+        Signature common = (current.mask & requiredMask);
+        if (common == requiredMask)
+            return;
+
+        requiredMask &= ~common;
+    }
+
+    auto record = Allocate(entity, requiredMask);
+
+    auto arche = GetArchetypeByID(record.archetype);
+
     while (requiredMask)
     {
-        TypeID id = __builtin_ctzll(requiredMask);
+        TypeID typeID = __builtin_ctzll(requiredMask);
 
-        AddComponentByID(entity, id);
+        auto info = ComponentRegistry::GetComponentByID(typeID);
+
+        uint8_t* raw = (uint8_t*)arche->getRaw(record.location.chunk, typeID);
+
+        void* component = (void*)(raw + record.location.row * info->stride);
+        info->constructor(component, nullptr);
         
         requiredMask &= (requiredMask - 1);
     }
@@ -285,10 +326,31 @@ void world::AddComponentByMask(Entity entity, Signature requiredMask)
 
 void* world::AddComponentByID(Entity entity, TypeID type)
 {
-    assert(entityManager.isAlive(entity));
+    if (!entityManager.isAlive(entity))
+        return nullptr;
 
     auto info = ComponentRegistry::GetComponentByID(type);
-    assert(info != nullptr);
+    if (info == nullptr)
+        return nullptr;
+
+    uint32_t entityID = handle_get_first(entity);
+    if (entityID >= entityRecords.size())
+        return nullptr;
+
+    Signature requiredMask = (1ULL << type);
+
+    auto& current = entityRecords[entityID];
+    if (
+            current.mask != INVALID_SIGNATURE &&
+            ((current.mask & requiredMask) == requiredMask)
+       )
+    {
+        auto arche = GetArchetypeByID(current.archetype);
+
+        uint8_t* raw = (uint8_t*)arche->getRaw(current.location.chunk, type);
+
+        return (void*)(raw + current.location.row * info->stride);
+    }
 
     auto record = Allocate(entity, type);
 
