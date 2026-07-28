@@ -21,7 +21,8 @@ enum AssetType
     AssetType_Texture   = 2,
     AssetType_Mesh      = 3,
     AssetType_Material  = 4,
-    AssetType_Shader    = 5
+    AssetType_Shader    = 5,
+    AssetType_Count
 };
 
 class MeshAsset;

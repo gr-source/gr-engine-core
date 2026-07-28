@@ -106,15 +106,9 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
                 meshFilter->mesh = mesh;
             }
 
-            /*
-            {
-                auto meshRef = go.GetOrAddComponent<MeshRef>();
-                meshRef->hash = asset->mesh;
-            }
-            */
         } catch (const std::exception& e)
         {
-            Console::LogWarning("[ ModelLoadTask ] Mesh não carregada asset='0x%lX' error='%s'. ", asset->mesh, e.what());
+            Console::LogWarning("[ ModelLoadTask ] Mesh não carregada asset='%ld' error='%s'. ", asset->mesh, e.what());
         }
 
         try

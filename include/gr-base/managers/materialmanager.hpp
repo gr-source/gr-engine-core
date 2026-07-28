@@ -22,6 +22,10 @@ public:
 
     size_t GetCount() const;
 
+    void addInCache(AssetID assetID, MaterialHandle handle);
+
+    AssetID findInCache(MaterialHandle handle);
+
 private:
     struct Slot
     {
@@ -37,6 +41,8 @@ private:
 
     Slot *m_slots;
     uint32_t m_freeID;
+
+    std::vector<AssetID> meshIDCache;
 
     void resize();
 

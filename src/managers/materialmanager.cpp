@@ -67,6 +67,24 @@ size_t MaterialManager::GetCount() const
     return m_count;
 }
 
+void MaterialManager::addInCache(AssetID assetID, MaterialHandle handle)
+{
+    uint32_t index = handle_get_first(handle);
+    if (index >= meshIDCache.size())
+        meshIDCache.resize(index + 1, INVALID_ASSET);
+
+    meshIDCache[index] = assetID;
+}
+
+AssetID MaterialManager::findInCache(MaterialHandle handle)
+{
+    uint32_t index = handle_get_first(handle);
+    if (index >= meshIDCache.size())
+        return INVALID_ASSET;
+
+    return meshIDCache[index];
+}
+
 // private
 void MaterialManager::resize()
 {

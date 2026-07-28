@@ -16,8 +16,6 @@ BVHtree::~BVHtree()
 
     if (m_nodes != nullptr)
         free(m_nodes);
-
-    std::cout << "Exists: " << m_count << std::endl;
 }
 
 void BVHtree::insert(Entity entity, const AABB &bounds)

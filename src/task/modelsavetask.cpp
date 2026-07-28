@@ -26,8 +26,8 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
     asset.isStatic = false;
 
     auto meshFilter = gameObject.GetComponent<MeshFilter>();
-    if (meshFilter != nullptr)
-        asset.mesh = AssetsManager::FindAssetIDInCache(meshFilter->mesh);
+    if (meshFilter != nullptr && meshFilter->mesh != HANDLE_INVALID)
+        asset.mesh = AssetsManager::FindAssetIDInCacheMesh(meshFilter->mesh);
 
     auto meshRender = gameObject.GetComponent<MeshRender>();
     if (meshRender != nullptr)
@@ -35,7 +35,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
         std::vector<AssetID> materials;
 
         for (size_t i=0;i<meshRender->numMaterials;i++)
-            materials.push_back(AssetsManager::FindAssetIDInCache(meshRender->materials[i]));
+            materials.push_back(AssetsManager::FindAssetIDInCacheMaterial(meshRender->materials[i]));
 
         asset.materials = materials;
     }

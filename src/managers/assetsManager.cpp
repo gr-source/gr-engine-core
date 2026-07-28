@@ -198,6 +198,7 @@ MeshHandle AssetsManager::LoadMesh(AssetID id)
     *GetMesh(handle) = std::move(mesh);
 
     s_AssetsManager->addInCache(id, handle);
+    s_AssetsManager->mMeshManager->addInCache(id, handle);
 
     return handle;
 }
@@ -344,6 +345,7 @@ MaterialHandle AssetsManager::LoadMaterial(AssetID id)
     *GetMaterial(handle) = std::move(material);
 
     s_AssetsManager->addInCache(id, handle);
+    s_AssetsManager->mMaterialManager->addInCache(id, handle);
 
     return handle;
 }
@@ -503,9 +505,14 @@ Handle AssetsManager::FindHandleInCache(AssetID id)
     return s_AssetsManager->findHandleInCache(id);
 }
 
-AssetID AssetsManager::FindAssetIDInCache(Handle handle)
+AssetID AssetsManager::FindAssetIDInCacheMaterial(Handle handle)
 {
-    return s_AssetsManager->findAssetIDInCache(handle);
+    return s_AssetsManager->mMaterialManager->findInCache(handle);
+}
+
+AssetID AssetsManager::FindAssetIDInCacheMesh(Handle handle)
+{
+    return s_AssetsManager->mMeshManager->findInCache(handle);
 }
 
 // private
@@ -531,7 +538,6 @@ AssetsManager::~AssetsManager()
 void AssetsManager::addInCache(AssetID id, Handle handle)
 {
     m_idToHandle[id] = handle;
-    m_handleToId[handle] = id;
 }
 
 Handle AssetsManager::findHandleInCache(AssetID id) const
@@ -540,14 +546,6 @@ Handle AssetsManager::findHandleInCache(AssetID id) const
     if (it != m_idToHandle.end())
         return it->second;
     return HANDLE_INVALID;
-}
-
-AssetID AssetsManager::findAssetIDInCache(Handle handle) const
-{
-    auto it = m_handleToId.find(handle);
-    if (it != m_handleToId.end())
-        return it->second;
-    return INVALID_ASSET;
 }
 
 bool AssetsManager::LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func)

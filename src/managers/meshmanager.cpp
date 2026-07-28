@@ -80,6 +80,24 @@ size_t MeshManager::GetCount() const
     return m_count;
 }
 
+void MeshManager::addInCache(AssetID assetID, MeshHandle handle)
+{
+    uint32_t index = handle_get_first(handle);
+    if (index >= meshIDCache.size())
+        meshIDCache.resize(index + 1, INVALID_ASSET);
+
+    meshIDCache[index] = assetID;
+}
+
+AssetID MeshManager::findInCache(MeshHandle handle)
+{
+    uint32_t index = handle_get_first(handle);
+    if (index >= meshIDCache.size())
+        return INVALID_ASSET;
+
+    return meshIDCache[index];
+}
+
 // private
 void MeshManager::resize()
 {

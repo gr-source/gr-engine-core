@@ -105,14 +105,15 @@ public:
 
     static Handle FindHandleInCache(AssetID id);
 
-    static AssetID FindAssetIDInCache(Handle handle);
+    static AssetID FindAssetIDInCacheMaterial(Handle handle);
+
+    static AssetID FindAssetIDInCacheMesh(Handle handle);
 
 private:
     static AssetsManager* s_AssetsManager;
 
     // Cache
     std::unordered_map<AssetID, Handle> m_idToHandle;
-    std::unordered_map<Handle, AssetID> m_handleToId;
 
     ShaderPrefabManager *mShaderPrefabManager;
 
@@ -131,8 +132,6 @@ private:
     void addInCache(AssetID id, Handle handle);
 
     Handle findHandleInCache(AssetID id) const;
-
-    AssetID findAssetIDInCache(Handle handle) const;
 
     static bool LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func);
 
