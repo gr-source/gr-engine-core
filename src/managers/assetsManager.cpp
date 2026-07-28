@@ -48,7 +48,7 @@ TextureHandle AssetsManager::LoadTexture(const std::string& uri)
     AssetID assetID = AssetDB::FindByHash(engine::hash::fnv1_str(uri));
     if (assetID != INVALID_ASSET)
         return LoadTexture(assetID);
-    return HANDLE_INVALID;
+    throw std::runtime_error("asset '" + uri + "' not found");
 }
 
 TextureHandle AssetsManager::LoadTexture(AssetID id)
