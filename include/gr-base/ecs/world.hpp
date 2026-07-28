@@ -37,7 +37,7 @@ struct world
 
     bool IsAlive(Entity entity) const;
 
-    ArchetypeID GetOrCreateArcheType(Signature mask, TypeID typeID);
+    ArchetypeID GetOrCreateArcheType(Signature mask);
 
     Signature GetMask(Entity e) const;
 
@@ -113,15 +113,13 @@ struct world
 
     void* AddComponentByID(Entity entity, TypeID type);
 
+    void AddComponentByMask(Entity entity, Signature requiredMask);
+
     void* GetComponentByID(Entity entity, TypeID type) const;
 
-    /*
-    template <typename T>
-    void DelComponent(Entity e)
-    {
-        DelComponent(e, engine::type_traits::hash<T>);
-    }
-    */
+    void DelComponentByID(Entity entity, TypeID type);
+
+    void DelComponentByMask(Entity entity, Signature requiredMask);
 
     std::vector<TypeID> GetAllComponentType(Entity e) const;
 
@@ -155,10 +153,12 @@ struct world
         return m_archetypePool;
     }
 
-    inline ArchetypeID GetArchetypeCount() const
+    inline size_t GetArchetypeCount() const
     {
         return m_count;
     }
+
+    void RemoveArchetype(ArchetypeID id);
 
 private:
 

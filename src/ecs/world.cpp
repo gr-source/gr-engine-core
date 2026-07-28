@@ -17,7 +17,7 @@ namespace engine::ecs
 
 world::world()
 {
-    m_emptyArchetypeStorage = GetOrCreateArcheType(0, INVALID_TYPE);
+    m_emptyArchetypeStorage = GetOrCreateArcheType(0);
 }
 
 world::~world()
@@ -114,13 +114,13 @@ bool world::IsAlive(Entity entity) const
     return entityManager.isAlive(entity);
 }
 
-ArchetypeID world::GetOrCreateArcheType(Signature mask, TypeID typeID)
+ArchetypeID world::GetOrCreateArcheType(Signature mask)
 {
     auto it = signatureToArchetype.find(mask);
     if (it != signatureToArchetype.end())
         return it->second;
 
-    if (m_count >= m_capacity)
+    if ((m_count + 1) >= m_capacity)
         resize();
 
     TypeID maxTypeID = 0;
@@ -135,7 +135,6 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask, TypeID typeID)
         temp &= (temp - 1);
     }
 
-    ArchetypeID id = static_cast<ArchetypeID>(m_count++);
 
     engine::ecs::detail::layout layout;
     if (maxTypeID > 0)
@@ -202,6 +201,7 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask, TypeID typeID)
 
     layout.alignment = maxAlign;
 
+    ArchetypeID id = static_cast<ArchetypeID>(m_count++);
 
     archetype* arche = GetArchetypeByID(id);
     new (arche) archetype();
@@ -253,7 +253,7 @@ engine::ecs::detail::records world::Allocate(Entity entity, TypeID type)
     {
         Signature newMask = lastArcheType->mask | mask;
 
-        dstID = GetOrCreateArcheType(newMask, type);
+        dstID = GetOrCreateArcheType(newMask);
 
         LinkAdd(type, rec.archetype, dstID);
     }
@@ -268,6 +268,19 @@ engine::ecs::detail::records world::Allocate(Entity entity, TypeID type)
     // type->constructor(ptr, component);
 
     return new_rec;
+}
+
+
+void world::AddComponentByMask(Entity entity, Signature requiredMask)
+{
+    while (requiredMask)
+    {
+        TypeID id = __builtin_ctzll(requiredMask);
+
+        AddComponentByID(entity, id);
+        
+        requiredMask &= (requiredMask - 1);
+    }
 }
 
 void* world::AddComponentByID(Entity entity, TypeID type)
@@ -328,6 +341,51 @@ void* world::GetComponentByID(Entity entity, TypeID type) const
 }
 
 /*
+    assert(entityManager.isAlive(entity));
+
+    auto info = ComponentRegistry::GetComponentByID(type);
+    assert(info != nullptr);
+
+    auto record = Allocate(entity, type);
+
+    auto arche = GetArchetypeByID(record.archetype);
+
+    uint8_t* raw = (uint8_t*)arche->getRaw(record.location.chunk, type);
+
+    void* component = (void*)(raw + record.location.row * info->stride);
+    info->constructor(component, nullptr);
+
+    return component;
+*/
+
+void world::DelComponentByID(Entity entity, TypeID typeID)
+{
+    DelComponentByMask(entity, (Signature)(1ull << typeID));
+}
+
+void world::DelComponentByMask(Entity entity, Signature requiredMask)
+{
+    if (!entityManager.isAlive(entity))
+        return;
+
+    uint32_t entityID = handle_get_first(entity);
+
+    auto& rec = entityRecords[entityID];
+
+    auto src = GetArchetypeByID(rec.archetype);
+
+    Signature oldMask = src->mask;
+    Signature newMask = oldMask & ~requiredMask;
+
+    auto dstID = GetOrCreateArcheType(newMask);
+    if (dstID == rec.archetype)
+        return;
+
+    entityRecords[entityID] =
+        MoveEntity(rec, dstID, entity);
+}
+
+/*
 void* world::GetComponent(Entity e, TypeID typeID) const
 {
     if (!entityManager.isAlive(e))
@@ -374,32 +432,6 @@ bool world::HasComponent(Entity entity, Signature mask) const
     auto arche = GetArchetypeByID(loc.archetype);
 
     return (arche->mask & mask) == mask;
-}
-*/
-
-/*
-void world::DelComponent(Entity e, Hash64 hash)
-{
-    if (!entityManager.isAlive(e))
-        return;
-
-    auto type = ComponentRegistry::GetComponentInfoByHash(hash);
-    if (type == nullptr)
-        return;
-
-    uint32_t entityID = handle_get_first(e);
-
-    auto srcID = entityRecords[entityID].archetype;
-    engine::ecs::dynamic::archetype* src = GetArchetypeByID(srcID);
-
-    Signature oldMask = src->mask;
-    Signature newMask = oldMask & ~(1ull << type->index);
-
-    auto dstID = GetOrCreateArcheType(newMask, type->index);
-    if (dstID == srcID)
-        return;
-
-    MoveEntity(srcID, dstID, e);
 }
 */
 
@@ -475,6 +507,38 @@ archetype* world::GetArchetypeByID(ArchetypeID id) const
     if (id >= m_count)
         return nullptr;
     return &m_archetypePool[id];
+}
+
+void world::RemoveArchetype(ArchetypeID id)
+{
+    auto arche = GetArchetypeByID(id);
+    if (arche == nullptr)
+        return;
+
+    /*
+    if (!entityManager.isAlive(entity))
+        return;
+
+    auto type = ComponentRegistry::GetComponentByID(typeID);
+    if (type == nullptr)
+        return;
+
+    uint32_t entityID = handle_get_first(entity);
+
+    auto& rec = entityRecords[entityID];
+
+    auto src = GetArchetypeByID(rec.archetype);
+
+    Signature oldMask = src->mask;
+    Signature newMask = oldMask & ~(1ull << type->index);
+
+    auto dstID = GetOrCreateArcheType(newMask, type->index);
+    if (dstID == rec.archetype)
+        return;
+
+    entityRecords[entityID] =
+        MoveEntity(rec, dstID, entity);
+        */
 }
 
 void world::LinkAdd(TypeID typeID, ArchetypeID srcID, ArchetypeID dstID)

@@ -76,7 +76,7 @@ public:
 private:
     static SystemRegistry* s_SystemRegistry;
 
-    std::unordered_map<Hash64, TypeID> m_bitsetMap;
+    std::unordered_map<Hash64, TypeID> m_cachedID;
 
     std::unordered_map<Hash64, TypeID> m_hashMap;
 
