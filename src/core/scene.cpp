@@ -213,9 +213,9 @@ size_t Scene::GetEntityCount()
 
 void Scene::MarkChildrenDirty(Entity entity)
 {
-    auto transform = world->GetComponent<TransformDirty>(entity);
+    auto transform = world->GetComponent<TransformLocal>(entity);
     if (transform != nullptr)
-        transform->version++;
+        transform->dirty = true;
 
     auto rel = GetWorldDynamic()->GetComponent<Relationship>(entity);
     if (rel != nullptr)
@@ -322,6 +322,7 @@ void Scene::Update()
 {
     for (auto& sys : m_systems)
         sys->Update(this);
+
     /*
     for (auto& systemID : m_systemIDs)
     {
@@ -329,9 +330,11 @@ void Scene::Update()
 
         auto info = SystemRegistry::GetSystemByID(systemID);
 
-        ScopeTimer scope(info->name);
+        {
+            ScopeTimer scope(info->name);
 
-        sys->Update(this);
+            sys->Update(this);
+        }
     }
     */
 

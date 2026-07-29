@@ -14,6 +14,7 @@
 
 void RenderSystem::Update(Scene* scene)
 {
+    return;
     Entity cameraEntity = scene->GetCamera();
     if (cameraEntity == INVALID_ENTITY)
         return;

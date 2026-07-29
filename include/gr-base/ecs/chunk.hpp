@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#define CHUNK_SIZE (16 * 1024)
+#define CHUNK_SIZE (64 * 1024)
 
 typedef struct Chunk
 {
