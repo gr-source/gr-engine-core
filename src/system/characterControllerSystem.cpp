@@ -12,10 +12,10 @@
 
 void CharacterControllerSystem::Update()
 {
+    /*
     auto p = scene->GetSystem<PhysicsSystem>();
     if (p == nullptr)
         return;
-
     scene->world->Query<Transform, CharacterController>(
             [&](
                 size_t count,
@@ -75,6 +75,7 @@ void CharacterControllerSystem::Update()
                 }
             }
         );
+        */
 }
 
 

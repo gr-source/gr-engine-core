@@ -2,6 +2,7 @@
 
 #include "BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h"
 
+#include "BulletCollision/CollisionDispatch/btGhostObject.h"
 #include "BulletCollision/CollisionShapes/btBoxShape.h"
 #include "BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h"
 #include "BulletCollision/CollisionShapes/btTriangleMesh.h"
@@ -47,17 +48,23 @@ private:
 
     btCollisionDispatcher* dispatcher;
 
+    btGhostPairCallback* ghostCallback;
+
     void Init() override;
 
     void OnGUI() override;
 
     void Update() override;
 
+    void SyncInput(engine::ecs::world* world);
+
+    void SyncTransforms(engine::ecs::world* world);
+
     void onCreateShape(engine::ecs::world* world, Entity entity);
 
     void onCreateRigidbody(engine::ecs::world* world, Entity entity);
 
-    void SyncTransforms(engine::ecs::world* world);
+    void onCreateCharacter(engine::ecs::world* world, Entity entity);
 };
 
 template <>

@@ -11,7 +11,6 @@ class btConvexShape;
 struct CharacterController
 {
     btPairCachingGhostObject* ghostObject = nullptr;
-    btConvexShape* capsuleShape = nullptr;
     btKinematicCharacterController* character = nullptr;
 };
 

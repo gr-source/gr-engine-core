@@ -40,6 +40,7 @@ void RegistryDefaultComponent()
 
     REGISTER_COMPONENT(PhysicsShape, false);
 
+    REGISTER_COMPONENT(CapsuleCollider, false);
     REGISTER_COMPONENT(BoxCollider, false);
     
     REGISTER_COMPONENT(Rigidbody, false);
