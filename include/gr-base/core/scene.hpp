@@ -123,17 +123,12 @@ public:
     template <typename T>
     void DelSystem();
 
-    inline const std::vector<TypeID>& GetSystemIDs() const
-    {
-        return m_systemIDs;
-    }
+    ISystem* GetSystemByID(TypeID id) const;
 
-    inline ISystem* GetSystem(TypeID id) const
-    {
-        if (id >= m_typeIDToSystem.size())
-            return nullptr;
-        return m_typeIDToSystem[id];
-    }
+    template <typename T>
+    T* GetSystem() const;
+
+    std::vector<TypeID> GetSystemIDs() const;
 
 private:
     std::unordered_set<Handle> u_object_has_been_selected;
@@ -177,6 +172,15 @@ inline void Scene::DelSystem()
     auto systemID = SystemRegistry::GetTypeID<T>();
     if (systemID != INVALID_TYPE)
         DelSystemByID(systemID);
+}
+
+template <typename T>
+inline T* Scene::GetSystem() const
+{
+    auto systemID = SystemRegistry::GetTypeID<T>();
+    if (systemID != INVALID_TYPE)
+        return static_cast<T*>(GetSystemByID(systemID));
+    return nullptr;
 }
 
 

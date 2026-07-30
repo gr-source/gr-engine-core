@@ -57,9 +57,10 @@ public:
         uint32_t denseIndex = m_sparseToDense[sparseID];
         if (denseIndex == INVALID_SPARSE_ID)
         {
-            denseIndex = static_cast<uint32_t>(m_denseCount++);
-            if (denseIndex >= m_denseCapacity)
+            if ((m_denseCount + 1) >= m_denseCapacity)
                 grow_dense();
+
+            denseIndex = static_cast<uint32_t>(m_denseCount++);
 
             m_sparseToDense[sparseID] = denseIndex;
             m_denseToSparse[denseIndex] = sparseID;

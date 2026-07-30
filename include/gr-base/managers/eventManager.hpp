@@ -20,6 +20,9 @@ public:
     static void Attach(Callback&& callback, Args&&...args);
 
     template <typename T>
+    static void Detach();
+
+    template <typename T>
     static void Notify(T* event);
 
     template <typename T>
@@ -41,6 +44,8 @@ private:
     std::mutex m_mutex;
 
     void attach(EventID id, std::function<void (IEvent*)> func);
+
+    void detach(EventID id);
 
     void notify(EventID id, std::shared_ptr<IEvent> event);
 
@@ -72,6 +77,13 @@ inline void EventManager::Attach(Callback&& callback, Args&&...args)
 
     s_EventManager->attach(
         GetEventIDByType<T>(), function);
+}
+
+template <typename T>
+inline void EventManager::Detach()
+{
+    s_EventManager->detach(
+        GetEventIDByType<T>());
 }
 
 template <typename T>

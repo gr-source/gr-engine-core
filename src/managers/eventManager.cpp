@@ -49,6 +49,19 @@ void EventManager::attach(EventID id, std::function<void (IEvent*)> func)
     logger::debug("[ EventManager ] Attached event '%d'.", id);
 }
 
+void EventManager::detach(EventID id)
+{
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (id >= m_listener.size())
+            m_listener.resize(id + 1);
+
+        m_listener[id].clear();
+    }
+
+    logger::debug("[ EventManager ] Detached event '%d'.", id);
+}
+
 void EventManager::notify(EventID id, std::shared_ptr<IEvent> event)
 {
     std::vector<std::function<void (IEvent*)>> execute;

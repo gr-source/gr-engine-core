@@ -11,7 +11,7 @@ public:
 
     virtual void Update(Scene* scene) = 0;
 
-    virtual void OnGUI() {}
+    virtual void OnGUI(Scene* scene) {}
 };
 
 

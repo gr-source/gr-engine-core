@@ -3,7 +3,10 @@
 #include "BulletCollision/BroadphaseCollision/btDbvtBroadphase.h"
 
 #include "BulletCollision/CollisionShapes/btBoxShape.h"
+#include "BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h"
+#include "BulletCollision/CollisionShapes/btTriangleMesh.h"
 #include "LinearMath/btDefaultMotionState.h"
+#include "gr-base/core/geometry/mesh.hpp"
 #include "gr-base/core/scene.hpp"
 #include "gr-base/core/clock.hpp"
 #include "gr-base/script/collider.hpp"
@@ -19,6 +22,145 @@ PhysicsSystem::PhysicsSystem() :
 
 PhysicsSystem::~PhysicsSystem()
 {}
+
+SparseID PhysicsSystem::CreateMotionState(const Vector3& position, const Quaternion& rotation)
+{
+    SparseID id = nextMotionStateID++;
+
+    motionsSparseset.insert(
+            id,
+            btTransform(
+                btQuaternion(
+                    rotation.x,
+                    rotation.y,
+                    rotation.z,
+                    rotation.w
+                ),
+                btVector3(
+                    position.x,
+                    position.y,
+                    position.z
+                )
+            )
+        );
+
+    return id;
+}
+
+btDefaultMotionState* PhysicsSystem::GetMotionState(SparseID id)
+{
+    return motionsSparseset.get(id);
+}
+
+SparseID PhysicsSystem::CreateRigidbody(const btRigidBody::btRigidBodyConstructionInfo& info)
+{
+    SparseID id = nextBodyID++;
+
+    rigidBodySparseset.insert(id, info);
+
+    return id;
+}
+
+btRigidBody* PhysicsSystem::GetRigidbody(SparseID id)
+{
+    return rigidBodySparseset.get(id);
+}
+
+void PhysicsSystem::AddBody(SparseID id)
+{
+    auto body = GetRigidbody(id);
+    if (body == nullptr)
+        return;
+
+    dynamicsWorld->addRigidBody(body);
+}
+
+void PhysicsSystem::RemoveBody(SparseID id)
+{
+    auto body = GetRigidbody(id);
+    if (body == nullptr)
+        return;
+
+    dynamicsWorld->removeRigidBody(body);
+}
+
+void PhysicsSystem::DestroyBody(SparseID id)
+{
+    rigidBodySparseset.destroy(id);
+}
+
+SparseID PhysicsSystem::CreateTriangleMeshShape(const Mesh* mesh)
+{
+    SparseID id = nextTriangleMeshShapeID++;
+
+    btTriangleMesh* triangleMesh =
+        new btTriangleMesh();
+
+    for (size_t i=0;i<mesh->numIndices;i+=3)
+    {
+        const auto& v0 =
+            mesh->vertices[mesh->indices[i + 0]];
+        const auto& v1 =
+            mesh->vertices[mesh->indices[i + 1]];
+        const auto& v2 =
+            mesh->vertices[mesh->indices[i + 2]];
+
+        triangleMesh->addTriangle(
+                btVector3(
+                    v0.position.x,
+                    v0.position.y,
+                    v0.position.z
+                ),
+                btVector3(
+                    v1.position.x,
+                    v1.position.y,
+                    v1.position.z
+                ),
+                btVector3(
+                    v2.position.x,
+                    v2.position.y,
+                    v2.position.z
+                )
+            );
+    }
+
+    auto shape = new btBvhTriangleMeshShape(triangleMesh, true);
+    shape->getMeshInterface();
+
+    if (id >= shapeList.size())
+        shapeList.resize(id + 1, nullptr);
+
+    shapeList[id] = shape;
+
+    return id;
+}
+
+SparseID PhysicsSystem::CreateBoxShape(const Vector3& boxHalfExtents)
+{
+    SparseID id = nextTriangleMeshShapeID++;
+
+    auto shape = new btBoxShape(
+            btVector3(
+                boxHalfExtents.x,
+                boxHalfExtents.y,
+                boxHalfExtents.z
+            )
+        );
+
+    if (id >= shapeList.size())
+        shapeList.resize(id + 1, nullptr);
+
+    shapeList[id] = shape;
+
+    return id;
+}
+
+btCollisionShape* PhysicsSystem::GetShape(SparseID id)
+{
+    if (id >= shapeList.size())
+        return nullptr;
+    return shapeList[id];
+}
 
 // private
 void PhysicsSystem::Init()
@@ -76,13 +218,9 @@ void PhysicsSystem::createShape(engine::ecs::world* world)
 
                     world->AddComponent<PhysicsShape>(
                             entities[i],
-                            new btBoxShape(
-                                btVector3(
-                                    transform.scale.x,
-                                    transform.scale.y,
-                                    transform.scale.z
+                            CreateBoxShape(
+                                    transform.scale
                                 )
-                            )
                         );
                 }
             }
@@ -102,47 +240,35 @@ void PhysicsSystem::createBody(engine::ecs::world* world)
             {
                 for (size_t i=0;i<count;i++)
                 {
-                    if (bodies[i].body != INVALID_BODY)
+                    if (bodies[i].body != INVALID32)
                         continue;
 
                     auto& transform = transforms[i];
-                    auto& shape = shapes[i];
+                    auto& physicsShape = shapes[i];
                     auto& rb = bodies[i];
 
-                    uint32_t bodyID = numBodies++;
+                    auto shape =
+                        GetShape(physicsShape.shapeID);
 
                     btVector3 fallInertia(0.0f, 0.0f, 0.0f);
-                    shape.shape->calculateLocalInertia(rb.mass, fallInertia);
+                    shape->calculateLocalInertia(rb.mass, fallInertia);
 
-                    auto state =
-                        new btDefaultMotionState(
-                                btTransform(
-                                    btQuaternion(
-                                        transform.rotation.x,
-                                        transform.rotation.y,
-                                        transform.rotation.z,
-                                        transform.rotation.w
-                                    ),
-                                    btVector3(
-                                        transform.position.x,
-                                        transform.position.y,
-                                        transform.position.z
-                                    )
-                                )
-                            );
+                    rb.motion =
+                        CreateMotionState(
+                                        transform.position,
+                                        transform.rotation
+                                    );
 
                     btRigidBody::btRigidBodyConstructionInfo info(
                                 rb.mass,
-                                state,
-                                shape.shape,
+                                GetMotionState(rb.motion),
+                                shape,
                                 fallInertia
                             );
 
-                    m_rigidbodies.insert(bodyID, info);
+                    rb.body = CreateRigidbody(info);
 
-                    dynamicsWorld->addRigidBody(m_rigidbodies.get(bodyID));
-
-                    rb.body = bodyID;
+                    AddBody(rb.body);
                 }
             }
         );
@@ -163,15 +289,13 @@ void PhysicsSystem::syncPhysicsToTransform(Scene* scene, engine::ecs::world* wor
                     auto& t = transforms[i];
                     auto& rb = bodies[i];
 
-                    btRigidBody* body = m_rigidbodies.get(rb.body);
+                    btRigidBody* body = GetRigidbody(rb.body);
 
                     btTransform tr;
                     body->getMotionState()->getWorldTransform(tr);
 
                     auto p = tr.getOrigin();
                     auto q = tr.getRotation();
-
-                    // std::cout << p.x() << " " << p.y() << " " << p.z()<< std::endl;
 
                     t.position = {
                         p.x(),

@@ -424,6 +424,18 @@ void Scene::DelSystemByID(TypeID systemID)
     sortSystems();
 }
 
+std::vector<TypeID> Scene::GetSystemIDs() const
+{
+    return m_systemIDs;
+}
+
+ISystem* Scene::GetSystemByID(TypeID id) const
+{
+    if (id >= m_typeIDToSystem.size())
+        return nullptr;
+    return m_typeIDToSystem[id];
+}
+
 ISystem* Scene::createSystem(const SystemInfo* info)
 {
     ISystem* system = (ISystem*)malloc(info->stride);
