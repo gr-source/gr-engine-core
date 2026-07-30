@@ -128,6 +128,7 @@ set(TASK_SRC
 
 set(SYSTEM_SRC
     src/system/transformsystem.cpp
+    src/system/physicsSystem.cpp
     src/system/camerasystem.cpp
     src/system/renderSystem.cpp
     src/system/default.cpp

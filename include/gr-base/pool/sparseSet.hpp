@@ -48,7 +48,8 @@ public:
             free(m_denseToSparse);
     }
 
-    void insert(SparseID sparseID, const T* src = nullptr)
+    template <typename... Args>
+    void insert(SparseID sparseID, Args&&... args)
     {
         while (sparseID >= m_sparseCapacity)
             grow_slot();
@@ -73,11 +74,7 @@ public:
         }
 
         T* dst = m_dense + denseIndex;
-
-        if (src != nullptr)
-            new (dst) T(*src);
-        else
-            new (dst) T();
+        new (dst) T(std::forward<Args>(args)...);
     }
 
     void destroy(SparseID id)

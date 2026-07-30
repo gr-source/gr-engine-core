@@ -1,5 +1,4 @@
 #pragma once
-/*
 
 #include "gr-base/script/default.hpp"
 
@@ -45,4 +44,4 @@ private:
     void drawWireCube(const Vector3 &position, float size);
 };
 
-*/
+

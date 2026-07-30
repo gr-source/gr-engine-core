@@ -53,7 +53,11 @@ PhysicsScene &PhysicsScene::GetInstance()
 }
 
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
-PhysicsScene::PhysicsScene() : broadphase(std::make_unique<btDbvtBroadphase>()), collisionConfiguration(std::make_unique<btDefaultCollisionConfiguration>()), dispatcher(std::make_unique<btCollisionDispatcher>(&(*collisionConfiguration))), solver(std::make_unique<btSequentialImpulseConstraintSolver>())
+PhysicsScene::PhysicsScene() :
+    broadphase(std::make_unique<btDbvtBroadphase>()),
+    collisionConfiguration(std::make_unique<btDefaultCollisionConfiguration>()),
+    dispatcher(std::make_unique<btCollisionDispatcher>(&(*collisionConfiguration))),
+    solver(std::make_unique<btSequentialImpulseConstraintSolver>())
 {
     dynamicsWorld = std::make_unique<btDiscreteDynamicsWorld>(&(*dispatcher), &(*broadphase), &(*solver), &(*collisionConfiguration));
     dynamicsWorld->setGravity(VEC3_TO_BTVEC3(gravity));

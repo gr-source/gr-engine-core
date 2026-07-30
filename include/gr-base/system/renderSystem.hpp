@@ -7,9 +7,7 @@
 #include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
 
-#include "gr-base/managers/default.hpp"
-
-#include <gr-render/shader.hpp>
+#include <vector>
 
 class RenderSystem : public ISystem
 {
@@ -18,9 +16,9 @@ public:
     virtual ~RenderSystem() override = default;
 
 private:
-    void Update(Scene* scene) override;
+    std::vector<Entity> m_entities;
 
-    void UpdateBVH(Scene* scene);
+    void Update(Scene* scene) override;
 };
 
 template <>

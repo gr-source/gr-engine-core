@@ -201,7 +201,7 @@ void AssetDB::registry(const AssetInfo& info)
 {
     URI uri = URI::parse(info.uri);
 
-    m_spaseSet.insert(info.id, &info);
+    m_spaseSet.insert(info.id, info);
 
     {
         std::lock_guard<std::mutex> lock(m_mutex);

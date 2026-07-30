@@ -15,11 +15,17 @@ public:
 
 template <typename... Args>
 inline std::string String::format(const std::string &fmt, Args &&...args) {
-    auto retVal = snprintf(nullptr, 0, fmt.c_str(), std::forward<Args>(args)...);
-    if (retVal <= 0) { return ""; }
+    if constexpr (sizeof...(Args) > 0)
+    {
+        int retVal = snprintf(nullptr, 0, fmt.c_str(), std::forward<Args>(args)...);
+        if (retVal <= 0) { return ""; }
 
-    std::string result(retVal, '\0');
-    snprintf(result.data(), result.size() + 1, fmt.c_str(), std::forward<Args>(args)...);
+        std::string result(retVal, '\0');
+        snprintf(result.data(), result.size() + 1, fmt.c_str(), std::forward<Args>(args)...);
 
-    return result;
+        return result;
+    } else
+    {
+        return fmt;
+    }
 }

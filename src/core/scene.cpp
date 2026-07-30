@@ -1,5 +1,6 @@
 #include "gr-base/core/scene.hpp"
 
+#include "gr-base/core/console.hpp"
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/default.hpp"
 #include "gr-base/core/logger.hpp"
@@ -62,15 +63,15 @@ Scene::~Scene()
 
 Entity Scene::create(const char* name)
 {
-    Entity entity = world->Create();
-    world->AddComponentByMask<TRANSFORM_MAKS>(entity);
-
+    Entity e = GetWorldDynamic()->Create();
+    GetWorldDynamic()->AddComponent<Transform>(e);
     if (name != nullptr)
-        world->AddComponent<Name>(entity, strdup(name));
+        GetWorldDynamic()->AddComponent<Name>(e, strdup(name));
     //
-    SetParent(m_root, entity);
+    // GetWorldDynamic()->AddComponent<Relationship>(e);
+    SetParent(m_root, e);
 
-    return entity;
+    return e;
 }
 
 Entity Scene::create(Entity other)
@@ -78,16 +79,17 @@ Entity Scene::create(Entity other)
     if (other == INVALID_ENTITY)
         return INVALID_ENTITY;
 
-    GameObject go(this, create(nullptr));
+    GameObject go(this, GetWorldDynamic()->Create());
     const GameObject otherGO(this, other);
     // m_isStatic = otherGO->m_isStatic;
 
-    auto otherTrans = otherGO.GetComponent<TransformLocal>();
+    auto otherTrans = otherGO.GetComponent<Transform>();
 
-    auto myTrans = go.GetComponent<TransformLocal>();
+    auto myTrans = go.GetOrAddComponent<Transform>();
     myTrans->position = otherTrans->position;
     myTrans->rotation = otherTrans->rotation;
     myTrans->scale = otherTrans->scale;
+    MarkChanged<Transform>(go.entity);
 
     auto otherRel = otherGO.GetComponent<Relationship>();
     if (otherRel != nullptr)
@@ -98,7 +100,7 @@ Entity Scene::create(Entity other)
             Entity newChild = create(sibling);
             SetParent(go.entity, newChild);
 
-            auto siblingRel = world->GetComponent<Relationship>(sibling);
+            auto siblingRel = GetWorldDynamic()->GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;
@@ -132,7 +134,7 @@ Entity Scene::create(Entity other)
         }
     }
 
-    if (go.HasComponent<MeshFilter, MeshRender>())
+    if (go.HasComponent<Transform, MeshFilter, MeshRender>())
     {
         auto meshFilter = go.GetComponent<MeshFilter>();
         if (meshFilter->mesh != HANDLE_INVALID)
@@ -152,7 +154,7 @@ Entity Scene::create(Entity other)
 
 void Scene::destroy(Entity e)
 {
-    if (world->HasComponent<TransformLocal, MeshFilter, MeshRender>(e))
+    if (GetWorldDynamic()->HasComponent<Transform, MeshFilter, MeshRender>(e))
         m_bvhtree->remove(e);
 
     Unlink(e);
@@ -213,9 +215,9 @@ size_t Scene::GetEntityCount()
 
 void Scene::MarkChildrenDirty(Entity entity)
 {
-    auto transform = world->GetComponent<TransformLocal>(entity);
+    auto transform = GetWorldDynamic()->GetComponent<Transform>(entity);
     if (transform != nullptr)
-        transform->dirty = true;
+        MarkChanged<Transform>(entity);
 
     auto rel = GetWorldDynamic()->GetComponent<Relationship>(entity);
     if (rel != nullptr)
@@ -322,7 +324,6 @@ void Scene::Update()
 {
     for (auto& sys : m_systems)
         sys->Update(this);
-
     /*
     for (auto& systemID : m_systemIDs)
     {
@@ -330,11 +331,9 @@ void Scene::Update()
 
         auto info = SystemRegistry::GetSystemByID(systemID);
 
-        {
-            ScopeTimer scope(info->name);
+        ScopeTimer scope(info->name);
 
-            sys->Update(this);
-        }
+        sys->Update(this);
     }
     */
 
@@ -386,9 +385,12 @@ void Scene::AddSystemByID(TypeID systemID)
     if (m_typeIDToSystem[info->index] != nullptr)
         return;
 
+    ISystem* system = createSystem(info);
+    if (system == nullptr)
+        return;
+
     m_systemIDs.push_back(info->index);
 
-    ISystem* system = createSystem(info);
 
     m_typeIDToSystem[info->index] = system;
 
@@ -424,10 +426,24 @@ void Scene::DelSystemByID(TypeID systemID)
 
 ISystem* Scene::createSystem(const SystemInfo* info)
 {
-    void* system = malloc(info->stride);
+    ISystem* system = (ISystem*)malloc(info->stride);
     info->constructor(system, nullptr);
 
-    return (ISystem*)system;
+    try
+    {
+        system->Init();
+    } catch (const std::exception& e)
+    {
+        info->destructor(system);
+
+        free(system);
+
+        Console::LogError("[ Scene ] Fail in to create system='%s' error='%s'.", info->name, e.what());
+
+        return nullptr;
+    }
+
+    return system;
 }
 
 void Scene::sortSystems()

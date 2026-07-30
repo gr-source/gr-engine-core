@@ -115,7 +115,8 @@ void BVHtree::queryFrustumAABB(std::vector<Entity>& results)
         NodeID id = stack.top();
         stack.pop();
 
-        if (id == INVALID_NODE) continue;
+        if (id == INVALID_NODE)
+            continue;
         Node& node = m_nodes[id];
 
         auto& boundary = node.boundary;

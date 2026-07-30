@@ -5,6 +5,7 @@
 
 #include "gr-base/ecs/world.hpp"
 
+#include "gr-base/scopeTimer.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
@@ -14,7 +15,6 @@
 
 void RenderSystem::Update(Scene* scene)
 {
-    return;
     Entity cameraEntity = scene->GetCamera();
     if (cameraEntity == INVALID_ENTITY)
         return;
@@ -22,14 +22,11 @@ void RenderSystem::Update(Scene* scene)
     auto world = scene->GetWorldDynamic();
     auto bvh = scene->GetBVHtree();
 
-    UpdateBVH(scene);
+    bvh->queryFrustumAABB(m_entities);
 
-    std::vector<Entity> entities;
-    bvh->queryFrustumAABB(entities);
-
-    for (auto& entity : entities)
+    for (auto& entity : m_entities)
     {
-        auto transformWorld = world->GetComponent<TransformWorld>(entity);
+        auto transform = world->GetComponent<Transform>(entity);
         auto meshFilter = world->GetComponent<MeshFilter>(entity);
         auto meshRender = world->GetComponent<MeshRender>(entity);
 
@@ -45,45 +42,14 @@ void RenderSystem::Update(Scene* scene)
                         material,
                         mesh,
                         static_cast<uint32_t>(j),
-                        &transformWorld->worldMatrix
+                        &transform->worldMatrix
                     );
         }
     }
+
+    m_entities.clear();
 }
 
-void RenderSystem::UpdateBVH(Scene* scene)
-{
-    auto bvh = scene->GetBVHtree();
-
-    auto world = scene->GetWorldDynamic();
-
-    world->Query<TransformWorld, RenderBounds, TransformDirty, RenderCache>(
-            [&](
-                size_t count,
-                Entity* entities,
-                TransformWorld* transformWorlds,
-                RenderBounds* bounds,
-                TransformDirty* dirty,
-                RenderCache* cache)
-            {
-                for (size_t i=0;i<count;i++)
-                {
-                    if (dirty[i].version == cache[i].version)
-                        continue;
-
-                    auto& world = transformWorlds[i];
-
-                    AABB local = bounds[i].local;
-                    local.min = world.worldMatrix * local.min;
-                    local.max = world.worldMatrix * local.max;
-
-                    bvh->sync(entities[i], local);
-
-                    cache[i].version = dirty[i].version;
-                }
-            }
-        );
-}
 
 
 
