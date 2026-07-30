@@ -13,12 +13,12 @@ class RenderSystem : public ISystem
 {
 public:
     RenderSystem() = default;
-    virtual ~RenderSystem() override = default;
+    ~RenderSystem() override = default;
 
 private:
     std::vector<Entity> m_entities;
 
-    void Update(Scene* scene) override;
+    void Update() override;
 };
 
 template <>

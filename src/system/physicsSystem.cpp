@@ -11,88 +11,10 @@
 #include "gr-base/core/clock.hpp"
 #include "gr-base/script/collider.hpp"
 #include "gr-base/script/transform.hpp"
+#include "imgui.h"
 
-PhysicsSystem::PhysicsSystem() :
-    collisionConfiguration(nullptr),
-    solver(nullptr),
-    dynamicsWorld(nullptr),
-    broadphase(nullptr),
-    dispatcher(nullptr)
-{}
-
-PhysicsSystem::~PhysicsSystem()
-{}
-
-SparseID PhysicsSystem::CreateMotionState(const Vector3& position, const Quaternion& rotation)
+btCollisionShape* PhysicsSystem::BuildMeshShape(const Mesh* mesh)
 {
-    SparseID id = nextMotionStateID++;
-
-    motionsSparseset.insert(
-            id,
-            btTransform(
-                btQuaternion(
-                    rotation.x,
-                    rotation.y,
-                    rotation.z,
-                    rotation.w
-                ),
-                btVector3(
-                    position.x,
-                    position.y,
-                    position.z
-                )
-            )
-        );
-
-    return id;
-}
-
-btDefaultMotionState* PhysicsSystem::GetMotionState(SparseID id)
-{
-    return motionsSparseset.get(id);
-}
-
-SparseID PhysicsSystem::CreateRigidbody(const btRigidBody::btRigidBodyConstructionInfo& info)
-{
-    SparseID id = nextBodyID++;
-
-    rigidBodySparseset.insert(id, info);
-
-    return id;
-}
-
-btRigidBody* PhysicsSystem::GetRigidbody(SparseID id)
-{
-    return rigidBodySparseset.get(id);
-}
-
-void PhysicsSystem::AddBody(SparseID id)
-{
-    auto body = GetRigidbody(id);
-    if (body == nullptr)
-        return;
-
-    dynamicsWorld->addRigidBody(body);
-}
-
-void PhysicsSystem::RemoveBody(SparseID id)
-{
-    auto body = GetRigidbody(id);
-    if (body == nullptr)
-        return;
-
-    dynamicsWorld->removeRigidBody(body);
-}
-
-void PhysicsSystem::DestroyBody(SparseID id)
-{
-    rigidBodySparseset.destroy(id);
-}
-
-SparseID PhysicsSystem::CreateTriangleMeshShape(const Mesh* mesh)
-{
-    SparseID id = nextTriangleMeshShapeID++;
-
     btTriangleMesh* triangleMesh =
         new btTriangleMesh();
 
@@ -124,20 +46,179 @@ SparseID PhysicsSystem::CreateTriangleMeshShape(const Mesh* mesh)
             );
     }
 
-    auto shape = new btBvhTriangleMeshShape(triangleMesh, true);
-    shape->getMeshInterface();
+    return new btBvhTriangleMeshShape(triangleMesh, true);
+}
 
-    if (id >= shapeList.size())
-        shapeList.resize(id + 1, nullptr);
+PhysicsSystem::PhysicsSystem() :
+    collisionConfiguration(nullptr),
+    solver(nullptr),
+    dynamicsWorld(nullptr),
+    broadphase(nullptr),
+    dispatcher(nullptr)
+{}
 
-    shapeList[id] = shape;
+PhysicsSystem::~PhysicsSystem()
+{}
+
+SparseID PhysicsSystem::CreateMotionState(const Vector3& position, const Quaternion& rotation)
+{
+    auto motion = new btDefaultMotionState(
+            btTransform(
+                btQuaternion(
+                    rotation.x,
+                    rotation.y,
+                    rotation.z,
+                    rotation.w
+                ),
+                btVector3(
+                    position.x,
+                    position.y,
+                    position.z
+                )
+            )
+        );
+
+    SparseID id;
+    if (!motionFreeIDs.empty())
+    {
+        id = motionFreeIDs.top();
+    } else
+    {
+        motionsStateList.push_back(nullptr);
+
+        id = static_cast<SparseID>(motionsStateList.size() - 1);
+    }
+
+    motionsStateList[id] = motion;
 
     return id;
 }
 
+void PhysicsSystem::DestroyMotion(SparseID id)
+{
+    if (id >= motionsStateList.size())
+        return;
+
+    auto motion = motionsStateList[id];
+    if (motion != nullptr)
+    {
+        delete motion;
+
+        motionFreeIDs.push(id);
+    }
+
+    motionsStateList[id] = nullptr;
+}
+
+btMotionState* PhysicsSystem::GetMotionState(SparseID id)
+{
+    if (id >= motionsStateList.size())
+        return nullptr;
+    return motionsStateList[id];
+}
+
+SparseID PhysicsSystem::CreateRigidbody(const btRigidBody::btRigidBodyConstructionInfo& info)
+{
+    SparseID id;
+    if (!bodyFreeIDs.empty())
+    {
+        id = bodyFreeIDs.top();
+    } else 
+    {
+        bodies.push_back(nullptr);
+
+        id = static_cast<SparseID>(bodies.size() - 1);
+    }
+
+    bodies[id] =
+        new btRigidBody(info);
+
+    return id;
+}
+
+btRigidBody* PhysicsSystem::GetRigidbody(SparseID id)
+{
+    if (id >= bodies.size())
+        return nullptr;
+    return bodies[id];
+}
+
+void PhysicsSystem::DestroyBody(SparseID id)
+{
+    if (id >= bodies.size())
+        return;
+
+    auto body = bodies[id];
+    if (body != nullptr)
+    {
+        delete body;
+
+        bodyFreeIDs.push(id);
+    }
+
+    bodies[id] = nullptr;
+}
+
+void PhysicsSystem::AddBody(SparseID id)
+{
+    auto body = GetRigidbody(id);
+    if (body == nullptr)
+        return;
+
+    dynamicsWorld->addRigidBody(body);
+}
+
+void PhysicsSystem::RemoveBody(SparseID id)
+{
+    auto body = GetRigidbody(id);
+    if (body == nullptr)
+        return;
+
+    dynamicsWorld->removeRigidBody(body);
+}
+
+SparseID PhysicsSystem::CreateShapeID()
+{
+    SparseID id;
+    if (shapeFreeIDs.empty())
+    {
+        shapes.push_back(nullptr);
+
+        id = static_cast<SparseID>(shapes.size() - 1);
+    } else
+    {
+        id = shapeFreeIDs.top();
+    }
+
+    return id;
+}
+
+void PhysicsSystem::DestroyShape(SparseID id)
+{
+    if (id >= shapes.size())
+        return;
+
+    auto shape = shapes[id];
+    if (shape != nullptr)
+    {
+        delete shape;
+        shapeFreeIDs.push(id);
+    }
+
+    shapes[id] = nullptr;
+}
+
+void PhysicsSystem::SetShape(SparseID id, btCollisionShape* shape)
+{
+    if (id >= shapes.size())
+        return;
+
+    shapes[id] = shape;
+}
+
 SparseID PhysicsSystem::CreateBoxShape(const Vector3& boxHalfExtents)
 {
-    SparseID id = nextTriangleMeshShapeID++;
+    SparseID id = CreateShapeID();
 
     auto shape = new btBoxShape(
             btVector3(
@@ -147,19 +228,16 @@ SparseID PhysicsSystem::CreateBoxShape(const Vector3& boxHalfExtents)
             )
         );
 
-    if (id >= shapeList.size())
-        shapeList.resize(id + 1, nullptr);
-
-    shapeList[id] = shape;
+    SetShape(id, shape);
 
     return id;
 }
 
 btCollisionShape* PhysicsSystem::GetShape(SparseID id)
 {
-    if (id >= shapeList.size())
+    if (id >= shapes.size())
         return nullptr;
-    return shapeList[id];
+    return shapes[id];
 }
 
 // private
@@ -188,7 +266,14 @@ void PhysicsSystem::Init()
     dynamicsWorld->setGravity(btVector3(0.0f, -9.8f, 0.0f));
 }
 
-void PhysicsSystem::Update(Scene* scene)
+void PhysicsSystem::OnGUI()
+{
+    ImGui::Text("Shapes: %lu", shapes.size());
+    ImGui::Text("Motions: %lu", motionsStateList.size());
+    ImGui::Text("Bodies: %lu", bodies.size());
+}
+
+void PhysicsSystem::Update()
 {
     createShape(scene->world);
 
@@ -196,7 +281,7 @@ void PhysicsSystem::Update(Scene* scene)
 
     dynamicsWorld->stepSimulation(Clock::deltaTime);
 
-    syncPhysicsToTransform(scene, scene->world);
+    syncPhysicsToTransform(scene->world);
 }
 
 void PhysicsSystem::createShape(engine::ecs::world* world)
@@ -274,7 +359,7 @@ void PhysicsSystem::createBody(engine::ecs::world* world)
         );
 }
 
-void PhysicsSystem::syncPhysicsToTransform(Scene* scene, engine::ecs::world* world)
+void PhysicsSystem::syncPhysicsToTransform(engine::ecs::world* world)
 {
     world->Query<Transform, Rigidbody>(
             [&](

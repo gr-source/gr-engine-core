@@ -4,14 +4,19 @@
 
 class ISystem
 {
+protected:
+    Scene* scene = nullptr;
+
 public:
     virtual ~ISystem() {}
 
     virtual void Init() {}
 
-    virtual void Update(Scene* scene) = 0;
+    virtual void Update() = 0;
 
-    virtual void OnGUI(Scene* scene) {}
+    virtual void OnGUI() {}
+
+    friend class Scene;
 };
 
 

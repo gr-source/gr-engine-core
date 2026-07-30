@@ -8,7 +8,7 @@
 class TransformSystem : public ISystem
 {
 public:
-    void Update(Scene* scene) override;
+    void Update() override;
 };
 
 template <>

@@ -19,28 +19,37 @@
 #include <gr-math/gmath.hpp>
 
 #include <memory>
+#include <stack>
 
 class PhysicsSystem : public ISystem
 {
 public:
+    static btCollisionShape* BuildMeshShape(const Mesh* mesh);
+
     PhysicsSystem();
     ~PhysicsSystem() override;
 
     SparseID CreateMotionState(const Vector3& position = type_traits<Vector3>::zero, const Quaternion& rotation = type_traits<Quaternion>::identity);
 
-    btDefaultMotionState* GetMotionState(SparseID id);
+    void DestroyMotion(SparseID id);
+
+    btMotionState* GetMotionState(SparseID id);
 
     SparseID CreateRigidbody(const btRigidBody::btRigidBodyConstructionInfo& info);
 
     btRigidBody* GetRigidbody(SparseID id);
 
+    void DestroyBody(SparseID id);
+
     void AddBody(SparseID id);
 
     void RemoveBody(SparseID id);
 
-    void DestroyBody(SparseID id);
+    SparseID CreateShapeID();
 
-    SparseID CreateTriangleMeshShape(const Mesh* mesh);
+    void DestroyShape(SparseID id);
+
+    void SetShape(SparseID id, btCollisionShape* shape);
 
     SparseID CreateBoxShape(const Vector3& boxHalfExtents);
 
@@ -57,27 +66,29 @@ private:
 
     btCollisionDispatcher* dispatcher;
 
-    SparseSet<btDefaultMotionState> motionsSparseset;
+    std::vector<btMotionState*> motionsStateList;
 
-    SparseID nextMotionStateID = 0;
+    std::stack<SparseID> motionFreeIDs;
 
-    SparseSet<btRigidBody> rigidBodySparseset;
+    std::vector<btRigidBody*> bodies;
 
-    SparseID nextBodyID = 0;
+    std::stack<SparseID> bodyFreeIDs;
 
-    std::vector<btCollisionShape*> shapeList;
+    std::vector<btCollisionShape*> shapes;
 
-    SparseID nextTriangleMeshShapeID = 0;
+    std::stack<SparseID> shapeFreeIDs;
 
     void Init() override;
 
-    void Update(Scene* scene) override;
+    void OnGUI() override;
+
+    void Update() override;
 
     void createShape(engine::ecs::world* world);
 
     void createBody(engine::ecs::world* world);
 
-    void syncPhysicsToTransform(Scene* scene, engine::ecs::world* world);
+    void syncPhysicsToTransform(engine::ecs::world* world);
 };
 
 template <>

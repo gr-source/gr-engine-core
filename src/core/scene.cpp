@@ -323,7 +323,7 @@ void Scene::SetParent(Entity parentEntity, Entity childEntity)
 void Scene::Update()
 {
     for (auto& sys : m_systems)
-        sys->Update(this);
+        sys->Update();
     /*
     for (auto& systemID : m_systemIDs)
     {
@@ -440,6 +440,7 @@ ISystem* Scene::createSystem(const SystemInfo* info)
 {
     ISystem* system = (ISystem*)malloc(info->stride);
     info->constructor(system, nullptr);
+    system->scene = this;
 
     try
     {

@@ -13,7 +13,7 @@
 
 #include "gr-base/spatial/bvhtree.hpp"
 
-void RenderSystem::Update(Scene* scene)
+void RenderSystem::Update()
 {
     Entity cameraEntity = scene->GetCamera();
     if (cameraEntity == INVALID_ENTITY)

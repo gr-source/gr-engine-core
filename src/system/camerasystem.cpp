@@ -8,7 +8,7 @@
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
-void CameraSystem::Update(Scene* scene)
+void CameraSystem::Update()
 {
     auto world = scene->GetWorldDynamic();
 

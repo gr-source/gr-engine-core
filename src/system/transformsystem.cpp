@@ -14,7 +14,7 @@
 
 #include "gr-base/spatial/bvhtree.hpp"
 
-void TransformSystem::Update(Scene* scene)
+void TransformSystem::Update()
 {
     BVHtree* bvh = scene->GetBVHtree();
 
