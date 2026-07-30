@@ -4,6 +4,7 @@
 
 #include "gr-base/ecs/componentRegistry.hpp"
 
+#include "gr-base/script/characterController.hpp"
 #include "gr-base/script/collider.hpp"
 #include "gr-base/script/relationship.hpp"
 #include "gr-base/script/meshFilter.hpp"
@@ -42,6 +43,9 @@ void RegistryDefaultComponent()
     REGISTER_COMPONENT(BoxCollider, false);
     
     REGISTER_COMPONENT(Rigidbody, false);
+
+    REGISTER_COMPONENT(CharacterController, false);
+    REGISTER_COMPONENT(CharacterInput, false);
 }
 
 #undef REGISTER_COMPONENT

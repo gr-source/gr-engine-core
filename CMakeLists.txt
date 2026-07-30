@@ -127,6 +127,7 @@ set(TASK_SRC
 )
 
 set(SYSTEM_SRC
+    src/system/characterControllerSystem.cpp
     src/system/transformsystem.cpp
     src/system/physicsSystem.cpp
     src/system/camerasystem.cpp

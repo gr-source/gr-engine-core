@@ -15,6 +15,7 @@
 #include "gr-base/core/system.hpp"
 #include "gr-base/ecs/world.hpp"
 #include "gr-base/pool/sparseSet.hpp"
+#include "gr-base/script/collider.hpp"
 
 #include <gr-math/gmath.hpp>
 
@@ -29,31 +30,11 @@ public:
     PhysicsSystem();
     ~PhysicsSystem() override;
 
-    SparseID CreateMotionState(const Vector3& position = type_traits<Vector3>::zero, const Quaternion& rotation = type_traits<Quaternion>::identity);
+    void AddBody(btRigidBody* body);
 
-    void DestroyMotion(SparseID id);
+    void RemoveBody(btRigidBody* body);
 
-    btMotionState* GetMotionState(SparseID id);
-
-    SparseID CreateRigidbody(const btRigidBody::btRigidBodyConstructionInfo& info);
-
-    btRigidBody* GetRigidbody(SparseID id);
-
-    void DestroyBody(SparseID id);
-
-    void AddBody(SparseID id);
-
-    void RemoveBody(SparseID id);
-
-    SparseID CreateShapeID();
-
-    void DestroyShape(SparseID id);
-
-    void SetShape(SparseID id, btCollisionShape* shape);
-
-    SparseID CreateBoxShape(const Vector3& boxHalfExtents);
-
-    btCollisionShape* GetShape(SparseID id);
+    void AddCollisionObject(btCollisionObject* collisionObject, btActionInterface* actionInterface);
 
 private:
     btDefaultCollisionConfiguration* collisionConfiguration;
@@ -66,29 +47,17 @@ private:
 
     btCollisionDispatcher* dispatcher;
 
-    std::vector<btMotionState*> motionsStateList;
-
-    std::stack<SparseID> motionFreeIDs;
-
-    std::vector<btRigidBody*> bodies;
-
-    std::stack<SparseID> bodyFreeIDs;
-
-    std::vector<btCollisionShape*> shapes;
-
-    std::stack<SparseID> shapeFreeIDs;
-
     void Init() override;
 
     void OnGUI() override;
 
     void Update() override;
 
-    void createShape(engine::ecs::world* world);
+    void onCreateShape(engine::ecs::world* world, Entity entity);
 
-    void createBody(engine::ecs::world* world);
+    void onCreateRigidbody(engine::ecs::world* world, Entity entity);
 
-    void syncPhysicsToTransform(engine::ecs::world* world);
+    void SyncTransforms(engine::ecs::world* world);
 };
 
 template <>

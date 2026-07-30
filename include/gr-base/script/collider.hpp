@@ -8,9 +8,13 @@
 
 #define INVALID32 UINT32_MAX
 
+class btCollisionShape;
+class btMotionState;
+class btRigidBody;
+
 struct PhysicsShape
 {
-    uint32_t shapeID = INVALID32;
+    btCollisionShape* shape = nullptr;
 };
 
 template <>
@@ -25,10 +29,18 @@ template <>
 inline constexpr TypeCategory engine::type_traits::category<BoxCollider> =
     TypeCategory::Component;
 
+struct CapsuleCollider
+{
+};
+
+template <>
+inline constexpr TypeCategory engine::type_traits::category<CapsuleCollider> =
+    TypeCategory::Component;
+
 struct Rigidbody
 {
-    uint32_t body = INVALID32;
-    uint32_t motion = INVALID32;
+    btMotionState* motionState = nullptr;
+    btRigidBody* body = nullptr;
 
     float mass = 1.0f;
 };

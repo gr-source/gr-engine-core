@@ -6,6 +6,7 @@
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/externals/handle.h"
 
+#include <functional>
 #include <unordered_map>
 #include <memory>
 #include <vector>
@@ -16,9 +17,11 @@ struct world
 {
     std::unordered_map<Signature, ArchetypeID> signatureToArchetype;
 
-    std::vector<engine::ecs::detail::records> entityRecords;
+    std::vector<std::vector<std::function<void(engine::ecs::world*, Entity)>>> events;
 
-    engine::ecs::manager::entity entityManager;
+    std::vector<detail::records> entityRecords;
+
+    manager::entity entityManager;
 
     ArchetypeID m_emptyArchetypeStorage = INVALID_ARCHETYPE;
 
@@ -30,6 +33,9 @@ struct world
 
     world();
     ~world();
+
+    template <typename Component, typename Callback, typename... Args>
+    void AddOnCreate(Callback&& callback, Args&&... args);
 
     Entity Create();
 
@@ -51,8 +57,8 @@ struct world
         if (!entityManager.isAlive(entity))
             return nullptr;
 
-        TypeID type = ComponentRegistry::GetTypeID<T>();
-        if (type == INVALID_TYPE)
+        TypeID typeID = ComponentRegistry::GetTypeID<T>();
+        if (typeID == INVALID_TYPE)
             return nullptr;
 
         uint32_t entityID = handle_get_first(entity);
@@ -72,12 +78,18 @@ struct world
             return arche->get<T>(current.location);
         }
 
-        auto record = Allocate(entity, type);
+        auto record = Allocate(entity, typeID);
 
         auto arche = GetArchetypeByID(record.archetype);
 
         T* component = arche->get<T>(record.location);
         new (component) T { std::forward<Args>(args)... };
+
+        if (typeID < events.size())
+        {
+            for (auto& func : events[typeID])
+                func(this, entity);
+        }
 
         return component;
     }
@@ -112,6 +124,21 @@ struct world
         auto arche = GetArchetypeByID(record.archetype);
 
         return arche->get<T>(record.location);
+    }
+
+    template <typename... Components>
+    std::tuple<Components*...> GetComponents(Entity entity) const
+    {
+        Signature requiredMask =
+            ComponentRegistry::GetMask<Components...>();
+
+        uint32_t entityID = handle_get_first(entity);
+
+        auto& record = entityRecords[entityID];
+
+        auto arche = GetArchetypeByID(record.archetype);
+
+        return std::make_tuple(arche->get<Components>(record.location)...);
     }
 
     template <typename... Components>
@@ -189,5 +216,34 @@ private:
 
     void resize();
 };
+
+
+template <typename Component, typename Callback, typename... Args>
+inline void world::AddOnCreate(Callback&& callback, Args&&... args)
+{
+    auto arguments = std::make_tuple(std::forward<Args>(args)...);
+
+    std::function<void(engine::ecs::world*, Entity)> function =
+        [callback = std::forward<Callback>(callback),
+         arguments = std::move(arguments)](engine::ecs::world* world, Entity entity) mutable
+        {
+            std::apply(
+                [&](auto&&... unpacked)
+                {
+                    std::invoke(callback, unpacked..., world, entity);
+                },
+                arguments
+            );
+        };
+
+    auto typeID = ComponentRegistry::GetTypeID<Component>();
+    if (typeID != INVALID_TYPE)
+    {
+        if (typeID >= events.size())
+            events.resize(typeID + 1);
+
+        events[typeID].push_back(function);
+    }
+}
 
 };

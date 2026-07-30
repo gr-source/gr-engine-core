@@ -324,12 +324,12 @@ void world::AddComponentByMask(Entity entity, Signature requiredMask)
     }
 }
 
-void* world::AddComponentByID(Entity entity, TypeID type)
+void* world::AddComponentByID(Entity entity, TypeID typeID)
 {
     if (!entityManager.isAlive(entity))
         return nullptr;
 
-    auto info = ComponentRegistry::GetComponentByID(type);
+    auto info = ComponentRegistry::GetComponentByID(typeID);
     if (info == nullptr)
         return nullptr;
 
@@ -337,7 +337,7 @@ void* world::AddComponentByID(Entity entity, TypeID type)
     if (entityID >= entityRecords.size())
         return nullptr;
 
-    Signature requiredMask = (1ULL << type);
+    Signature requiredMask = (1ULL << typeID);
 
     auto& current = entityRecords[entityID];
     if (
@@ -347,19 +347,26 @@ void* world::AddComponentByID(Entity entity, TypeID type)
     {
         auto arche = GetArchetypeByID(current.archetype);
 
-        uint8_t* raw = (uint8_t*)arche->getRaw(current.location.chunk, type);
+        uint8_t* raw = (uint8_t*)arche->getRaw(current.location.chunk, typeID);
 
         return (void*)(raw + current.location.row * info->stride);
     }
 
-    auto record = Allocate(entity, type);
+    auto record = Allocate(entity, typeID);
 
     auto arche = GetArchetypeByID(record.archetype);
 
-    uint8_t* raw = (uint8_t*)arche->getRaw(record.location.chunk, type);
+    uint8_t* raw = (uint8_t*)arche->getRaw(record.location.chunk, typeID);
 
     void* component = (void*)(raw + record.location.row * info->stride);
     info->constructor(component, nullptr);
+
+
+    if (typeID < events.size())
+    {
+        for (auto& func : events[typeID])
+            func(this, entity);
+    }
 
     return component;
 }
