@@ -8,6 +8,7 @@
 #include "gr-base/asset/default.hpp"
 
 #include <vector>
+#include <string>
 
 struct SubMeshAsset
 {

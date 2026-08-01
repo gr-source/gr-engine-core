@@ -9,6 +9,8 @@
 #include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/externals/hash.hpp"
 
+#include <string.h>
+
 AssetSaveTask::AssetSaveTask(const AssetSaveInfo& info) :
     m_info(info)
 {}

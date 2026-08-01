@@ -351,7 +351,8 @@ void PhysicsSystem::onCreateCharacter(engine::ecs::world* world, Entity entity)
       new btKinematicCharacterController(
           ghostObject,
           (btConvexShape *)physicsShape->shape,
-          0.35f
+          0.35f,
+          btVector3(0.0f, 1.0f, 0.0f)
       );
 
     character->setGravity(btVector3(0.0f, -9.8f, 0.0f));

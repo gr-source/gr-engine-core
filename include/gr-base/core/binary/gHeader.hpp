@@ -3,7 +3,6 @@
 #include <gr-math/gmath.hpp>
 
 #include <cstdint>
-#include <cstring>
 #include <array>
 
 class Stream;
@@ -25,7 +24,7 @@ enum class HeaderType : HeaderType_
 
 constexpr uint8_t IHeaderType = static_cast<uint8_t>(HeaderType::COUNT);
 
-static const std::array<std::string, IHeaderType> HeaderName = {
+static const std::array<const char*, IHeaderType> HeaderName = {
     "NONE",
     "METADATA",
     "SHADER",

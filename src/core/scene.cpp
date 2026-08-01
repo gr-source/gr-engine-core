@@ -459,6 +459,7 @@ ISystem* Scene::createSystem(const SystemInfo* info)
     return system;
 }
 
+#include <iostream>
 void Scene::sortSystems()
 {
     std::unordered_map<TypeID, Signature> graph;

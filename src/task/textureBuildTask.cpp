@@ -10,6 +10,7 @@
 
 #include "gr-base/task/assetSaveTask.hpp"
 
+#include <stdexcept>
 #include <vector>
 #include <cerrno>
 

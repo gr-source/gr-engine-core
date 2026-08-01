@@ -53,10 +53,6 @@ set(core
     src/scopeTimer.cpp
 )
 
-set(binary
-    src/core/binary/gHeader.cpp
-)
-
 set(SCRIPT_SRC
     src/script/default.cpp
 )
@@ -166,7 +162,6 @@ add_library(${PROJECT_NAME} SHARED
     ${core}
     ${culling}
     ${task}
-    ${binary}
     ${animation}
     ${physics}
     ${thread}
