@@ -83,8 +83,8 @@ void TransformSystem::Update()
             continue;
 
         auto transform = gameObject.GetComponent<Transform>();
-        transform->localMatrix = Math::CreateTRS(transform->position, transform->rotation, transform->scale);
-        transform->worldMatrix = transform->localMatrix;
+        
+        Matrix4x4 parentMatrix = type_traits<Matrix4x4>::identity;
 
         if (gameObject.HasComponent<Relationship>())
         {
@@ -95,10 +95,13 @@ void TransformSystem::Update()
                 if (parent.HasComponent<Transform>())
                 {
                     auto parentTransform = parent.GetComponent<Transform>();
-                    transform->worldMatrix = parentTransform->worldMatrix * transform->localMatrix;
+                    parentMatrix = parentTransform->worldMatrix;
                 }
             }
         }
+
+        transform->localMatrix = Math::CreateTRS(transform->position, transform->rotation, transform->scale);
+        transform->worldMatrix = parentMatrix * transform->localMatrix;
 
         if (gameObject.HasComponent<Transform, MeshFilter, MeshRender>())
         {

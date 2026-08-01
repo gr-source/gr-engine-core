@@ -4,11 +4,15 @@
 
 #include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
+#include <gr-math/types.hpp>
 
 class TransformSystem : public ISystem
 {
 public:
     void Update() override;
+
+
+    void UpdateTransform(Entity entity, const Matrix4x4& parentMatrix);
 };
 
 template <>
