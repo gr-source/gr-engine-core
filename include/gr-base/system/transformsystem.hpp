@@ -11,8 +11,7 @@ class TransformSystem : public ISystem
 public:
     void Update() override;
 
-
-    void UpdateTransform(Entity entity, const Matrix4x4& parentMatrix);
+    bool SyncTransform(const GameObject& gameObject, const Matrix4x4& parentMatrix) const;
 };
 
 template <>

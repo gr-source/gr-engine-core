@@ -8,7 +8,8 @@
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/camera.hpp"
 
-bool gluInvertMatrix(const float m[16], float invOut[16]) {
+bool gluInvertMatrix(const float m[16], float invOut[16])
+{
     float inv[16], det;
     int i;
 
