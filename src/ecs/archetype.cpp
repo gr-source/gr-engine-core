@@ -1,4 +1,7 @@
 #include "gr-base/ecs/archetype.hpp"
+
+#include "gr-base/ecs/componentRegistry.hpp"
+
 #include <cassert>
 #include <cstdlib>
 

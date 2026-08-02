@@ -14,6 +14,7 @@
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/scene.hpp"
 
+#include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"

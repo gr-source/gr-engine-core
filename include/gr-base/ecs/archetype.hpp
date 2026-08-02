@@ -1,22 +1,11 @@
 #pragma once
 
-#include "gr-base/ecs/componentRegistry.hpp"
+#include "gr-base/ecs/type_id.hpp"
 #include "gr-base/ecs/detail.hpp"
 #include "gr-base/ecs/chunk.hpp"
 
 namespace engine::ecs
 {
-    /*
-    struct alignas(16) Chunk
-    {
-        size_t count = 0;
-
-        Entity* entities = nullptr;
-
-        uint8_t* base = nullptr;
-    };
-    */
-
     struct archetype
     {
         engine::ecs::detail::layout* layout = nullptr;
@@ -47,7 +36,7 @@ namespace engine::ecs
         template <typename T>
         inline T* getRaw(ChunkID chunkID) const
         {
-            return reinterpret_cast<T*>(getRaw(chunkID, ComponentRegistry::GetTypeID<T>()));
+            return reinterpret_cast<T*>(getRaw(chunkID, GetComponentID<T>::id));
         }
 
         void* getRaw(ChunkID chunkID, TypeID typeID) const;

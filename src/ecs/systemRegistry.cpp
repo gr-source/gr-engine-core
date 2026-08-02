@@ -1,11 +1,10 @@
 #include "gr-base/ecs/systemRegistry.hpp"
 
+#include "gr-base/system/default.hpp"
+
 #include "gr-base/core/logger.hpp"
-#include <cstdlib>
 
 SystemRegistry* SystemRegistry::s_SystemRegistry = nullptr;
-
-#include "gr-base/system/default.hpp"
 
 void SystemRegistry::Initialize()
 {

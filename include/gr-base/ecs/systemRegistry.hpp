@@ -1,13 +1,10 @@
 #pragma once
 
-#include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/typeinfo.hpp"
+#include "gr-base/ecs/default.hpp"
 
-#include "gr-base/externals/hash.hpp"
-
-#include <cstring>
 #include <unordered_map>
-#include <type_traits>
+#include <cstring>
 #include <vector>
 
 class SystemRegistry

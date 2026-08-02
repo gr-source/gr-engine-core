@@ -2,14 +2,11 @@
 
 #include "gr-base/ecs/archetype.hpp"
 
-#include "gr-base/ecs/detail.hpp"
+#include "gr-base/ecs/signature.hpp"
 #include "gr-base/ecs/default.hpp"
-#include "gr-base/externals/handle.h"
+#include "gr-base/ecs/detail.hpp"
 
 #include <functional>
-#include <unordered_map>
-#include <memory>
-#include <vector>
 
 namespace engine::ecs
 {
@@ -57,7 +54,8 @@ struct world
         if (!entityManager.isAlive(entity))
             return nullptr;
 
-        TypeID typeID = ComponentRegistry::GetTypeID<T>();
+        TypeID typeID =
+            GetComponentID<T>::id;
         if (typeID == INVALID_TYPE)
             return nullptr;
 
@@ -65,7 +63,8 @@ struct world
         if (entityID >= entityRecords.size())
             return nullptr;
 
-        Signature requiredMask = ComponentRegistry::GetMask<T>();
+        Signature requiredMask =
+            GetComponentMask<T>::Get();
 
         auto& current = entityRecords[entityID];
         if (
@@ -100,7 +99,8 @@ struct world
         if (!entityManager.isAlive(entity))
             return nullptr;
 
-        TypeID type = ComponentRegistry::GetTypeID<T>();
+        TypeID type =
+            GetComponentID<T>::id;
         if (type == INVALID_TYPE)
             return nullptr;
 
@@ -113,7 +113,7 @@ struct world
         assert(record.mask != INVALID_SIGNATURE);
 
         Signature requiredMask =
-            ComponentRegistry::GetMask<T>();
+            GetComponentMask<T>::Get();
         if (
                 record.archetype == INVALID_ARCHETYPE ||
                 record.mask == INVALID_SIGNATURE ||
@@ -130,7 +130,7 @@ struct world
     std::tuple<Components*...> GetComponents(Entity entity) const
     {
         Signature requiredMask =
-            ComponentRegistry::GetMask<Components...>();
+            GetComponentMask<Components...>::Get();
 
         uint32_t entityID = handle_get_first(entity);
 
@@ -148,7 +148,7 @@ struct world
             return false;
 
         Signature requiredMask =
-            ComponentRegistry::GetMask<Components...>();
+            GetComponentMask<Components...>::Get();
 
         uint32_t entityID = handle_get_first(entity);
         assert(entityID < entityRecords.size());
@@ -174,7 +174,8 @@ struct world
     template<typename... Components, typename Func>
     void Query(Func&& func)
     {
-        Signature requiredMask = ComponentRegistry::GetMask<Components...>();
+        Signature requiredMask =
+            GetComponentMask<Components...>::Get();
 
         for (size_t i=0;i<m_count;i++)
         {
@@ -236,7 +237,8 @@ inline void world::AddOnCreate(Callback&& callback, Args&&... args)
             );
         };
 
-    auto typeID = ComponentRegistry::GetTypeID<Component>();
+    auto typeID =
+        GetComponentID<Component>::id;
     if (typeID != INVALID_TYPE)
     {
         if (typeID >= events.size())

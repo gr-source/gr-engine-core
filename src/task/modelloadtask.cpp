@@ -8,6 +8,7 @@
 #include "gr-base/core/file/stream.hpp"
 #include "gr-base/core/file/file.hpp"
 
+#include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/spatial/bvhtree.hpp"
 
 #include "gr-base/core/gameObject.hpp"
@@ -20,6 +21,7 @@
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 #include <cerrno>
+#include <cstring>
 #include <exception>
 
 void ModelLoadTask::onPreExecute()

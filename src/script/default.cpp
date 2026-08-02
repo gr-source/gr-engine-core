@@ -3,6 +3,7 @@
 #include "gr-base/core/logger.hpp"
 
 #include "gr-base/ecs/componentRegistry.hpp"
+#include "gr-base/ecs/type_id.hpp"
 
 #include "gr-base/script/characterController.hpp"
 #include "gr-base/script/collider.hpp"
@@ -18,6 +19,8 @@
         do \
         { \
             ComponentRegistry::Register<K>(b); \
+            GetComponentID<K>::id = \
+                TypeId<IdCategory::COMPONENT>::GetID<K>(); \
         } while (0)
 
 void RegistryDefaultComponent()

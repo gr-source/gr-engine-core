@@ -10,6 +10,8 @@
 #define REGISTER_SYSTEM(K, ...) \
     do{ \
         SystemRegistry::Register<K __VA_OPT__(,) __VA_ARGS__>(); \
+        GetSystemID<K>::id = \
+            TypeId<IdCategory::SYSTEM>::GetID<K>(); \
     } while (0)
 
 void RegistryDefaultSystem()

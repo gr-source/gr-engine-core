@@ -1,5 +1,7 @@
 #include "gr-base/core/gameObject.hpp"
 
+#include "gr-base/ecs/componentRegistry.hpp"
+
 #include "gr-base/script/name.hpp"
 
 std::string GameObject::GetName() const

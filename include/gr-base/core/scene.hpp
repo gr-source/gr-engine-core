@@ -2,17 +2,13 @@
 
 #include "gr-base/core/default.hpp"
 
-#include "gr-base/core/system.hpp"
-
-#include "gr-base/ecs/systemRegistry.hpp"
+#include "gr-base/ecs/type_id.hpp"
 #include "gr-base/ecs/world.hpp"
 
 #include "gr-base/spatial/default.hpp"
 
 #include <unordered_set>
-#include <vector>
 #include <string>
-#include <memory>
 
 enum class StageType
 {
@@ -27,6 +23,8 @@ struct ChangeSet
     std::vector<Entity> entities;
     std::vector<bool> exists;
 };
+
+class ISystem;
 
 class Scene
 {
@@ -100,7 +98,7 @@ public:
     template <typename T>
     inline void MarkChanged(Entity e)
     {
-        MarkChanged(ComponentRegistry::GetTypeID<T>(), e);
+        MarkChanged(GetComponentID<T>::id, e);
     }
 
     void MarkChanged(TypeID type, Entity e);
@@ -108,7 +106,7 @@ public:
     template <typename T>
     std::vector<Entity> Changed()
     {
-        return Changed(ComponentRegistry::GetTypeID<T>());
+        return Changed(GetComponentID<T>::id);
     }
 
     std::vector<Entity> Changed(TypeID type);
@@ -161,7 +159,7 @@ private:
 template <typename T>
 inline void Scene::AddSystem()
 {
-    auto systemID = SystemRegistry::GetTypeID<T>();
+    auto systemID = GetSystemID<T>::id;
     if (systemID != INVALID_TYPE)
         AddSystemByID(systemID);
 }
@@ -169,7 +167,7 @@ inline void Scene::AddSystem()
 template <typename T>
 inline void Scene::DelSystem()
 {
-    auto systemID = SystemRegistry::GetTypeID<T>();
+    auto systemID = GetSystemID<T>::id;
     if (systemID != INVALID_TYPE)
         DelSystemByID(systemID);
 }
@@ -177,7 +175,7 @@ inline void Scene::DelSystem()
 template <typename T>
 inline T* Scene::GetSystem() const
 {
-    auto systemID = SystemRegistry::GetTypeID<T>();
+    auto systemID = GetSystemID<T>::id;
     if (systemID != INVALID_TYPE)
         return static_cast<T*>(GetSystemByID(systemID));
     return nullptr;
