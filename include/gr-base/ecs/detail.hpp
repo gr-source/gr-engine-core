@@ -1,10 +1,7 @@
 #pragma once
 
 #include "gr-base/ecs/default.hpp"
-#include "gr-base/ecs/entityManager.hpp"
-
-#include <unordered_map>
-#include <vector>
+#include "gr-base/ecs/signature.hpp"
 
 #define align_up(value, alignment) (((value) + ((alignment) - 1)) & ~((alignment) - 1))   
 

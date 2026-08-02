@@ -3,10 +3,12 @@
 struct Relationship;
 struct MeshFilter;
 struct MeshRender;
-struct Transform;
 struct Camera;
 struct Light;
 struct Name;
+
+struct TransformLocal;
+struct TransformWorld;
 
 void RegistryDefaultComponent();
 

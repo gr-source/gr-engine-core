@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <utility>
 
 // public
 Scene* Scene::GetCurrent()
@@ -69,11 +70,12 @@ Scene::~Scene()
 Entity Scene::create(const char* name)
 {
     Entity e = GetWorldDynamic()->Create();
-    GetWorldDynamic()->AddComponent<Transform>(e);
+    world->AddComponent<TransformLocal>(e);
+    world->AddComponent<TransformWorld>(e);
+
     if (name != nullptr)
         GetWorldDynamic()->AddComponent<Name>(e, strdup(name));
     //
-    // GetWorldDynamic()->AddComponent<Relationship>(e);
     SetParent(m_root, e);
 
     return e;
@@ -84,17 +86,18 @@ Entity Scene::create(Entity other)
     if (other == INVALID_ENTITY)
         return INVALID_ENTITY;
 
-    GameObject go(this, GetWorldDynamic()->Create());
+    GameObject go(this, create(nullptr));
     const GameObject otherGO(this, other);
     // m_isStatic = otherGO->m_isStatic;
 
-    auto otherTrans = otherGO.GetComponent<Transform>();
+    auto otherTrans = otherGO.GetComponent<TransformLocal>();
 
-    auto myTrans = go.GetOrAddComponent<Transform>();
+    auto myTrans = go.GetComponent<TransformLocal>();
     myTrans->position = otherTrans->position;
     myTrans->rotation = otherTrans->rotation;
     myTrans->scale = otherTrans->scale;
-    MarkChanged<Transform>(go.entity);
+
+    MarkChanged<TransformWorld>(go.entity);
 
     auto otherRel = otherGO.GetComponent<Relationship>();
     if (otherRel != nullptr)
@@ -139,18 +142,14 @@ Entity Scene::create(Entity other)
         }
     }
 
-    if (go.HasComponent<Transform, MeshFilter, MeshRender>())
+    if (otherGO.HasComponent<RenderBounds>())
     {
-        auto meshFilter = go.GetComponent<MeshFilter>();
-        if (meshFilter->mesh != HANDLE_INVALID)
+        auto otherRenderBounds = otherGO.GetComponent<RenderBounds>();
+        if (otherRenderBounds->id != UINT32_MAX)
         {
-            auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
-            if (mesh != nullptr)
-            {
-                auto& bounds = mesh->localBounds;
-                if (bounds.Volume() > 0.0f)
-                    m_bvhtree->insert(go.entity, bounds);
-            }
+            auto renderBounds = go.GetOrAddComponent<RenderBounds>();
+            renderBounds->localBounds = otherRenderBounds->localBounds;
+            renderBounds->id = m_bvhtree->insert(go.entity, otherRenderBounds->localBounds);
         }
     }
 
@@ -159,7 +158,7 @@ Entity Scene::create(Entity other)
 
 void Scene::destroy(Entity e)
 {
-    if (GetWorldDynamic()->HasComponent<Transform, MeshFilter, MeshRender>(e))
+    if (world->HasComponent<MeshFilter, MeshRender>(e))
         m_bvhtree->remove(e);
 
     Unlink(e);
@@ -216,28 +215,6 @@ std::string Scene::GetName() const
 size_t Scene::GetEntityCount()
 {
     return GetWorldDynamic()->GetEntityCount();
-}
-
-void Scene::MarkChildrenDirty(Entity entity)
-{
-    auto transform = GetWorldDynamic()->GetComponent<Transform>(entity);
-    if (transform != nullptr)
-        MarkChanged<Transform>(entity);
-
-    auto rel = GetWorldDynamic()->GetComponent<Relationship>(entity);
-    if (rel != nullptr)
-    {
-        Entity sibling = rel->firstChild;
-        while (sibling != INVALID_ENTITY)
-        {
-            MarkChildrenDirty(sibling);
-
-            auto siblingRel = GetWorldDynamic()->GetComponent<Relationship>(sibling);
-            if (siblingRel == nullptr)
-                break;
-            sibling = siblingRel->nextSibling;
-        }
-    }
 }
 
 void Scene::Unlink(Entity entity)
@@ -320,7 +297,27 @@ void Scene::SetParent(Entity parentEntity, Entity childEntity)
 
     hierarchyDirty = true;
 
-    MarkChildrenDirty(child.entity);
+    MarkChanged<TransformWorld>(child.entity);
+}
+
+void Scene::BeginFrame()
+{
+    /*
+    currentFrame++;
+
+    for (auto& change : changes)
+        change.entities.clear();
+    */
+}
+
+void Scene::EndFrame()
+{
+    std::swap(readIndex, writeIndex);
+
+    for (auto& change : changes[writeIndex])
+        change.entities.clear();
+
+    currentFrame++;
 }
 
 #include "gr-base/scopeTimer.hpp"
@@ -329,53 +326,48 @@ void Scene::Update()
 {
     for (auto& sys : m_systems)
         sys->Update();
-    /*
-    for (auto& systemID : m_systemIDs)
-    {
-        ISystem* sys = m_typeIDToSystem[systemID];
 
-        auto info = SystemRegistry::GetSystemByID(systemID);
-
-        ScopeTimer scope(info->name);
-
-        sys->Update(this);
-    }
-    */
+    // for (auto& systemID : m_systemIDs)
+    // {
+    //     ISystem* sys = m_typeIDToSystem[systemID];
+    //
+    //     auto info = SystemRegistry::GetSystemByID(systemID);
+    //
+    //     ScopeTimer scope(info->name);
+    //
+    //     sys->Update();
+    // }
 
     // m_bvhtree->renderer();
 }
 
-void Scene::MarkChanged(TypeID type, Entity e)
+void Scene::MarkChanged(TypeID typeID, Entity entity)
 {
-    if (!GetWorldDynamic()->IsAlive(e))
-        return;
+    if (typeID >= changes[writeIndex].size())
+        changes[writeIndex].resize(typeID + 1);
 
-    if (type >= changes.size())
-        changes.resize(type + 1);
+    auto entityID = handle_get_first(entity);
 
-    uint32_t entityID = handle_get_first(e);
+    auto& change = changes[writeIndex][typeID];
+    if (entityID >= change.frames.size())
+        change.frames.resize(entityID, 0);
 
-    ChangeSet& change = changes[type];
-    if (entityID >= change.exists.size())
-        change.exists.resize(entityID + 1, false);
-
-    if (!change.exists[entityID])
+    if (change.frames[entityID] != currentFrame)
     {
-        change.entities.push_back(e);
+        change.entities.push_back(entity);
 
-        change.exists[entityID] = true;
+        change.frames[entityID] = currentFrame;
     }
 }
 
-std::vector<Entity> Scene::Changed(TypeID type)
+bool Scene::Changed(TypeID typeID, std::vector<Entity>& entities) const
 {
-    if (type >= changes.size())
-        return std::vector<Entity>();
+    if (typeID >= changes[readIndex].size() || changes[readIndex][typeID].entities.empty())
+        return false;
 
-    ChangeSet& change = changes[type];
-    change.exists.clear();
+    entities = changes[readIndex][typeID].entities;
 
-    return std::move(change.entities);
+    return true;
 }
 
 void Scene::AddSystemByID(TypeID systemID)

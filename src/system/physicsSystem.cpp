@@ -175,11 +175,11 @@ void PhysicsSystem::SyncInput(engine::ecs::world* world)
 
 void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
 {
-    world->Query<Transform, Rigidbody>(
+    world->Query<TransformLocal, Rigidbody>(
             [&](
                 size_t count,
                 Entity* entities,
-                Transform* transforms,
+                TransformLocal* transforms,
                 Rigidbody* bodies
             )
             {
@@ -211,16 +211,16 @@ void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
                         q.z()
                     };
 
-                    scene->MarkChanged<Transform>(entities[i]);
+                    scene->MarkChanged<TransformWorld>(entities[i]);
                 }
             }
         );
 
-    world->Query<Transform, CharacterController>(
+    world->Query<TransformLocal, CharacterController>(
             [&](
                 size_t count,
                 Entity* entities,
-                Transform* transforms,
+                TransformLocal* transforms,
                 CharacterController* controllers
             )
             {
@@ -251,7 +251,7 @@ void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
                         q.z()
                     };
 
-                    scene->MarkChanged<Transform>(entities[i]);
+                    scene->MarkChanged<TransformLocal>(entities[i]);
                 }
             }
         );
@@ -259,7 +259,7 @@ void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
 
 void PhysicsSystem::onCreateShape(engine::ecs::world* world, Entity entity)
 {
-    auto transform = world->GetComponent<Transform>(entity);
+    auto transform = world->GetComponent<TransformLocal>(entity);
 
     btCollisionShape* shape = nullptr;
     if (world->HasComponent<BoxCollider>(entity))
@@ -286,10 +286,10 @@ void PhysicsSystem::onCreateShape(engine::ecs::world* world, Entity entity)
 
 void PhysicsSystem::onCreateRigidbody(engine::ecs::world* world, Entity entity)
 {
-    if (!world->HasComponent<Transform, PhysicsShape, Rigidbody>(entity))
+    if (!world->HasComponent<PhysicsShape, Rigidbody>(entity))
         return;
 
-    auto&& [transform, physicsShape, rb] = world->GetComponents<Transform, PhysicsShape, Rigidbody>(entity);
+    auto&& [transform, physicsShape, rb] = world->GetComponents<TransformLocal, PhysicsShape, Rigidbody>(entity);
 
     auto shape =
         physicsShape->shape;
@@ -334,7 +334,7 @@ void PhysicsSystem::onCreateCharacter(engine::ecs::world* world, Entity entity)
         world->GetComponent<PhysicsShape>(entity);
 
     auto transform =
-        world->GetComponent<Transform>(entity);
+        world->GetComponent<TransformLocal>(entity);
 
     auto characterController =
         world->GetComponent<CharacterController>(entity);

@@ -21,7 +21,7 @@ enum class StageType
 struct ChangeSet
 {
     std::vector<Entity> entities;
-    std::vector<bool> exists;
+    std::vector<int> frames;
 };
 
 class ISystem;
@@ -77,8 +77,6 @@ public:
 
     size_t GetEntityCount();
 
-    void MarkChildrenDirty(Entity entity);
-
     void Unlink(Entity child);
 
     void SetParent(Entity parent, Entity child);
@@ -93,23 +91,27 @@ public:
         return m_camera;
     }
 
+    void BeginFrame();
+
+    void EndFrame();
+
     void Update();
 
     template <typename T>
-    inline void MarkChanged(Entity e)
+    inline void MarkChanged(Entity entity)
     {
-        MarkChanged(GetComponentID<T>::id, e);
+        MarkChanged(GetComponentID<T>::id, entity);
     }
 
-    void MarkChanged(TypeID type, Entity e);
+    void MarkChanged(TypeID typeID, Entity entity);
 
     template <typename T>
-    std::vector<Entity> Changed()
+    bool Changed(std::vector<Entity>& entities) const
     {
-        return Changed(GetComponentID<T>::id);
+        return Changed(GetComponentID<T>::id, entities);
     }
 
-    std::vector<Entity> Changed(TypeID type);
+    bool Changed(TypeID typeID, std::vector<Entity>& entities) const;
 
     void AddSystemByID(TypeID systemID);
 
@@ -133,7 +135,10 @@ private:
 
     std::vector<Entity> v_object_selected_list;
 
-    std::vector<ChangeSet> changes;
+    int readIndex = 0;
+    int writeIndex = 1;
+
+    std::vector<ChangeSet> changes[2];
 
     BVHtree* m_bvhtree;
 
@@ -142,6 +147,8 @@ private:
     Entity m_root;
 
     Entity m_camera;
+
+    int currentFrame = 0;
 
     // systems
     std::vector<TypeID> m_systemIDs;

@@ -23,7 +23,7 @@
 #include <memory>
 #include <stack>
 
-class PhysicsSystem : public ISystem
+class PhysicsSystem : public ISystemImpl<Read<>, Write<>>
 {
 public:
     static btCollisionShape* BuildMeshShape(const Mesh* mesh);

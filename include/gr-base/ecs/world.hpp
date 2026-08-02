@@ -2,6 +2,7 @@
 
 #include "gr-base/ecs/archetype.hpp"
 
+#include "gr-base/ecs/entityManager.hpp"
 #include "gr-base/ecs/signature.hpp"
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/detail.hpp"

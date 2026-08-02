@@ -1,5 +1,6 @@
 #include "gr-base/system/renderSystem.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/renderer.hpp"
 #include "gr-base/core/scene.hpp"
 
@@ -20,13 +21,16 @@ void RenderSystem::Update()
         return;
 
     auto world = scene->GetWorldDynamic();
+
+    SyncBVHBounds();
+
     auto bvh = scene->GetBVHtree();
 
-    bvh->queryFrustumAABB(m_entities);
+    bvh->queryFrustumAABB(entities);
 
-    for (auto& entity : m_entities)
+    for (auto& entity : entities)
     {
-        auto transform = world->GetComponent<Transform>(entity);
+        auto transform = world->GetComponent<TransformWorld>(entity);
         auto meshFilter = world->GetComponent<MeshFilter>(entity);
         auto meshRender = world->GetComponent<MeshRender>(entity);
 
@@ -42,14 +46,47 @@ void RenderSystem::Update()
                         material,
                         mesh,
                         static_cast<uint32_t>(j),
-                        &transform->worldMatrix
+                        &transform->world
                     );
         }
     }
 
-    m_entities.clear();
+    entities.clear();
 }
 
+#include <iostream>
+
+void RenderSystem::SyncBVHBounds()
+{
+    if (!scene->Changed<TransformWorld>(entities))
+        return;
+
+    auto bvh = scene->GetBVHtree();
+
+    for (auto& entity : entities)
+    {
+        GameObject gameObject(scene, entity);
+        if (!gameObject.IsAlive())
+            continue;
+
+        if (gameObject.HasComponent<RenderBounds>())
+        {
+            auto renderBounds = gameObject.GetComponent<RenderBounds>();
+            if (renderBounds->id == UINT32_MAX)
+                continue;
+
+            auto transformWorld = gameObject.GetComponent<TransformWorld>();
+
+            AABB bounds = renderBounds->localBounds;
+            bounds.min = transformWorld->world * bounds.min;
+            bounds.max = transformWorld->world * bounds.max;
+
+            bvh->sync(renderBounds->id, bounds);
+        }
+    }
+
+    entities.clear();
+}
 
 
 

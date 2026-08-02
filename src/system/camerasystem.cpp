@@ -142,18 +142,18 @@ void CameraSystem::Update()
 {
     auto world = scene->GetWorldDynamic();
 
-    world->Query<Transform, Camera, CameraData>([&](
+    world->Query<TransformWorld, Camera, CameraData>([&](
                 size_t count,
                 const Entity* entities,
-                Transform* transforms,
-                Camera* cameras,
+                const TransformWorld* transforms,
+                const Camera* cameras,
                 CameraData* datas)
     {
         for (size_t i=0;i<count;i++)
         {
-            Transform& transform = transforms[i];
+            const TransformWorld& transform = transforms[i];
+            const Camera& camera = cameras[i];
             CameraData& data = datas[i];
-            Camera& camera = cameras[i];
 
             float aspectRatio = static_cast<float>(camera.rendertarget->GetWidth()) / static_cast<float>(camera.rendertarget->GetHeight());
 
@@ -165,24 +165,15 @@ void CameraSystem::Update()
                     camera.farPlane
                 );
 
-            // data.view =
-            //     CreateViewMatrix(&transform);
-
-            gluInvertMatrix(&transform.worldMatrix[0][0], &data.view[0][0]);
-            /*
-            data.view =
-                Math::lookAt(
-                        transform.position,
-                        transform.position + data.forward,
-                        data.up
-                    );
-            */
+            gluInvertMatrix(&transform.world[0][0], &data.view[0][0]);
         }
     });
 }
 
-Matrix4x4 CameraSystem::CreateViewMatrix(const Transform* transform) const
+Matrix4x4 CameraSystem::CreateViewMatrix(const TransformWorld* transform) const
 {
+    return {};
+    /*
     auto invRotation =
         Math::normalize(Math::inverse(transform->rotation));
 
@@ -192,5 +183,6 @@ Matrix4x4 CameraSystem::CreateViewMatrix(const Transform* transform) const
     return
         Math::rotate<Matrix4x4>(invRotation) *
         Math::translate<Matrix4x4>(invPosition);
+    */
 }
 

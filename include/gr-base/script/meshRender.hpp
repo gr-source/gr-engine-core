@@ -1,10 +1,11 @@
 #pragma once
 
-#include "gr-base/managers/default.hpp"
+#include "gr-base/ecs/type_traits.hpp"
 
 #include "gr-base/core/default.hpp"
 
-#include "gr-base/ecs/default.hpp"
+#include <cstdint>
+#include <gr-math/aabb.hpp>
 
 struct MeshRender
 {
@@ -16,16 +17,14 @@ template <>
 inline constexpr TypeCategory engine::type_traits::category<MeshRender> =
     TypeCategory::Component;
 
-struct MaterialRef
+struct RenderBounds
 {
-    AssetHash* materials = nullptr;
-    size_t numMaterials = 0;
+    AABB localBounds;
+    uint32_t id = UINT32_MAX;
 };
 
 template <>
-inline constexpr TypeCategory engine::type_traits::category<MaterialRef> =
+inline constexpr TypeCategory engine::type_traits::category<RenderBounds> =
     TypeCategory::Component;
-
-
 
 

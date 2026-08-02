@@ -1,4 +1,5 @@
 #include "gr-base/core/culling/octree.hpp"
+/*
 
 #include "gr-base/debug/debugDraw.hpp"
 
@@ -158,5 +159,5 @@ void Octree::drawWireCube(const Vector3 &center, float size)
     DebugDraw::DrawLine(v[3], v[7]);
 }
 
-
+*/
 

@@ -18,12 +18,8 @@ BVHtree::~BVHtree()
         free(m_nodes);
 }
 
-void BVHtree::insert(Entity entity, const AABB &bounds)
+NodeID BVHtree::insert(Entity entity, const AABB &bounds)
 {
-    uint32_t entityID = handle_get_first(entity);
-    if (entityID >= m_entityToNode.size())
-        m_entityToNode.resize(entityID + 1, INVALID_NODE);
-
     NodeID id = allocate();
 
     Node& node = m_nodes[id];
@@ -34,18 +30,11 @@ void BVHtree::insert(Entity entity, const AABB &bounds)
 
     insertLeaf(id);
 
-    m_entityToNode[entityID] = id;
+    return id;
 }
 
-void BVHtree::remove(Entity entity)
+void BVHtree::remove(NodeID id)
 {
-    uint32_t entityID = handle_get_first(entity);
-    if (entityID >= m_entityToNode.size())
-        return;
-
-    NodeID id = m_entityToNode[entityID];
-    assert(id != INVALID_NODE);
-
     Node &node = m_nodes[id];
     if (!node.isLeaf())
         return;
@@ -53,20 +42,10 @@ void BVHtree::remove(Entity entity)
     removeLeaf(id);
 
     deallocate(id);
-
-    m_entityToNode[entityID] = INVALID_NODE;
 }
 
-void BVHtree::sync(Entity entity, const AABB& bounds)
+void BVHtree::sync(NodeID id, const AABB& bounds)
 {
-    uint32_t entityID = handle_get_first(entity);
-    if (entityID >= m_entityToNode.size())
-        return;
-
-    NodeID id = m_entityToNode[entityID];
-    if (id == INVALID_NODE)
-        return;
-
     Node& node = m_nodes[id];
     node.boundary = bounds;
 

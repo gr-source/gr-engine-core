@@ -30,13 +30,15 @@ void RegistryDefaultComponent()
     REGISTER_COMPONENT(Relationship, false);
 
     REGISTER_COMPONENT(MeshRender, false);
-    REGISTER_COMPONENT(MaterialRef, false);
+    REGISTER_COMPONENT(RenderBounds, false);
 
     REGISTER_COMPONENT(MeshFilter, false);
     REGISTER_COMPONENT(MeshRef, false);
     
+    REGISTER_COMPONENT(TransformLocal, true);
+    REGISTER_COMPONENT(TransformWorld, false);
+
     REGISTER_COMPONENT(CameraData, false);
-    REGISTER_COMPONENT(Transform, true);
     REGISTER_COMPONENT(Camera, true);
     REGISTER_COMPONENT(Light, true);
     REGISTER_COMPONENT(Name, false);

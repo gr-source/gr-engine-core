@@ -2,6 +2,7 @@
 
 #include "gr-base/core/file/default.hpp"
 
+#include "gr-base/ecs/signature.hpp"
 #include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
 

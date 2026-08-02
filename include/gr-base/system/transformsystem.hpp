@@ -4,11 +4,15 @@
 
 #include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
-#include <gr-math/types.hpp>
+#include "gr-base/script/transform.hpp"
 
-class TransformSystem : public ISystem
+#include <vector>
+
+class TransformSystem : public ISystemImpl<Read<TransformLocal>, Write<TransformWorld>>
 {
-public:
+private:
+    std::vector<Entity> entities;
+
     void Update() override;
 
     bool SyncTransform(const GameObject& gameObject, const Matrix4x4& parentMatrix) const;

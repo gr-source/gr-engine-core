@@ -34,11 +34,11 @@ public:
     BVHtree();
     ~BVHtree();
 
-    void insert(Entity entity, const AABB &bounds);
+    NodeID insert(Entity entity, const AABB &bounds);
 
-    void remove(Entity entity);
+    void remove(NodeID id);
 
-    void sync(Entity entity, const AABB& bounds);
+    void sync(NodeID id, const AABB& bounds);
 
     void query(const AABB& queryBounds, std::vector<Entity>& results);
 
@@ -47,8 +47,6 @@ public:
     void renderer();
 
 private:
-    std::vector<NodeID> m_entityToNode;
-
     NodeID* m_freeList;
 
     Node* m_nodes;

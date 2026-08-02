@@ -14,18 +14,22 @@
 
 #include "gr-base/spatial/bvhtree.hpp"
 
+#include <iostream>
+
 void TransformSystem::Update()
 {
-    BVHtree* bvh = scene->GetBVHtree();
+    if (!scene->Changed<TransformWorld>(entities))
+        return;
 
-    auto entities = scene->Changed<Transform>();
+    BVHtree* bvh = scene->GetBVHtree();
     for (auto& entity : entities)
     {
         GameObject gameObject(scene, entity);
-        if (!gameObject.HasComponent<Transform>())
+        if (!gameObject.HasComponent<TransformWorld>())
             continue;
 
-        auto transform = gameObject.GetComponent<Transform>();
+        auto transform = gameObject.GetComponent<TransformLocal>();
+        auto transformWorld = gameObject.GetComponent<TransformWorld>();
         
         Matrix4x4 parentMatrix = type_traits<Matrix4x4>::identity;
 
@@ -35,44 +39,28 @@ void TransformSystem::Update()
             if (rel->parent != INVALID_ENTITY)
             {
                 GameObject parent(scene, rel->parent);
-                if (parent.HasComponent<Transform>())
+                if (parent.HasComponent<TransformWorld>())
                 {
-                    auto parentTransform = parent.GetComponent<Transform>();
-                    parentMatrix = parentTransform->worldMatrix;
+                    auto parentTransform = parent.GetComponent<TransformWorld>();
+                    parentMatrix = parentTransform->world;
                 }
             }
         }
 
-        transform->localMatrix = Math::CreateTRS(transform->position, Math::normalize(transform->rotation), transform->scale);
+        transformWorld->local = Math::CreateTRS(transform->position, Math::normalize(transform->rotation), transform->scale);
 
         SyncTransform(gameObject, parentMatrix);
     }
+
+    entities.clear();
 }
 
 bool TransformSystem::SyncTransform(const GameObject& gameObject, const Matrix4x4& parentMatrix) const
 {
     auto bvh = scene->GetBVHtree();
 
-    auto transform = gameObject.GetComponent<Transform>();
-
-    transform->worldMatrix = parentMatrix * transform->localMatrix;
-
-    if (gameObject.HasComponent<MeshFilter, MeshRender>())
-    {
-        auto meshFilter = gameObject.GetComponent<MeshFilter>();
-        if (meshFilter != nullptr)
-        {
-            auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
-            if (mesh != nullptr)
-            {
-                AABB bounds = mesh->localBounds;
-                bounds.min = transform->worldMatrix * bounds.min;
-                bounds.max = transform->worldMatrix * bounds.max;
-
-                bvh->sync(gameObject.entity, bounds);
-            }
-        }
-    }
+    auto transform = gameObject.GetComponent<TransformWorld>();
+    transform->world = parentMatrix * transform->local;
 
     auto rel = gameObject.GetComponent<Relationship>();
     if (rel == nullptr)
@@ -82,7 +70,7 @@ bool TransformSystem::SyncTransform(const GameObject& gameObject, const Matrix4x
     while (firstChild != INVALID_ENTITY)
     {
         GameObject child(scene, firstChild);
-        if (!SyncTransform(child, transform->worldMatrix))
+        if (!SyncTransform(child, transform->world))
             break;
 
         rel = child.GetComponent<Relationship>();
