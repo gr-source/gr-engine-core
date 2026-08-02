@@ -92,7 +92,7 @@ void Renderer::beginFrame()
     gr::gRender::SetEnable(GR_DEPTH, true);
     gr::gRender::SetEnable(GR_CULL_FACE, true);
 
-    gr::gRender::SetBackgroundColor(Color{0.5f, 0.5f, 0.5f, 1.0f});
+    gr::gRender::SetBackgroundColor(Color{0.5f, 0.5f, 0.5f, 1.0f}.data);
     gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_DEPTH_BUFFER | gr::GR_COLOR_BUFFER);
 }
 
