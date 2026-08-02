@@ -41,8 +41,8 @@ Scene::Scene() :
 {
     logger::info("[ Scene ] Create '%p'.", this);
 
-    m_root = GetWorldDynamic()->Create();
-    GetWorldDynamic()->AddComponent<Relationship>(m_root);
+    m_root = world->Create();
+    world->AddComponent<Relationship>(m_root);
 }
 
 Scene::~Scene()
@@ -69,13 +69,14 @@ Scene::~Scene()
 
 Entity Scene::create(const char* name)
 {
-    Entity e = GetWorldDynamic()->Create();
+    Entity e = world->Create();
+
     world->AddComponent<TransformLocal>(e);
     world->AddComponent<TransformWorld>(e);
 
     if (name != nullptr)
-        GetWorldDynamic()->AddComponent<Name>(e, strdup(name));
-    //
+        world->AddComponent<Name>(e, strdup(name));
+    
     SetParent(m_root, e);
 
     return e;
@@ -219,7 +220,7 @@ size_t Scene::GetEntityCount()
 
 void Scene::Unlink(Entity entity)
 {
-    auto rel = GetWorldDynamic()->GetComponent<Relationship>(entity);
+    auto rel = world->GetComponent<Relationship>(entity);
     if (rel == nullptr)
         return;
 
@@ -257,6 +258,8 @@ void Scene::Unlink(Entity entity)
     hierarchyDirty = true;
 }
 
+#include <iostream>
+
 void Scene::SetParent(Entity parentEntity, Entity childEntity)
 {
     if (parentEntity == childEntity)
@@ -283,7 +286,7 @@ void Scene::SetParent(Entity parentEntity, Entity childEntity)
     {
         Entity oldFirst = parentRel->firstChild;
 
-        auto oldFirstRel = GetWorldDynamic()->GetComponent<Relationship>(oldFirst);
+        auto oldFirstRel = world->GetComponent<Relationship>(oldFirst);
 
         // novo filho aponta pro antigo primeiro
         childRel->nextSibling = oldFirst;
@@ -350,7 +353,7 @@ void Scene::MarkChanged(TypeID typeID, Entity entity)
 
     auto& change = changes[writeIndex][typeID];
     if (entityID >= change.frames.size())
-        change.frames.resize(entityID, 0);
+        change.frames.resize(entityID + 1, 0);
 
     if (change.frames[entityID] != currentFrame)
     {
@@ -456,7 +459,6 @@ ISystem* Scene::createSystem(const SystemInfo* info)
     return system;
 }
 
-#include <iostream>
 void Scene::sortSystems()
 {
     std::unordered_map<TypeID, Signature> graph;

@@ -60,7 +60,8 @@ bool TransformSystem::SyncTransform(const GameObject& gameObject, const Matrix4x
     auto bvh = scene->GetBVHtree();
 
     auto transform = gameObject.GetComponent<TransformWorld>();
-    transform->world = parentMatrix * transform->local;
+    if (transform != nullptr)
+        transform->world = parentMatrix * transform->local;
 
     auto rel = gameObject.GetComponent<Relationship>();
     if (rel == nullptr)
@@ -70,7 +71,7 @@ bool TransformSystem::SyncTransform(const GameObject& gameObject, const Matrix4x
     while (firstChild != INVALID_ENTITY)
     {
         GameObject child(scene, firstChild);
-        if (!SyncTransform(child, transform->world))
+        if (!SyncTransform(child, transform != nullptr ? transform->world : parentMatrix))
             break;
 
         rel = child.GetComponent<Relationship>();
