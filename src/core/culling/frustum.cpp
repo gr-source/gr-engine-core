@@ -2,110 +2,77 @@
 
 #include <cfloat>
 
-enum FrustumSide {
-	RIGHT	= 0,		// The RIGHT side of the frustum
-	LEFT	= 1,		// The LEFT	 side of the frustum
-	BOTTOM	= 2,		// The BOTTOM side of the frustum
-	TOP		= 3,		// The TOP side of the frustum
-	BACK	= 4,		// The BACK	side of the frustum
-	FRONT	= 5			// The FRONT side of the frustum
+enum FrustumSide
+{
+	RIGHT	= 0,
+	LEFT	= 1,
+	BOTTOM	= 2,
+	TOP		= 3,
+    BACK	= 4,
+    FRONT	= 5
 }; 
 
-enum PlaneData {
-	A = 0,				// The X value of the plane's normal
-	B = 1,				// The Y value of the plane's normal
-	C = 2,				// The Z value of the plane's normal
-	D = 3				// The distance the plane is from the origin
-};
-
-void NormalizePlane(float frustum[6][4], int side) {
-	float magnitude = std::sqrt(frustum[side][A] * frustum[side][A] +  frustum[side][B] * frustum[side][B] + frustum[side][C] * frustum[side][C]);
-	
-	if (magnitude > 1e-5f) {
-        float invMagnitude = 1.0f / magnitude;
-        frustum[side][A] *= invMagnitude;
-        frustum[side][B] *= invMagnitude;
-        frustum[side][C] *= invMagnitude;
-        frustum[side][D] *= invMagnitude;
-    }
-}
-
-float Frustum::m_Frustum[6][4] {
-	{0.0f, 0.0f, 0.0f, 0.0f},
-	{0.0f, 0.0f, 0.0f, 0.0f},
-	{0.0f, 0.0f, 0.0f, 0.0f},
-	{0.0f, 0.0f, 0.0f, 0.0f},
-	{0.0f, 0.0f, 0.0f, 0.0f},
-	{0.0f, 0.0f, 0.0f, 0.0f},
-};
+Frustum::Plane Frustum::planes[6] {};
 
 void Frustum::CalculateFrustum(const Matrix4x4& vp) 
 {
-	auto data = reinterpret_cast<const float *>(&vp);
+    Vector4 row0{
+        vp[0].x,
+        vp[1].x,
+        vp[2].x,
+        vp[3].x
+    };
 
-	// This will extract the RIGHT side of the frustum
-	m_Frustum[RIGHT][A] = data[ 3] - data[ 0];
-	m_Frustum[RIGHT][B] = data[ 7] - data[ 4];
-	m_Frustum[RIGHT][C] = data[11] - data[ 8];
-	m_Frustum[RIGHT][D] = data[15] - data[12];
+    Vector4 row1{
+        vp[0].y,
+        vp[1].y,
+        vp[2].y,
+        vp[3].y
+    };
 
-	NormalizePlane(m_Frustum, RIGHT);
+    Vector4 row2{
+        vp[0].z,
+        vp[1].z,
+        vp[2].z,
+        vp[3].z
+    };
 
-	// This will extract the LEFT side of the frustum
-	m_Frustum[LEFT][A] = data[ 3] + data[ 0];
-	m_Frustum[LEFT][B] = data[ 7] + data[ 4];
-	m_Frustum[LEFT][C] = data[11] + data[ 8];
-	m_Frustum[LEFT][D] = data[15] + data[12];
+    Vector4 row3{
+        vp[0].w,
+        vp[1].w,
+        vp[2].w,
+        vp[3].w
+    };
 
-	// Normalize the LEFT side
-	NormalizePlane(m_Frustum, LEFT);
+    planes[LEFT].col   = row3 + row0;
+    planes[RIGHT].col  = row3 - row0;
 
-	// This will extract the BOTTOM side of the frustum
-	m_Frustum[BOTTOM][A] = data[ 3] + data[ 1];
-	m_Frustum[BOTTOM][B] = data[ 7] + data[ 5];
-	m_Frustum[BOTTOM][C] = data[11] + data[ 9];
-	m_Frustum[BOTTOM][D] = data[15] + data[13];
+    planes[BOTTOM].col = row3 + row1;
+    planes[TOP].col    = row3 - row1;
 
-	// Normalize the BOTTOM side
-	NormalizePlane(m_Frustum, BOTTOM);
+    planes[FRONT].col  = row3 + row2;
+    planes[BACK].col   = row3 - row2;
 
-	// This will extract the TOP side of the frustum
-	m_Frustum[TOP][A] = data[ 3] - data[ 1];
-	m_Frustum[TOP][B] = data[ 7] - data[ 5];
-	m_Frustum[TOP][C] = data[11] - data[ 9];
-	m_Frustum[TOP][D] = data[15] - data[13];
+    for (int i=0;i<6;i++)
+    {
+        auto& p = planes[i];
 
-	// Normalize the TOP side
-	NormalizePlane(m_Frustum, TOP);
+        float len = Math::magnitude(p.normal);
 
-	// This will extract the BACK side of the frustum
-	m_Frustum[BACK][A] = data[ 3] - data[ 2];
-	m_Frustum[BACK][B] = data[ 7] - data[ 6];
-	m_Frustum[BACK][C] = data[11] - data[10];
-	m_Frustum[BACK][D] = data[15] - data[14];
-
-	// Normalize the BACK side
-	NormalizePlane(m_Frustum, BACK);
-
-	// This will extract the FRONT side of the frustum
-	m_Frustum[FRONT][A] = data[ 3] + data[ 2];
-	m_Frustum[FRONT][B] = data[ 7] + data[ 6];
-	m_Frustum[FRONT][C] = data[11] + data[10];
-	m_Frustum[FRONT][D] = data[15] + data[14];
-
-	// Normalize the FRONT side
-	NormalizePlane(m_Frustum, FRONT);
+        p.normal /= len;
+        p.d /= len;
+    }
 }
 
-bool Frustum::IsPointInFrustum(const Vector3 &point, int planeIndex) {
-    return m_Frustum[planeIndex][A] * point.x +
-           m_Frustum[planeIndex][B] * point.y +
-           m_Frustum[planeIndex][C] * point.z +
-           m_Frustum[planeIndex][D] > 0.0f;
-}
+// bool Frustum::IsPointInFrustum(const Vector3 &point, int planeIndex) {
+//     return planes[planeIndex][A] * point.x +
+//            planes[planeIndex][B] * point.y +
+//            planes[planeIndex][C] * point.z +
+//            planes[planeIndex][D] > 0.0f;
+// }
 
-bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model)
-{
+// bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model)
+// {
     /*
     Vector3 points[8] {
         Vector3(model * Vector4{min.x, min.y, min.z, 1.0f}),
@@ -138,10 +105,30 @@ bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const 
         if (allPointsOutside) return false;
     }
     */
+//     return true;
+// }
+
+bool Frustum::IsCubeInFrustumAABB(const Vector3& min,
+                                  const Vector3& max)
+{
+    for (int i = 0; i < 6; ++i)
+    {
+        const auto& p = planes[i];
+
+        Vector3 positive;
+
+        positive.x = (p.normal.x >= 0.0f) ? max.x : min.x;
+        positive.y = (p.normal.y >= 0.0f) ? max.y : min.y;
+        positive.z = (p.normal.z >= 0.0f) ? max.z : min.z;
+
+        if (Math::dot(p.normal, positive) + p.d < 0.0f)
+            return false;
+    }
+
     return true;
 }
 
-// max 170
+/*
 bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) {
     Vector3 points[8] {
         {min.x, min.y, min.z},
@@ -169,20 +156,22 @@ bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) {
     }
 	return true;
 }
+*/
 
 bool Frustum::IsSphereInFrustum(const Vector3 &center, float radius)
 {
     for (int i = 0; i < 6; i++) {
-        float distance = m_Frustum[i][A] * center.x +
-                         m_Frustum[i][B] * center.y +
-                         m_Frustum[i][C] * center.z +
-                         m_Frustum[i][D];
+        float distance = planes[i][0] * center.x +
+                         planes[i][1] * center.y +
+                         planes[i][2] * center.z +
+                         planes[i][3];
         if (distance < -radius)
             return false;
     }
     return true;
 }
 
+/*
 AABB Frustum::ComputeAABB()
 {
     Vector3 min{+FLT_MAX, +FLT_MAX, +FLT_MAX};
@@ -196,7 +185,7 @@ AABB Frustum::ComputeAABB()
             for (int k = j + 1; k < 6; k++)
             {
                 Vector3 point;
-                if (IntersectPlanes(m_Frustum[i], m_Frustum[j], m_Frustum[k], point))
+                if (IntersectPlanes(planes[i], planes[j], planes[k], point))
                 {
                     min.x = std::min(min.x, point.x);
                     min.y = std::min(min.y, point.y);
@@ -212,6 +201,7 @@ AABB Frustum::ComputeAABB()
 
     return AABB{min, max};
 }
+*/
 
 bool Frustum::IntersectPlanes(const float planeA[4], const float planeB[4], const float planeC[4], Vector3 &out)
 {

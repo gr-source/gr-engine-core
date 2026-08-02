@@ -98,7 +98,7 @@ void DebugBuffer::drawPoint(const Vector3& position, const Color& color)
 
 void DebugBuffer::drawLine(const Vector3 &start, const Vector3 &end, const Color &color)
 {
-    if (lineCount >= lineCapacity)
+    if ((lineCount + 1) >= lineCapacity)
     {
         lineCapacity = lineCapacity > 0 ? lineCapacity * 2 : 2;
 

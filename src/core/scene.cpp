@@ -126,8 +126,8 @@ Entity Scene::create(Entity other)
         if (go.HasComponentByID(typeID))
             continue;
 
-        void* dst = go.GetOrAddComponentByID(typeID);
         void* src = otherGO.GetComponentByID(typeID);
+        void* dst = go.AddComponentByID(typeID);
 
         if (type->isTriviallyCopyable)
         {

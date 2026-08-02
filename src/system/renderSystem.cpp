@@ -26,7 +26,10 @@ void RenderSystem::Update()
 
     auto bvh = scene->GetBVHtree();
 
-    bvh->queryFrustumAABB(entities);
+    {
+        // ScopeTimer scope("queryFrustumAABB");
+        bvh->queryFrustumAABB(entities);
+    }
 
     for (auto& entity : entities)
     {
