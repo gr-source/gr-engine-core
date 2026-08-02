@@ -4,14 +4,16 @@
 
 #include <gr-math/gmath.hpp>
 
-class btKinematicCharacterController;
+class KinematicCharacterController;
 class btPairCachingGhostObject;
 class btConvexShape;
 
 struct CharacterController
 {
     btPairCachingGhostObject* ghostObject = nullptr;
-    btKinematicCharacterController* character = nullptr;
+    KinematicCharacterController* character = nullptr;
+
+    bool canJump = false;
 };
 
 template <>
@@ -21,6 +23,7 @@ inline constexpr TypeCategory engine::type_traits::category<CharacterController>
 struct CharacterInput
 {
     Vector3 move = type_traits<Vector3>::zero;
+    bool jump = false;
 };
 
 template <>

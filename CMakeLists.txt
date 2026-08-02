@@ -58,6 +58,7 @@ set(SCRIPT_SRC
 )
 
 set(physics
+    src/physics/kinematicCharacterController.cpp
     src/physics/physicsScene.cpp
 )
 

@@ -7,8 +7,10 @@
 #include "BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h"
 #include "BulletCollision/CollisionShapes/btCapsuleShape.h"
 #include "BulletCollision/CollisionShapes/btTriangleMesh.h"
-#include "BulletDynamics/Character/btKinematicCharacterController.h"
 #include "LinearMath/btDefaultMotionState.h"
+
+#include "gr-base/physics/kinematicCharacterController.hpp"
+
 #include "gr-base/core/geometry/mesh.hpp"
 #include "gr-base/core/scene.hpp"
 #include "gr-base/core/clock.hpp"
@@ -159,7 +161,13 @@ void PhysicsSystem::SyncInput(engine::ecs::world* world)
                                 input.move.z
                             )
                         );
-                    // c.character->jump();
+
+                    if (input.jump && controller.canJump)
+                    {
+                        controller.character->jump();
+
+                        input.jump = false;
+                    }
                 }
             }
         );
@@ -221,7 +229,11 @@ void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
                     auto& t = transforms[i];
                     auto& c = controllers[i];
 
-                    btTransform tr = c.ghostObject->getWorldTransform();
+                    auto ghostObject = c.ghostObject;
+
+                    c.canJump = c.character->canJump();
+
+                    btTransform tr = ghostObject->getWorldTransform();
 
                     auto p = tr.getOrigin();
                     auto q = tr.getRotation();
@@ -348,7 +360,7 @@ void PhysicsSystem::onCreateCharacter(engine::ecs::world* world, Entity entity)
     ghostObject->setWorldTransform(start);
 
     auto character =
-      new btKinematicCharacterController(
+      new KinematicCharacterController(
           ghostObject,
           (btConvexShape *)physicsShape->shape,
           0.35f,
@@ -356,7 +368,7 @@ void PhysicsSystem::onCreateCharacter(engine::ecs::world* world, Entity entity)
       );
 
     character->setGravity(btVector3(0.0f, -9.8f, 0.0f));
-    character->setMaxSlope(btRadians(45.0f));
+    character->setMaxSlope(btRadians(44.0f));
     character->setFallSpeed(55.0f);
     character->setJumpSpeed(10.0f);
 
