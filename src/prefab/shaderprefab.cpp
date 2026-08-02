@@ -25,7 +25,7 @@ static std::unordered_map<std::string, gr::UniformType> mTypeMapping =
 ShaderPrefab::ShaderPrefab(const ShaderAsset& asset) : m_asset(asset)
 {}
 
-gr::shader* ShaderPrefab::Get(ShaderPrefabFlags_ flags)
+gr::shader* ShaderPrefab::Get(ShaderVariantFlags_ flags)
 {
     auto it = m_shadervariant.find(flags);
     if (it != m_shadervariant.end())
@@ -34,12 +34,12 @@ gr::shader* ShaderPrefab::Get(ShaderPrefabFlags_ flags)
 }
 
 // private
-gr::shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
+gr::shader* ShaderPrefab::create(ShaderVariantFlags_ flags)
 {
     std::string fragment = "#version 420\n";
     if ((m_asset.flags & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
     {
-        if (flags & ShaderPrefabFlags_Instancing)
+        if ((flags & ShaderVariantFlags_Instancing) != 0)
             fragment += "#define USE_INSTANCED\n";
     }
 
@@ -48,7 +48,7 @@ gr::shader* ShaderPrefab::create(ShaderPrefabFlags_ flags)
     std::string vertex = "#version 420\n";
     if ((m_asset.flags & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
     {
-        if (flags & ShaderPrefabFlags_Instancing)
+        if ((flags & ShaderVariantFlags_Instancing) != 0)
             vertex += "#define USE_INSTANCED\n";
     }
 

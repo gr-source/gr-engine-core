@@ -33,9 +33,10 @@ void RenderSystem::Update()
 
     for (auto& entity : entities)
     {
-        auto transform = world->GetComponent<TransformWorld>(entity);
-        auto meshFilter = world->GetComponent<MeshFilter>(entity);
-        auto meshRender = world->GetComponent<MeshRender>(entity);
+        if (!world->HasComponent<TransformWorld, MeshFilter, MeshRender>(entity))
+            continue;
+
+        auto&& [transform, meshFilter, meshRender] = world->GetComponents<TransformWorld, MeshFilter, MeshRender>(entity);
 
         if (meshRender == nullptr)
             continue;

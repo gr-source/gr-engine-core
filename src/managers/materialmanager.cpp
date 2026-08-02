@@ -6,108 +6,45 @@
 
 #include <cstdlib>
 
-MaterialManager::MaterialManager() : m_count(0), m_capacity(0), m_slots(nullptr), m_freeID(0)
+MaterialManager::MaterialManager()
 {}
 
 MaterialHandle MaterialManager::create()
 {
-    if (m_count >= m_capacity)
-        resize();
-
-    uint32_t id = m_freeID;
-
-    Slot& slot = m_slots[id];
-
-    m_freeID = slot.next;
-
-    m_count++;
-
-    MaterialHandle h = handle_create(id, slot.version);
-
-    Material* material = &m_materialPool[id];
-    new (material) Material();
-
-    return h;
+    return m_pool.create();
 }
 
-Material *MaterialManager::get(MaterialHandle h)
+Material *MaterialManager::get(MaterialHandle h) const
 {
-    uint32_t index = handle_get_first(h);
-    uint32_t version = handle_get_second(h);
-
-    Slot& slot = m_slots[index];
-    if (slot.version != version)
-        return nullptr;
-
-    return &m_materialPool[index];
+    return m_pool.get(h);
 }
 
 void MaterialManager::destroy(MaterialHandle h)
 {
-    uint32_t index = handle_get_first(h);
-    uint32_t version = handle_get_second(h);
-
-    Slot& slot = m_slots[index];
-    if (slot.version != version)
-        return;
-
-    Material& material = m_materialPool[index];
-    material.~Material();
-
-    m_freeID = index;
-
-    slot.next = m_freeID;
-    slot.version++;
-
-    m_count--;
+    m_pool.destroy(h);
 }
 
 size_t MaterialManager::GetCount() const
 {
-    return m_count;
+    return m_pool.count();
 }
 
 void MaterialManager::addInCache(AssetID assetID, MaterialHandle handle)
 {
     uint32_t index = handle_get_first(handle);
-    if (index >= meshIDCache.size())
-        meshIDCache.resize(index + 1, INVALID_ASSET);
+    if (index >= materialIDCacheList.size())
+        materialIDCacheList.resize(index + 1, INVALID_ASSET);
 
-    meshIDCache[index] = assetID;
+    materialIDCacheList[index] = assetID;
 }
 
-AssetID MaterialManager::findInCache(MaterialHandle handle)
+AssetID MaterialManager::findInCache(MaterialHandle handle) const
 {
     uint32_t index = handle_get_first(handle);
-    if (index >= meshIDCache.size())
+    if (index >= materialIDCacheList.size())
         return INVALID_ASSET;
 
-    return meshIDCache[index];
-}
-
-// private
-void MaterialManager::resize()
-{
-    size_t oldCapacity = m_capacity;
-
-    m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
-
-    m_materialPool.resize(m_capacity);
-
-    // m_materialPool = (Material*)realloc(m_materialPool, m_capacity * sizeof(Material));
-    m_slots = (Slot*)realloc(m_slots, m_capacity * sizeof(Slot));
-
-    addFreeID(oldCapacity);
-}
-
-void MaterialManager::addFreeID(size_t oldCapacity)
-{
-    size_t lastElement = m_capacity - 1;
-    for (size_t i=oldCapacity;i<lastElement;i++)
-        m_slots[i] = { static_cast<uint32_t>(i) + 1, 1 };
-
-    m_slots[lastElement] = { m_freeID, 1 };
-    m_freeID = static_cast<uint32_t>(oldCapacity);
+    return materialIDCacheList[index];
 }
 
 

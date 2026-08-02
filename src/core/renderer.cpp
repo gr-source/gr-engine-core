@@ -11,6 +11,7 @@
 
 #include <gr-render/shader.hpp>
 #include <gr-render/gl.h>
+#include <iostream>
 
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
@@ -156,12 +157,6 @@ void Renderer::draw()
             lastShader = shader;
         }
 
-        material->shader = shader;
-        material->Sync();
-
-
-        // auto m = AssetsManager::GetMaterial(chunk->material);
-
         if (material != lastMaterial)
         {
             material->Flush();
@@ -276,14 +271,39 @@ void Renderer::sorting()
 
             bool instancing = count > 1;
 
-            cmd.shader =
-                cmd.material->prefab->Get(
-                    instancing
-                        ? ShaderPrefabFlags_Instancing
-                        : ShaderPrefabFlags_none);
+            if (instancing)
+            {
+                if ((cmd.material->flags & ShaderVariantFlags_Instancing) != 0)
+                {
+                    cmd.shader = cmd.material->shader;
+                } else
+                {
+                    cmd.shader = 
+                        cmd.material->prefab->Get(ShaderVariantFlags_Instancing);
 
-            if (cmd.shader != nullptr)
-                m_commands.push_back(cmd);
+                    cmd.material->shader = cmd.shader;
+                    cmd.material->Sync();
+
+                    cmd.material->flags = ShaderVariantFlags_Instancing;
+                }
+            } else 
+            {
+                if ((cmd.material->flags & ShaderVariantFlags_none) != 0)
+                {
+                    cmd.shader = cmd.material->shader;
+                } else
+                {
+                    cmd.shader = 
+                        cmd.material->prefab->Get(ShaderVariantFlags_none);
+
+                    cmd.material->shader = cmd.shader;
+                    cmd.material->Sync();
+
+                    cmd.material->flags = ShaderVariantFlags_none;
+                }
+            }
+
+            m_commands.push_back(cmd);
         }
 
         i = start;

@@ -135,9 +135,10 @@ private:
         uint32_t slotID = m_freeID;
         m_freeID = m_freeList[slotID];
 
-        uint32_t index = static_cast<uint32_t>(m_denseCount++);
-        if (index >= m_denseCapacity)
+        if ((m_denseCount + 1) >= m_denseCapacity)
             grow_dense();
+
+        uint32_t index = static_cast<uint32_t>(m_denseCount++);
 
         m_sparseToDense[slotID] = index;
         m_denseToSparse[index] = slotID;

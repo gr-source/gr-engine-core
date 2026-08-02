@@ -7,11 +7,7 @@
 
 #include "gr-base/asset/default.hpp"
 
-#include <unordered_map>
-
-#define INVALID_MESHID UINT32_MAX
-
-typedef uint32_t MeshID;
+#include "gr-base/pool/objectPool.hpp"
 
 class MeshManager
 {
@@ -28,29 +24,12 @@ public:
 
     void addInCache(AssetID assetID, MeshHandle handle);
 
-    AssetID findInCache(MeshHandle handle);
+    AssetID findInCache(MeshHandle handle) const;
 
 private:
-    struct Slot
-    {
-        MeshID next;
-        uint32_t version;
-    };
-
-    Mesh* m_pool;
-
-    size_t m_capacity;
-
-    size_t m_count;
-
-    Slot *m_slots;
-    MeshID m_freeID;
-
     std::vector<AssetID> meshIDCache;
 
-    void resize();
-
-    void addFreeID(size_t oldCapacity);
+    ObjectPool<Mesh> m_pool;
 };
 
 
