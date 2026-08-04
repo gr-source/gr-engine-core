@@ -6,14 +6,21 @@
 #include "gr-base/ecs/default.hpp"
 
 #include <gr-math/gmath.hpp>
+#include <gr-math/rect.h>
 
 struct Camera
 {
-    RenderTarget* rendertarget  = nullptr;
+    RenderTarget* rendertarget =
+        nullptr;
 
-    float nearPlane             = 0.001f;
-    float farPlane              = 500.0f;
-    float fov                   = 45.0f;
+    Rect viewport =
+        { 0.0f, 0.0f, 512.0f, 512.0f };
+    float nearPlane =
+        0.001f;
+    float farPlane =
+        500.0f;
+    float fov =
+        45.0f;
 };
 
 template <>

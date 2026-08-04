@@ -53,6 +53,11 @@ void Renderer::SetRenderTarget(RenderTarget* rt)
     s_Renderer->m_rendertarget = rt;
 }
 
+void Renderer::SetViewport(const Rect& r)
+{
+    s_Renderer->viewport = r;
+}
+
 void Renderer::Submit(
         const MaterialHandle& material,
         const MeshHandle& mesh,
@@ -91,7 +96,15 @@ void Renderer::beginFrame()
     sorting();
 
     m_renderables.clear();
+}
 
+void Renderer::endFrame()
+{
+    m_commands.clear();
+}
+
+void Renderer::render()
+{
     if (m_rendertarget != nullptr)
         m_rendertarget->bind();
 
@@ -99,20 +112,9 @@ void Renderer::beginFrame()
     gr::gRender::SetEnable(GR_DEPTH, true);
     gr::gRender::SetEnable(GR_CULL_FACE, true);
 
+    gr::gRender::SetViewport(viewport.data);
     gr::gRender::SetBackgroundColor(Color{0.5f, 0.5f, 0.5f, 1.0f}.data);
     gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_DEPTH_BUFFER | gr::GR_COLOR_BUFFER);
-}
-
-void Renderer::endFrame()
-{
-    if (m_rendertarget != nullptr)
-        m_rendertarget->unbind();
-
-    m_commands.clear();
-}
-
-void Renderer::render()
-{
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glBindVertexArray(0);
@@ -131,8 +133,8 @@ void Renderer::render()
     gr::gRender::SetDepthFunc(GR_DEPTH_FUNC_LEQUAL);
     DebugDraw::Renderer();
 
-    // gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
-    // m_skybox.render(camera);
+    if (m_rendertarget != nullptr)
+        m_rendertarget->unbind();
 }
 
 void Renderer::draw()

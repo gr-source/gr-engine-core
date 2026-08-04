@@ -52,6 +52,8 @@ public:
 
     static void SetRenderTarget(RenderTarget* rt);
 
+    static void SetViewport(const Rect& r);
+
     static void Submit(const MaterialHandle& material, const MeshHandle& mesh, uint32_t submesh, const Matrix4x4* matrice);
 
 private:
@@ -64,6 +66,9 @@ private:
     std::vector<Matrix4x4> m_metrices;
 
     RenderTarget* m_rendertarget;
+
+    Rect viewport =
+        { 0.0f, 0.0f, 512.0f, 512.0f };
 
     Renderer();
     ~Renderer();

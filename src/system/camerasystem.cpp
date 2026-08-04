@@ -25,7 +25,8 @@ void CameraSystem::Update()
             const Camera& camera = cameras[i];
             CameraData& data = datas[i];
 
-            float aspectRatio = static_cast<float>(camera.rendertarget->GetWidth()) / static_cast<float>(camera.rendertarget->GetHeight());
+            float aspectRatio =
+                camera.viewport.w / camera.viewport.h;
 
             data.projection =
                 Math::perspective(
