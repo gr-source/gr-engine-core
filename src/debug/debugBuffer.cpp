@@ -54,6 +54,9 @@ DebugBuffer::~DebugBuffer()
     if (lines != nullptr)
         free(lines);
 
+    if (points != nullptr)
+        free(points);
+
     if (m_vao != nullptr)
         delete m_vao;
 
@@ -84,7 +87,7 @@ bool DebugBuffer::initialize()
 
 void DebugBuffer::drawPoint(const Vector3& position, const Color& color)
 {
-    if (pointCount >= pointCapacity)
+    if ((pointCount + 1) >= pointCapacity)
     {
         pointCapacity = pointCapacity > 0 ? pointCapacity * 2 : 2;
 

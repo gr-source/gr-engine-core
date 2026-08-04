@@ -10,7 +10,6 @@
 #include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/systemRegistry.hpp"
 
-#include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/spatial/bvhtree.hpp"
@@ -24,6 +23,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <stdexcept>
 #include <utility>
 
 // public
@@ -35,9 +35,7 @@ Scene* Scene::GetCurrent()
 Scene::Scene() :
     world(new engine::ecs::world()),
     m_bvhtree(new BVHtree()),
-    m_root(INVALID_ENTITY),
-    m_camera(INVALID_ENTITY),
-    hierarchyDirty(false)
+    m_root(INVALID_ENTITY)
 {
     logger::info("[ Scene ] Create '%p'.", this);
 
@@ -157,14 +155,18 @@ Entity Scene::create(Entity other)
     return go.entity;
 }
 
-void Scene::destroy(Entity e)
+void Scene::destroy(Entity entity)
 {
-    if (world->HasComponent<MeshFilter, MeshRender>(e))
-        m_bvhtree->remove(e);
+    if (world->HasComponent<RenderBounds>(entity))
+    {
+        auto renderBounds = world->GetComponent<RenderBounds>(entity);
+        if (renderBounds->id != UINT32_MAX)
+            m_bvhtree->remove(renderBounds->id);
+    }
 
-    Unlink(e);
+    Unlink(entity);
 
-    GetWorldDynamic()->Destroy(e);
+    world->Destroy(entity);
 }
 
 // ********** public ********** //
@@ -215,7 +217,12 @@ std::string Scene::GetName() const
 
 size_t Scene::GetEntityCount()
 {
-    return GetWorldDynamic()->GetEntityCount();
+    return world->GetEntityCount();
+}
+
+Entity Scene::GetRoot() const
+{
+    return m_root;
 }
 
 void Scene::Unlink(Entity entity)
@@ -255,10 +262,8 @@ void Scene::Unlink(Entity entity)
     rel->prevSibling  = INVALID_ENTITY;
     rel->nextSibling  = INVALID_ENTITY;
 
-    hierarchyDirty = true;
+    hierarchySync[writeIndex] = true;
 }
-
-#include <iostream>
 
 void Scene::SetParent(Entity parentEntity, Entity childEntity)
 {
@@ -298,19 +303,54 @@ void Scene::SetParent(Entity parentEntity, Entity childEntity)
         parentRel->firstChild = child.entity;
     }
 
-    hierarchyDirty = true;
+    hierarchySync[writeIndex] = true;
 
     MarkChanged<TransformWorld>(child.entity);
 }
 
+void Scene::SetCamera(Entity entity)
+{
+    currentCamera = entity;
+}
+
+Entity Scene::GetCurrentCamera() const
+{
+    return currentCamera != INVALID_ENTITY ? currentCamera : mainCamera;
+}
+
+void Scene::SetMainCamera(Entity entity)
+{
+    mainCamera = entity;
+}
+
+Entity Scene::GetMainCamera() const
+{
+    return mainCamera;
+}
+
+bool Scene::CanSyncHierarchyUI() const
+{
+    return hierarchySync[readIndex];
+}
+
+void Scene::GetRootEntities(std::vector<Entity>& entities) const
+{
+    auto rel = world->GetComponent<Relationship>(m_root);
+
+    Entity child = rel->firstChild;
+    while (child != INVALID_ENTITY)
+    {
+        entities.push_back(child);
+
+        auto rel = world->GetComponent<Relationship>(child);
+        if (rel == nullptr)
+            break;
+        child = rel->nextSibling;
+    }
+}
+
 void Scene::BeginFrame()
 {
-    /*
-    currentFrame++;
-
-    for (auto& change : changes)
-        change.entities.clear();
-    */
 }
 
 void Scene::EndFrame()
@@ -321,27 +361,16 @@ void Scene::EndFrame()
         change.entities.clear();
 
     currentFrame++;
+
+    hierarchySync[writeIndex] = false;
 }
 
-#include "gr-base/scopeTimer.hpp"
+// #include "gr-base/scopeTimer.hpp"
 
 void Scene::Update()
 {
     for (auto& sys : m_systems)
         sys->Update();
-
-    // for (auto& systemID : m_systemIDs)
-    // {
-    //     ISystem* sys = m_typeIDToSystem[systemID];
-    //
-    //     auto info = SystemRegistry::GetSystemByID(systemID);
-    //
-    //     ScopeTimer scope(info->name);
-    //
-    //     sys->Update();
-    // }
-
-    // m_bvhtree->renderer();
 }
 
 void Scene::MarkChanged(TypeID typeID, Entity entity)
@@ -505,10 +534,7 @@ void Scene::sortSystems()
     }
 
     if (hasCycle)
-    {
-        std::cout << "Erro: ciclo detectado na DAG!\n";
-        return;
-    }
+        throw std::runtime_error("Erro: ciclo detectado na DAG!");
 
     for (size_t i=0;i<order.size();i++)
     {

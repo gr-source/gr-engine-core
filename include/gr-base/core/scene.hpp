@@ -38,21 +38,14 @@ public:
 
     static Scene* GetCurrent();
 
-    bool hierarchyDirty;
-
     Scene();
     ~Scene();
-
-    inline Entity GetRoot() const
-    {
-        return m_root;
-    }
 
     Entity create(const char* name);
 
     Entity create(Entity other);
 
-    void destroy(Entity e);
+    void destroy(Entity entity);
 
     void select(Handle id);
 
@@ -77,19 +70,23 @@ public:
 
     size_t GetEntityCount();
 
+    Entity GetRoot() const;
+
     void Unlink(Entity child);
 
     void SetParent(Entity parent, Entity child);
 
-    inline void SetCamera(Entity entity)
-    {
-        m_camera = entity;
-    }
+    void SetCamera(Entity entity);
 
-    inline Entity GetCamera() const
-    {
-        return m_camera;
-    }
+    Entity GetCurrentCamera() const;
+
+    void SetMainCamera(Entity entity);
+
+    Entity GetMainCamera() const;
+
+    bool CanSyncHierarchyUI() const;
+
+    void GetRootEntities(std::vector<Entity>& entities) const;
 
     void BeginFrame();
 
@@ -146,9 +143,13 @@ private:
 
     Entity m_root;
 
-    Entity m_camera;
+    Entity currentCamera = INVALID_ENTITY;
+
+    Entity mainCamera = INVALID_ENTITY;
 
     int currentFrame = 0;
+
+    bool hierarchySync[2] = { false, false };
 
     // systems
     std::vector<TypeID> m_systemIDs;

@@ -53,7 +53,11 @@ void Renderer::SetRenderTarget(RenderTarget* rt)
     s_Renderer->m_rendertarget = rt;
 }
 
-void Renderer::Submit(const MaterialHandle& material, const MeshHandle& mesh, uint32_t submesh, const Matrix4x4* matrice)
+void Renderer::Submit(
+        const MaterialHandle& material,
+        const MeshHandle& mesh,
+        uint32_t submesh,
+        const Matrix4x4* matrice)
 {
     uint64_t sortKey =
           (uint64_t)handle_get_first(material) << 36
@@ -67,6 +71,8 @@ void Renderer::Submit(const MaterialHandle& material, const MeshHandle& mesh, ui
 Renderer::Renderer() : m_rendertarget(nullptr)
 {
     logger::info("[ Renderer ] Intialize '%p'.", this);
+
+    // std::cout << "R: " << sizeof(Renderable) << std::endl;
 }
 
 Renderer::~Renderer()
@@ -107,9 +113,6 @@ void Renderer::endFrame()
 
 void Renderer::render()
 {
-    if (m_rendertarget == nullptr)
-        return;
-    
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glBindVertexArray(0);
@@ -175,7 +178,7 @@ void Renderer::draw()
                 GL_TRIANGLES,
                 indexCount,
                 GL_UNSIGNED_INT,
-                (void*)(indexOffset * sizeof(uint32_t)),
+                (void*)(indexOffset),
                 (GLsizei)instanceCount);
         }
         else
@@ -189,7 +192,7 @@ void Renderer::draw()
                 GL_TRIANGLES,
                 indexCount,
                 GL_UNSIGNED_INT,
-                (void*)(indexOffset * sizeof(uint32_t)));
+                (void*)(indexOffset));
         }
 
         RendererStats::TriangleCount +=
@@ -267,7 +270,7 @@ void Renderer::sorting()
             cmd.instanceCount = count;
 
             cmd.indexCount = submesh.indexCount;
-            cmd.indexOffset = submesh.indexOffset;
+            cmd.indexOffset = submesh.indexOffset * sizeof(uint32_t);
 
             bool instancing = count > 1;
 

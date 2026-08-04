@@ -14,50 +14,27 @@ enum FrustumSide
 
 Frustum::Plane Frustum::planes[6] {};
 
-void Frustum::CalculateFrustum(const Matrix4x4& vp) 
+void Frustum::CalculateFrustum(const Matrix4x4& matrix) 
 {
-    Vector4 row0{
-        vp[0].x,
-        vp[1].x,
-        vp[2].x,
-        vp[3].x
-    };
+    const Matrix4x4 vp = Math::transpose(matrix);
 
-    Vector4 row1{
-        vp[0].y,
-        vp[1].y,
-        vp[2].y,
-        vp[3].y
-    };
+    const Vector4& column0 = vp[0];
+    const Vector4& column1 = vp[1];
+    const Vector4& column2 = vp[2];
+    const Vector4& column3 = vp[3];
 
-    Vector4 row2{
-        vp[0].z,
-        vp[1].z,
-        vp[2].z,
-        vp[3].z
-    };
-
-    Vector4 row3{
-        vp[0].w,
-        vp[1].w,
-        vp[2].w,
-        vp[3].w
-    };
-
-    planes[LEFT].col   = row3 + row0;
-    planes[RIGHT].col  = row3 - row0;
-
-    planes[BOTTOM].col = row3 + row1;
-    planes[TOP].col    = row3 - row1;
-
-    planes[FRONT].col  = row3 + row2;
-    planes[BACK].col   = row3 - row2;
+    planes[0].col = column3 + column0;
+    planes[1].col = column3 - column0;
+    planes[2].col = column3 + column1;
+    planes[3].col = column3 - column1;
+    planes[4].col = column3 + column2;
+    planes[5].col = column3 - column2;
 
     for (int i=0;i<6;i++)
     {
         auto& p = planes[i];
 
-        float len = Math::magnitude(p.normal);
+        float len = Math::length(p.normal);
 
         p.normal /= len;
         p.d /= len;

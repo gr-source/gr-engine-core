@@ -22,8 +22,10 @@ inline constexpr TypeCategory engine::type_traits::category<Camera> =
 
 struct CameraData
 {
-    Matrix4x4 projection      = type_traits<Matrix4x4>::identity;
-    Matrix4x4 view            = type_traits<Matrix4x4>::identity;
+    Matrix4x4 projection =
+        type_traits<Matrix4x4>::identity;
+    Matrix4x4 view =
+        type_traits<Matrix4x4>::identity;
 };
 
 template <>

@@ -16,10 +16,6 @@
 
 void RenderSystem::Update()
 {
-    Entity cameraEntity = scene->GetCamera();
-    if (cameraEntity == INVALID_ENTITY)
-        return;
-
     auto world = scene->GetWorldDynamic();
 
     SyncBVHBounds();

@@ -5,7 +5,7 @@
 
 class Frustum {
 public:
-    static void CalculateFrustum(const Matrix4x4& vp);
+    static void CalculateFrustum(const Matrix4x4& matrix);
 
     // static bool IsPointInFrustum(const Vector3& point, int planeIndex);
 
