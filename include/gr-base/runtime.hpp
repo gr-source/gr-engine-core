@@ -6,7 +6,7 @@ public:
     void initialize();
     void shutdown();
 
-    void process();
+    void update();
 };
 
 

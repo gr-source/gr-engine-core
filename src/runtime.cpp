@@ -81,8 +81,8 @@ void Runtime::shutdown()
     MainThreadDispatcher::Shutdown();
 }
 
-void Runtime::process()
+void Runtime::update()
 {
-    MainThreadDispatcher::Process();
+    MainThreadDispatcher::Dispatch();
 }
 

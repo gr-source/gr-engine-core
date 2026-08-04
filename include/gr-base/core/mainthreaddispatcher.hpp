@@ -5,11 +5,11 @@
 #include <map>
 #include <mutex>
 
-enum class Priority : uint8_t
+enum Priority
 {
-    HIGHT = 0,
-    NORMAL = 1,
-    LOW = 2,
+    HIGHT,
+    NORMAL,
+    LOW,
     COUNT
 };
 
@@ -20,7 +20,7 @@ public:
 
     static void Shutdown();
 
-    static void Process();
+    static void Dispatch();
 
     template <typename ...Args>
     static void Queue(float seconds, Args&&...args);
@@ -34,22 +34,25 @@ public:
 private:
     static MainThreadDispatcher* s_MainThreadDispatcher;
 
-    std::vector<std::function<void()>> m_events[static_cast<int>(Priority::COUNT)];
+    static constexpr size_t TimerPriority = Priority::NORMAL;
+    static constexpr size_t PriorityCount = Priority::COUNT;
 
-    std::vector<std::function<void()>> m_processingEvents;
+    std::vector<std::function<void()>> priorityQueues[PriorityCount];
 
-    std::multimap<float, std::function<void()>> m_timerHeap;
+    std::multimap<float, std::function<void()>> timerQueue;
 
-    std::atomic<bool> m_hasEvent;
+    std::vector<std::function<void()>> dispatchQueue;
+
+    std::atomic<bool> hasPendingWork;
     
     std::mutex m_mutex;
 
     MainThreadDispatcher();
     ~MainThreadDispatcher();
 
-    void process();
+    void dispatch();
 
-    void queue(std::function<void()> func, float seconds = 0.0f, Priority priority = Priority::NORMAL);
+    void queue(std::function<void()> func, float delaySeconds = 0.0f, Priority priority = Priority::NORMAL);
 };
 
 template <typename... Args>
