@@ -1,17 +1,11 @@
 #pragma once
 
+#include "gr-base/core/thread/default.hpp"
+
 #include <atomic>
 #include <functional>
 #include <map>
 #include <mutex>
-
-enum Priority
-{
-    HIGHT,
-    NORMAL,
-    LOW,
-    COUNT
-};
 
 class MainThreadDispatcher
 {

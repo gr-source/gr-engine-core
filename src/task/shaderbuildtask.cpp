@@ -15,9 +15,9 @@
 #include "gr-base/task/shadersavetask.hpp"
 
 #include <cstring>
-#include <exception>
 #include <fstream>
 #include <cerrno>
+#include <array>
 
 ShaderBuildTask::ShaderBuildTask(const std::string& file, const URI& uri) : m_file(file), m_uri(uri)
 {}

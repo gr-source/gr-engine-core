@@ -6,6 +6,7 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <atomic>
 #include <mutex>
 
 #include "default.hpp"
@@ -21,18 +22,20 @@ public:
     static void AddTask(Args &&...args);
 
     template <typename ...Args>
-    static void AddTask(TaskPriority priority, Args &&...args);
+    static void AddTask(Priority priority, Args &&...args);
 
     static bool IsMainThread();
 
     static size_t GetThreadCount();
+
+    static size_t GetJobCount();
 
     static size_t GetCount();
 
 private:
     static Threadpool* s_Threadpool;
 
-    std::list<std::function<void()>> m_task[static_cast<uint8_t>(TaskPriority::COUNT)];
+    std::list<std::function<void()>> jobQueues[Priority::COUNT];
 
     std::vector<std::thread> m_threads;
 
@@ -40,11 +43,14 @@ private:
 
     std::mutex m_mutex;
 
-    bool m_bStop;
+    std::atomic<bool> stopRequested = false;
 
-    bool m_hasTask;
+    // bool m_hasTask;
 
-    std::uint8_t m_available;
+    std::atomic<uint32_t> pendingJobs = 0;
+
+    std::atomic<uint32_t> threadUsedCount = 0;
+    std::atomic<uint32_t> activeWorkers = 0;
 
     const std::thread::id m_mainThreadID;
 
@@ -53,24 +59,23 @@ private:
 
     bool isMainThread() const;
 
-    void add(TaskPriority priority, std::function<void()> func);
+    void add(Priority priority, std::function<void()> func);
 
-    void update();
+    void workerThread();
 
+    size_t get_thread_count();
 
-    std::size_t get_thread_count();
-
-    std::size_t get_count();
+    size_t get_count();
 };
 
 template <typename... Args>
 inline void Threadpool::AddTask(Args &&...args)
 {
-    return s_Threadpool->add(TaskPriority::LOW, std::move(std::bind(std::forward<Args>(args)...)));
+    return s_Threadpool->add(Priority::NORMAL, std::move(std::bind(std::forward<Args>(args)...)));
 }
 
 template <typename... Args>
-inline void Threadpool::AddTask(TaskPriority priority, Args &&...args)
+inline void Threadpool::AddTask(Priority priority, Args &&...args)
 {
     return s_Threadpool->add(priority, std::move(std::bind(std::forward<Args>(args)...)));
 }

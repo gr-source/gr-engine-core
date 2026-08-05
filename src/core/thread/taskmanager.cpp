@@ -1,7 +1,10 @@
 #include "gr-base/core/thread/taskmanager.hpp"
 
-#include "gr-base/core/logger.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
+
+#include "gr-base/core/thread/threadpool.hpp"
+
+#include "gr-base/core/logger.hpp"
 
 TaskManager* TaskManager::s_TaskManager = nullptr;
 
@@ -25,6 +28,18 @@ void TaskManager::Shutdown()
 }
 
 // private
+std::shared_ptr<TaskInfo> TaskManager::add(std::shared_ptr<ITask> task)
+{
+    auto info = std::make_shared<TaskInfo>();
+    info->task = std::move(task);
+
+    info->task->onPreExecute();
+
+    Threadpool::AddTask(info->task->priority, &TaskManager::update, this, info);
+
+    return info;
+}
+
 void TaskManager::update(std::shared_ptr<TaskInfo> info)
 {
     info->task->run();

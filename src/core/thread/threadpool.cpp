@@ -1,8 +1,9 @@
 #include "gr-base/core/thread/threadpool.hpp"
 
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/logger.hpp"
 #include "gr-base/core/thread/default.hpp"
+
+#include "gr-base/core/logger.hpp"
 
 #include <thread>
 #include <mutex>
@@ -34,18 +35,25 @@ std::size_t Threadpool::GetThreadCount()
     return s_Threadpool->get_thread_count();
 }
 
+size_t Threadpool::GetJobCount()
+{
+    return s_Threadpool->pendingJobs.load(std::memory_order_acquire);
+}
+
 std::size_t Threadpool::GetCount()
 {
     return s_Threadpool->get_count();
 }
 
 // private
-Threadpool::Threadpool(uint32_t maxThread) : m_bStop(false), m_hasTask(false), m_available(0), m_mainThreadID(std::this_thread::get_id())
+Threadpool::Threadpool(uint32_t maxThread) :
+    threadUsedCount(0),
+    m_mainThreadID(std::this_thread::get_id())
 {
     logger::info("[ Threadpool ] Initialize '%p'.", this);
 
     for (uint32_t i=0;i<maxThread;i++)
-        m_threads.emplace_back(&Threadpool::update, this);
+        m_threads.emplace_back(&Threadpool::workerThread, this);
 
     logger::info("[ Threadpool] Started with %u worker threads.", maxThread);
 }
@@ -54,15 +62,18 @@ Threadpool::~Threadpool()
 {
     logger::info("[ Threadpool ] Stopping %zu worker threads.", m_threads.size());
 
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_bStop = true;
-    }
+    stopRequested.store(true, std::memory_order_release);
+
     m_cv.notify_all();
 
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        m_cv.wait(lock, [&] { return !m_available || !m_hasTask; });
+        m_cv.wait(
+                lock,
+                [&]{
+                    return activeWorkers.load(std::memory_order_acquire) == 0;
+                }
+            );
     }
 
     for (auto &thread : m_threads)
@@ -81,90 +92,80 @@ bool Threadpool::isMainThread() const
     return std::this_thread::get_id() == m_mainThreadID;
 }
 
-void Threadpool::add(TaskPriority priority, std::function<void()> func)
+void Threadpool::add(Priority priority, std::function<void()> func)
 {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_task[static_cast<uint8_t>(priority)].push_back(std::move(func));
-        m_hasTask = true;
+        jobQueues[priority].push_back(std::move(func));
     }
+
+    pendingJobs.fetch_add(1, std::memory_order_release);
 
     m_cv.notify_all();
 }
 
-void Threadpool::update()
+void Threadpool::workerThread()
 {
+    activeWorkers.fetch_add(1, std::memory_order_release);
+
     while (true)
     {
-        std::function<void()> task;
+        std::function<void()> task = nullptr;
 
         {
             std::unique_lock<std::mutex> lock(m_mutex);
-            m_cv.wait(lock, [this]{ return m_bStop || m_hasTask; });
+            m_cv.wait(
+                    lock,
+                    [this]
+                    {
+                        return stopRequested.load(std::memory_order_acquire) || pendingJobs.load(std::memory_order_acquire) != 0;
+                    }
+                );
 
-            if (m_bStop && !m_hasTask)
+            if (stopRequested.load(std::memory_order_acquire))
                 break;
 
-            bool found = false;
-            for (uint8_t i = 0; i < static_cast<uint8_t>(TaskPriority::COUNT); i++)
+            for (size_t i = 0; i <Priority::COUNT; i++)
             {
-                if (!m_task[i].empty())
-                {
-                    task = std::move(m_task[i].front());
-                    m_task[i].pop_front();
-                    found = true;
-                    
-                    bool stillHasWork = false;
-                    for(uint8_t j = 0; j < static_cast<uint8_t>(TaskPriority::COUNT); j++)
-                    {
-                        if(!m_task[j].empty())
-                        {
-                            stillHasWork = true;
-                            break;
-                        }
-                    }
-                    m_hasTask = stillHasWork;
-                    break; 
-                }
-            }
+                if (jobQueues[i].empty())
+                    continue;
 
-            if (!found)
-            {
-                m_hasTask = false;
-                continue;
-            }
+                task = std::move(jobQueues[i].front());
+                jobQueues[i].pop_front();
 
-            m_available++; 
+                pendingJobs.fetch_sub(1, std::memory_order_release);
+
+                break;
+            }
         }
 
         if (task)
         {
+            threadUsedCount.fetch_add(1, std::memory_order_release);
+
             try
             {
                 task();
             } catch (const std::exception &e)
             {
-                logger::error("[Threadpool] Exception detected '%s'.", e.what());
+                Console::LogDefault("{FF0000}[ Threadpool ] {FFFFFF}%s", e.what());
             }
-        }
 
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_available--;
-            m_cv.notify_all(); 
+            threadUsedCount.fetch_sub(1, std::memory_order_release);
         }
     }
+
+    m_cv.notify_all();
+    activeWorkers.fetch_sub(1, std::memory_order_release);
 }
 
-std::size_t Threadpool::get_thread_count()
+size_t Threadpool::get_thread_count()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return m_threads.size();
+    return activeWorkers.load(std::memory_order_acquire);
 }
 
-std::size_t Threadpool::get_count()
+size_t Threadpool::get_count()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return m_available;
+    return threadUsedCount.load(std::memory_order_acquire);
 }
 

@@ -19,15 +19,17 @@ struct Result
 class ITask
 {
 public:
-    TaskPriority priority;
+    Priority priority =
+        Priority::NORMAL;
     
-    bool finished;
+    bool finished = false;
+
     std::mutex mutex;
     std::condition_variable cv;
 
     std::atomic<bool> bCancelable;
 
-    ITask(TaskPriority taskPriority) : priority(taskPriority), finished(false), bCancelable(false) {}
+    ITask(Priority priority) : priority(priority), finished(false), bCancelable(false) {}
 
     virtual ~ITask() = default;
 
@@ -44,7 +46,7 @@ class IAsyncTask : public ITask
 public:
     Result<R> result;
 
-    IAsyncTask(TaskPriority taskPriority = TaskPriority::LOW) : ITask(taskPriority) {}
+    IAsyncTask(Priority priority = Priority::NORMAL) : ITask(priority) {}
 
     virtual ~IAsyncTask() = default;
 
