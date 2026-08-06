@@ -5,13 +5,13 @@
 class ScopeTimer
 {
 public:
-    ScopeTimer(const char* name);
-    ~ScopeTimer();
+    void start();
+
+    double end() const;
     
 private:
-    std::chrono::high_resolution_clock::time_point m_start;
-
-    const char* m_name;
+    std::chrono::high_resolution_clock::time_point m_start =
+        std::chrono::high_resolution_clock::now();
 };
 
 

@@ -53,6 +53,8 @@ private:
     ~logger();
 
     void vlog(const char* prefix, const char* fmt, va_list ap);
+
+    std::string getfilename() const;
 };
 
 template <typename... Args>

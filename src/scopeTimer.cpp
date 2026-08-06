@@ -1,29 +1,20 @@
 #include "gr-base/scopeTimer.hpp"
 
-#include <iostream>
-#include <iomanip>
-
-ScopeTimer::ScopeTimer(const char* name) : m_name(name)
+void ScopeTimer::start()
 {
     m_start = std::chrono::high_resolution_clock::now();
 }
 
-ScopeTimer::~ScopeTimer()
+double ScopeTimer::end() const
 {
     auto end =
             std::chrono::high_resolution_clock::now();
 
-        auto duration =
-            std::chrono::duration<double, std::milli>(
-                end - m_start);
+    auto duration =
+        std::chrono::duration<double, std::milli>(
+            end - m_start);
 
-        std::cout
-            << m_name
-            << ": "
-            << std::fixed
-            << std::setprecision(3)
-            << duration.count()
-            << " ms\n";
+    return duration.count();
 }
 
 

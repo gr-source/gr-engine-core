@@ -365,12 +365,37 @@ void Scene::EndFrame()
     hierarchySync[writeIndex] = false;
 }
 
-// #include "gr-base/scopeTimer.hpp"
+// #define ENABLE_PROFILING
+
+#ifdef ENABLE_PROFILING
+#include "gr-base/scopeTimer.hpp"
+#include "gr-base/profiler.hpp"
+#endif
 
 void Scene::Update()
 {
+#ifdef ENABLE_PROFILING
+    for (auto& systemID : m_systemIDs)
+    {
+        auto info = SystemRegistry::GetSystemByID(systemID);
+
+        ISystem* sys = m_typeIDToSystem[systemID];
+
+        ScopeTimer scope;
+
+        scope.start();
+
+        sys->Update();
+
+        double ms =
+            scope.end();
+
+        Profiler::Add(info->name, static_cast<float>(ms));
+    }
+#else // ENABLE_PROFILING
     for (auto& sys : m_systems)
         sys->Update();
+#endif // ENABLE_PROFILING
 }
 
 void Scene::MarkChanged(TypeID typeID, Entity entity)
@@ -419,7 +444,6 @@ void Scene::AddSystemByID(TypeID systemID)
         return;
 
     m_systemIDs.push_back(info->index);
-
 
     m_typeIDToSystem[info->index] = system;
 

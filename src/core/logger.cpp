@@ -33,7 +33,8 @@ logger::logger(const logger_config* config) : m_handle(STDOUT_FILENO)
         if (!gfile::exists(config->path))
             gfile::create_directory(config->path);
 
-        std::string file = config->path + "/" + __DATE__ + ".txt";
+        std::string file =
+            config->path + "/" + getfilename();
 
         m_handle = open(file.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
         if (m_handle == -1)
@@ -43,7 +44,7 @@ logger::logger(const logger_config* config) : m_handle(STDOUT_FILENO)
 
 logger::~logger()
 {
-    if (m_handle != -1)
+    if (m_handle != -1 && m_handle != STDOUT_FILENO)
     {
         const char* newline = "\n";
         write(m_handle, newline, 1);
@@ -67,17 +68,31 @@ void logger::vlog(const char* prefix, const char* fmt, va_list ap)
     struct tm tm_info;
     localtime_r(&rawtime, &tm_info);
 
-    snprintf(final, sizeof(final),
+    size_t len =
+        snprintf(final, sizeof(final),
              "[%02d:%02d:%02d.%03ld] %-*s %s\n",
              tm_info.tm_hour, tm_info.tm_min, tm_info.tm_sec,
              tv.tv_usec / 1000,
              10, prefix, formatted);
 
-    size_t len = strlen(final);
-
-    if (write(m_handle, final, len) != static_cast<ssize_t>(len))
-        write(STDERR_FILENO, "Log write failed!\n", 18);
+    if (len > 0)
+    {
+        if (write(m_handle, final, len) != len)
+            write(STDERR_FILENO, "Log write failed!\n", 18);
+    }
 }
 
+std::string logger::getfilename() const
+{
+    char filename[32];
+
+    time_t now = time(nullptr);
+    tm tm{};
+    localtime_r(&now, &tm);
+
+    strftime(filename, sizeof(filename), "%Y-%m-%d.txt", &tm);
+
+    return filename;
+}
 
 

@@ -51,6 +51,7 @@ set(core
     src/core/input.cpp
 
     src/scopeTimer.cpp
+    src/profiler.cpp
 )
 
 set(SCRIPT_SRC
