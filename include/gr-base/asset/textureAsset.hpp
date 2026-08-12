@@ -2,8 +2,6 @@
 
 #include "gr-base/asset/iasset.hpp"
 
-#include "gr-base/core/file/default.hpp"
-
 #include <cstdint>
 #include <vector>
 

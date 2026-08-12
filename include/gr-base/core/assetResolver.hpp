@@ -1,10 +1,10 @@
 #pragma once
 
-#include "gr-base/asset/assetProvider.hpp"
+#include "gr-base/core/assetProvider.hpp"
+
 #include "gr-base/asset/URI.hpp"
 
 #include <memory>
-#include <stdexcept>
 
 class AssetResolver
 {

@@ -1,4 +1,4 @@
-#include "gr-base/core/file/memoryStream.hpp"
+#include "gr-base/file/memoryStream.hpp"
 
 #include <string.h>
 

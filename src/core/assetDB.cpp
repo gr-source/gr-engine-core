@@ -1,4 +1,4 @@
-#include "gr-base/asset/assetDB.hpp"
+#include "gr-base/core/assetDB.hpp"
 
 #include "gr-base/asset/URI.hpp"
 
@@ -49,6 +49,11 @@ void AssetDB::Unregistry(AssetID id)
 AssetID AssetDB::FindByHash(AssetHash hash)
 {
     return s_AssetDB->findByHash(hash);
+}
+
+AssetID AssetDB::FindByName(const std::string& name)
+{
+    return s_AssetDB->findByHash(engine::hash::fnv1_str(name));
 }
 
 AssetID AssetDB::CreateID()

@@ -1,5 +1,6 @@
 #include "gr-base/core/animation/keyframe.hpp"
-#include "gr-base/core/file/stream.hpp"
+
+#include "gr-base/file/stream.hpp"
 
 Keyframe::Keyframe()
 {}

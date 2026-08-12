@@ -1,6 +1,7 @@
 #include "gr-base/asset/modelasset.hpp"
 
-#include "gr-base/core/file/stream.hpp"
+#include "gr-base/file/stream.hpp"
+
 #include <cstring>
 
 void ModelAsset::AddComponent(Hash64 hash, const void* data, size_t size)

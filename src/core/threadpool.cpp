@@ -1,4 +1,4 @@
-#include "gr-base/core/thread/threadpool.hpp"
+#include "gr-base/core/threadpool.hpp"
 
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/thread/default.hpp"
@@ -92,7 +92,7 @@ bool Threadpool::isMainThread() const
     return std::this_thread::get_id() == m_mainThreadID;
 }
 
-void Threadpool::add(Priority priority, std::function<void()> func)
+void Threadpool::submit(Priority priority, std::function<void()> func)
 {
     {
         std::lock_guard<std::mutex> lock(m_mutex);

@@ -1,11 +1,7 @@
 #include "gr-base/core/animation/animation.hpp"
 #include "gr-base/core/animation/keyframe.hpp"
 
-#include <algorithm>
-#include <cstddef>
-#include <iterator>
-#include <strings.h>
-#include <vector>
+#include "gr-base/file/stream.hpp"
 
 Animation::Animation(const std::string &name, float duration, float tick) : m_name(name), m_duration(duration), m_tick(tick) {}
 

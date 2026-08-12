@@ -1,12 +1,8 @@
 #pragma once
 
-#include "gr-base/core/file/default.hpp"
-
-#include "gr-base/core/file/stream.hpp"
 #include "keyframe.hpp"
 
-#include <unordered_map>
-#include <vector>
+#include <string>
 
 class Animation {
 public:

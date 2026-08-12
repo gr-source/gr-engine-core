@@ -39,6 +39,8 @@ public:
 
     static AssetID FindByHash(AssetHash hash);
 
+    static AssetID FindByName(const std::string& name);
+
     static AssetID CreateID();
 
     static AssetInfo* GetAsset(AssetID id);

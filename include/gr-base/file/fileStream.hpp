@@ -1,6 +1,7 @@
 #pragma once
 
-#include "gr-base/core/file/stream.hpp"
+#include "gr-base/file/stream.hpp"
+
 #include <fstream>
 
 class FileStream : public Stream

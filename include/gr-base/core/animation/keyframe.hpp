@@ -1,14 +1,10 @@
 #pragma once
 
-#include <cstddef>
-#include <gr-math/quaternion.hpp>
-#include <gr-math/vector3.hpp>
-#include <string>
-#include <vector>
-
-#include "gr-base/core/file/default.hpp"
+#include "gr-base/file/default.hpp"
 
 #include <gr-math/gmath.hpp>
+
+#include <vector>
 
 template <typename T>
 struct Key {

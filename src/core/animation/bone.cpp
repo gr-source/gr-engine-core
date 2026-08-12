@@ -1,6 +1,6 @@
 #include "gr-base/core/animation/bone.hpp"
 
-#include "gr-base/core/file/stream.hpp"
+#include "gr-base/file/stream.hpp"
 
 Bone::Bone() :
     m_position(type_traits<Vector3>::zero),

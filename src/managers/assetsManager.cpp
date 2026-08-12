@@ -1,19 +1,20 @@
 #include "gr-base/managers/assetsManager.hpp"
+#include "gr-base/managers/taskmanager.hpp"
 
-#include "gr-base/asset/assetResolver.hpp"
 #include "gr-base/asset/materialasset.hpp"
 #include "gr-base/asset/shaderasset.hpp"
-#include "gr-base/asset/assetDB.hpp"
 
 #include "gr-base/core/binary/gHeader.hpp"
 
-#include "gr-base/core/file/file.hpp"
-#include "gr-base/core/file/fileStream.hpp"
 #include "gr-base/core/geometry/default.hpp"
 
+#include "gr-base/core/assetResolver.hpp"
+#include "gr-base/core/assetDB.hpp"
 #include "gr-base/core/logger.hpp"
 #include "gr-base/core/scene.hpp"
-#include "gr-base/core/thread/taskmanager.hpp"
+
+#include "gr-base/file/fileStream.hpp"
+#include "gr-base/file/file.hpp"
 
 #include "gr-base/externals/handle.h"
 #include "gr-base/externals/hash.hpp"
@@ -26,6 +27,7 @@
 #include "gr-base/task/modelloadtask.hpp"
 
 #include <gr-render/texture.h>
+#include <stdexcept>
 
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
 

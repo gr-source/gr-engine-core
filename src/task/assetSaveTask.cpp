@@ -1,13 +1,13 @@
 #include "gr-base/task/assetSaveTask.hpp"
 
-#include "gr-base/asset/assetDB.hpp"
-#include "gr-base/asset/assetResolver.hpp"
-#include "gr-base/core/binary/gHeader.hpp"
+#include "gr-base/core/assetResolver.hpp"
+#include "gr-base/core/assetDB.hpp"
 #include "gr-base/core/console.hpp"
 
-#include "gr-base/core/file/file.hpp"
-#include "gr-base/core/file/fileStream.hpp"
-#include "gr-base/externals/hash.hpp"
+#include "gr-base/core/binary/gHeader.hpp"
+
+#include "gr-base/file/fileStream.hpp"
+#include "gr-base/file/file.hpp"
 
 #include <string.h>
 

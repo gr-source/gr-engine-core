@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gr-base/core/file/default.hpp"
+#include "gr-base/file/default.hpp"
 
 struct IAsset
 {

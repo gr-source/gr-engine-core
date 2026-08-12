@@ -1,6 +1,7 @@
 #include "gr-base/asset/shaderasset.hpp"
 
-#include "gr-base/core/file/stream.hpp"
+#include "gr-base/file/stream.hpp"
+
 #include <cstdint>
 
 void ShaderAsset::AddUniform(const std::string& name, const std::string& typesname, int count)

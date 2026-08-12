@@ -1,6 +1,6 @@
 #include "gr-base/asset/textureAsset.hpp"
 
-#include "gr-base/core/file/stream.hpp"
+#include "gr-base/file/stream.hpp"
 
 bool TextureAsset::serialize(Stream* stream) const
 {

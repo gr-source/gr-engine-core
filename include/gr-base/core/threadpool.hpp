@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gr-base/core/thread/default.hpp"
+
 #include <condition_variable>
 #include <functional>
 #include <list>
@@ -9,8 +11,6 @@
 #include <atomic>
 #include <mutex>
 
-#include "default.hpp"
-
 class Threadpool
 {
 public:
@@ -19,10 +19,10 @@ public:
     static void Shutdown();
 
     template <typename ...Args>
-    static void AddTask(Args &&...args);
+    static void Submit(Args &&...args);
 
     template <typename ...Args>
-    static void AddTask(Priority priority, Args &&...args);
+    static void Submit(Priority priority, Args &&...args);
 
     static bool IsMainThread();
 
@@ -59,7 +59,7 @@ private:
 
     bool isMainThread() const;
 
-    void add(Priority priority, std::function<void()> func);
+    void submit(Priority priority, std::function<void()> func);
 
     void workerThread();
 
@@ -69,15 +69,15 @@ private:
 };
 
 template <typename... Args>
-inline void Threadpool::AddTask(Args &&...args)
+inline void Threadpool::Submit(Args &&...args)
 {
-    return s_Threadpool->add(Priority::NORMAL, std::move(std::bind(std::forward<Args>(args)...)));
+    return s_Threadpool->submit(Priority::NORMAL, std::move(std::bind(std::forward<Args>(args)...)));
 }
 
 template <typename... Args>
-inline void Threadpool::AddTask(Priority priority, Args &&...args)
+inline void Threadpool::Submit(Priority priority, Args &&...args)
 {
-    return s_Threadpool->add(priority, std::move(std::bind(std::forward<Args>(args)...)));
+    return s_Threadpool->submit(priority, std::move(std::bind(std::forward<Args>(args)...)));
 }
 
 

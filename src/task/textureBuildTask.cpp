@@ -1,14 +1,15 @@
 #include "gr-base/task/textureBuildTask.hpp"
 
-#include "gr-base/asset/assetDB.hpp"
 #include "gr-base/asset/textureAsset.hpp"
+
 #include "gr-base/core/console.hpp"
+#include "gr-base/core/assetDB.hpp"
 
-#include "gr-base/core/file/file.hpp"
-
-#include "gr-base/core/thread/taskmanager.hpp"
+#include "gr-base/managers/taskmanager.hpp"
 
 #include "gr-base/task/assetSaveTask.hpp"
+
+#include "gr-base/file/file.hpp"
 
 #include <stdexcept>
 #include <vector>

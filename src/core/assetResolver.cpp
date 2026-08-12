@@ -1,4 +1,6 @@
-#include "gr-base/asset/assetResolver.hpp"
+#include "gr-base/core/assetResolver.hpp"
+
+#include <stdexcept>
 
 // public
 std::string AssetResolver::Resolve(const URI& uri)

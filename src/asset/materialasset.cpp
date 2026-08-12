@@ -1,6 +1,6 @@
 #include "gr-base/asset/materialasset.hpp"
 
-#include "gr-base/core/file/stream.hpp"
+#include "gr-base/file/stream.hpp"
 
 #include <cstring>
 

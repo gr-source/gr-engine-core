@@ -1,11 +1,11 @@
 #include "gr-base/debug/debugBuffer.hpp"
 
-#include "gr-base/asset/assetDB.hpp"
-#include "gr-base/core/console.hpp"
-#include "gr-base/externals/hash.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/prefab/shaderprefab.hpp"
+
+#include "gr-base/core/assetDB.hpp"
+#include "gr-base/core/console.hpp"
 
 #include <gr-render/shader.hpp>
 #include <gr-render/gl.h>

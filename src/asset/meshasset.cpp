@@ -1,6 +1,6 @@
 #include "gr-base/asset/meshasset.hpp"
 
-#include "gr-base/core/file/stream.hpp"
+#include "gr-base/file/stream.hpp"
 
 bool MeshAsset::serialize(Stream* stream) const
 {

@@ -1,24 +1,21 @@
 #include "gr-base/task/modelsavetask.hpp"
 
-#include "gr-base/asset/assetResolver.hpp"
-#include "gr-base/asset/assetDB.hpp"
-
 #include "gr-base/core/binary/gHeader.hpp"
 
+#include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/console.hpp"
 
-#include "gr-base/core/file/memoryStream.hpp"
-#include "gr-base/core/file/fileStream.hpp"
-#include "gr-base/core/file/file.hpp"
-
-#include "gr-base/core/gameObject.hpp"
-#include "gr-base/core/scene.hpp"
+#include "gr-base/file/memoryStream.hpp"
+#include "gr-base/file/fileStream.hpp"
+#include "gr-base/file/file.hpp"
 
 #include "gr-base/ecs/componentRegistry.hpp"
-#include "gr-base/managers/assetsManager.hpp"
+
+#include "gr-base/script/relationship.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
-#include "gr-base/script/relationship.hpp"
+
+#include "gr-base/managers/assetsManager.hpp"
 
 ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
 {

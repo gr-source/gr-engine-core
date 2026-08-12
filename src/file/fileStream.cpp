@@ -1,4 +1,4 @@
-#include "gr-base/core/file/fileStream.hpp"
+#include "gr-base/file/fileStream.hpp"
 
 FileStream::FileStream(const std::string& path, StreamType type) : stream(path, (type == StreamType::OUTPUT ? std::ios_base::out : std::ios_base::in) | std::ios_base::binary)
 {}

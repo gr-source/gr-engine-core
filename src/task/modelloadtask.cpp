@@ -1,12 +1,10 @@
 #include "gr-base/task/modelloadtask.hpp"
 
-#include "gr-base/asset/assetDB.hpp"
 #include "gr-base/core/binary/gHeader.hpp"
 
-#include "gr-base/core/file/memoryStream.hpp"
-#include "gr-base/core/file/fileStream.hpp"
-#include "gr-base/core/file/stream.hpp"
-#include "gr-base/core/file/file.hpp"
+#include "gr-base/file/memoryStream.hpp"
+#include "gr-base/file/fileStream.hpp"
+#include "gr-base/file/file.hpp"
 
 #include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/spatial/bvhtree.hpp"
@@ -19,10 +17,6 @@
 
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
-#include "gr-base/script/transform.hpp"
-#include <cerrno>
-#include <cstring>
-#include <exception>
 
 ModelLoadTask::ModelLoadTask(
         const std::string& file,
