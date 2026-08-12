@@ -1,18 +1,14 @@
 #include "gr-base/asset/assetDB.hpp"
 
 #include "gr-base/asset/URI.hpp"
-#include "gr-base/asset/assetResolver.hpp"
 
 #include "gr-base/core/logger.hpp"
-#include "gr-base/core/string.hpp"
-#include "gr-base/externals/hash.hpp"
+
 #include "gr-base/managers/eventManager.hpp"
 
 #include <cstring>
 #include <fstream>
-#include <iostream>
 #include <sstream>
-#include <stdexcept>
 
 AssetDB* AssetDB::s_AssetDB = nullptr;
 
@@ -44,22 +40,11 @@ void AssetDB::Registry(const AssetInfo& info)
 {
     s_AssetDB->registry(info);
 }
-/*
-void AssetDB::Registry(const std::string& path, AssetType flags)
-{
-    s_AssetDB->registry(path, flags);
-}
 
-void AssetDB::Unregistry(Hash64 hash)
+void AssetDB::Unregistry(AssetID id)
 {
-    s_AssetDB->unregistry(hash);
+    s_AssetDB->unregistry(id);
 }
-
-std::string AssetDB::Resolve(Hash64 hash)
-{
-    return s_AssetDB->resolve(hash);
-}
-*/
 
 AssetID AssetDB::FindByHash(AssetHash hash)
 {
@@ -152,51 +137,6 @@ void AssetDB::save(const std::string &file)
     os.close();
 }
 
-/*
-void AssetDB::registry(const std::string& path, AssetType type)
-{
-    AssetHash hash = engine::hash::fnv1_str(path);
-
-    if (m_refMapped.find(hash) != m_refMapped.end())
-        return;
-
-    AssetID id = createID();
-
-    AssetInfo info;
-    info.hash = hash;
-    info.id = id;
-    info.type = type;
-
-    size_t size = path.size();
-    size = size > ASSET_MAX_PATH_LENGHT ? ASSET_MAX_PATH_LENGHT : size;
-
-    strncpy(info.uri, path.c_str(), size);
-    info.uri[size] = '\0';
-
-    insert(info);
-}
-
-void AssetDB::unregistry(Hash64 hash)
-{
-    auto it = m_refMapped.find(hash);
-    if (it == m_refMapped.end())
-        return;
-
-    AssetEventOnRemove event;
-    event.value = it->second;
-
-    EventManager::Notify<AssetEventOnRemove>(&event);
-
-    auto info = m_spaseSet.get(it->second);
-
-    logger::trace("[ AssetDB ] unregister: '0x%lX' lookup: '%s'.", hash, info->uri);
-
-    m_spaseSet.destroy(it->second);
-
-    m_refMapped.erase(it);
-}
-*/
-
 void AssetDB::registry(const AssetInfo& info)
 {
     URI uri = URI::parse(info.uri);
@@ -214,20 +154,23 @@ void AssetDB::registry(const AssetInfo& info)
     EventManager::Notify<AssetEventOnCreated>(&event);
 }
 
-/*
-std::string AssetDB::resolve(Hash64 hash)
+void AssetDB::unregistry(AssetID id)
 {
-    AssetID id = findByHash(hash);
-    if (id == INVALID_ASSET)
-        throw std::runtime_error(String::format("reference '0x%lX' not found...", hash));
-
     auto info = m_spaseSet.get(id);
     if (info == nullptr)
-        throw std::runtime_error(String::format("this assetID is not valid id='%d'.", id));
+        return;
 
-    return AssetResolver::Resolve(URI::parse(info->uri));
+    AssetEventOnRemove event;
+    event.value = info->id;
+
+    EventManager::Notify<AssetEventOnRemove>(&event);
+
+    logger::trace("[ AssetDB ] unregister: '0x%lX' lookup: '%s'.", info->hash, info->uri);
+
+    m_refMapped.erase(info->hash);
+
+    m_spaseSet.destroy(id);
 }
-*/
 
 AssetID AssetDB::findByHash(AssetHash hash)
 {

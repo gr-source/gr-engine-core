@@ -118,7 +118,9 @@ void Threadpool::workerThread()
                     lock,
                     [this]
                     {
-                        return stopRequested.load(std::memory_order_acquire) || pendingJobs.load(std::memory_order_acquire) != 0;
+                        return
+                            stopRequested.load(std::memory_order_acquire) ||
+                            pendingJobs.load(std::memory_order_acquire) != 0;
                     }
                 );
 
@@ -155,8 +157,9 @@ void Threadpool::workerThread()
         }
     }
 
-    m_cv.notify_all();
     activeWorkers.fetch_sub(1, std::memory_order_release);
+
+    m_cv.notify_all();
 }
 
 size_t Threadpool::get_thread_count()

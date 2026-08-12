@@ -35,11 +35,7 @@ public:
 
     static void Registry(const AssetInfo& info);
 
-    // static void Registry(const std::string& path, AssetType type);
-
-    // static void Unregistry(AssetHash hash);
-
-    // static std::string Resolve(Hash64 hash);
+    static void Unregistry(AssetID id);
 
     static AssetID FindByHash(AssetHash hash);
 
@@ -65,14 +61,9 @@ private:
 
     void save(const std::string &file);
 
-    // void registry(const std::string& path, AssetType type);
-
-    // void unregistry(Hash64 hash);
-
     void registry(const AssetInfo& info);
 
-    // std::string resolve(Hash64 hash);
-
+    void unregistry(AssetID hash);
 
     AssetID findByHash(AssetHash hash);
 

@@ -14,8 +14,7 @@
 class ModelLoadTask : public IAsyncTask<ModelAsset>
 {
 public:
-    template <typename ...Args>
-    ModelLoadTask(const std::string& file, Scene* scene, Args&&... args);
+    ModelLoadTask(const std::string& file, Scene* scene, std::function<void (Entity)> func);
 
 private:
     std::function<void (Handle)> m_func;
@@ -32,12 +31,5 @@ private:
 
     Entity CreateFromAsset(const ModelAsset* asset);
 };
-
-template <typename ...Args>
-inline ModelLoadTask::ModelLoadTask(const std::string& file, Scene* scene, Args&&... args) : m_file(file), m_func(nullptr), m_scene(scene)
-{
-    if constexpr (sizeof...(Args) > 0)
-        m_func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
-}
 
 

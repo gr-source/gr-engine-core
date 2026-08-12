@@ -24,6 +24,16 @@
 #include <cstring>
 #include <exception>
 
+ModelLoadTask::ModelLoadTask(
+        const std::string& file,
+        Scene* scene,
+        std::function<void (Entity)> func
+    ) :
+    m_file(file),
+    m_func(func),
+    m_scene(scene)
+{}
+
 void ModelLoadTask::onPreExecute()
 {
     Console::LogInfo("[ModelLoadTask] Loading model '%s'...", m_file.c_str());
