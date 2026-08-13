@@ -13,26 +13,19 @@ struct RenderTargetDesc
     int depthFormat = TEXTURE_FORMAT_DEPTH;
 };
 
-class RenderTarget
+struct RenderTarget
 {
-public:
-    RenderTarget(const RenderTargetDesc& desc);
-    ~RenderTarget();
+    AssetPtr<gr::texture> textureColor;
+
+    AssetPtr<gr::texture> textureDepth;
+
+    uint32_t framebuffer;
 
     void bind();
 
     void unbind();
 
     void resize(int width, int height);
-
-    AssetPtr<gr::texture> GetTextureColor() const;
-
-private:
-    AssetPtr<gr::texture> textureColor;
-
-    AssetPtr<gr::texture> textureDepth;
-
-    uint32_t framebuffer;
 };
 
 

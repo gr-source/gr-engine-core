@@ -59,7 +59,7 @@ private:
 
     size_t m_count;
 
-    void renderer_node(NodeID id);
+    void renderer_node(NodeID id, uint8_t planeMask);
 
     void removeLeaf(NodeID id);
 

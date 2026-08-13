@@ -4,7 +4,7 @@
 
 typedef struct DebugVertex
 {
-    Vector3 position;
+    Vector4 position;
     Color color;
 } DebugVertex;
 

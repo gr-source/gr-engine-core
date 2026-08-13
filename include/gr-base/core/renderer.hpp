@@ -51,11 +51,11 @@ public:
 
     static void Render();
 
-    static void SetRenderTarget(RenderTargetID renderTargetID);
-
     static void SetViewport(const Rect& r);
 
     static void Submit(const MaterialHandle& material, const MeshHandle& mesh, uint32_t submesh, const Matrix4x4* matrice);
+
+    static void DrawFullScreenQuad();
 
 private:
     static Renderer *s_Renderer;
@@ -66,11 +66,14 @@ private:
 
     std::vector<Matrix4x4> m_metrices;
 
-    RenderTarget* renderTarget =
-        nullptr;
-
     Rect viewport =
         { 0.0f, 0.0f, 512.0f, 512.0f };
+
+    struct FullScreenQuad
+    {
+        gr::vertex_array* vao = nullptr;
+        gr::vertex_buffer* vbo = nullptr;
+    } fullScreenQuad;
 
     Renderer();
     ~Renderer();

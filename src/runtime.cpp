@@ -13,6 +13,7 @@
 
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/eventManager.hpp"
+#include "gr-base/managers/renderPipelineManager.hpp"
 #include "gr-base/managers/renderTargetManager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 #include "gr-base/managers/taskmanager.hpp"
@@ -47,6 +48,8 @@ void Runtime::initialize()
 
     RenderTargetManager::Initialize();
 
+    RenderPipelineManager::Initialize();
+
     SceneManager::Initialize();
 
     Renderer::Initialize();
@@ -69,6 +72,8 @@ void Runtime::shutdown()
     SceneManager::Shutdown();
 
     RenderTargetManager::Shutdown();
+
+    RenderPipelineManager::Shutdown();
 
     AssetsManager::Shutdown();
 

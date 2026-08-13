@@ -157,10 +157,10 @@ void DebugBuffer::addLineVertex(const DebugLine& line)
     auto& v0 = vertexBuffer[vertexCount++];
     auto& v1 = vertexBuffer[vertexCount++];
 
-    v0.position = line.start;
+    *(Vector3*)(&v0.position[0]) = line.start;
     v0.color = line.color;
 
-    v1.position = line.end;
+    *(Vector3*)(&v1.position[0]) = line.end;
     v1.color = line.color;
 }
 
@@ -193,7 +193,7 @@ void DebugBuffer::addPointVertex(const DebugPoint& point)
 
     auto& v0 = vertexBuffer[vertexCount++];
 
-    v0.position = point.position;
+    *(Vector3*)(&v0.position[0]) = point.position;
     v0.color = point.color;
 }
 

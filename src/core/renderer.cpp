@@ -1,5 +1,7 @@
 #include "gr-base/core/renderer.hpp"
 
+#include "gr-base/core/geometry/vertex2D.hpp"
+
 #include "gr-base/core/logger.hpp"
 #include "gr-base/core/status.hpp"
 
@@ -51,12 +53,6 @@ void Renderer::Render()
     s_Renderer->render();
 }
 
-void Renderer::SetRenderTarget(RenderTargetID renderTargetID)
-{
-    s_Renderer->renderTarget =
-        renderTargetID.value != UINT32_MAX ? RenderTargetManager::Get(renderTargetID) : nullptr;
-}
-
 void Renderer::SetViewport(const Rect& r)
 {
     s_Renderer->viewport = r;
@@ -76,12 +72,45 @@ void Renderer::Submit(
     s_Renderer->m_renderables.push_back({ sortKey, material, mesh, submesh, matrice });
 }
 
+void Renderer::DrawFullScreenQuad()
+{
+    s_Renderer->fullScreenQuad.vao->Bind();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
 // priuvae
 Renderer::Renderer()
 {
     logger::info("[ Renderer ] Intialize '%p'.", this);
 
-    // std::cout << "R: " << sizeof(Renderable) << std::endl;
+
+    std::vector<Vertex2D> vertices = {
+        {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+        {{-1.0f, -1.0f}, {0.0f, 0.0f}},
+        {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
+
+        {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+        {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
+        {{ 1.0f,  1.0f}, {1.0f, 1.0f}}
+    };
+
+    gr::buffer_layout layout = {
+        {gr::shader_data_type::Float2, "in_position", false},
+        {gr::shader_data_type::Float2, "in_texCoord", false}
+    };
+
+    auto vbo = gr::vertex_buffer::create(vertices.data(), vertices.size() * sizeof(Vertex2D), gr::buffer_usage::static_draw);
+    vbo->SetLayout(layout);
+
+    auto vertexarray = gr::vertex_array::create();
+    vertexarray->Bind();
+    vertexarray->AddVertexBuffer(vbo);
+
+    vertexarray->Unbind();
+    vbo->Unbind();
+
+    fullScreenQuad.vao = vertexarray;
+    fullScreenQuad.vbo = vbo;
 }
 
 Renderer::~Renderer()
@@ -109,9 +138,6 @@ void Renderer::endFrame()
 
 void Renderer::render()
 {
-    if (renderTarget != nullptr)
-        renderTarget->bind();
-
     gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
     gr::gRender::SetEnable(GR_DEPTH, true);
     gr::gRender::SetEnable(GR_CULL_FACE, true);
@@ -129,19 +155,6 @@ void Renderer::render()
 
     gr::gRender::SetDepthFunc(GR_DEPTH_FUNC_LESS);
     draw();
-
-    glBindVertexArray(0);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    gr::gRender::SetDepthFunc(GR_DEPTH_FUNC_LEQUAL);
-    DebugDraw::Renderer();
-
-    if (renderTarget != nullptr)
-        renderTarget->unbind();
-
-    // gr::gRender::SetEnable(GR_FRAMEBUFFER_SRGB, false);
 }
 
 void Renderer::draw()

@@ -41,12 +41,35 @@ void Frustum::CalculateFrustum(const Matrix4x4& matrix)
     }
 }
 
-// bool Frustum::IsPointInFrustum(const Vector3 &point, int planeIndex) {
-//     return planes[planeIndex][A] * point.x +
-//            planes[planeIndex][B] * point.y +
-//            planes[planeIndex][C] * point.z +
-//            planes[planeIndex][D] > 0.0f;
-// }
+FrustumResult Frustum::TestAABB(const Vector3& min, const Vector3& max, int planeIndex)
+{
+    const auto& p = planes[planeIndex];
+
+    Vector3 positive;
+    Vector3 negative;
+
+    positive.x = (p.normal.x >= 0.0f) ? max.x : min.x;
+    positive.y = (p.normal.y >= 0.0f) ? max.y : min.y;
+    positive.z = (p.normal.z >= 0.0f) ? max.z : min.z;
+
+    negative.x = (p.normal.x >= 0.0f) ? min.x : max.x;
+    negative.y = (p.normal.y >= 0.0f) ? min.y : max.y;
+    negative.z = (p.normal.z >= 0.0f) ? min.z : max.z;
+
+    float positiveDistance =
+        Math::dot(p.normal, positive) + p.d;
+
+    float negativeDistance =
+        Math::dot(p.normal, negative) + p.d;
+
+    if (positiveDistance < 0.0f)
+        return FrustumResult::Outside;
+
+    if (negativeDistance >= 0.0f)
+        return FrustumResult::Inside;
+
+    return FrustumResult::Intersect;
+}
 
 // bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model)
 // {

@@ -3,11 +3,18 @@
 #include <gr-math/aabb.hpp>
 #include <gr-math/gmath.hpp>
 
+enum class FrustumResult
+{
+    Outside,
+    Intersect,
+    Inside
+};
+
 class Frustum {
 public:
     static void CalculateFrustum(const Matrix4x4& matrix);
 
-    // static bool IsPointInFrustum(const Vector3& point, int planeIndex);
+    static FrustumResult TestAABB(const Vector3& min, const Vector3& max, int planeIndex);
 
     // static bool IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model);
 

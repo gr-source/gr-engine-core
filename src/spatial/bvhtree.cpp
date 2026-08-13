@@ -86,37 +86,85 @@ void BVHtree::query(const AABB& queryBounds, std::vector<Entity>& results)
 
 void BVHtree::queryFrustumAABB(std::vector<Entity>& results)
 {
-    std::stack<NodeID> stack;
-    stack.push(m_root);
+    struct StackEntry
+    {
+        NodeID id;
+        uint8_t planeMask;
+    };
+
+    std::stack<StackEntry> stack;
+
+    if (m_root == INVALID_NODE)
+        return;
+
+    stack.push({ m_root, 0x3F });
 
     while (!stack.empty())
     {
-        NodeID id = stack.top();
+        StackEntry entry = stack.top();
         stack.pop();
 
-        if (id == INVALID_NODE)
+        if (entry.id == INVALID_NODE)
             continue;
-        Node& node = m_nodes[id];
 
-        auto& boundary = node.boundary;
+        Node& node = m_nodes[entry.id];
+        const AABB& boundary = node.boundary;
 
-        if (!Frustum::IsCubeInFrustumAABB(boundary.min, boundary.max))
+        uint8_t remaining = entry.planeMask;
+
+        bool outside = false;
+
+        for (int i = 0; i < 6; ++i)
+        {
+            if (!(remaining & (1 << i)))
+                continue;
+
+            FrustumResult result =
+                Frustum::TestAABB(
+                    boundary.min,
+                    boundary.max,
+                    i
+                );
+
+            if (result == FrustumResult::Outside)
+            {
+                outside = true;
+                break;
+            }
+
+            if (result == FrustumResult::Inside)
+            {
+                remaining &= ~(1 << i);
+            }
+        }
+
+        if (outside)
             continue;
 
         if (node.isLeaf())
-            results.push_back(node.entity);
-        else
         {
-            stack.push(node.left);
-            stack.push(node.right);
+            results.push_back(node.entity);
+            continue;
         }
+
+        stack.push({
+            node.left,
+            remaining
+        });
+
+        stack.push({
+            node.right,
+            remaining
+        });
     }
 }
 
 void BVHtree::renderer()
 {
+    uint8_t mask = 0xFF;
+
     if (m_root != INVALID_NODE)
-        renderer_node(m_root);
+        renderer_node(m_root, mask);
 }
 
 /*
@@ -135,13 +183,32 @@ void BVHtree::for_each(NodeID id, std::function<bool (struct Node<void *> *)> fu
 */
 
 // private
-void BVHtree::renderer_node(NodeID id)
+void BVHtree::renderer_node(NodeID id, uint8_t planeMask)
 {
     Node& node = m_nodes[id];
 
     const AABB& b = node.boundary;
     auto min = b.min;
     auto max = b.max;
+
+    uint8_t remaining = planeMask;
+    // for (int i=0;i<6;i++)
+    // {
+    //     if (!(remaining & (1 << i)))
+    //         continue;
+    //
+    //     FrustumResult result =
+    //         Frustum::TestAABB(min, max, i);
+    //
+    //     if (result == FrustumResult::Outside)
+    //         return;
+    //
+    //     if (result == FrustumResult::Inside)
+    //         remaining &= ~(1 << i);
+    // }
+
+    if (!Frustum::IsCubeInFrustumAABB(min, max))
+        return;
 
     Vector3 points[8] {
         {min.x, min.y, min.z},
@@ -172,8 +239,8 @@ void BVHtree::renderer_node(NodeID id)
 
     if (!node.isLeaf())
     {
-        renderer_node(node.right);
-        renderer_node(node.left);
+        renderer_node(node.right, remaining);
+        renderer_node(node.left, remaining);
     }
 }
 

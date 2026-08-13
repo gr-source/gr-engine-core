@@ -10,8 +10,8 @@
 
 struct Camera
 {
-    RenderTargetID rendertarget =
-        InvalidRenderTarget;
+    RenderPipelineID pipeline =
+        RenderPipelineForward;
 
     Rect viewport =
         { 0.0f, 0.0f, 512.0f, 512.0f };
