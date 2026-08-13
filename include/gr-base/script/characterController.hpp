@@ -12,8 +12,6 @@ struct CharacterController
 {
     btPairCachingGhostObject* ghostObject = nullptr;
     KinematicCharacterController* character = nullptr;
-
-    bool canJump = false;
 };
 
 template <>
@@ -30,6 +28,13 @@ template <>
 inline constexpr TypeCategory engine::type_traits::category<CharacterInput> =
     TypeCategory::Component;
 
+struct CharacterState
+{
+    bool canJump = false;
+};
 
+template <>
+inline constexpr TypeCategory engine::type_traits::category<CharacterState> =
+    TypeCategory::Component;
 
 

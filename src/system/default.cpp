@@ -3,6 +3,8 @@
 #include "gr-base/ecs/systemRegistry.hpp"
 #include "gr-base/system/camerasystem.hpp"
 // #include "gr-base/system/characterControllerSystem.hpp"
+#include "gr-base/system/characterControllerSystem.hpp"
+#include "gr-base/system/characterInputSystem.hpp"
 #include "gr-base/system/physicsSystem.hpp"
 #include "gr-base/system/renderSystem.hpp"
 #include "gr-base/system/transformsystem.hpp"
@@ -19,6 +21,8 @@ void RegistryDefaultSystem()
     // REGISTER_SYSTEM(CharacterControllerSystem);
 
     REGISTER_SYSTEM(PhysicsSystem);
+
+    REGISTER_SYSTEM(CharacterInputSystem);
 
     REGISTER_SYSTEM(TransformSystem,
             PhysicsSystem);

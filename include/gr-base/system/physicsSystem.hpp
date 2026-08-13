@@ -16,14 +16,23 @@
 #include "gr-base/core/system.hpp"
 #include "gr-base/ecs/world.hpp"
 #include "gr-base/pool/sparseSet.hpp"
+#include "gr-base/script/characterController.hpp"
 #include "gr-base/script/collider.hpp"
+#include "gr-base/script/transform.hpp"
 
 #include <gr-math/gmath.hpp>
 
 #include <memory>
 #include <stack>
 
-class PhysicsSystem : public ISystemImpl<Read<>, Write<>>
+class PhysicsSystem : public ISystemImpl<
+                      Read<
+                        Rigidbody, CharacterController
+                      >,
+                      Write<
+                        TransformLocal
+                      >
+                    >
 {
 public:
     static btCollisionShape* BuildMeshShape(const Mesh* mesh);
@@ -55,8 +64,6 @@ private:
     void OnGUI() override;
 
     void Update() override;
-
-    void SyncInput(engine::ecs::world* world);
 
     void SyncTransforms(engine::ecs::world* world);
 

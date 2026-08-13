@@ -51,8 +51,6 @@ public:
 
     static void Render();
 
-    static void SetViewport(const Rect& r);
-
     static void Submit(const MaterialHandle& material, const MeshHandle& mesh, uint32_t submesh, const Matrix4x4* matrice);
 
     static void DrawFullScreenQuad();
@@ -65,9 +63,6 @@ private:
     std::vector<Renderable> m_renderables;
 
     std::vector<Matrix4x4> m_metrices;
-
-    Rect viewport =
-        { 0.0f, 0.0f, 512.0f, 512.0f };
 
     struct FullScreenQuad
     {

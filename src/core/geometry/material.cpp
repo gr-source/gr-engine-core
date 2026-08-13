@@ -62,8 +62,8 @@ void Material::Flush() const
     {
         auto& uniform = shader->uniforms[i];
 
-        if (strstr(uniform.name, "u_mat_") != nullptr)
-            break;
+        // if (strstr(uniform.name, "u_mat_") != nullptr)
+        //     break;
 
         const void* data = static_cast<const void*>(&GPUbuffer[uniform.offset]);
 

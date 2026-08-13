@@ -2,8 +2,12 @@
 
 #include "gr-base/render/default.hpp"
 
+#include "gr-base/core/assetPtr.hpp"
+
 #include "gr-base/ecs/type_traits.hpp"
 // #include "gr-base/ecs/default.hpp"
+
+#include <gr-render/default.hpp>
 
 #include <gr-math/gmath.hpp>
 #include <gr-math/rect.h>
@@ -39,6 +43,14 @@ template <>
 inline constexpr TypeCategory engine::type_traits::category<CameraData> =
     TypeCategory::Component;
 
+struct CameraRenderResult
+{
+    AssetPtr<gr::texture> output;
+};
+
+template <>
+inline constexpr TypeCategory engine::type_traits::category<CameraRenderResult> =
+    TypeCategory::Component;
 
 
 

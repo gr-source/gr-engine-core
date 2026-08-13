@@ -10,7 +10,7 @@
 
 void CameraSystem::Update()
 {
-    auto world = scene->GetWorldDynamic();
+    auto world = scene->world;
 
     world->Query<TransformWorld, Camera, CameraData>([&](
                 size_t count,

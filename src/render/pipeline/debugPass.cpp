@@ -5,6 +5,19 @@
 #include <gr-render/gRender.h>
 #include <gr-render/gl.h>
 
+DebugPass::DebugPass(
+        AssetPtr<gr::texture> hdr,
+        AssetPtr<gr::texture> depth) :
+    m_hdr(hdr),
+    m_depth(depth)
+{}
+
+void DebugPass::Setup(RenderGraphBuild& build)
+{
+    build.color = m_hdr.handle;
+    build.depth = m_depth.handle;
+}
+
 void DebugPass::Execute()
 {
     glBindVertexArray(0);

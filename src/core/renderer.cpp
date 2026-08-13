@@ -5,18 +5,12 @@
 #include "gr-base/core/logger.hpp"
 #include "gr-base/core/status.hpp"
 
-#include "gr-base/debug/debugDraw.hpp"
-
-#include "gr-base/managers/renderTargetManager.hpp"
-#include "gr-base/render/rendertarget.hpp"
-
 #include "gr-base/managers/assetsManager.hpp"
 
 #include <algorithm>
 
 #include <gr-render/shader.hpp>
 #include <gr-render/gl.h>
-#include <iostream>
 
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
@@ -51,11 +45,6 @@ void Renderer::EndFrame()
 void Renderer::Render()
 {
     s_Renderer->render();
-}
-
-void Renderer::SetViewport(const Rect& r)
-{
-    s_Renderer->viewport = r;
 }
 
 void Renderer::Submit(
@@ -138,16 +127,6 @@ void Renderer::endFrame()
 
 void Renderer::render()
 {
-    gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
-    gr::gRender::SetEnable(GR_DEPTH, true);
-    gr::gRender::SetEnable(GR_CULL_FACE, true);
-    // gr::gRender::SetEnable(GR_FRAMEBUFFER_SRGB, true);
-
-    gr::gRender::SetViewport(viewport.data);
-    gr::gRender::SetBackgroundColor(Color{0.5f, 0.5f, 0.5f, 1.0f}.data);
-    gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_DEPTH_BUFFER | gr::GR_COLOR_BUFFER);
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
     glBindVertexArray(0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -177,7 +156,10 @@ void Renderer::draw()
         {
             shader->bind();
 
-            model = shader->findUniform("u_mat_model");
+            model = GR_INVALID_ID;
+
+            if (instanceCount == 1)
+                model = shader->findUniform("u_mat_model");
 
             lastShader = shader;
         }
@@ -232,9 +214,6 @@ void Renderer::sorting()
         return a.sortKey < b.sortKey;
     });
 
-    MaterialHandle lastMaterial = HANDLE_INVALID;
-
-    MeshHandle lastMesh = HANDLE_INVALID;
     Mesh* mesh = nullptr;
 
     RenderCommand cmd;
@@ -257,6 +236,22 @@ void Renderer::sorting()
 
             m_metrices[matrixID++] = *current.world;
 
+            mesh = AssetsManager::GetMesh(current.mesh);
+
+            auto& gpuMesh = mesh->gpuMesh;
+
+            if (gpuMesh.vertexarray == nullptr)
+                mesh->Build();
+
+            cmd.vao = gpuMesh.vertexarray;
+            cmd.pbo = gpuMesh.pbo;
+
+            auto& submesh = mesh->submeshes[current.submesh];
+            cmd.indexCount = submesh.indexCount;
+            cmd.indexOffset = submesh.indexOffset * sizeof(uint32_t);
+
+            cmd.material = AssetsManager::GetMaterial(current.material);
+
             ++start;
         }
 
@@ -264,35 +259,8 @@ void Renderer::sorting()
 
         if (count > 0)
         {
-            if (first.material != lastMaterial)
-            {
-                cmd.material = AssetsManager::GetMaterial(first.material);
-
-                lastMaterial = first.material;
-            }
-
-            if (first.mesh != lastMesh)
-            {
-                mesh = AssetsManager::GetMesh(first.mesh);
-
-                auto& gpuMesh = mesh->gpuMesh;
-
-                if (gpuMesh.vertexarray == nullptr)
-                    mesh->Build();
-
-                cmd.vao = gpuMesh.vertexarray;
-                cmd.pbo = gpuMesh.pbo;
-
-                lastMesh = first.mesh;
-            }
-
-            auto& submesh = mesh->submeshes[first.submesh];
-
             cmd.instances = &m_metrices[matrixID - count];
             cmd.instanceCount = count;
-
-            cmd.indexCount = submesh.indexCount;
-            cmd.indexOffset = submesh.indexOffset * sizeof(uint32_t);
 
             bool instancing = count > 1;
 

@@ -132,45 +132,9 @@ void PhysicsSystem::OnGUI()
 
 void PhysicsSystem::Update()
 {
-    SyncInput(scene->world);
-
     dynamicsWorld->stepSimulation(Clock::deltaTime);
 
     SyncTransforms(scene->world);
-}
-
-void PhysicsSystem::SyncInput(engine::ecs::world* world)
-{
-    world->Query<CharacterController, CharacterInput>(
-            [&](
-                size_t count,
-                Entity* entities,
-                CharacterController* controllers,
-                CharacterInput* inputs
-            )
-            {
-                for (size_t i=0;i<count;i++)
-                {
-                    auto& input = inputs[i];
-                    auto& controller = controllers[i];
-
-                    controller.character->setWalkDirection(
-                            btVector3(
-                                input.move.x,
-                                input.move.y,
-                                input.move.z
-                            )
-                        );
-
-                    if (input.jump && controller.canJump)
-                    {
-                        controller.character->jump();
-
-                        input.jump = false;
-                    }
-                }
-            }
-        );
 }
 
 void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
@@ -180,7 +144,7 @@ void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
                 size_t count,
                 Entity* entities,
                 TransformLocal* transforms,
-                Rigidbody* bodies
+                const Rigidbody* bodies
             )
             {
                 for (size_t i=0;i<count;i++)
@@ -221,7 +185,7 @@ void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
                 size_t count,
                 Entity* entities,
                 TransformLocal* transforms,
-                CharacterController* controllers
+                const CharacterController* controllers
             )
             {
                 for (size_t i=0;i<count;i++)
@@ -230,8 +194,6 @@ void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
                     auto& c = controllers[i];
 
                     auto ghostObject = c.ghostObject;
-
-                    c.canJump = c.character->canJump();
 
                     btTransform tr = ghostObject->getWorldTransform();
 

@@ -21,11 +21,14 @@ struct RenderTarget
 
     uint32_t framebuffer;
 
+    int width;
+    int height;
+
     void bind();
 
     void unbind();
 
-    void resize(int width, int height);
+    void resize(int w, int h);
 };
 
 

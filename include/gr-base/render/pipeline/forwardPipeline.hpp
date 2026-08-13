@@ -1,18 +1,24 @@
 #pragma once
 
-#include "gr-base/render/default.hpp"
-#include "gr-base/render/pipeline/renderGraph.hpp"
 #include "gr-base/render/pipeline/renderPipeline.hpp"
+#include "gr-base/render/pipeline/renderGraph.hpp"
+#include "gr-base/render/default.hpp"
+
+#include "gr-base/core/assetPtr.hpp"
+
+#include <gr-render/default.hpp>
 
 class ForwardPipeline : public IRenderPipeline
 {
 public:
-
-    RenderTargetID GetOutput() const;
+    AssetPtr<gr::texture> GetTextureOutput() const;
 
 private:
-    RenderTargetID rendertarget =
-        InvalidRenderTarget;
+    AssetPtr<gr::texture> m_hdr;
+
+    AssetPtr<gr::texture> m_depth;
+
+    // AssetPtr<gr::texture> m_output;
 
     RenderGraph graph;
 

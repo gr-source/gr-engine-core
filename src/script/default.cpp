@@ -38,6 +38,7 @@ void RegistryDefaultComponent()
     REGISTER_COMPONENT(TransformLocal, true);
     REGISTER_COMPONENT(TransformWorld, false);
 
+    REGISTER_COMPONENT(CameraRenderResult, false);
     REGISTER_COMPONENT(CameraData, false);
     REGISTER_COMPONENT(Camera, true);
     REGISTER_COMPONENT(Light, true);
@@ -51,6 +52,7 @@ void RegistryDefaultComponent()
     REGISTER_COMPONENT(Rigidbody, false);
 
     REGISTER_COMPONENT(CharacterController, false);
+    REGISTER_COMPONENT(CharacterState, false);
     REGISTER_COMPONENT(CharacterInput, false);
 }
 

@@ -4,8 +4,7 @@
 #include "gr-base/core/gameObject.hpp"
 #include "gr-base/core/default.hpp"
 #include "gr-base/core/logger.hpp"
-
-#include "gr-base/core/isystem.hpp"
+#include "gr-base/core/system.hpp"
 
 #include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/systemRegistry.hpp"
@@ -23,6 +22,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 #include <utility>
 
@@ -516,56 +516,170 @@ ISystem* Scene::createSystem(const SystemInfo* info)
 
 void Scene::sortSystems()
 {
-    std::unordered_map<TypeID, Signature> graph;
-    for (auto& id : m_systemIDs)
-        graph[id] = SystemRegistry::GetSystemByID(id)->depends_on;
+    std::unordered_map<TypeID, std::vector<TypeID>> graph;
+
+    std::unordered_map<TypeID, std::vector<TypeID>> readers;
+
+    std::unordered_map<TypeID, std::vector<TypeID>> writers;
+
+    for (TypeID systemID : m_systemIDs)
+    {
+        auto sys = m_typeIDToSystem[systemID];
+        if (sys == nullptr)
+            continue;
+
+        Signature readMask = sys->GetRead();
+
+        while (readMask != INVALID_SIGNATURE && readMask)
+
+        {
+            TypeID component =
+                static_cast<TypeID>(__builtin_ctzll(readMask));
+
+            readers[component].push_back(systemID);
+
+            readMask &= (readMask - 1);
+        }
+
+        Signature writeMask = sys->GetWrite();
+
+        while (writeMask != INVALID_SIGNATURE && writeMask)
+        {
+            TypeID component =
+                static_cast<TypeID>(__builtin_ctzll(writeMask));
+
+            writers[component].push_back(systemID);
+
+            writeMask &= (writeMask - 1);
+        }
+    }
+
+    for (const auto& [component, componentReaders] : readers)
+    {
+        auto itWriters = writers.find(component);
+
+        if (itWriters == writers.end())
+            continue;
+
+        const auto& componentWriters = itWriters->second;
+
+        for (TypeID reader : componentReaders)
+        {
+            for (TypeID writer : componentWriters)
+            {
+                if (writer == reader)
+                    continue;
+
+                graph[reader].push_back(writer);
+            }
+        }
+    }
+
+    for (const auto& [component, componentWriters] : writers)
+    {
+        for (size_t i = 0; i < componentWriters.size(); ++i)
+        {
+            TypeID first = componentWriters[i];
+
+            for (size_t j = i + 1;
+                 j < componentWriters.size();
+                 ++j)
+            {
+                TypeID second = componentWriters[j];
+
+                if (first == second)
+                    continue;
+
+                graph[second].push_back(first);
+            }
+        }
+    }
+
+    for (auto& [systemID, dependencies] : graph)
+    {
+        std::sort(
+            dependencies.begin(),
+            dependencies.end()
+        );
+
+        dependencies.erase(
+            std::unique(
+                dependencies.begin(),
+                dependencies.end()
+            ),
+            dependencies.end()
+        );
+    }
 
     std::unordered_set<TypeID> visited;
     std::unordered_set<TypeID> temp;
+
     std::vector<TypeID> order;
+    order.reserve(m_systemIDs.size());
+
     bool hasCycle = false;
 
-    std::function<void(TypeID)> dfs = [&](TypeID node)
+    std::function<void(TypeID)> dfs =
+        [&](TypeID node)
     {
+        if (hasCycle)
+            return;
+
         if (temp.count(node))
-        { 
-            hasCycle = true; 
+        {
+            for (auto& t : temp)
+                std::cout << SystemRegistry::GetSystemByID(t)->name << std::endl;
+            hasCycle = true;
             return;
         }
 
-        if (!visited.count(node))
+        if (visited.count(node))
+            return;
+
+        temp.insert(node);
+
+        auto it = graph.find(node);
+
+        if (it != graph.end())
         {
-            temp.insert(node);
-
-            Signature mask = graph[node];
-            while (mask)
+            for (TypeID dependency : it->second)
             {
-                TypeID dep = __builtin_ctzll(mask);
-                if (graph.find(dep) != graph.end())
-                    dfs(dep);
+                dfs(dependency);
 
-                mask &= (mask - 1);
+                if (hasCycle)
+                    return;
             }
-
-            temp.erase(node);
-            visited.insert(node);
-            order.push_back(node);
         }
+
+        temp.erase(node);
+        visited.insert(node);
+
+        order.push_back(node);
     };
 
-    for (auto& id : m_systemIDs)
+    for (TypeID systemID : m_systemIDs)
     {
-        if (!visited.count(id))
-            dfs(id);
+        if (!visited.count(systemID))
+            dfs(systemID);
+
+        if (hasCycle)
+            break;
     }
 
-    if (hasCycle)
-        throw std::runtime_error("Erro: ciclo detectado na DAG!");
 
-    for (size_t i=0;i<order.size();i++)
+    if (hasCycle)
     {
-        m_systems[i] = m_typeIDToSystem[order[i]];
-        m_systemIDs[i] = order[i];
+        throw std::runtime_error(
+            "Erro: ciclo detectado na DAG de sistemas!"
+        );
+    }
+
+    for (size_t i = 0; i < order.size(); ++i)
+    {
+        TypeID systemID = order[i];
+
+        m_systemIDs[i] = systemID;
+        m_systems[i] = m_typeIDToSystem[systemID];
     }
 }
 
