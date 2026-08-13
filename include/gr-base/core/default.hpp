@@ -11,7 +11,6 @@ struct GameObject;
 class MaterialManager;
 class MeshManager;
 
-class RenderTarget;
 class Scene;
 
 

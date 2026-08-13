@@ -35,6 +35,8 @@ public:
 
     static TextureHandle CreateTexture();
 
+    static void DestroyTexture(TextureHandle handle);
+
     static gr::texture* GetTexture(TextureHandle h);
 
     // template <typename ...Args>

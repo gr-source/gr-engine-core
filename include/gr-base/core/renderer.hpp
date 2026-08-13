@@ -4,6 +4,7 @@
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/managers/default.hpp"
+#include "gr-base/render/default.hpp"
 
 #include <gr-math/types.hpp>
 
@@ -50,7 +51,7 @@ public:
 
     static void Render();
 
-    static void SetRenderTarget(RenderTarget* rt);
+    static void SetRenderTarget(RenderTargetID renderTargetID);
 
     static void SetViewport(const Rect& r);
 
@@ -65,7 +66,8 @@ private:
 
     std::vector<Matrix4x4> m_metrices;
 
-    RenderTarget* m_rendertarget;
+    RenderTarget* renderTarget =
+        nullptr;
 
     Rect viewport =
         { 0.0f, 0.0f, 512.0f, 512.0f };

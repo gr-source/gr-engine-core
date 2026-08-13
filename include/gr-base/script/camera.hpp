@@ -1,17 +1,17 @@
 #pragma once
 
-#include "gr-base/core/renderer.hpp"
+#include "gr-base/render/default.hpp"
 
 #include "gr-base/ecs/type_traits.hpp"
-#include "gr-base/ecs/default.hpp"
+// #include "gr-base/ecs/default.hpp"
 
 #include <gr-math/gmath.hpp>
 #include <gr-math/rect.h>
 
 struct Camera
 {
-    RenderTarget* rendertarget =
-        nullptr;
+    RenderTargetID rendertarget =
+        InvalidRenderTarget;
 
     Rect viewport =
         { 0.0f, 0.0f, 512.0f, 512.0f };

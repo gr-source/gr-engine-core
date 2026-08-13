@@ -1,12 +1,15 @@
 #include "gr-base/core/renderer.hpp"
 
+#include "gr-base/core/logger.hpp"
 #include "gr-base/core/status.hpp"
+
 #include "gr-base/debug/debugDraw.hpp"
 
-#include "gr-base/core/rendertarget.hpp"
-#include "gr-base/core/logger.hpp"
+#include "gr-base/managers/renderTargetManager.hpp"
+#include "gr-base/render/rendertarget.hpp"
 
 #include "gr-base/managers/assetsManager.hpp"
+
 #include <algorithm>
 
 #include <gr-render/shader.hpp>
@@ -48,9 +51,10 @@ void Renderer::Render()
     s_Renderer->render();
 }
 
-void Renderer::SetRenderTarget(RenderTarget* rt)
+void Renderer::SetRenderTarget(RenderTargetID renderTargetID)
 {
-    s_Renderer->m_rendertarget = rt;
+    s_Renderer->renderTarget =
+        renderTargetID.value != UINT32_MAX ? RenderTargetManager::Get(renderTargetID) : nullptr;
 }
 
 void Renderer::SetViewport(const Rect& r)
@@ -73,7 +77,7 @@ void Renderer::Submit(
 }
 
 // priuvae
-Renderer::Renderer() : m_rendertarget(nullptr)
+Renderer::Renderer()
 {
     logger::info("[ Renderer ] Intialize '%p'.", this);
 
@@ -105,8 +109,8 @@ void Renderer::endFrame()
 
 void Renderer::render()
 {
-    if (m_rendertarget != nullptr)
-        m_rendertarget->bind();
+    if (renderTarget != nullptr)
+        renderTarget->bind();
 
     gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
     gr::gRender::SetEnable(GR_DEPTH, true);
@@ -134,8 +138,8 @@ void Renderer::render()
     gr::gRender::SetDepthFunc(GR_DEPTH_FUNC_LEQUAL);
     DebugDraw::Renderer();
 
-    if (m_rendertarget != nullptr)
-        m_rendertarget->unbind();
+    if (renderTarget != nullptr)
+        renderTarget->unbind();
 
     // gr::gRender::SetEnable(GR_FRAMEBUFFER_SRGB, false);
 }

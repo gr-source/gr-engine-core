@@ -2,7 +2,7 @@
 
 #include "gr-base/managers/assetsManager.hpp"
 
-#include <gr-render/texture.h>
+#include <gr-render/texture.hpp>
 
 // ===== Texture ===== //
 template <>

@@ -1,6 +1,6 @@
 #include "gr-base/managers/textureManager.hpp"
 
-#include <gr-render/texture.h>
+#include <gr-render/texture.hpp>
 
 #include <cassert>
 #include <cstdlib>

@@ -26,7 +26,6 @@
 
 #include "gr-base/task/modelloadtask.hpp"
 
-#include <gr-render/texture.h>
 #include <stdexcept>
 
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
@@ -53,6 +52,7 @@ TextureHandle AssetsManager::LoadTexture(const std::string& uri)
     throw std::runtime_error("asset '" + uri + "' not found");
 }
 
+#include <gr-render/texture.hpp>
 TextureHandle AssetsManager::LoadTexture(AssetID id)
 {
     TextureHandle h = s_AssetsManager->findHandleInCache(id);
@@ -165,6 +165,11 @@ TextureHandle AssetsManager::LoadTexture(AssetID id)
 TextureHandle AssetsManager::CreateTexture()
 {
     return s_AssetsManager->mTextureManager->create();
+}
+
+void AssetsManager::DestroyTexture(TextureHandle handle)
+{
+    s_AssetsManager->mTextureManager->remove(handle);
 }
 
 gr::texture* AssetsManager::GetTexture(TextureHandle h)
