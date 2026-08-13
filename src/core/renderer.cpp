@@ -111,6 +111,7 @@ void Renderer::render()
     gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
     gr::gRender::SetEnable(GR_DEPTH, true);
     gr::gRender::SetEnable(GR_CULL_FACE, true);
+    // gr::gRender::SetEnable(GR_FRAMEBUFFER_SRGB, true);
 
     gr::gRender::SetViewport(viewport.data);
     gr::gRender::SetBackgroundColor(Color{0.5f, 0.5f, 0.5f, 1.0f}.data);
@@ -135,6 +136,8 @@ void Renderer::render()
 
     if (m_rendertarget != nullptr)
         m_rendertarget->unbind();
+
+    // gr::gRender::SetEnable(GR_FRAMEBUFFER_SRGB, false);
 }
 
 void Renderer::draw()

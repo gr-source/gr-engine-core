@@ -6,7 +6,8 @@ RenderTarget::RenderTarget(int width, int height) : textureColor(0), textureDept
 {
     glGenTextures(1, &textureColor);
     glBindTexture(GL_TEXTURE_2D, textureColor);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -36,6 +37,7 @@ RenderTarget::RenderTarget(int width, int height) : textureColor(0), textureDept
     // }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 RenderTarget::~RenderTarget()
@@ -55,13 +57,15 @@ RenderTarget::~RenderTarget()
 
 void RenderTarget::bind()
 {
-    glViewport(0, 0, m_width, m_height);
+    // glViewport(0, 0, m_width, m_height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    // glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
 void RenderTarget::unbind()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // glDisable(GL_FRAMEBUFFER_SRGB);
 }
 
 void RenderTarget::resize(int width, int height)
@@ -72,10 +76,13 @@ void RenderTarget::resize(int width, int height)
     m_height = height;
 
     glBindTexture(GL_TEXTURE_2D, textureColor);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
     glBindTexture(GL_TEXTURE_2D, textureDepth);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 uint32_t RenderTarget::GetTextureID() const
