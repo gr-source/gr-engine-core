@@ -17,6 +17,19 @@ gr::texture* AssetPtr<gr::texture>::operator->()
     return get();
 }
 
+// ===== Texture ===== //
+template <>
+Mesh* AssetPtr<Mesh>::get()
+{
+    return AssetsManager::GetMesh(handle);
+}
+
+template <>
+Mesh* AssetPtr<Mesh>::operator->()
+{
+    return get();
+}
+
 // ===== Material ===== //
 template <>
 Material* AssetPtr<Material>::get()

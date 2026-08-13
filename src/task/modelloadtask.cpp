@@ -103,13 +103,13 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
     {
         try
         {
-            MeshHandle mesh =
+            auto mesh =
                 AssetsManager::LoadMesh(asset->mesh);
 
-            if (mesh != HANDLE_INVALID)
+            if (mesh.get())
             {
                 auto meshFilter = go.GetOrAddComponent<MeshFilter>();
-                meshFilter->mesh = mesh;
+                meshFilter->mesh = mesh.handle;
             }
 
         } catch (const std::exception& e)
@@ -123,10 +123,10 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
             std::vector<MaterialHandle> materials;
             for (auto& assetID : asset->materials)
             {
-                MaterialHandle material =
+                auto material =
                     AssetsManager::LoadMaterial(assetID);
 
-                materials.push_back(material);
+                materials.push_back(material.handle);
             }
 
             auto meshRender = go.GetOrAddComponent<MeshRender>();

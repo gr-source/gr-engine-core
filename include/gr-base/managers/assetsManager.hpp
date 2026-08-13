@@ -6,6 +6,7 @@
 #include "gr-base/asset/textureAsset.hpp"
 #include "gr-base/asset/default.hpp"
 
+#include "gr-base/core/assetPtr.hpp"
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
 
@@ -29,13 +30,13 @@ public:
     static void Shutdown();
 
     // ********** Texture ********** //
-    static TextureHandle LoadTexture(const std::string& uri);
+    static AssetPtr<gr::texture> LoadTexture(const std::string& uri);
 
-    static TextureHandle LoadTexture(AssetID id);
+    static AssetPtr<gr::texture> LoadTexture(AssetID id);
 
-    static TextureHandle CreateTexture();
+    static AssetPtr<gr::texture> CreateTexture();
 
-    static void DestroyTexture(TextureHandle handle);
+    static void DestroyTexture(AssetPtr<gr::texture> ptr);
 
     static gr::texture* GetTexture(TextureHandle h);
 
@@ -61,14 +62,14 @@ public:
     // ********** Mesh ********** //
     // static MeshHandle LoadMesh(const std::string& name);
 
-    static MeshHandle LoadMesh(AssetID id);
+    static AssetPtr<Mesh> LoadMesh(AssetID id);
 
     static size_t GetMeshCount();
 
     // API Privada
-    static MeshHandle CreateMesh();
+    static AssetPtr<Mesh> CreateMesh();
 
-    static void RemoveMesh(MeshHandle handle);
+    static void RemoveMesh(AssetPtr<Mesh> ptr);
 
     static Mesh *GetMesh(MeshHandle h);
 
@@ -78,9 +79,9 @@ public:
     // ********** Material API publica ********** //
     // static MaterialHandle LoadMaterial(const std::string& name);
 
-    static MaterialHandle LoadMaterial(AssetID id);
+    static AssetPtr<Material> LoadMaterial(AssetID id);
 
-    static MaterialHandle CreateMaterial();
+    static AssetPtr<Material> CreateMaterial();
 
     // ********** Material API privada ********** //
     static Material *GetMaterial(MaterialHandle h);
@@ -95,13 +96,9 @@ public:
 
     static ShaderPrefab* LoadShader(AssetID id);
 
-    static ShaderAsset ImportShaderAssetFromFile(const std::string& file);
-
-    static TextureAsset ImportTextureAssetFromFile(const std::string& file);
+    static bool ImportAssetFromFile(const std::string& file, IAsset* asset);
 
     static Material LoadMaterialFromFile(const std::string& file);
-
-    static Mesh LoadMeshFromFile(const std::string& file);
 
     static Handle FindHandleInCache(AssetID id);
 

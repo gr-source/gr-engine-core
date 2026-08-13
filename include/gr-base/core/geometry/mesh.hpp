@@ -44,7 +44,8 @@ struct Mesh
     void Build();
 };
 
-static void Mesh_Normalize(Mesh* mesh);
+void Mesh_Normalize(Mesh* mesh);
 
+AABB Mesh_CalculateBounds(Mesh* mesh);
 
 

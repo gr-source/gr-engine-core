@@ -161,5 +161,38 @@ void Mesh_Normalize(Mesh* mesh)
     }
 }
 
+AABB Mesh_CalculateBounds(Mesh* mesh)
+{
+    if (!mesh->numVertices)
+        return { type_traits<Vector3>::zero, type_traits<Vector3>::zero };
+
+    AABB bounds;
+
+    bounds.min.x = mesh->vertices[0].position.x;
+    bounds.min.y = mesh->vertices[0].position.y;
+    bounds.min.z = mesh->vertices[0].position.z;
+
+    bounds.max.x = mesh->vertices[0].position.x;
+    bounds.max.y = mesh->vertices[0].position.y;
+    bounds.max.z = mesh->vertices[0].position.z;
+
+    for (size_t i=0;i<mesh->numVertices;i++)
+    {
+        const auto& vertex = mesh->vertices[i];
+        const auto& p = vertex.position;
+
+        bounds.min.x = std::min(bounds.min.x, p.x);
+        bounds.min.y = std::min(bounds.min.y, p.y);
+        bounds.min.z = std::min(bounds.min.z, p.z);
+
+        bounds.max.x = std::max(bounds.max.x, p.x);
+        bounds.max.y = std::max(bounds.max.y, p.y);
+
+        bounds.max.z = std::max(bounds.max.z, p.z);
+    }
+
+    return bounds;
+}
+
 
 

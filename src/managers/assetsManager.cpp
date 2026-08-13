@@ -44,7 +44,7 @@ void AssetsManager::Shutdown()
     s_AssetsManager = nullptr;
 }
 
-TextureHandle AssetsManager::LoadTexture(const std::string& uri)
+AssetPtr<gr::texture> AssetsManager::LoadTexture(const std::string& uri)
 {
     AssetID assetID = AssetDB::FindByHash(engine::hash::fnv1_str(uri));
     if (assetID != INVALID_ASSET)
@@ -53,7 +53,7 @@ TextureHandle AssetsManager::LoadTexture(const std::string& uri)
 }
 
 #include <gr-render/texture.hpp>
-TextureHandle AssetsManager::LoadTexture(AssetID id)
+AssetPtr<gr::texture> AssetsManager::LoadTexture(AssetID id)
 {
     TextureHandle h = s_AssetsManager->findHandleInCache(id);
     if (h != HANDLE_INVALID)
@@ -61,20 +61,19 @@ TextureHandle AssetsManager::LoadTexture(AssetID id)
 
     auto info = AssetDB::GetAsset(id);
     if (info == nullptr)
-        throw std::runtime_error("Asset not found");
+        throw std::runtime_error("asset not found");
 
     auto path = AssetResolver::Resolve(info->uri) + HEADER_TEXTURE_EXTENSION;
     if (!gfile::exists(path))
-        throw std::runtime_error("File not found");
+        throw std::runtime_error("file not found");
 
-    TextureAsset asset =
-        ImportTextureAssetFromFile(path);
+    TextureAsset asset;
+    if (!ImportAssetFromFile(path, &asset))
+        throw std::runtime_error("invalid binary");
 
-    TextureHandle handle =
+    AssetPtr<gr::texture> texture =
         CreateTexture();
 
-    auto texture =
-        GetTexture(handle);
     texture->width = asset.width;
     texture->height = asset.height;
 
@@ -108,68 +107,19 @@ TextureHandle AssetsManager::LoadTexture(AssetID id)
     texture->applyTextureBuffer(asset.raw.data());
     texture->unbind();
 
-    s_AssetsManager->addInCache(id, handle);
+    s_AssetsManager->addInCache(id, texture.handle);
 
-    return handle;
-    /*
-    TextureHandle h =
-        s_AssetsManager->mTextureManager->find(hash);
-    if (h != HANDLE_INVALID)
-        return h;
-
-    TextureAsset asset =
-        ImportTextureAssetFromFile(AssetDB::Resolve(hash));
-
-    h =
-        CreateTexture();
-
-    auto texture =
-        GetTexture(h);
-    texture->width = asset.width;
-    texture->height = asset.height;
-
-    texture->filter = TEXTURE_FILTER_LINEAR_MIPMAP;
-    texture->wrap = TEXTURE_WRAP_REPEAT;
-    texture->type = TEXTURE_TYPE_2D;
-
-    switch (asset.channels)
-    {
-        case 1:
-            texture->format = TEXTURE_FORMAT_RED;
-            break;
-
-        case 2:
-            texture->format = asset.hdr ? TEXTURE_FORMAT_RG16F : TEXTURE_FORMAT_RG;
-            break;
-
-        case 3:
-            texture->format = asset.hdr ? TEXTURE_FORMAT_RGB16F : TEXTURE_FORMAT_RGB;
-            break;
-
-        case 4:
-            texture->format = asset.hdr ? TEXTURE_FORMAT_RGBA16F : TEXTURE_FORMAT_RGBA;
-            break;
-        default:
-            throw std::runtime_error("Unsupported channel count: " + std::to_string(asset.channels));
-    }
-
-    texture->bind();
-    texture->applyTextureSettings();
-    texture->applyTextureBuffer(asset.raw.data());
-    texture->unbind();
-
-    return h;
-    */
+    return texture;
 }
 
-TextureHandle AssetsManager::CreateTexture()
+AssetPtr<gr::texture> AssetsManager::CreateTexture()
 {
     return s_AssetsManager->mTextureManager->create();
 }
 
-void AssetsManager::DestroyTexture(TextureHandle handle)
+void AssetsManager::DestroyTexture(AssetPtr<gr::texture> ptr)
 {
-    s_AssetsManager->mTextureManager->remove(handle);
+    s_AssetsManager->mTextureManager->remove(ptr.handle);
 }
 
 gr::texture* AssetsManager::GetTexture(TextureHandle h)
@@ -185,7 +135,9 @@ MeshHandle AssetsManager::LoadMesh(const std::string& name)
 }
 */
 
-MeshHandle AssetsManager::LoadMesh(AssetID id)
+#include "gr-base/asset/meshasset.hpp"
+
+AssetPtr<Mesh> AssetsManager::LoadMesh(AssetID id)
 {
     MeshHandle h = s_AssetsManager->findHandleInCache(id);
     if (h != HANDLE_INVALID)
@@ -193,21 +145,55 @@ MeshHandle AssetsManager::LoadMesh(AssetID id)
 
     auto info = AssetDB::GetAsset(id);
     if (info == nullptr)
-        throw std::runtime_error("Asset not found");
+        throw std::runtime_error("asset not found");
 
     auto path = AssetResolver::Resolve(info->uri) + HEADER_MESH_EXTENSION;
     if (!gfile::exists(path))
-        throw std::runtime_error("File not found");
+        throw std::runtime_error("file not found");
 
-    Mesh mesh = LoadMeshFromFile(path);
+    MeshAsset asset;
+    if (!ImportAssetFromFile(path, &asset))
+        throw std::runtime_error("invalid binary");
 
-    MeshHandle handle = CreateMesh();
-    *GetMesh(handle) = std::move(mesh);
+    auto mesh = CreateMesh();
 
-    s_AssetsManager->addInCache(id, handle);
-    s_AssetsManager->mMeshManager->addInCache(id, handle);
+    auto& submeshes = asset.submeshes;
+    auto& vertices = asset.vertices;
+    auto& indices = asset.indices;
 
-    return handle;
+    {
+        mesh->vertices = (Vertex3D*)malloc(vertices.size() * sizeof(Vertex3D));
+        mesh->numVertices = static_cast<uint32_t>(vertices.size());
+
+        memcpy(mesh->vertices, vertices.data(), vertices.size() * sizeof(Vertex3D));
+    }
+
+    {
+        mesh->indices = (uint32_t*)malloc(indices.size() * sizeof(uint32_t));
+        mesh->numIndices = static_cast<uint32_t>(indices.size());
+
+        memcpy(mesh->indices, indices.data(), indices.size() * sizeof(uint32_t));
+    }
+
+    mesh->submeshes = (Submesh*)malloc(submeshes.size() * sizeof(Submesh));
+    mesh->numSubmeshes = static_cast<uint32_t>(submeshes.size());
+
+    for (size_t i=0;i<mesh->numSubmeshes;i++)
+    {
+        auto& assetSubmesh = submeshes[i];
+
+        auto& submesh = mesh->submeshes[i];
+        submesh.indexOffset = assetSubmesh.indexOffset;
+        submesh.indexCount = assetSubmesh.indexCount;
+    }
+
+    mesh->localBounds =
+        Mesh_CalculateBounds(mesh.get());
+
+    s_AssetsManager->addInCache(id, mesh.handle);
+    s_AssetsManager->mMeshManager->addInCache(id, mesh.handle);
+
+    return mesh;
 }
 
 size_t AssetsManager::GetMeshCount()
@@ -215,49 +201,14 @@ size_t AssetsManager::GetMeshCount()
     return s_AssetsManager->mMeshManager->GetCount();
 }
 
-#include "gr-base/asset/meshasset.hpp"
-
-static AABB CalculateBounds(Mesh* mesh)
-{
-    if (!mesh->numVertices)
-        return { type_traits<Vector3>::zero, type_traits<Vector3>::zero };
-
-    AABB bounds;
-
-    bounds.min.x = mesh->vertices[0].position.x;
-    bounds.min.y = mesh->vertices[0].position.y;
-    bounds.min.z = mesh->vertices[0].position.z;
-
-    bounds.max.x = mesh->vertices[0].position.x;
-    bounds.max.y = mesh->vertices[0].position.y;
-    bounds.max.z = mesh->vertices[0].position.z;
-
-    for (size_t i=0;i<mesh->numVertices;i++)
-    {
-        const auto& vertex = mesh->vertices[i];
-        const auto& p = vertex.position;
-
-        bounds.min.x = std::min(bounds.min.x, p.x);
-        bounds.min.y = std::min(bounds.min.y, p.y);
-        bounds.min.z = std::min(bounds.min.z, p.z);
-
-        bounds.max.x = std::max(bounds.max.x, p.x);
-        bounds.max.y = std::max(bounds.max.y, p.y);
-
-        bounds.max.z = std::max(bounds.max.z, p.z);
-    }
-
-    return bounds;
-}
-
-MeshHandle AssetsManager::CreateMesh()
+AssetPtr<Mesh> AssetsManager::CreateMesh()
 {
     return s_AssetsManager->mMeshManager->create();
 }
 
-void AssetsManager::RemoveMesh(MeshHandle handle)
+void AssetsManager::RemoveMesh(AssetPtr<Mesh> ptr)
 {
-    s_AssetsManager->mMeshManager->remove(handle);
+    s_AssetsManager->mMeshManager->remove(ptr.handle);
 }
 
 Mesh *AssetsManager::GetMesh(MeshHandle h)
@@ -332,7 +283,7 @@ std::vector<gr::Shader *> AssetsManager::GetShaderList(ShaderType type)
 }
 */
 
-MaterialHandle AssetsManager::LoadMaterial(AssetID id)
+AssetPtr<Material> AssetsManager::LoadMaterial(AssetID id)
 {
     MaterialHandle h = s_AssetsManager->findHandleInCache(id);
     if (h != HANDLE_INVALID)
@@ -348,16 +299,16 @@ MaterialHandle AssetsManager::LoadMaterial(AssetID id)
 
     Material material = LoadMaterialFromFile(path);
 
-    MaterialHandle handle = CreateMaterial();
-    *GetMaterial(handle) = std::move(material);
+    auto ptr = CreateMaterial();
+    *GetMaterial(ptr.handle) = std::move(material);
 
-    s_AssetsManager->addInCache(id, handle);
-    s_AssetsManager->mMaterialManager->addInCache(id, handle);
+    s_AssetsManager->addInCache(id, ptr.handle);
+    s_AssetsManager->mMaterialManager->addInCache(id, ptr.handle);
 
-    return handle;
+    return ptr;
 }
 
-MaterialHandle AssetsManager::CreateMaterial()
+AssetPtr<Material> AssetsManager::CreateMaterial()
 {
     return s_AssetsManager->mMaterialManager->create();
 }
@@ -377,29 +328,10 @@ usize AssetsManager::GetTextureCount()
     return s_AssetsManager->mTextureManager->count();
 }
 
-/*
-MaterialHandle AssetsManager::LoadMaterial(const std::string& name)
-{
-    return LoadMaterial(engine::hash::fnv1_str(name.c_str()));
-}
-
-ShaderPrefab* AssetsManager::FindShader(const std::string &name)
-{
-    return FindShader(engine::hash::fnv1_str(name.c_str()));
-}
-*/
-
 ShaderPrefab* AssetsManager::FindShader(AssetID id)
 {
     return s_AssetsManager->mShaderPrefabManager->find(id);
 }
-
-/*
-ShaderPrefab* AssetsManager::LoadShader(const std::string& name)
-{
-    return LoadShaderFromFile(AssetDB::Resolve(engine::hash::fnv1_str(name.c_str())));
-}
-*/
 
 ShaderPrefab* AssetsManager::LoadShader(AssetID id)
 {
@@ -408,36 +340,31 @@ ShaderPrefab* AssetsManager::LoadShader(AssetID id)
 
     auto info = AssetDB::GetAsset(id);
     if (info == nullptr)
-        return nullptr;
+        throw std::runtime_error("asset not found");
 
-    auto asset =
-        ImportShaderAssetFromFile(AssetResolver::Resolve(info->uri));
+    auto path = AssetResolver::Resolve(info->uri) + HEADER_SHADER_EXTENSION;
+    if (!gfile::exists(path))
+        throw std::runtime_error("file not found");
+
+    ShaderAsset asset;
+    if (!ImportAssetFromFile(path, &asset))
+        throw std::runtime_error("invalid binary");
 
     return s_AssetsManager->mShaderPrefabManager->create(id, &asset);
 }
 
-ShaderAsset AssetsManager::ImportShaderAssetFromFile(const std::string& file)
+bool AssetsManager::ImportAssetFromFile(const std::string& file, IAsset* asset)
 {
-    ShaderAsset asset;
-    if (!LoadFromFile(file + HEADER_SHADER_EXTENSION, HEADER_SHADER_SIGN, [&](Stream* stream)
-                {
-                    return asset.deserialize(stream);
-                }))
-        throw std::runtime_error("[ AssetsManager ] ShaderAsset load failed: " + file + HEADER_TEXTURE_EXTENSION);
+    FileStream stream(file, StreamType::INPUT);
 
-    return asset;
-}
+    FileHeader header{};
+    if (!stream.read(&header, sizeof(FileHeader)))
+        return false;
 
-TextureAsset AssetsManager::ImportTextureAssetFromFile(const std::string& file)
-{
-    TextureAsset asset;
-    if (!LoadFromFile(file, HEADER_TEXTURE_SIGN, [&](Stream* stream)
-            {
-                return asset.deserialize(stream);
-            }))
-        throw std::runtime_error("[ AssetsManager ] TextureAsset load failed: " + file + HEADER_TEXTURE_EXTENSION);
+    if (header.version != HEADER_ASSET_VERSION)
+        return false;
 
-    return asset;
+    return asset->deserialize(&stream);
 }
 
 Material AssetsManager::LoadMaterialFromFile(const std::string& file)
@@ -460,51 +387,6 @@ Material AssetsManager::LoadMaterialFromFile(const std::string& file)
         material.Set(name, buffer.data(), buffer.size());
 
     return material;
-}
-
-Mesh AssetsManager::LoadMeshFromFile(const std::string& file)
-{
-    MeshAsset asset;
-    if (!LoadFromFile(file, HEADER_MESH_SIGN, [&](Stream* stream)
-            {
-                return asset.deserialize(stream);
-            }))
-        throw std::runtime_error("[ AssetsManager ] Mesh load failed: " + file + HEADER_MESH_EXTENSION);
-
-    auto& submeshes = asset.submeshes;
-    auto& vertices = asset.vertices;
-    auto& indices = asset.indices;
-
-    Mesh mesh;
-    {
-        mesh.vertices = (Vertex3D*)malloc(vertices.size() * sizeof(Vertex3D));
-        mesh.numVertices = static_cast<uint32_t>(vertices.size());
-
-        memcpy(mesh.vertices, vertices.data(), vertices.size() * sizeof(Vertex3D));
-    }
-
-    {
-        mesh.indices = (uint32_t*)malloc(indices.size() * sizeof(uint32_t));
-        mesh.numIndices = static_cast<uint32_t>(indices.size());
-
-        memcpy(mesh.indices, indices.data(), indices.size() * sizeof(uint32_t));
-    }
-
-    mesh.submeshes = (Submesh*)malloc(submeshes.size() * sizeof(Submesh));
-    mesh.numSubmeshes = static_cast<uint32_t>(submeshes.size());
-
-    for (size_t i=0;i<mesh.numSubmeshes;i++)
-    {
-        auto& assetSubmesh = submeshes[i];
-
-        auto& submesh = mesh.submeshes[i];
-        submesh.indexOffset = assetSubmesh.indexOffset;
-        submesh.indexCount = assetSubmesh.indexCount;
-    }
-
-    mesh.localBounds = CalculateBounds(&mesh);
-
-    return mesh;
 }
 
 Handle AssetsManager::FindHandleInCache(AssetID id)
