@@ -40,8 +40,6 @@ public:
 
     void sync(NodeID id, const AABB& bounds);
 
-    void query(const AABB& queryBounds, std::vector<Entity>& results);
-
     void queryFrustumAABB(std::vector<Entity>& results);
 
     void renderer();

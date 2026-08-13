@@ -44,45 +44,30 @@ void BVHtree::remove(NodeID id)
     deallocate(id);
 }
 
+bool Contains(const AABB& lhs, const AABB& rhs)
+{
+    return
+        lhs.min.x <= rhs.min.x &&
+        lhs.min.y <= rhs.min.y &&
+        lhs.min.z <= rhs.min.z &&
+        lhs.max.x >= rhs.max.x &&
+        lhs.max.y >= rhs.max.y &&
+        lhs.max.z >= rhs.max.z;
+}
+
 void BVHtree::sync(NodeID id, const AABB& bounds)
 {
     Node& node = m_nodes[id];
+    if (Contains(node.boundary, bounds))
+        return;
+
+    removeLeaf(id);
+
     node.boundary = bounds;
+    fatten(node.boundary);
 
-    if (!node.isLeaf())
-        syncHeirarchy(id);
-    else
-        syncHeirarchy(node.parent);
+    insertLeaf(id);
 }
-
-#include <stack>
-
-void BVHtree::query(const AABB& queryBounds, std::vector<Entity>& results)
-{
-    std::stack<NodeID> stack;
-    stack.push(m_root);
-
-    while (!stack.empty())
-    {
-        NodeID id = stack.top();
-        stack.pop();
-
-        if (id == INVALID_NODE) continue;
-        Node& node = m_nodes[id];
-
-        if (!node.boundary.Intersects(queryBounds))
-            continue;
-
-        if (node.isLeaf())
-            results.push_back(node.entity);
-        else
-        {
-            stack.push(node.left);
-            stack.push(node.right);
-        }
-    }
-}
-
 
 void BVHtree::queryFrustumAABB(std::vector<Entity>& results)
 {
@@ -92,17 +77,21 @@ void BVHtree::queryFrustumAABB(std::vector<Entity>& results)
         uint8_t planeMask;
     };
 
-    std::stack<StackEntry> stack;
+    static constexpr size_t kStackCapacity = 256;
+
+    // std::stack<StackEntry> stack;
 
     if (m_root == INVALID_NODE)
         return;
 
-    stack.push({ m_root, 0x3F });
+    StackEntry stack[kStackCapacity];
+    size_t sp = 1;
 
-    while (!stack.empty())
+    *stack = { m_root, 0x3F };
+
+    while (sp)
     {
-        StackEntry entry = stack.top();
-        stack.pop();
+        const StackEntry& entry = stack[--sp];
 
         if (entry.id == INVALID_NODE)
             continue;
@@ -147,15 +136,17 @@ void BVHtree::queryFrustumAABB(std::vector<Entity>& results)
             continue;
         }
 
-        stack.push({
+        stack[sp++] =
+        {
             node.left,
             remaining
-        });
+        };
 
-        stack.push({
+        stack[sp++] =
+        {
             node.right,
             remaining
-        });
+        };
     }
 }
 
@@ -166,21 +157,6 @@ void BVHtree::renderer()
     if (m_root != INVALID_NODE)
         renderer_node(m_root, mask);
 }
-
-/*
-void BVHtree::for_each(NodeID id, std::function<bool (struct Node<void *> *)> func)
-{
-    if (id == Null)
-        return;
-
-    struct Node<void *> *node = m_nodes + id;
-    if (func(node))
-        return;
-
-    for_each(node->right, func);
-    for_each(node->left, func);
-}
-*/
 
 // private
 void BVHtree::renderer_node(NodeID id, uint8_t planeMask)
