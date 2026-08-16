@@ -2,7 +2,7 @@
 
 #include <string>
 
-enum class Scheme
+enum Scheme
 {
     Engine,
     Project,

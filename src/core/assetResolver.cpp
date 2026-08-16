@@ -21,7 +21,7 @@ AssetResolver& AssetResolver::GetInstance()
 
 std::string AssetResolver::resolve(const URI& uri)
 {
-    auto& provider = m_providers[static_cast<int>(uri.scheme)];
+    auto& provider = m_providers[uri.scheme];
     if (provider == nullptr)
         throw std::runtime_error("provider do not registed.");
     return provider->resolve(uri.path);

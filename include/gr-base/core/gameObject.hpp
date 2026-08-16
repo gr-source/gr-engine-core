@@ -13,7 +13,7 @@ struct GameObject
     Entity entity;
 
     inline GameObject(Scene* scene, Entity entity) :
-        scene(scene), entity(entity), world(scene->GetWorldDynamic())
+        scene(scene), entity(entity), world(scene->world)
     {}
 
     inline bool IsAlive() const

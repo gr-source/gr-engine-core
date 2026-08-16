@@ -25,7 +25,7 @@
 class EngineFileProvider : public IAssetProvider
 {
 public:
-    virtual std::string resolve(const std::string& path) override
+    std::string resolve(const std::string& path) override
     {
         return gfile::get_data_directory() + "/assets/" + path;
     }

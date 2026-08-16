@@ -107,7 +107,7 @@ Entity Scene::create(Entity other)
             Entity newChild = create(sibling);
             SetParent(go.entity, newChild);
 
-            auto siblingRel = GetWorldDynamic()->GetComponent<Relationship>(sibling);
+            auto siblingRel = world->GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;
@@ -118,7 +118,7 @@ Entity Scene::create(Entity other)
     if (rel == nullptr || rel->parent == INVALID_ENTITY)
         SetParent(m_root, go.entity);
 
-    for (auto& typeID : GetWorldDynamic()->GetAllComponentType(other))
+    for (auto& typeID : world->GetAllComponentType(other))
     {
         auto type = ComponentRegistry::GetComponentByID(typeID);
 
@@ -235,7 +235,7 @@ void Scene::Unlink(Entity entity)
 
     if (parent != INVALID_ENTITY)
     {
-        auto parentRel = GetWorldDynamic()->GetComponent<Relationship>(parent);
+        auto parentRel = world->GetComponent<Relationship>(parent);
 
         // se era o primeiro filho
         if (parentRel->firstChild == entity)
@@ -244,7 +244,7 @@ void Scene::Unlink(Entity entity)
         // conecta anterior -> próximo
         if (rel->prevSibling != INVALID_ENTITY)
         {
-            auto prevRel = GetWorldDynamic()->GetComponent<Relationship>(rel->prevSibling);
+            auto prevRel = world->GetComponent<Relationship>(rel->prevSibling);
 
             prevRel->nextSibling = rel->nextSibling;
         }
@@ -252,7 +252,7 @@ void Scene::Unlink(Entity entity)
         // conecta próximo -> anterior
         if (rel->nextSibling != INVALID_ENTITY)
         {
-            auto nextRel = GetWorldDynamic()->GetComponent<Relationship>(rel->nextSibling);
+            auto nextRel = world->GetComponent<Relationship>(rel->nextSibling);
 
             nextRel->prevSibling = rel->prevSibling;
         }

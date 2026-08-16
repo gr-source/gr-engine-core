@@ -19,7 +19,7 @@ public:
 private:
     static AssetResolver& GetInstance();
 
-    std::shared_ptr<IAssetProvider> m_providers[static_cast<int>(Scheme::Count)];
+    std::shared_ptr<IAssetProvider> m_providers[Scheme::Count];
 
     std::string resolve(const URI& uri);
 };
@@ -28,7 +28,7 @@ private:
 template <typename T, typename... Args>
 inline void AssetResolver::Registry(Scheme scheme, Args&&...args)
 {
-    GetInstance().m_providers[static_cast<int>(scheme)] = std::make_shared<T>(std::forward<Args>(args)...);
+    GetInstance().m_providers[scheme] = std::make_shared<T>(std::forward<Args>(args)...);
 }
 
 

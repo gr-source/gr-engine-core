@@ -18,7 +18,7 @@
 
 void RenderSystem::Update()
 {
-    auto world = scene->GetWorldDynamic();
+    auto world = scene->world;
 
     SyncBVHBounds();
 

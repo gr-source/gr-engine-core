@@ -31,11 +31,6 @@ class Scene
 public:
     engine::ecs::world* world;
 
-    inline engine::ecs::world* GetWorldDynamic()
-    {
-        return world;
-    }
-
     static Scene* GetCurrent();
 
     Scene();
