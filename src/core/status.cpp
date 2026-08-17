@@ -1,10 +1,14 @@
 #include "gr-base/core/status.hpp"
 
-// std::size_t Status::BatchDrawCallRender = 0;
-//
-// std::size_t Status::BatchDrawCallCount = 0;
-//
-// std::size_t Status::BatchRenderCount = 0;
-//
-// std::size_t Status::BatchCount = 0;
+size_t RendererStats::InstanceCount =
+    0;
+
+size_t RendererStats::BatchCount =
+    0;
+
+size_t RendererStats::DrawCallCount =
+    0;
+
+size_t RendererStats::TriangleCount =
+    0;
 

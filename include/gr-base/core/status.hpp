@@ -2,15 +2,15 @@
 
 #include <cstdlib>
 
-namespace RendererStats
+struct RendererStats
 {
-    inline size_t InstanceCount = 0;
+    static size_t InstanceCount;
 
-    inline size_t BatchCount = 0;
+    static size_t BatchCount;
 
-    inline size_t DrawCallCount = 0;
+    static size_t DrawCallCount;
 
-    inline size_t TriangleCount = 0;
+    static size_t TriangleCount;
 };
 
 

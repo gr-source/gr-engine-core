@@ -134,17 +134,6 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
             meshRender->numMaterials = materials.size();
 
             memcpy(meshRender->materials, materials.data(), materials.size() * sizeof(MaterialHandle));
-
-            /*
-            auto materialRef = go.GetOrAddComponent<MaterialRef>();
-            if (materialRef != nullptr)
-            {
-                materialRef->materials = (AssetHash*)malloc(asset->materials.size() * sizeof(AssetHash));
-                materialRef->numMaterials = asset->materials.size();
-
-                memcpy(materialRef->materials, asset->materials.data(), asset->materials.size() * sizeof(AssetHash));
-            }
-            */
         } catch (const std::exception& e)
         {
             Console::LogWarning("[ ModelLoadTask ] Material não carregado: error='%s'.", e.what());
