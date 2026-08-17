@@ -11,7 +11,7 @@
 
 namespace engine::ecs
 {
-struct world
+class world
 {
     std::unordered_map<Signature, ArchetypeID> signatureToArchetype;
 
@@ -29,8 +29,15 @@ struct world
 
     size_t m_count = 0;
 
+public:
     world();
     ~world();
+
+    world(const world&) = delete;
+    world& operator=(const world&) = delete;
+
+    world(world&&) = default;
+    world& operator=(world&&) = default;
 
     template <typename Component, typename Callback, typename... Args>
     void AddOnCreate(Callback&& callback, Args&&... args);

@@ -6,7 +6,7 @@
 
 void CharacterInputSystem::Update()
 {
-    scene->world->Query<CharacterController, CharacterInput>(
+    scene->world.Query<CharacterController, CharacterInput>(
             [&](
                 size_t count,
                 Entity* entities,

@@ -4,6 +4,15 @@
 
 #include "gr-base/script/name.hpp"
 
+GameObject::GameObject(Scene* scene, Entity entity) :
+    scene(scene), entity(entity)
+{}
+
+bool GameObject::IsAlive() const
+{
+    return scene->world.IsAlive(entity);
+}
+
 std::string GameObject::GetName() const
 {
     Name* name = GetComponent<Name>();
@@ -25,7 +34,7 @@ void* GameObject::AddComponentByName(const std::string& name)
 
 void* GameObject::AddComponentByID(TypeID type)
 {
-    return world->AddComponentByID(entity, type);
+    return scene->world.AddComponentByID(entity, type);
 }
 
 void* GameObject::GetComponentByName(const std::string& name) const
@@ -38,7 +47,7 @@ void* GameObject::GetComponentByName(const std::string& name) const
 
 void* GameObject::GetComponentByID(TypeID type) const
 {
-    return world->GetComponentByID(entity, type);
+    return scene->world.GetComponentByID(entity, type);
 }
 
 bool GameObject::HasComponentByName(const std::string& name) const
@@ -55,11 +64,11 @@ bool GameObject::HasComponentByID(TypeID type) const
 
     Signature mask = (1ull << type);
 
-    return (world->GetMask(entity) & mask) == mask;
+    return (scene->world.GetMask(entity) & mask) == mask;
 }
 
 std::vector<TypeID> GameObject::GetAllComponentIDs() const
 {
-    return world->GetAllComponentType(entity);
+    return scene->world.GetAllComponentType(entity);
 }
 

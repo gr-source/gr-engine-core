@@ -11,7 +11,7 @@
 
 void CharacterControllerSystem::Update()
 {
-    scene->world->Query<TransformLocal, CharacterController>(
+    scene->world.Query<TransformLocal, CharacterController>(
             [&](
                 size_t count,
                 Entity* entities,

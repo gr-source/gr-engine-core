@@ -10,9 +10,7 @@
 
 void CameraSystem::Update()
 {
-    auto world = scene->world;
-
-    world->Query<TransformWorld, Camera, CameraData>([&](
+    scene->world.Query<TransformWorld, Camera, CameraData>([&](
                 size_t count,
                 const Entity* entities,
                 const TransformWorld* transforms,

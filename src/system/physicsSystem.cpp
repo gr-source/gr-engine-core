@@ -118,12 +118,10 @@ void PhysicsSystem::Init()
         ghostCallback
     );
 
-    auto world = scene->world;
-
-    world->AddOnCreate<CapsuleCollider>(&PhysicsSystem::onCreateShape, this);
-    world->AddOnCreate<BoxCollider>(&PhysicsSystem::onCreateShape, this);
-    world->AddOnCreate<Rigidbody>(&PhysicsSystem::onCreateRigidbody, this);
-    world->AddOnCreate<CharacterController>(&PhysicsSystem::onCreateCharacter, this);
+    scene->world.AddOnCreate<CapsuleCollider>(&PhysicsSystem::onCreateShape, this);
+    scene->world.AddOnCreate<BoxCollider>(&PhysicsSystem::onCreateShape, this);
+    scene->world.AddOnCreate<Rigidbody>(&PhysicsSystem::onCreateRigidbody, this);
+    scene->world.AddOnCreate<CharacterController>(&PhysicsSystem::onCreateCharacter, this);
 }
 
 void PhysicsSystem::OnGUI()
@@ -134,7 +132,7 @@ void PhysicsSystem::Update()
 {
     dynamicsWorld->stepSimulation(Clock::deltaTime);
 
-    SyncTransforms(scene->world);
+    SyncTransforms(&scene->world);
 }
 
 void PhysicsSystem::SyncTransforms(engine::ecs::world* world)

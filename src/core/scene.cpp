@@ -33,14 +33,12 @@ Scene* Scene::GetCurrent()
 }
 
 Scene::Scene() :
-    world(new engine::ecs::world()),
-    m_bvhtree(new BVHtree()),
     m_root(INVALID_ENTITY)
 {
     logger::info("[ Scene ] Create '%p'.", this);
 
-    m_root = world->Create();
-    world->AddComponent<Relationship>(m_root);
+    m_root = world.Create();
+    world.AddComponent<Relationship>(m_root);
 }
 
 Scene::~Scene()
@@ -57,23 +55,17 @@ Scene::~Scene()
 
         free(system);
     }
-
-    if (m_bvhtree != nullptr)
-        delete m_bvhtree;
-
-    if (world != nullptr)
-        delete world;
 }
 
 Entity Scene::create(const char* name)
 {
-    Entity e = world->Create();
+    Entity e = world.Create();
 
-    world->AddComponent<TransformLocal>(e);
-    world->AddComponent<TransformWorld>(e);
+    world.AddComponent<TransformLocal>(e);
+    world.AddComponent<TransformWorld>(e);
 
     if (name != nullptr)
-        world->AddComponent<Name>(e, strdup(name));
+        world.AddComponent<Name>(e, strdup(name));
     
     SetParent(m_root, e);
 
@@ -107,7 +99,7 @@ Entity Scene::create(Entity other)
             Entity newChild = create(sibling);
             SetParent(go.entity, newChild);
 
-            auto siblingRel = world->GetComponent<Relationship>(sibling);
+            auto siblingRel = world.GetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;
@@ -118,7 +110,7 @@ Entity Scene::create(Entity other)
     if (rel == nullptr || rel->parent == INVALID_ENTITY)
         SetParent(m_root, go.entity);
 
-    for (auto& typeID : world->GetAllComponentType(other))
+    for (auto& typeID : world.GetAllComponentType(other))
     {
         auto type = ComponentRegistry::GetComponentByID(typeID);
 
@@ -148,7 +140,7 @@ Entity Scene::create(Entity other)
         {
             auto renderBounds = go.GetOrAddComponent<RenderBounds>();
             renderBounds->localBounds = otherRenderBounds->localBounds;
-            renderBounds->id = m_bvhtree->insert(go.entity, otherRenderBounds->localBounds);
+            renderBounds->id = bvhtree.insert(go.entity, otherRenderBounds->localBounds);
         }
     }
 
@@ -157,16 +149,16 @@ Entity Scene::create(Entity other)
 
 void Scene::destroy(Entity entity)
 {
-    if (world->HasComponent<RenderBounds>(entity))
+    if (world.HasComponent<RenderBounds>(entity))
     {
-        auto renderBounds = world->GetComponent<RenderBounds>(entity);
+        auto renderBounds = world.GetComponent<RenderBounds>(entity);
         if (renderBounds->id != UINT32_MAX)
-            m_bvhtree->remove(renderBounds->id);
+            bvhtree.remove(renderBounds->id);
     }
 
     Unlink(entity);
 
-    world->Destroy(entity);
+    world.Destroy(entity);
 }
 
 // ********** public ********** //
@@ -217,7 +209,7 @@ std::string Scene::GetName() const
 
 size_t Scene::GetEntityCount()
 {
-    return world->GetEntityCount();
+    return world.GetEntityCount();
 }
 
 Entity Scene::GetRoot() const
@@ -227,7 +219,7 @@ Entity Scene::GetRoot() const
 
 void Scene::Unlink(Entity entity)
 {
-    auto rel = world->GetComponent<Relationship>(entity);
+    auto rel = world.GetComponent<Relationship>(entity);
     if (rel == nullptr)
         return;
 
@@ -235,7 +227,7 @@ void Scene::Unlink(Entity entity)
 
     if (parent != INVALID_ENTITY)
     {
-        auto parentRel = world->GetComponent<Relationship>(parent);
+        auto parentRel = world.GetComponent<Relationship>(parent);
 
         // se era o primeiro filho
         if (parentRel->firstChild == entity)
@@ -244,7 +236,7 @@ void Scene::Unlink(Entity entity)
         // conecta anterior -> próximo
         if (rel->prevSibling != INVALID_ENTITY)
         {
-            auto prevRel = world->GetComponent<Relationship>(rel->prevSibling);
+            auto prevRel = world.GetComponent<Relationship>(rel->prevSibling);
 
             prevRel->nextSibling = rel->nextSibling;
         }
@@ -252,7 +244,7 @@ void Scene::Unlink(Entity entity)
         // conecta próximo -> anterior
         if (rel->nextSibling != INVALID_ENTITY)
         {
-            auto nextRel = world->GetComponent<Relationship>(rel->nextSibling);
+            auto nextRel = world.GetComponent<Relationship>(rel->nextSibling);
 
             nextRel->prevSibling = rel->prevSibling;
         }
@@ -291,7 +283,7 @@ void Scene::SetParent(Entity parentEntity, Entity childEntity)
     {
         Entity oldFirst = parentRel->firstChild;
 
-        auto oldFirstRel = world->GetComponent<Relationship>(oldFirst);
+        auto oldFirstRel = world.GetComponent<Relationship>(oldFirst);
 
         // novo filho aponta pro antigo primeiro
         childRel->nextSibling = oldFirst;
@@ -335,14 +327,14 @@ bool Scene::CanSyncHierarchyUI() const
 
 void Scene::GetRootEntities(std::vector<Entity>& entities) const
 {
-    auto rel = world->GetComponent<Relationship>(m_root);
+    auto rel = world.GetComponent<Relationship>(m_root);
 
     Entity child = rel->firstChild;
     while (child != INVALID_ENTITY)
     {
         entities.push_back(child);
 
-        auto rel = world->GetComponent<Relationship>(child);
+        auto rel = world.GetComponent<Relationship>(child);
         if (rel == nullptr)
             break;
         child = rel->nextSibling;
@@ -397,7 +389,7 @@ void Scene::Update()
         sys->Update();
 #endif // ENABLE_PROFILING
 
-    m_bvhtree->renderer();
+    bvhtree.renderer();
 }
 
 void Scene::MarkChanged(TypeID typeID, Entity entity)

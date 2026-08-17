@@ -18,16 +18,12 @@
 
 void RenderSystem::Update()
 {
-    auto world = scene->world;
-
     SyncBVHBounds();
-
-    auto bvh = scene->GetBVHtree();
 
     {
         // ScopeTimer scope;
         // scope.start();
-        bvh->queryFrustumAABB(entities);
+        scene->bvhtree.queryFrustumAABB(entities);
         // double ms = scope.end();
         //
         // std::cout << std::fixed << std::setprecision(3) << "queryFrustumAABB: " << ms << std::endl;
@@ -35,10 +31,10 @@ void RenderSystem::Update()
 
     for (auto& entity : entities)
     {
-        if (!world->HasComponent<TransformWorld, MeshFilter, MeshRender>(entity))
+        if (!scene->world.HasComponent<TransformWorld, MeshFilter, MeshRender>(entity))
             continue;
 
-        auto&& [transform, meshFilter, meshRender] = world->GetComponents<TransformWorld, MeshFilter, MeshRender>(entity);
+        auto&& [transform, meshFilter, meshRender] = scene->world.GetComponents<TransformWorld, MeshFilter, MeshRender>(entity);
 
         if (meshRender == nullptr)
             continue;
@@ -86,8 +82,6 @@ void RenderSystem::SyncBVHBounds()
 
     Vector3 corners[8];
 
-    auto bvh = scene->GetBVHtree();
-
     for (auto& entity : entities)
     {
         GameObject gameObject(scene, entity);
@@ -134,7 +128,7 @@ void RenderSystem::SyncBVHBounds()
             bounds.min = worldMin;
             bounds.max = worldMax;
 
-            bvh->sync(renderBounds->id, bounds);
+            scene->bvhtree.sync(renderBounds->id, bounds);
         }
     }
 

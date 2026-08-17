@@ -145,14 +145,12 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         auto meshFilter = go.GetComponent<MeshFilter>();
         if (meshFilter->mesh != HANDLE_INVALID)
         {
-            auto bvh = m_scene->GetBVHtree();
-
             auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
             if (mesh != nullptr)
             {
                 auto& bounds = mesh->localBounds;
                 if (bounds.Volume() > 0.0f)
-                    go.AddComponent<RenderBounds>(bounds, bvh->insert(go.entity, bounds));
+                    go.AddComponent<RenderBounds>(bounds, m_scene->bvhtree.insert(go.entity, bounds));
             }
         }
     }

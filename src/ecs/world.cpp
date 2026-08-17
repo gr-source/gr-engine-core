@@ -10,8 +10,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <iostream>
-
 namespace engine::ecs
 {
 
@@ -243,7 +241,7 @@ detail::records world::Allocate(Entity entity, Signature mask)
 
     auto currentArchetype = GetArchetypeByID(currentRecord.archetype);
     if ((currentArchetype->mask & mask) == mask)
-        std::cout << "Has be" << std::endl;
+        return currentRecord;
 
     Signature newMask = currentArchetype->mask | mask;
 
@@ -266,8 +264,7 @@ detail::records world::Allocate(Entity entity, TypeID type)
 
     auto lastArcheType = GetArchetypeByID(rec.archetype);
     if ((lastArcheType->mask & mask) == mask)
-        std::cout << "Has be" << std::endl;
-        // return srcID;
+        return rec;
 
     ArchetypeID dstID = lastArcheType->addEdges(type);
     if (dstID == INVALID_ARCHETYPE)
@@ -547,7 +544,6 @@ engine::ecs::detail::records world::MoveEntity(engine::ecs::detail::records src_
 
         } else
         {
-            std::cout << "ss" << std::endl;
             ((void(*)(void*, const void*))(info->move))(dst_component, src_component);
         }
 

@@ -29,9 +29,10 @@ public:
 
     static Scene *GetCurrent();
 
-private:
-    static SceneManager* s_SceneManager;
+    SceneManager();
+    ~SceneManager();
 
+private:
     std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenemap;
 
     std::unordered_map<const Scene *, const std::string> m_scenenamemap;
@@ -40,8 +41,7 @@ private:
 
     Scene *m_current;
 
-    SceneManager();
-    ~SceneManager();
+    static SceneManager* s_SceneManager;
 
     Scene *create(const std::string &name);
 

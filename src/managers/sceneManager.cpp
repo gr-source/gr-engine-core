@@ -12,12 +12,18 @@ void SceneManager::Initialize()
 {
     if (s_SceneManager == nullptr)
         s_SceneManager = new SceneManager();
+
+    logger::info("[ SceneManager ] Initialize '0x%lX'.", s_SceneManager);
 }
 
 void SceneManager::Shutdown()
 {
     if (s_SceneManager != nullptr)
+    {
         delete s_SceneManager;
+
+        logger::info("[ SceneManager ] Shutdown '0x%lX'.", s_SceneManager);
+    }
     s_SceneManager = nullptr;
 }
 
@@ -58,26 +64,24 @@ Scene *SceneManager::GetCurrent()
 
 // ***** private ***** //
 SceneManager::SceneManager() : m_current(nullptr)
-{
-    logger::info("[ SceneManager ] Initialize '%p'.", this);
-}
+{}
 
 SceneManager::~SceneManager()
-{
-    logger::info("[ SceneManager ] Shutdown '%p'.", this);
-}
+{}
 
 Scene *SceneManager::create(const std::string &name)
 {
-    auto &&[it, added] = m_scenemap.emplace(name, std::make_unique<Scene>());
-    if (added)
-    {
-        m_sceneList.push_back(it->second.get());
+    m_scenemap[name] = std::make_unique<Scene>();
 
-        m_scenenamemap.emplace(it->second.get(), name);
-    }
+    auto scene = m_scenemap[name].get();
 
-    return it->second.get();
+    m_sceneList.push_back(scene);
+
+    m_scenenamemap.emplace(scene, name);
+
+    set_active(scene);
+
+    return scene;
 }
 
 Scene *SceneManager::find(const std::string &name)
@@ -109,13 +113,13 @@ void SceneManager::remove(Scene *scene)
 {
     auto it = m_scenenamemap.find(scene);
     if (it == m_scenenamemap.end())
+    {
         return;
-
-    m_sceneList.erase(std::remove(m_sceneList.begin(), m_sceneList.end(), scene), m_sceneList.end());
-    
-    m_scenemap.erase(it->second);
+    }
 
     m_scenenamemap.erase(it);
+    m_sceneList.erase(std::remove(m_sceneList.begin(), m_sceneList.end(), scene), m_sceneList.end());
+    m_scenemap.erase(it->second);
 }
 
 void SceneManager::set_active(Scene *scene)

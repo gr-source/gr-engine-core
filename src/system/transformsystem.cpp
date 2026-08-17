@@ -21,7 +21,6 @@ void TransformSystem::Update()
     if (!scene->Changed<TransformWorld>(entities))
         return;
 
-    BVHtree* bvh = scene->GetBVHtree();
     for (auto& entity : entities)
     {
         GameObject gameObject(scene, entity);
@@ -57,8 +56,6 @@ void TransformSystem::Update()
 
 bool TransformSystem::SyncTransform(const GameObject& gameObject, const Matrix4x4& parentMatrix) const
 {
-    auto bvh = scene->GetBVHtree();
-
     auto transform = gameObject.GetComponent<TransformWorld>();
     if (transform != nullptr)
         transform->world = parentMatrix * transform->local;

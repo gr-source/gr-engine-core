@@ -5,7 +5,7 @@
 #include "gr-base/ecs/type_id.hpp"
 #include "gr-base/ecs/world.hpp"
 
-#include "gr-base/spatial/default.hpp"
+#include "gr-base/spatial/bvhtree.hpp"
 
 #include <unordered_set>
 #include <string>
@@ -29,7 +29,8 @@ class ISystem;
 class Scene
 {
 public:
-    engine::ecs::world* world;
+    engine::ecs::world world;
+    BVHtree bvhtree;
 
     static Scene* GetCurrent();
 
@@ -57,11 +58,6 @@ public:
     void SetName(const std::string& name);
 
     std::string GetName() const;
-
-    inline BVHtree* GetBVHtree() const
-    {
-        return m_bvhtree;
-    }
 
     size_t GetEntityCount();
 
@@ -131,8 +127,6 @@ private:
     int writeIndex = 1;
 
     std::vector<ChangeSet> changes[2];
-
-    BVHtree* m_bvhtree;
 
     std::string m_name;
 

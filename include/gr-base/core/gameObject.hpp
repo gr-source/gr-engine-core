@@ -6,33 +6,26 @@
 
 struct GameObject
 {
-    engine::ecs::world* world;
-
     Scene* scene;
 
     Entity entity;
 
-    inline GameObject(Scene* scene, Entity entity) :
-        scene(scene), entity(entity), world(scene->world)
-    {}
+    GameObject(Scene* scene, Entity entity);
 
-    inline bool IsAlive() const
-    {
-        return world != nullptr && world->IsAlive(entity);
-    }
+    bool IsAlive() const;
 
     std::string GetName() const;
 
     template <typename T, typename... Args>
     inline T* AddComponent(Args&&... args)
     {
-        return world->AddComponent<T>(entity, std::forward<Args>(args)...);
+        return scene->world.AddComponent<T>(entity, std::forward<Args>(args)...);
     }
 
     template <typename T>
     inline T* GetComponent() const
     {
-        return world->GetComponent<T>(entity);
+        return scene->world.GetComponent<T>(entity);
     }
 
     template <typename T>
@@ -44,7 +37,7 @@ struct GameObject
     template <typename... Components>
     bool HasComponent() const
     {
-        return world->HasComponent<Components...>(entity);
+        return scene->world.HasComponent<Components...>(entity);
     }
 
     inline void* GetOrAddComponentByID(TypeID type)

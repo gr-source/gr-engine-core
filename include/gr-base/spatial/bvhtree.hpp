@@ -34,6 +34,12 @@ public:
     BVHtree();
     ~BVHtree();
 
+    BVHtree(const BVHtree&) = delete;
+    BVHtree& operator=(const BVHtree&) = delete;
+
+    BVHtree(BVHtree&&) = default;
+    BVHtree& operator=(BVHtree&&) = default;
+
     NodeID insert(Entity entity, const AABB &bounds);
 
     void remove(NodeID id);
