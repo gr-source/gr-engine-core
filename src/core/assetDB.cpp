@@ -4,6 +4,7 @@
 
 #include "gr-base/core/logger.hpp"
 
+#include "gr-base/file/fileStream.hpp"
 #include "gr-base/managers/eventManager.hpp"
 
 #include <cstring>
@@ -77,8 +78,32 @@ AssetDB::~AssetDB()
     logger::info("[ AssetDB ] Shutdown.");
 }
 
+#include <iostream>
 void AssetDB::load(Scheme_ scheme, const std::string &file)
 {
+    FileStream is(file, StreamType::INPUT);
+    
+    uint64_t count =
+        0;
+
+    if (!is.read(&count, sizeof(uint64_t)))
+        return;
+
+    std::vector<AssetInfo> infos(count);
+    if (!is.read(infos.data(), count * sizeof(AssetInfo)))
+        return;
+
+    is.close();
+
+    for (auto& info : infos)
+    {
+        URI uri = URI::parse(info.uri);
+        if (uri.scheme != scheme)
+            continue;
+
+        registry(info);
+    }
+    /*
     std::ifstream is(file);
     if (!is.is_open())
         return logger::error("[AssetDB] Fail in to load source '%s'.", strerror(errno));
@@ -94,8 +119,10 @@ void AssetDB::load(Scheme_ scheme, const std::string &file)
         int type;
 
         std::stringstream iss(line);
-        if (!(iss >> hash >> id >> path >> type))
+        if (!(iss >> hash >> id >> type >> path))
             continue;
+
+        std::cout << path << std::endl;
 
         URI uri = URI::parse(path);
         if (uri.scheme != scheme)
@@ -120,6 +147,7 @@ void AssetDB::load(Scheme_ scheme, const std::string &file)
 
         registry(info);
     }
+    */
 
     EventManager::Notify<AssetEventOnLoaded>(nullptr);
 
@@ -128,7 +156,7 @@ void AssetDB::load(Scheme_ scheme, const std::string &file)
 
 void AssetDB::save(Scheme_ scheme, const std::string &file)
 {
-    std::ofstream os(file);
+    std::vector<AssetInfo> buffer;
 
     const auto infos = m_spaseSet.data();
     for (size_t i=0;i<m_spaseSet.count();i++)
@@ -139,19 +167,31 @@ void AssetDB::save(Scheme_ scheme, const std::string &file)
         if (uri.scheme != scheme)
             continue;
 
-        os
-            << info.hash  << " "
-            << info.id    << " "
-            << info.uri  << " "
-            << static_cast<int>(info.type)
-            << std::endl;
+        buffer.push_back(info);
     }
+
+    FileStream os(file, StreamType::OUTPUT);
+
+    uint64_t count =
+        static_cast<uint64_t>(buffer.size());
+
+    if (!os.write(&count, sizeof(uint64_t)))
+        return;
+
+    if (!os.write(buffer.data(), count * sizeof(AssetInfo)))
+        return;
 
     os.close();
 }
 
 void AssetDB::registry(const AssetInfo& info)
 {
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (info.id >= m_nextID)
+            m_nextID = info.id + 1;
+    }
+
     URI uri = URI::parse(info.uri);
 
     m_spaseSet.insert(info.id, info);

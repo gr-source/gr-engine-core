@@ -77,8 +77,8 @@ AssetPtr<gr::texture> AssetsManager::LoadTexture(AssetID id)
     texture->width = asset.width;
     texture->height = asset.height;
 
-    texture->filter = TEXTURE_FILTER_LINEAR_MIPMAP;
-    texture->wrap = TEXTURE_WRAP_REPEAT;
+    texture->filter = TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR;
+    texture->wrap = TEXTURE_WRAP_MIRROR;
     texture->type = TEXTURE_TYPE_2D;
 
     switch (asset.channels)

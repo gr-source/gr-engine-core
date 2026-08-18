@@ -13,6 +13,8 @@ struct MaterialAsset : IAsset
 {
     std::unordered_map<std::string, std::vector<uint8_t>> overrides;
 
+    std::unordered_map<std::string, AssetID> textures;
+
     std::string name;
 
     AssetID shader;
@@ -21,6 +23,8 @@ struct MaterialAsset : IAsset
     void Set(const std::string& name, const T& data);
 
     void Set(const std::string& name, const void* data, size_t size);
+
+    void SetTexture(const std::string& name, AssetID assetID);
 
     template <typename T>
     T *Get(const std::string& name);

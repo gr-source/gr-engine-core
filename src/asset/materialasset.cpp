@@ -12,6 +12,12 @@ void MaterialAsset::Set(const std::string& name, const void* data, size_t size)
     memcpy(cache.data(), data, size);
 }
 
+
+void MaterialAsset::SetTexture(const std::string& name, AssetID assetID)
+{
+    textures[name] = assetID;
+}
+
 bool MaterialAsset::serialize(Stream* stream) const
 {
     if (!stream->write(name))
@@ -35,6 +41,21 @@ bool MaterialAsset::serialize(Stream* stream) const
 
         if (!stream->write(buffer.data(), length))
             return false;
+    }
+
+    uint64_t textureCount =
+        static_cast<uint64_t>(textures.size());
+
+    if (!stream->write(textureCount))
+        return false;
+
+    for (auto&& [name, assetID] : textures)
+    {
+        if (!stream->write(name))
+            break;
+
+        if (!stream->write(assetID))
+            break;
     }
 
     return true;
@@ -67,6 +88,25 @@ bool MaterialAsset::deserialize(Stream* stream)
             return false;
 
         overrides.emplace(name, buffer);
+    }
+
+    uint64_t textureCount =
+        0;
+
+    if (!stream->read(textureCount))
+        return false;
+
+    for (uint64_t i=0;i<textureCount;i++)
+    {
+        std::string name;
+        if (!stream->read(name))
+            break;
+
+        AssetID assetID;
+        if (!stream->read(assetID))
+            break;
+
+        SetTexture(name, assetID);
     }
 
     return true;

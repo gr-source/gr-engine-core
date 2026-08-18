@@ -50,7 +50,7 @@ void ForwardPipeline::Initialize()
     m_ldr->wrap =
         TEXTURE_WRAP_REPEAT;
     m_ldr->format =
-        TEXTURE_FORMAT_RGBA;
+        TEXTURE_FORMAT_RGBA8;
 
     m_ldr->bind();
     m_ldr->applyTextureSettings();
