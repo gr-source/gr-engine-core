@@ -26,12 +26,12 @@ void AssetDB::Shutdown()
     s_AssetDB = nullptr;
 }
 
-void AssetDB::Load(Scheme scheme, const std::string &file)
+void AssetDB::Load(Scheme_ scheme, const std::string &file)
 {
     s_AssetDB->load(scheme, file);
 }
 
-void AssetDB::Save(Scheme scheme, const std::string &file)
+void AssetDB::Save(Scheme_ scheme, const std::string &file)
 {
     s_AssetDB->save(scheme, file);
 }
@@ -77,7 +77,7 @@ AssetDB::~AssetDB()
     logger::info("[ AssetDB ] Shutdown.");
 }
 
-void AssetDB::load(Scheme scheme, const std::string &file)
+void AssetDB::load(Scheme_ scheme, const std::string &file)
 {
     std::ifstream is(file);
     if (!is.is_open())
@@ -126,7 +126,7 @@ void AssetDB::load(Scheme scheme, const std::string &file)
     is.close();
 }
 
-void AssetDB::save(Scheme scheme, const std::string &file)
+void AssetDB::save(Scheme_ scheme, const std::string &file)
 {
     std::ofstream os(file);
 

@@ -29,9 +29,9 @@ public:
 
     static void Shutdown();
 
-    static void Load(Scheme scheme, const std::string &file);
+    static void Load(Scheme_ scheme, const std::string &file);
 
-    static void Save(Scheme scheme, const std::string &file);
+    static void Save(Scheme_ scheme, const std::string &file);
 
     static void Registry(const AssetInfo& info);
 
@@ -59,9 +59,9 @@ private:
     AssetDB();
     ~AssetDB();
 
-    void load(Scheme scheme, const std::string &file);
+    void load(Scheme_ scheme, const std::string &file);
 
-    void save(Scheme scheme, const std::string &file);
+    void save(Scheme_ scheme, const std::string &file);
 
     void registry(const AssetInfo& info);
 

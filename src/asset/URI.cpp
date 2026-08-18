@@ -7,9 +7,9 @@ std::string URI::toString() const
     std::string result;
     switch (scheme)
     {
-        case Scheme::Engine:  result += "engine"; break;
-        case Scheme::Project: result += "project"; break;
-        case Scheme::Mod:     result += "mod"; break;
+        case Scheme_Engine:  result += "engine"; break;
+        case Scheme_Project: result += "project"; break;
+        case Scheme_Mod:     result += "mod"; break;
         default:
             throw std::runtime_error("Unknown scheme enum");
     }
@@ -28,9 +28,9 @@ URI URI::parse(const std::string& uri)
     std::string schemeStr = uri.substr(0, start);
     result.path = uri.substr(start + 3);
 
-    if (schemeStr == "engine") result.scheme = Scheme::Engine;
-    else if (schemeStr == "project") result.scheme = Scheme::Project;
-    else if (schemeStr == "mod") result.scheme = Scheme::Mod;
+    if (schemeStr == "engine") result.scheme = Scheme_Engine;
+    else if (schemeStr == "project") result.scheme = Scheme_Project;
+    else if (schemeStr == "mod") result.scheme = Scheme_Mod;
     else
         throw std::runtime_error("Unknown scheme: " + schemeStr);
 

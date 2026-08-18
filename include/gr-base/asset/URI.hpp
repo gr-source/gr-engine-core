@@ -2,17 +2,17 @@
 
 #include <string>
 
-enum Scheme
+enum Scheme_
 {
-    Engine,
-    Project,
-    Mod,
-    Count
+    Scheme_Engine,
+    Scheme_Project,
+    Scheme_Mod,
+    Scheme_Count
 };
 
 struct URI
 {
-    Scheme scheme;
+    Scheme_ scheme;
     std::string path;
 
     std::string toString() const;

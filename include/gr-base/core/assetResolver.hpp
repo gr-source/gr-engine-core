@@ -14,7 +14,7 @@ public:
     static void Shutdown();
 
     template <typename T, typename... Args>
-    static void Registry(Scheme scheme, Args&&...args);
+    static void Registry(Scheme_ scheme, Args&&...args);
 
     static std::string Resolve(const std::string& uri);
 
@@ -23,14 +23,14 @@ public:
 private:
     static AssetResolver* gAssetResolver;
 
-    std::shared_ptr<IAssetProvider> m_providers[Scheme::Count];
+    std::shared_ptr<IAssetProvider> m_providers[Scheme_Count];
 
     std::string resolve(const URI& uri);
 };
 
 
 template <typename T, typename... Args>
-inline void AssetResolver::Registry(Scheme scheme, Args&&...args)
+inline void AssetResolver::Registry(Scheme_ scheme, Args&&...args)
 {
     gAssetResolver->m_providers[scheme] = std::make_shared<T>(std::forward<Args>(args)...);
 }

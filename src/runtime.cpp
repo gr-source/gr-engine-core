@@ -27,12 +27,12 @@ class EngineFileProvider : public IAssetProvider
 public:
     EngineFileProvider()
     {
-        AssetDB::Load(Scheme::Engine, gfile::get_data_directory() + "/asset.db");
+        AssetDB::Load(Scheme_Engine, gfile::get_data_directory() + "/asset.db");
     }
 
     ~EngineFileProvider()
     {
-        AssetDB::Save(Scheme::Engine, gfile::get_data_directory() + "/asset.db");
+        AssetDB::Save(Scheme_Engine, gfile::get_data_directory() + "/asset.db");
     }
 
     std::string resolve(const std::string& path) override
@@ -70,7 +70,7 @@ void Runtime::initialize()
 
     AssetResolver::Initialize();
 
-    AssetResolver::Registry<EngineFileProvider>(Scheme::Engine);
+    AssetResolver::Registry<EngineFileProvider>(Scheme_Engine);
 }
 
 void Runtime::shutdown()
