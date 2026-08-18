@@ -73,6 +73,8 @@ public:
 
     void Update();
 
+    void Render();
+
     template <typename T>
     inline void MarkChanged(Entity entity)
     {

@@ -2,6 +2,8 @@
 
 #include "gr-base/ecs/type_traits.hpp"
 
+#include <gr-render/color.hpp>
+
 #include <gr-math/gmath.hpp>
 
 enum class LightType : int
@@ -15,7 +17,7 @@ struct Light
 {
     LightType type = LightType::eDirection;
 
-    Color color = COLOR_WHITE;
+    Color color = Color::White();
 
     float attenuationConstant = 1.0f;
     float attenuationLinear = 0.70f;

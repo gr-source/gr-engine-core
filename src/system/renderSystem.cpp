@@ -19,15 +19,11 @@
 void RenderSystem::Update()
 {
     SyncBVHBounds();
+}
 
-    {
-        // ScopeTimer scope;
-        // scope.start();
-        scene->bvhtree.queryFrustumAABB(entities);
-        // double ms = scope.end();
-        //
-        // std::cout << std::fixed << std::setprecision(3) << "queryFrustumAABB: " << ms << std::endl;
-    }
+void RenderSystem::Render()
+{
+    scene->bvhtree.queryFrustumAABB(entities);
 
     for (auto& entity : entities)
     {

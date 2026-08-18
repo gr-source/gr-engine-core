@@ -3,9 +3,9 @@
 #include "gr-base/core/default.hpp"
 #include "gr-base/render/pipeline/renderPass.hpp"
 
-#include <gr-math/color.h>
 #include <gr-render/gRender.h>
 #include <gr-render/texture.hpp>
+#include <gr-render/color.hpp>
 #include <gr-render/gl.h>
 
 void RenderGraph::Execute()
@@ -23,7 +23,7 @@ void RenderGraph::Execute()
             // gr::gRender::SetEnable(GR_FRAMEBUFFER_SRGB, true);
 
             // gr::gRender::SetViewport(viewport.data);
-            gr::gRender::SetBackgroundColor(Color{0.5f, 0.5f, 0.5f, 1.0f}.data);
+            gr::gRender::SetBackgroundColor(Color::Black());
 
             if (pass->clearColor || pass->clearDepth)
             {

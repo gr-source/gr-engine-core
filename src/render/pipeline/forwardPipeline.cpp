@@ -1,11 +1,10 @@
 #include "gr-base/render/pipeline/forwardPipeline.hpp"
 
 #include "gr-base/managers/assetsManager.hpp"
-#include "gr-base/managers/renderTargetManager.hpp"
+
 #include "gr-base/render/pipeline/debugPass.hpp"
 #include "gr-base/render/pipeline/scenePass.hpp"
 #include "gr-base/render/pipeline/toneMappingPass.hpp"
-#include <gr-math/color.h>
 
 AssetPtr<gr::texture> ForwardPipeline::GetTextureOutput() const
 {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gr-render/color.hpp>
+
 #include <gr-math/gmath.hpp>
 
 typedef struct DebugVertex

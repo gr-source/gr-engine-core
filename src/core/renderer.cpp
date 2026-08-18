@@ -108,24 +108,24 @@ Renderer::~Renderer()
 
 void Renderer::beginFrame()
 {
-    RendererStats::InstanceCount = m_renderables.size();
+    RendererStats::InstanceCount = 0;
     RendererStats::TriangleCount = 0;
 
+    m_renderables.clear();
+    m_commands.clear();
+}
+
+void Renderer::endFrame()
+{
+}
+
+void Renderer::render()
+{
     if (m_renderables.size() >= m_metrices.size())
         m_metrices.resize(m_renderables.size() + 1, type_traits<Matrix4x4>::identity);
 
     sorting();
 
-    m_renderables.clear();
-}
-
-void Renderer::endFrame()
-{
-    m_commands.clear();
-}
-
-void Renderer::render()
-{
     glBindVertexArray(0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

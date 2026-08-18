@@ -8,9 +8,9 @@
 // #include "gr-base/ecs/default.hpp"
 
 #include <gr-render/default.hpp>
+#include <gr-render/rect.hpp>
 
 #include <gr-math/gmath.hpp>
-#include <gr-math/rect.h>
 
 struct Camera
 {

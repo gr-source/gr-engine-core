@@ -353,6 +353,12 @@ void Scene::Update()
     for (auto& sys : m_systems)
         sys->Update();
 #endif // ENABLE_PROFILING
+}
+
+void Scene::Render()
+{
+    for (auto& sys : m_systems)
+        sys->Render();
 
     bvhtree.renderer();
 }
