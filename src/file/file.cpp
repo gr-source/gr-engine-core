@@ -168,30 +168,25 @@ bool gfile::move(const char* src_path, const char* dest_path)
     return remove(src_path);
 }
 
-bool gfile::copy(const char* src_path, const char* dest_path)
+bool gfile::copy(const std::string& src, const std::string& dst)
 {
-    if (gfile::is_directory(src_path))
+    if (!gfile::exists(src))
+        return false;
+
+    if (gfile::is_directory(src))
     {
-        if (!gfile::exists(dest_path))
-            gfile::create_directory(dest_path);
+        if (!gfile::exists(dst))
+            gfile::create_directory(dst);
 
-        for (auto& entry : std::filesystem::directory_iterator(src_path))
+        for (auto& entry : std::filesystem::directory_iterator(src))
         {
-            char path[512];
-            sprintf(path, "%s/%s", dest_path, entry.path().filename().c_str());
+            std::string current_dst = dst + "/" + entry.path().filename().string();
 
-            if (entry.is_directory())
-            {
-                if (!copy(entry.path().c_str(), path))
-                    break;
-            } else
-            {
-                std::filesystem::copy_file(entry, path);
-            }
+            copy(entry.path().c_str(), current_dst);
         }
     } else
     {
-        std::filesystem::copy_file(src_path, dest_path);
+        std::filesystem::copy_file(src, dst);
     }
     return true;
 }

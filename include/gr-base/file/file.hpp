@@ -33,7 +33,7 @@ namespace gfile
 
     bool move(const char* src_path, const char* dest_path);
 
-    bool copy(const char* src_path, const char* dest_path);
+    bool copy(const std::string& src, const std::string& dst);
 
     uint8_t* read(const char* file, size_t *length);
 };
