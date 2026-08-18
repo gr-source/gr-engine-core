@@ -98,8 +98,6 @@ public:
 
     static bool ImportAssetFromFile(const std::string& file, IAsset* asset);
 
-    static Material LoadMaterialFromFile(const std::string& file);
-
     static Handle FindHandleInCache(AssetID id);
 
     static AssetID FindAssetIDInCacheMaterial(Handle handle);

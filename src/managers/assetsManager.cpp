@@ -213,73 +213,6 @@ Mesh *AssetsManager::GetMesh(MeshHandle h)
     return s_AssetsManager->mMeshManager->get(h);
 }
 
-/*
-void AssetsManager::SetAnimationList(const std::string &path, const std::function<void (Animation *)> func)
-{
-    std::lock_guard<std::mutex> lock(mAnimationMutex);
-    
-    // check task is processing
-    {
-        auto it = mAnimationLoadTask.find(path);
-        if (it != mAnimationLoadTask.end())
-        {
-            if (func == nullptr)
-                return;
-
-            return it->second->addFunction(func);
-        }
-    }
-
-    // check animation has be loaded
-    {
-        auto it = mAnimationList.find(path);
-        if (it != mAnimationList.end())
-        {
-            if (func == nullptr)
-                return;
-            
-            return func(&(*it->second));
-        }
-    }
-
-    if (!File::Exists(path))
-    {
-        return Console::LogError("[ AssetsManager::Animation ] Fail to load, file do not found: %s", path.c_str());
-    }
-
-    mAnimationLoadTask.emplace(path, std::make_unique<AnimationLoadTask>(path, func));
-}
-
-Animation *AssetsManager::CreateAnimation(const std::string &name)
-{
-    return mAnimationManager.create(name);
-}
-
-Animation *AssetsManager::FindAnimation(const std::string &name)
-{
-    return mAnimationManager.find(name);
-}
-
-std::string AssetsManager::GetAnimationName(const Animation *animation)
-{
-    auto name = mAnimationManager.get_name(animation);
-    return name == nullptr ? "" : name;
-}
-*/
-/*
-std::vector<gr::gShader *> AssetsManager::GetShaderList(AssetShader_ type, ShaderOptimize_ optimize)
-{
-    return s_AssetsManager->mShaderManager.get_shader(type, optimize);
-}
-*/
-
-/*
-std::vector<gr::Shader *> AssetsManager::GetShaderList(ShaderType type)
-{
-    return s_AssetsManager->mShaderManager.get_shader(type);
-}
-*/
-
 AssetPtr<Material> AssetsManager::LoadMaterial(AssetID id)
 {
     MaterialHandle h = s_AssetsManager->findHandleInCache(id);
@@ -288,21 +221,36 @@ AssetPtr<Material> AssetsManager::LoadMaterial(AssetID id)
 
     auto info = AssetDB::GetAsset(id);
     if (info == nullptr)
-        throw std::runtime_error("Asset not found");
+        throw std::runtime_error("asset not found");
 
     auto path = AssetResolver::Resolve(info->uri) + HEADER_MATERIAL_EXTENSION;
     if (!gfile::exists(path))
-        throw std::runtime_error("File not found");
+        throw std::runtime_error("file not found");
 
-    Material material = LoadMaterialFromFile(path);
+    MaterialAsset asset;
+    if (!ImportAssetFromFile(path, &asset))
+        throw std::runtime_error("invalid binary");
 
-    auto ptr = CreateMaterial();
-    *GetMaterial(ptr.handle) = std::move(material);
+    auto material =
+        CreateMaterial();
 
-    s_AssetsManager->addInCache(id, ptr.handle);
-    s_AssetsManager->mMaterialManager->addInCache(id, ptr.handle);
+    ShaderPrefab* prefab = FindShader(asset.shader);
+    if (prefab == nullptr)
+        prefab = LoadShader(asset.shader);
 
-    return ptr;
+    material->prefab = prefab;
+
+    for (auto&& [name, buffer] : asset.overrides)
+        material->Set(name, buffer.data(), buffer.size());
+
+    for (auto&&[name, assetID] : asset.textures)
+    {
+    }
+
+    s_AssetsManager->addInCache(id, material.handle);
+    s_AssetsManager->mMaterialManager->addInCache(id, material.handle);
+
+    return material;
 }
 
 AssetPtr<Material> AssetsManager::CreateMaterial()
@@ -362,28 +310,6 @@ bool AssetsManager::ImportAssetFromFile(const std::string& file, IAsset* asset)
         return false;
 
     return asset->deserialize(&stream);
-}
-
-Material AssetsManager::LoadMaterialFromFile(const std::string& file)
-{
-    MaterialAsset asset;
-    if (!LoadFromFile(file, HEADER_MATERIAL_SIGN, [&](Stream* stream)
-            {
-                return asset.deserialize(stream);
-            }))
-        throw std::runtime_error("[ AssetsManager ] Material load failed: " + file);
-
-    ShaderPrefab* prefab = FindShader(asset.shader);
-    if (prefab == nullptr)
-        prefab = LoadShader(asset.shader);
-
-    Material material;
-    material.prefab = prefab;
-
-    for (auto&& [name, buffer] : asset.overrides)
-        material.Set(name, buffer.data(), buffer.size());
-
-    return material;
 }
 
 Handle AssetsManager::FindHandleInCache(AssetID id)

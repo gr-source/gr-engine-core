@@ -360,7 +360,7 @@ void Scene::Render()
     for (auto& sys : m_systems)
         sys->Render();
 
-    bvhtree.renderer();
+    // bvhtree.renderer();
 }
 
 void Scene::MarkChanged(TypeID typeID, Entity entity)
