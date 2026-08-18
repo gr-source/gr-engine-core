@@ -12,7 +12,33 @@ public:
     AssetPtr(Handle h) : handle(h) {}
 
     T* get();
-    T* operator->();
+
+    const T* get() const;
+
+    T* operator->()
+    {
+        return get();
+    }
+
+    const T* operator->() const
+    {
+        return get();
+    }
+
+    T& operator*()
+    {
+        return *get();
+    }
+
+    const T& operator*() const
+    {
+        return *get();
+    }
+
+    explicit operator bool() const
+    {
+        return get() != nullptr;
+    }
 };
 
 

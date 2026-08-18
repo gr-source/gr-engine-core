@@ -106,7 +106,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
             auto mesh =
                 AssetsManager::LoadMesh(asset->mesh);
 
-            if (mesh.get())
+            if (mesh)
             {
                 auto meshFilter = go.GetOrAddComponent<MeshFilter>();
                 meshFilter->mesh = mesh.handle;
@@ -148,7 +148,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
             auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
             if (mesh != nullptr)
             {
-                auto& bounds = mesh->localBounds;
+                auto bounds = Mesh_CalculateBounds(mesh);
                 if (bounds.Volume() > 0.0f)
                     go.AddComponent<RenderBounds>(bounds, m_scene->bvhtree.insert(go.entity, bounds));
             }

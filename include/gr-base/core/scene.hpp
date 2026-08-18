@@ -43,18 +43,6 @@ public:
 
     void destroy(Entity entity);
 
-    void select(Handle id);
-
-    void deselect(Handle id);
-
-    void deselect_all();
-
-    bool has_object_selected() const;
-
-    bool object_has_been_selected(Entity id) const;
-
-    std::vector<Handle> get_object_selected() const;
-
     void SetName(const std::string& name);
 
     std::string GetName() const;
@@ -119,10 +107,6 @@ public:
     std::vector<TypeID> GetSystemIDs() const;
 
 private:
-    std::unordered_set<Handle> u_object_has_been_selected;
-
-    std::vector<Entity> v_object_selected_list;
-
     int readIndex = 0;
     int writeIndex = 1;
 

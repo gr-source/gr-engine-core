@@ -187,9 +187,6 @@ AssetPtr<Mesh> AssetsManager::LoadMesh(AssetID id)
         submesh.indexCount = assetSubmesh.indexCount;
     }
 
-    mesh->localBounds =
-        Mesh_CalculateBounds(mesh.get());
-
     s_AssetsManager->addInCache(id, mesh.handle);
     s_AssetsManager->mMeshManager->addInCache(id, mesh.handle);
 

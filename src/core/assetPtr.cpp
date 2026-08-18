@@ -12,9 +12,9 @@ gr::texture* AssetPtr<gr::texture>::get()
 }
 
 template <>
-gr::texture* AssetPtr<gr::texture>::operator->()
+const gr::texture* AssetPtr<gr::texture>::get() const
 {
-    return get();
+    return AssetsManager::GetTexture(handle);
 }
 
 // ===== Texture ===== //
@@ -25,9 +25,9 @@ Mesh* AssetPtr<Mesh>::get()
 }
 
 template <>
-Mesh* AssetPtr<Mesh>::operator->()
+const Mesh* AssetPtr<Mesh>::get() const
 {
-    return get();
+    return AssetsManager::GetMesh(handle);
 }
 
 // ===== Material ===== //
@@ -38,9 +38,9 @@ Material* AssetPtr<Material>::get()
 }
 
 template <>
-Material* AssetPtr<Material>::operator->()
+const Material* AssetPtr<Material>::get() const
 {
-    return get();
+    return AssetsManager::GetMaterial(handle);
 }
 
 

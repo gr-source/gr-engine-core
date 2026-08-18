@@ -162,41 +162,6 @@ void Scene::destroy(Entity entity)
 }
 
 // ********** public ********** //
-void Scene::select(Handle id)
-{
-    v_object_selected_list.push_back(id);
-
-    u_object_has_been_selected.emplace(id);
-}
-
-void Scene::deselect(Handle id)
-{
-    v_object_selected_list.erase(std::remove(v_object_selected_list.begin(), v_object_selected_list.end(), id), v_object_selected_list.end());
-
-    u_object_has_been_selected.erase(id);
-}
-
-void Scene::deselect_all()
-{
-    v_object_selected_list.clear();
-    u_object_has_been_selected.clear();
-}
-
-bool Scene::has_object_selected() const
-{
-    return !v_object_selected_list.empty();
-}
-
-bool Scene::object_has_been_selected(Handle id) const
-{
-    return u_object_has_been_selected.find(id) != u_object_has_been_selected.end();
-}
-
-std::vector<Handle> Scene::get_object_selected() const
-{
-    return v_object_selected_list;
-}
-
 void Scene::SetName(const std::string& name)
 {
     m_name = name;
@@ -389,7 +354,7 @@ void Scene::Update()
         sys->Update();
 #endif // ENABLE_PROFILING
 
-    bvhtree.renderer();
+    // bvhtree.renderer();
 }
 
 void Scene::MarkChanged(TypeID typeID, Entity entity)

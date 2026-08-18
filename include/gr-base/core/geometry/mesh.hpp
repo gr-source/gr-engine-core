@@ -2,8 +2,9 @@
 
 #include "gr-base/core/geometry/vertex3D.hpp"
 
-#include <gr-math/aabb.hpp>
 #include <gr-render/vertex_array.hpp>
+
+#include <gr-math/aabb.hpp>
 
 typedef struct GPUMesh
 {
@@ -32,12 +33,6 @@ struct Mesh
 
     Submesh* submeshes = nullptr;
     size_t numSubmeshes = 0;
-
-    AABB localBounds =
-        {
-            type_traits<Vector3>::zero,
-            type_traits<Vector3>::zero
-        };
 
     GPUMesh gpuMesh;
 
