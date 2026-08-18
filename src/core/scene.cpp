@@ -354,7 +354,7 @@ void Scene::Update()
         sys->Update();
 #endif // ENABLE_PROFILING
 
-    // bvhtree.renderer();
+    bvhtree.renderer();
 }
 
 void Scene::MarkChanged(TypeID typeID, Entity entity)

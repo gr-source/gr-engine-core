@@ -22,11 +22,13 @@ public:
     void compile();
 
 private:
-    std::unordered_map<Handle, RenderTarget> m_cacheRenderTarget;
+    std::unordered_map<Handle, uint32_t> m_cacheRenderTarget;
 
-    std::vector<std::tuple<RenderTarget, std::shared_ptr<IRenderPass>>> passes;
+    std::vector<std::shared_ptr<IRenderPass>> passes;
 
-    RenderTarget Create(AssetPtr<gr::texture> color, AssetPtr<gr::texture> depth);
+    uint32_t GetOrCreateFrameBuffer(uint64_t hash);
+
+    uint32_t CreateFrameBuffer(const std::vector<AssetPtr<gr::texture>>& attachments, AssetPtr<gr::texture> depth);
 
     void Set(std::shared_ptr<IRenderPass> pass);
 };

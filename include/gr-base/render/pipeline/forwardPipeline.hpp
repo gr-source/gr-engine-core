@@ -16,6 +16,8 @@ public:
 private:
     AssetPtr<gr::texture> m_hdr;
 
+    AssetPtr<gr::texture> m_ldr;
+
     AssetPtr<gr::texture> m_depth;
 
     // AssetPtr<gr::texture> m_output;

@@ -99,7 +99,9 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
     auto&& [fragment, vertex, definations, shaderType] = ReadingSourceFileShader();
 
     ShaderAssetFlags_ flags = ShaderAssetFlags_Shader3D;
-    if (shaderType == ShaderType::LINE)
+    if (shaderType == ShaderType::SHADER2D)
+        flags = ShaderAssetFlags_Shader2D;
+    else if (shaderType == ShaderType::LINE)
         flags |= ShaderAssetFlags_Line;
 
     asset.flags = flags;

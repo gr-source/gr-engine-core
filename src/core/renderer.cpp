@@ -96,7 +96,6 @@ Renderer::Renderer()
     vertexarray->AddVertexBuffer(vbo);
 
     vertexarray->Unbind();
-    vbo->Unbind();
 
     fullScreenQuad.vao = vertexarray;
     fullScreenQuad.vbo = vbo;

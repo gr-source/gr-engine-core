@@ -26,14 +26,14 @@ void AssetDB::Shutdown()
     s_AssetDB = nullptr;
 }
 
-void AssetDB::Load(const std::string &file)
+void AssetDB::Load(Scheme scheme, const std::string &file)
 {
-    s_AssetDB->load(file);
+    s_AssetDB->load(scheme, file);
 }
 
-void AssetDB::Save(const std::string &file)
+void AssetDB::Save(Scheme scheme, const std::string &file)
 {
-    s_AssetDB->save(file);
+    s_AssetDB->save(scheme, file);
 }
 
 void AssetDB::Registry(const AssetInfo& info)
@@ -77,7 +77,7 @@ AssetDB::~AssetDB()
     logger::info("[ AssetDB ] Shutdown.");
 }
 
-void AssetDB::load(const std::string &file)
+void AssetDB::load(Scheme scheme, const std::string &file)
 {
     std::ifstream is(file);
     if (!is.is_open())
@@ -95,6 +95,10 @@ void AssetDB::load(const std::string &file)
 
         std::stringstream iss(line);
         if (!(iss >> hash >> id >> path >> type))
+            continue;
+
+        URI uri = URI::parse(path);
+        if (uri.scheme != scheme)
             continue;
 
         AssetInfo info;
@@ -122,7 +126,7 @@ void AssetDB::load(const std::string &file)
     is.close();
 }
 
-void AssetDB::save(const std::string &file)
+void AssetDB::save(Scheme scheme, const std::string &file)
 {
     std::ofstream os(file);
 
@@ -130,6 +134,10 @@ void AssetDB::save(const std::string &file)
     for (size_t i=0;i<m_spaseSet.count();i++)
     {
         AssetInfo& info = infos[i];
+
+        URI uri = URI::parse(info.uri);
+        if (uri.scheme != scheme)
+            continue;
 
         os
             << info.hash  << " "

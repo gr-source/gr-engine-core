@@ -14,12 +14,17 @@ DebugPass::DebugPass(
 
 void DebugPass::Setup(RenderGraphBuild& build)
 {
-    build.color = m_hdr.handle;
-    build.depth = m_depth.handle;
+    build.write.push_back(m_hdr.handle);
+    build.read.push_back(m_depth.handle);
+
+    build.AddColorAttachment(m_hdr);
+    build.SetDepthAttachment(m_depth);
 }
 
 void DebugPass::Execute()
 {
+    // gr::gRender::SetEnable(GR_DEPTH, false);
+
     glBindVertexArray(0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

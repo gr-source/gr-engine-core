@@ -9,6 +9,10 @@
 class AssetResolver
 {
 public:
+    static void Initialize();
+
+    static void Shutdown();
+
     template <typename T, typename... Args>
     static void Registry(Scheme scheme, Args&&...args);
 
@@ -17,7 +21,7 @@ public:
     static std::string Resolve(const URI& uri);
 
 private:
-    static AssetResolver& GetInstance();
+    static AssetResolver* gAssetResolver;
 
     std::shared_ptr<IAssetProvider> m_providers[Scheme::Count];
 
@@ -28,7 +32,7 @@ private:
 template <typename T, typename... Args>
 inline void AssetResolver::Registry(Scheme scheme, Args&&...args)
 {
-    GetInstance().m_providers[scheme] = std::make_shared<T>(std::forward<Args>(args)...);
+    gAssetResolver->m_providers[scheme] = std::make_shared<T>(std::forward<Args>(args)...);
 }
 
 

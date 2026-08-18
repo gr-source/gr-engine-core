@@ -2,21 +2,31 @@
 
 #include <stdexcept>
 
+AssetResolver* AssetResolver::gAssetResolver =
+    nullptr;
+
 // public
+void AssetResolver::Initialize()
+{
+    if (gAssetResolver == nullptr)
+        gAssetResolver = new AssetResolver();
+}
+
+void AssetResolver::Shutdown()
+{
+    if (gAssetResolver != nullptr)
+        delete gAssetResolver;
+    gAssetResolver = nullptr;
+}
+
 std::string AssetResolver::Resolve(const URI& uri)
 {
-    return GetInstance().resolve(uri);
+    return gAssetResolver->resolve(uri);
 }
 
 std::string AssetResolver::Resolve(const std::string& uri)
 {
-    return GetInstance().resolve(URI::parse(uri));
-}
-
-AssetResolver& AssetResolver::GetInstance()
-{
-    static AssetResolver s_AssetResolver;
-    return s_AssetResolver;
+    return gAssetResolver->resolve(URI::parse(uri));
 }
 
 std::string AssetResolver::resolve(const URI& uri)

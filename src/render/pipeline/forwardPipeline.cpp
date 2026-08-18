@@ -4,11 +4,12 @@
 #include "gr-base/managers/renderTargetManager.hpp"
 #include "gr-base/render/pipeline/debugPass.hpp"
 #include "gr-base/render/pipeline/scenePass.hpp"
+#include "gr-base/render/pipeline/toneMappingPass.hpp"
 #include <gr-math/color.h>
 
 AssetPtr<gr::texture> ForwardPipeline::GetTextureOutput() const
 {
-    return m_hdr;
+    return m_ldr;
 }
 
 void ForwardPipeline::Initialize()
@@ -35,6 +36,28 @@ void ForwardPipeline::Initialize()
     m_hdr->applyTextureBuffer(nullptr);
     m_hdr->unbind();
 
+    m_ldr =
+        AssetsManager::CreateTexture();
+
+    m_ldr->width =
+        512;
+    m_ldr->height =
+        512;
+
+    m_ldr->type =
+        TEXTURE_TYPE_2D;
+    m_ldr->filter =
+        TEXTURE_FILTER_LINEAR;
+    m_ldr->wrap =
+        TEXTURE_WRAP_REPEAT;
+    m_ldr->format =
+        TEXTURE_FORMAT_RGBA;
+
+    m_ldr->bind();
+    m_ldr->applyTextureSettings();
+    m_ldr->applyTextureBuffer(nullptr);
+    m_ldr->unbind();
+
     m_depth =
         AssetsManager::CreateTexture();
 
@@ -59,11 +82,10 @@ void ForwardPipeline::Initialize()
 
     graph.add<ScenePass>(m_hdr, m_depth);
     graph.add<DebugPass>(m_hdr, m_depth);
+    graph.add<ToneMappingPass>(m_hdr, m_ldr);
 
     graph.compile();
 }
-
-#include <gr-render/gRender.h>
 
 void ForwardPipeline::Execute()
 {
