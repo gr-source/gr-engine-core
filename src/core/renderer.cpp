@@ -54,7 +54,7 @@ void Renderer::Submit(
         const Matrix4x4* matrice)
 {
     uint64_t sortKey =
-          (uint64_t)handle_get_first(material) << 36
+          (uint64_t)handle_get_first(material) << 32
         | (uint64_t)handle_get_first(mesh) << 8
         | (uint64_t)submesh;
     
@@ -112,7 +112,7 @@ void Renderer::beginFrame()
     RendererStats::TriangleCount = 0;
 
     m_renderables.clear();
-    m_commands.clear();
+    // m_commands.clear();
 }
 
 void Renderer::endFrame()
@@ -124,88 +124,16 @@ void Renderer::render()
     if (m_renderables.size() >= m_metrices.size())
         m_metrices.resize(m_renderables.size() + 1, type_traits<Matrix4x4>::identity);
 
-    sorting();
-
     glBindVertexArray(0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     gr::gRender::SetDepthFunc(GR_DEPTH_FUNC_LESS);
-    draw();
+    flush();
 }
 
-void Renderer::draw()
-{
-    Material* lastMaterial = nullptr;
-    gr::shader* lastShader = nullptr;
-    gr::vertex_array* lastVao = nullptr;
-
-    UniformID model = 0;
-
-    for (auto &&[material, shader, vao, pbo, instances, instanceCount, indexCount, indexOffset] : m_commands)
-    {
-        if (vao != lastVao)
-        {
-            vao->Bind();
-            lastVao = vao;
-        }
-
-        if (lastShader != shader)
-        {
-            shader->bind();
-
-            model = GR_INVALID_ID;
-
-            if (instanceCount == 1)
-                model = shader->findUniform("u_mat_model");
-
-            lastShader = shader;
-        }
-
-        if (material != lastMaterial)
-        {
-            material->Flush();
-            lastMaterial = material;
-        }
-
-        if (instanceCount > 1)
-        {
-            pbo->Bind();
-
-            pbo->SetData(
-                instances,
-                instanceCount * sizeof(Matrix4x4));
-
-            glDrawElementsInstanced(
-                GL_TRIANGLES,
-                indexCount,
-                GL_UNSIGNED_INT,
-                (void*)(indexOffset),
-                (GLsizei)instanceCount);
-        }
-        else
-        {
-            if (model != GR_INVALID_ID)
-                shader->SetUniform(
-                    model,
-                    instances);
-
-            glDrawElements(
-                GL_TRIANGLES,
-                indexCount,
-                GL_UNSIGNED_INT,
-                (void*)(indexOffset));
-        }
-
-        RendererStats::TriangleCount +=
-            (indexCount / 3) * instanceCount;
-
-        // RendererStats::DrawCallCount++;
-    }
-}
-
-void Renderer::sorting()
+void Renderer::flush()
 {
     std::sort(m_renderables.begin(), m_renderables.end(),
     [](const Renderable& a, const Renderable& b)
@@ -213,9 +141,13 @@ void Renderer::sorting()
         return a.sortKey < b.sortKey;
     });
 
-    Mesh* mesh = nullptr;
+    MeshHandle lastMesh =
+        HANDLE_INVALID;
 
-    RenderCommand cmd;
+    gr::shader* lastShader =
+        nullptr;
+
+    Material* lastMaterial = nullptr;
 
     size_t i = 0, matrixID = 0;
     while (i < m_renderables.size())
@@ -235,75 +167,136 @@ void Renderer::sorting()
 
             m_metrices[matrixID++] = *current.world;
 
-            mesh = AssetsManager::GetMesh(current.mesh);
-
-            auto& gpuMesh = mesh->gpuMesh;
-
-            if (gpuMesh.vertexarray == nullptr)
-                mesh->Build();
-
-            cmd.vao = gpuMesh.vertexarray;
-            cmd.pbo = gpuMesh.pbo;
-
-            auto& submesh = mesh->submeshes[current.submesh];
-            cmd.indexCount = submesh.indexCount;
-            cmd.indexOffset = submesh.indexOffset * sizeof(uint32_t);
-
-            cmd.material = AssetsManager::GetMaterial(current.material);
-
             ++start;
         }
 
-        size_t count = start - i;
+        size_t instanceCount = start - i;
 
-        if (count > 0)
+        if (instanceCount > 0)
         {
-            cmd.instances = &m_metrices[matrixID - count];
-            cmd.instanceCount = count;
+            auto mesh = AssetsManager::GetMesh(first.mesh);
 
-            bool instancing = count > 1;
+            auto& gpuMesh = mesh->gpuMesh;
+
+            auto& submesh = mesh->submeshes[first.submesh];
+
+            auto material = AssetsManager::GetMaterial(first.material);
+            auto shader = material->shader;
+            auto instances = &m_metrices[matrixID - instanceCount];
+
+            bool instancing = instanceCount > 1;
 
             if (instancing)
             {
-                if ((cmd.material->flags & ShaderVariantFlags_Instancing) != 0)
+                if ((material->flags & ShaderVariantFlags_Instancing) != 0)
                 {
-                    cmd.shader = cmd.material->shader;
+                    shader = material->shader;
                 } else
                 {
-                    cmd.shader = 
-                        cmd.material->prefab->Get(ShaderVariantFlags_Instancing);
+                    shader = 
+                        material->prefab->Get(ShaderVariantFlags_Instancing);
 
-                    cmd.material->shader = cmd.shader;
-                    cmd.material->Sync();
+                    material->shader = shader;
+                    material->Sync();
 
-                    cmd.material->flags = ShaderVariantFlags_Instancing;
+                    material->flags = ShaderVariantFlags_Instancing;
                 }
             } else 
             {
-                if ((cmd.material->flags & ShaderVariantFlags_none) != 0)
+                if ((material->flags & ShaderVariantFlags_none) != 0)
                 {
-                    cmd.shader = cmd.material->shader;
+                    shader = material->shader;
                 } else
                 {
-                    cmd.shader = 
-                        cmd.material->prefab->Get(ShaderVariantFlags_none);
+                    shader = 
+                        material->prefab->Get(ShaderVariantFlags_none);
 
-                    cmd.material->shader = cmd.shader;
-                    cmd.material->Sync();
+                    material->shader = shader;
+                    material->Sync();
 
-                    cmd.material->flags = ShaderVariantFlags_none;
+                    material->flags = ShaderVariantFlags_none;
                 }
             }
 
-            m_commands.push_back(cmd);
+            if (lastShader != shader)
+            {
+                shader->bind();
+
+                lastShader = shader;
+            }
+
+
+            if (material != lastMaterial)
+            {
+                material->Flush();
+                lastMaterial = material;
+            }
+
+            if (lastMesh != first.mesh)
+            {
+                if (gpuMesh.vertexarray == nullptr)
+                    mesh->Build();
+
+                gpuMesh.vertexarray->Bind();
+
+                lastMesh = first.mesh;
+            }
+
+            draw(
+                    material,
+                    shader,
+                    gpuMesh.vertexarray,
+                    gpuMesh.pbo,
+                    instances,
+                    instanceCount,
+                    submesh.indexCount,
+                    submesh.indexOffset
+                );
         }
 
         i = start;
     }
-
-    RendererStats::BatchCount = m_commands.size();
 }
 
+void Renderer::draw(Material* material,
+    gr::shader* shader,
+    gr::vertex_array* vao,
+    gr::vertex_buffer* pbo,
+    const Matrix4x4* instances,
+    size_t instanceCount,
+    size_t indexCount,
+    size_t indexOffset)
+{
+
+    if (instanceCount > 1)
+    {
+        pbo->Bind();
+
+        pbo->SetData(
+            instances,
+            instanceCount * sizeof(Matrix4x4));
+
+        glDrawElementsInstanced(
+            GL_TRIANGLES,
+            indexCount,
+            GL_UNSIGNED_INT,
+            (void*)(indexOffset * sizeof(uint32_t)),
+            (GLsizei)instanceCount);
+    }
+    else
+    {
+        shader->setUniform("u_mat_model", instances);
+
+        glDrawElements(
+            GL_TRIANGLES,
+            indexCount,
+            GL_UNSIGNED_INT,
+            (void*)(indexOffset * sizeof(uint32_t)));
+    }
+
+    RendererStats::TriangleCount +=
+        (indexCount / 3) * instanceCount;
+}
 
 
 

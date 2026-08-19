@@ -6,15 +6,11 @@
 
 #include "gr-base/ecs/world.hpp"
 
-#include "gr-base/scopeTimer.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
-#include "gr-base/script/light.hpp"
 
 #include "gr-base/spatial/bvhtree.hpp"
-#include <iomanip>
-#include <iostream>
 
 void RenderSystem::Update()
 {
@@ -27,25 +23,18 @@ void RenderSystem::Render()
 
     for (auto& entity : entities)
     {
-        if (!scene->world.HasComponent<TransformWorld, MeshFilter, MeshRender>(entity))
-            continue;
-
         auto&& [transform, meshFilter, meshRender] = scene->world.GetComponents<TransformWorld, MeshFilter, MeshRender>(entity);
 
-        if (meshRender == nullptr)
-            continue;
-
-        auto& mesh = meshFilter->mesh;
         for (size_t j=0;j<meshRender->numMaterials;j++)
         {
             auto& material = meshRender->materials[j];
 
             Renderer::Submit(
-                        material,
-                        mesh,
-                        static_cast<uint32_t>(j),
-                        &transform->world
-                    );
+                    material,
+                    meshFilter->mesh,
+                    static_cast<uint32_t>(j),
+                    &transform->world
+                );
         }
     }
 

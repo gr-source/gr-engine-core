@@ -137,9 +137,6 @@ public:
     template <typename... Components>
     std::tuple<Components*...> GetComponents(Entity entity) const
     {
-        Signature requiredMask =
-            GetComponentMask<Components...>::Get();
-
         uint32_t entityID = handle_get_first(entity);
 
         auto& record = entityRecords[entityID];
@@ -152,9 +149,6 @@ public:
     template <typename... Components>
     bool HasComponent(Entity entity) const
     {
-        if (!entityManager.isAlive(entity))
-            return false;
-
         Signature requiredMask =
             GetComponentMask<Components...>::Get();
 

@@ -34,33 +34,6 @@ engine::ecs::detail::location archetype::allocate(Entity entity)
     chunk->entities[row] = entity;
 
     return { chunkIndex, row };
-
-    /*
-    if (chunkCount >= chunkCapacity)
-        grow();
-
-    ChunkID chunkID = freeChunk;
-    assert(chunkID < chunkCapacity);
-
-    Chunk* chunk = chunks[chunkID];
-
-    uint32_t row = static_cast<uint32_t>(chunk->count++);
-    assert(row < layout->capacity);
-
-    chunk->entities[row] = entity;
-
-    if (chunk->count >= layout->capacity)
-    {
-        freeChunk = freeList[chunkID];
-        freeList[chunkID] = INVALID_CHUNK;
-
-        chunkCount++;
-    }
-
-    entityCount++;
-
-    return { chunkID, row };
-    */
 }
 
 Entity archetype::deallocate(engine::ecs::detail::location loc)
@@ -108,67 +81,6 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
         chunkCount--;
 
     return moved;
-    /*
-    assert(loc.chunk < chunkCapacity);
-
-    Chunk* chunk = chunks[loc.chunk];
-
-    bool wasFull = (chunk->count == layout->capacity);
-
-    uint32_t dst_row = loc.row;
-    uint32_t src_row = --chunk->count;
-
-    Entity moved = INVALID_ENTITY;
-
-
-    if (dst_row != src_row)
-    {
-        Signature temp = mask;
-        while (temp)
-        {
-            auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
-
-            uint8_t* array = chunk->base + layout->offsets[info->index];
-
-            void* src = array + (info->stride * src_row);
-            void* dst = array + (info->stride * dst_row);
-
-            info->move(dst, src);
-            
-            temp &= (temp - 1);
-        }
-
-        moved = chunk->entities[src_row];
-
-        chunk->entities[dst_row] = moved;
-    }
-
-    Signature temp = mask;
-    while (temp)
-    {
-        auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
-
-        uint8_t* array = chunk->base + layout->offsets[info->index];
-
-        void* src = array + (info->stride * src_row);
-
-        info->destructor(src);
-        
-        temp &= (temp - 1);
-    }
-
-    if (wasFull)
-    {
-        freeList[loc.chunk] = freeChunk;
-        freeChunk = loc.chunk;
-
-        chunkCount--;
-    }
-
-    entityCount--;
-
-    return moved;
-    */
 }
 
 void* archetype::getRaw(ChunkID chunkID, TypeID typeID) const
@@ -217,17 +129,6 @@ Chunk* archetype::create() const
     chunk->base = reinterpret_cast<uint8_t*>(
         chunk
     ) + baseOffset;
-
-    /*
-    uint64_t p = reinterpret_cast<uint64_t>(
-            chunk->entities +
-            layout->capacity
-        );
-
-    uint64_t aligned = (p + layout->alignment - 1) & ~(layout->alignment - 1);
-
-    chunk->base = reinterpret_cast<uint8_t*>(aligned);
-    */
 
     return chunk;
 }

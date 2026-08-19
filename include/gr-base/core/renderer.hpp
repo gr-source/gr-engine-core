@@ -13,21 +13,10 @@
 
 #include <vector>
 
-struct RenderCommand
-{
-    Material* material;
-
-    gr::shader* shader;
-
-    gr::vertex_array* vao;
-    gr::vertex_buffer* pbo;
-
-    const Matrix4x4* instances;
-    size_t instanceCount;
-
-    size_t indexCount;
-    size_t indexOffset;
-};
+// struct RenderCommand
+// {
+//
+// };
 
 struct Renderable
 {
@@ -58,7 +47,7 @@ public:
 private:
     static Renderer *s_Renderer;
 
-    std::vector<RenderCommand> m_commands;
+    // std::vector<RenderCommand> m_commands;
 
     std::vector<Renderable> m_renderables;
 
@@ -79,8 +68,15 @@ private:
 
     void render();
 
-    void draw();
+    void flush();
 
-    void sorting();
+    void draw(Material* material,
+        gr::shader* shader,
+        gr::vertex_array* vao,
+        gr::vertex_buffer* pbo,
+        const Matrix4x4* instances,
+        size_t instanceCount,
+        size_t indexCount,
+        size_t indexOffset);
 };
 
