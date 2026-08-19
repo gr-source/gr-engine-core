@@ -347,7 +347,7 @@ void Scene::Update()
         double ms =
             scope.end();
 
-        Profiler::Add(info->name, static_cast<float>(ms));
+        Profiler::Add("[ Update ] " + std::string(info->name), static_cast<float>(ms));
     }
 #else // ENABLE_PROFILING
     for (auto& sys : m_systems)
@@ -357,8 +357,28 @@ void Scene::Update()
 
 void Scene::Render()
 {
+#ifdef ENABLE_PROFILING
+    for (auto& systemID : m_systemIDs)
+    {
+        auto info = SystemRegistry::GetSystemByID(systemID);
+
+        ISystem* sys = m_typeIDToSystem[systemID];
+
+        ScopeTimer scope;
+
+        scope.start();
+
+        sys->Render();
+
+        double ms =
+            scope.end();
+
+        Profiler::Add("[ Render ] " + std::string(info->name), static_cast<float>(ms));
+    }
+#else // ENABLE_PROFILING
     for (auto& sys : m_systems)
         sys->Render();
+#endif // ENABLE_PROFILING
 
     // bvhtree.renderer();
 }
