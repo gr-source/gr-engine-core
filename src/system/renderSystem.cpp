@@ -41,27 +41,62 @@ void RenderSystem::Render()
     entities.clear();
 }
 
-Vector3 MultiplyPoint(const Matrix4x4& lhs, const Vector3& rhs)
-{
-    Vector3 res =
-    {
-        lhs[0].x * rhs.x + lhs[1].x * rhs.y + lhs[2].x * rhs.z + lhs[3].x,
-        lhs[0].y * rhs.x + lhs[1].y * rhs.y + lhs[2].y * rhs.z + lhs[3].y,
-        lhs[0].z * rhs.x + lhs[1].z * rhs.y + lhs[2].z * rhs.z + lhs[3].z
-    };
-
-    float magSq = lhs[0].w * rhs.x + lhs[1].w * rhs.y + lhs[2].w * rhs.z + lhs[3].w;
-    if (magSq > 1e-10f)
-    {
-        f32 invMag = 1.0f / std::sqrt(magSq);
-        return res * invMag;
-    }
-
-    return type_traits<Vector3>::zero;
-}
+#include "gr-base/ecs/view.hpp"
 
 void RenderSystem::SyncBVHBounds()
 {
+    auto view =
+        scene->world.view<TransformWorld, RenderBounds>()
+        .Without<Static>();
+
+    // Vector3 corners[8];
+
+    view.Each([&](
+                size_t count,
+                Entity*,
+                TransformWorld* transforms,
+                RenderBounds* renderBounds
+            )
+        {
+            for (size_t i=0;i<count;i++)
+            {
+                auto& transform = transforms[i];
+                auto& bound = renderBounds[i];
+
+                const auto& local = bound.localBounds;
+
+                Vector3 localCenter = local.Center();
+                Vector3 localExtend = local.Extents();
+
+                Vector3 worldCenter =
+                    Math::transform_point(transform.world, localCenter);
+
+                Vector3 worldExtend;
+                worldExtend.x =
+                    abs(transform.world[0][0]) * localExtend.x +
+                    abs(transform.world[0][1]) * localExtend.y +
+                    abs(transform.world[0][2]) * localExtend.z;
+
+                worldExtend.y =
+                    abs(transform.world[1][0]) * localExtend.x +
+                    abs(transform.world[1][1]) * localExtend.y +
+                    abs(transform.world[1][2]) * localExtend.z;
+
+                worldExtend.z =
+                    abs(transform.world[2][0]) * localExtend.x +
+                    abs(transform.world[2][1]) * localExtend.y +
+                    abs(transform.world[2][2]) * localExtend.z;
+
+                AABB bounds;
+                bounds.min = worldCenter - worldExtend;
+                bounds.max = worldCenter + worldExtend;
+
+                scene->bvhtree.sync(bound.id, bounds);
+            }
+        });
+
+
+    /*
     if (!scene->Changed<TransformWorld>(entities))
         return;
 
@@ -118,6 +153,7 @@ void RenderSystem::SyncBVHBounds()
     }
 
     entities.clear();
+    */
 }
 
 

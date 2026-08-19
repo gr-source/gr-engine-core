@@ -7,12 +7,15 @@
 
 #include "gr-base/core/scene.hpp"
 
-#include <iostream>
+#include "gr-base/ecs/view.hpp"
+
 void TransformSystem::Update()
 {
-    /*
-    size_t id = 0;
-    scene->world.Query<TransformLocal, TransformWorld>(
+    auto view =
+        scene->world.view<TransformLocal, TransformWorld>()
+        .Without<Static>();
+
+    view.Each(
         [&](size_t count,
            Entity* entities,
            TransformLocal* local,
@@ -28,14 +31,10 @@ void TransformSystem::Update()
                     );
 
                 world[i].world = world[i].local;
-
-                id++;
             }
         });
 
-    std::cout << id << std::endl;
-    */
-
+    /*
     if (!scene->Changed<TransformWorld>(entities))
         return;
 
@@ -70,6 +69,7 @@ void TransformSystem::Update()
     }
 
     entities.clear();
+    */
 }
 
 bool TransformSystem::SyncTransform(const GameObject& gameObject, const Matrix4x4& parentMatrix) const

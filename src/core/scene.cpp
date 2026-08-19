@@ -20,10 +20,11 @@
 #include "gr-base/script/transform.hpp"
 #include "gr-base/script/name.hpp"
 
-#include <algorithm>
-#include <cstring>
-#include <iostream>
+#include <functional>
 #include <stdexcept>
+#include <algorithm>
+#include <iostream>
+#include <cstring>
 #include <utility>
 
 // public
@@ -383,7 +384,7 @@ void Scene::Render()
         sys->Render();
 #endif // ENABLE_PROFILING
 
-    // bvhtree.renderer();
+    bvhtree.renderer();
 }
 
 void Scene::MarkChanged(TypeID typeID, Entity entity)

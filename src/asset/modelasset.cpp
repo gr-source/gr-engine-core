@@ -17,9 +17,6 @@ bool ModelAsset::serialize(Stream* stream) const
     if (!stream->write(name))
         return false;
 
-    if (!stream->write(isStatic))
-        return false;
-
     if (!stream->write(mesh))
         return false;
 
@@ -67,9 +64,6 @@ bool ModelAsset::serialize(Stream* stream) const
 bool ModelAsset::deserialize(Stream* stream)
 {
     if (!stream->read(name))
-        return false;
-
-    if (!stream->read(isStatic))
         return false;
 
     if (!stream->read(mesh))

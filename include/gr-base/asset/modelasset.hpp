@@ -23,8 +23,6 @@ struct ModelAsset : IAsset
     
     std::string name;
 
-    bool isStatic = false;
-
     template <typename T>
     void AddComponent(const T& pref);
 

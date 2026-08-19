@@ -38,7 +38,7 @@ void RegistryDefaultComponent()
     REGISTER_COMPONENT(Static, true);
 
     REGISTER_COMPONENT(TransformLocal, true);
-    REGISTER_COMPONENT(TransformWorld, false);
+    REGISTER_COMPONENT(TransformWorld, true);
 
     REGISTER_COMPONENT(CameraRenderResult, false);
     REGISTER_COMPONENT(CameraData, false);

@@ -17,13 +17,11 @@
 
 #include "gr-base/managers/assetsManager.hpp"
 
-#include <iostream>
 
 ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
 {
     ModelAsset asset;
     asset.name = gameObject.GetName();
-    asset.isStatic = false;
 
     auto meshFilter = gameObject.GetComponent<MeshFilter>();
     if (meshFilter != nullptr && meshFilter->mesh != HANDLE_INVALID)
