@@ -25,7 +25,7 @@ struct GameObject
     template <typename T>
     inline T* GetComponent() const
     {
-        return scene->world.GetComponent<T>(entity);
+        return scene->world.TryGetComponent<T>(entity);
     }
 
     template <typename T>

@@ -9,7 +9,6 @@
 #include <assert.h>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 
 size_t bit_floor(size_t value)
 {
@@ -27,20 +26,20 @@ size_t bit_floor(size_t value)
 namespace engine::ecs
 {
 
-world::world()
+World::World()
 {
     m_emptyArchetypeStorage = GetOrCreateArcheType(0);
 }
 
-world::~world()
+World::~World()
 {
     /*
     printf("\n========== Archetype Graph ==========\n");
 
-    for (size_t id = 0; id < m_count; ++id)
+    for (size_t id = 0; id < storage.count; ++id)
     {
-        const auto& g = graphs[id];
-        const auto& arche = m_archetypePool[id];
+        const auto& g = storage.graphs[id];
+        const auto& arche = storage.archetypes[id];
 
         printf("\n[%zu] mask=0x%016llX\n",
                id,
@@ -119,10 +118,10 @@ world::~world()
     printf("\n=====================================\n");
     */
 
-    for (size_t i=0;i<m_count;i++)
+    for (size_t i=0;i<storage.count;i++)
     {
-        auto& arche = m_archetypePool[i];
-        auto& graph = graphs[i];
+        auto& arche = storage.archetypes[i];
+        auto& graph = storage.graphs[i];
 
         if (graph.addEdges != nullptr)
             free(graph.addEdges);
@@ -150,81 +149,49 @@ world::~world()
         }
     }
 
-    if (m_archetypePool != nullptr)
-        free(m_archetypePool);
+    if (storage.archetypes != nullptr)
+        free(storage.archetypes);
 
-    if (graphs != nullptr)
-        free(graphs);
+    if (storage.graphs != nullptr)
+        free(storage.graphs);
 }
 
-Entity world::Create()
+Entity World::Create()
 {
-    Entity e = entityManager.create();
-    EntityID entityID = handle_get_first(e);
-    if (entityID >= entityRecords.size())
-        entityRecords.resize(entityID + 1, {
-                .mask = INVALID_SIGNATURE,
-                .archetype = m_emptyArchetypeStorage,
-
-                .location = {
-                    .chunk = INVALID_CHUNK,
-                    .row = 0
-                }
-            });
-
-    entityRecords[entityID] = {
-        .mask = INVALID_SIGNATURE,
-        .archetype = m_emptyArchetypeStorage,
-
-        .location = {
-            .chunk = INVALID_CHUNK,
-            .row = 0
-        }
-    };
-
-    return e;
+    return entityManager.create();
 }
 
-void world::Destroy(Entity entity)
+void World::Destroy(Entity entity)
 {
     if (!entityManager.isAlive(entity))
         return;
 
     EntityID entityID = handle_get_first(entity);
 
-    auto& rec = entityRecords[entityID];
+    auto& rec = entityManager.records[entityID];
 
-    auto arche = GetArchetypeByID(rec.archetype);
+    assert(rec.archetype < storage.count);
+    auto& arche = storage.archetypes[rec.archetype];
 
     Entity moved = INVALID_ENTITY;
-    if ((moved = arche->deallocate(rec.location)) != INVALID_ENTITY)
-        entityRecords[handle_get_first(moved)].location = rec.location;
-
-    entityRecords[entityID] = {
-        .mask = INVALID_SIGNATURE,
-        .archetype = m_emptyArchetypeStorage,
-
-        .location = {
-            .chunk = INVALID_CHUNK,
-            .row = 0
-        }
-    };
+    if ((moved = arche.deallocate(rec.location)) != INVALID_ENTITY)
+        entityManager.records[handle_get_first(moved)].location = rec.location;
 
     entityManager.destroy(entity);
 }
 
-bool world::IsAlive(Entity entity) const
+bool World::IsAlive(Entity entity) const
 {
     return entityManager.isAlive(entity);
 }
 
-ArchetypeID world::GetOrCreateArcheType(Signature mask)
+ArchetypeID World::GetOrCreateArcheType(Signature mask)
 {
     auto it = signatureToArchetype.find(mask);
     if (it != signatureToArchetype.end())
         return it->second;
 
-    if (m_count >= m_capacity)
+    if (storage.count >= storage.capacity)
         resize();
 
     size_t numOffsets = 0;
@@ -304,9 +271,9 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask)
 
     }
 
-    ArchetypeID id = static_cast<ArchetypeID>(m_count++);
+    ArchetypeID id = static_cast<ArchetypeID>(storage.count++);
 
-    graph* g = graphs + id;
+    graph* g = storage.graphs + id;
     new (g) graph();
 
     if (numOffsets >= g->capacity)
@@ -323,23 +290,21 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask)
     return id;
 }
 
-Signature world::GetMask(Entity e) const
+Signature World::GetMask(Entity e) const
 {
     if (!entityManager.isAlive(e))
         return 0;
 
     EntityID entityID = handle_get_first(e);
-    if (entityID >= entityRecords.size())
-        return 0;
 
-    return entityRecords[entityID].mask;
+    return entityManager.records[entityID].mask;
 }
 
-detail::records world::Allocate(Entity entity, Signature mask)
+detail::records World::Allocate(Entity entity, Signature mask)
 {
     uint32_t entityID = handle_get_first(entity);
 
-    auto& currentRecord = entityRecords[entityID];
+    auto& currentRecord = entityManager.records[entityID];
 
     auto currentArchetype = GetArchetypeByID(currentRecord.archetype);
     if ((currentArchetype->mask & mask) == mask)
@@ -351,18 +316,18 @@ detail::records world::Allocate(Entity entity, Signature mask)
         GetOrCreateArcheType(newMask);
 
     auto newRecord = MoveEntity(currentRecord, archeID, entity);
-    entityRecords[entityID] = newRecord;
+    entityManager.records[entityID] = newRecord;
 
     return newRecord;
 }
 
-detail::records world::Allocate(Entity entity, TypeID type)
+detail::records World::Allocate(Entity entity, TypeID type)
 {
     Signature mask = (1ull << type);
 
     uint32_t entityID = handle_get_first(entity);
 
-    auto& rec = entityRecords[entityID];
+    auto& rec = entityManager.records[entityID];
 
     auto lastArcheType = GetArchetypeByID(rec.archetype);
     if ((lastArcheType->mask & mask) == mask)
@@ -379,22 +344,20 @@ detail::records world::Allocate(Entity entity, TypeID type)
     }
 
     auto new_rec = MoveEntity(rec, dstID, entity);
-    entityRecords[entityID] = new_rec;
+    entityManager.records[entityID] = new_rec;
 
     return new_rec;
 }
 
 
-void world::AddComponentByMask(Entity entity, Signature requiredMask)
+void World::AddComponentByMask(Entity entity, Signature requiredMask)
 {
     if (!entityManager.isAlive(entity))
         return;
 
     uint32_t entityID = handle_get_first(entity);
-    if (entityID >= entityRecords.size())
-        return;
 
-    auto& current = entityRecords[entityID];
+    auto& current = entityManager.records[entityID];
     if (current.mask != INVALID_SIGNATURE)
     {
         Signature common = (current.mask & requiredMask);
@@ -426,7 +389,7 @@ void world::AddComponentByMask(Entity entity, Signature requiredMask)
     }
 }
 
-void* world::AddComponentByID(Entity entity, TypeID typeID)
+void* World::AddComponentByID(Entity entity, TypeID typeID)
 {
     if (!entityManager.isAlive(entity))
         return nullptr;
@@ -436,12 +399,10 @@ void* world::AddComponentByID(Entity entity, TypeID typeID)
         return nullptr;
 
     uint32_t entityID = handle_get_first(entity);
-    if (entityID >= entityRecords.size())
-        return nullptr;
 
     Signature requiredMask = (1ULL << typeID);
 
-    auto& current = entityRecords[entityID];
+    auto& current = entityManager.records[entityID];
     if (
             current.mask != INVALID_SIGNATURE &&
             ((current.mask & requiredMask) == requiredMask)
@@ -472,7 +433,7 @@ void* world::AddComponentByID(Entity entity, TypeID typeID)
     return component;
 }
 
-void* world::GetComponentByID(Entity entity, TypeID type) const
+void* World::GetComponentByID(Entity entity, TypeID type) const
 {
     assert(entityManager.isAlive(entity));
     if (!entityManager.isAlive(entity))
@@ -484,11 +445,8 @@ void* world::GetComponentByID(Entity entity, TypeID type) const
         return nullptr;
 
     uint32_t entityID = handle_get_first(entity);
-    assert(entityID < entityRecords.size());
-    if (entityID > entityRecords.size())
-        return nullptr;
 
-    auto& record = entityRecords[entityID];
+    auto& record = entityManager.records[entityID];
     assert(record.archetype != INVALID_ARCHETYPE);
     assert(record.mask != INVALID_SIGNATURE);
 
@@ -513,19 +471,19 @@ void* world::GetComponentByID(Entity entity, TypeID type) const
     return (void*)(raw + record.location.row * info->stride);
 }
 
-void world::DelComponentByID(Entity entity, TypeID typeID)
+void World::DelComponentByID(Entity entity, TypeID typeID)
 {
     DelComponentByMask(entity, (Signature)(1ull << typeID));
 }
 
-void world::DelComponentByMask(Entity entity, Signature requiredMask)
+void World::DelComponentByMask(Entity entity, Signature requiredMask)
 {
     if (!entityManager.isAlive(entity))
         return;
 
     uint32_t entityID = handle_get_first(entity);
 
-    auto& rec = entityRecords[entityID];
+    auto& rec = entityManager.records[entityID];
 
     auto src = GetArchetypeByID(rec.archetype);
 
@@ -536,28 +494,28 @@ void world::DelComponentByMask(Entity entity, Signature requiredMask)
     if (dstID == rec.archetype)
         return;
 
-    entityRecords[entityID] =
+    entityManager.records[entityID] =
         MoveEntity(rec, dstID, entity);
 }
 
-std::vector<TypeID> world::GetAllComponentType(Entity e) const
+std::vector<TypeID> World::GetAllComponentType(Entity e) const
 {
     return ComponentRegistry::GetTypesOfMask(GetMask(e));
 }
 
-size_t world::GetEntityCount() const
+size_t World::GetEntityCount() const
 {
     return entityManager.count;
 }
 
-engine::ecs::detail::records world::MoveEntity(engine::ecs::detail::records src_rec, ArchetypeID dstID, Entity e)
+engine::ecs::detail::records World::MoveEntity(engine::ecs::detail::records src_rec, ArchetypeID dstID, Entity e)
 {
     // EntityID entityID = handle_get_first(e);
 
     archetype* src = GetArchetypeByID(src_rec.archetype);
     archetype* dst = GetArchetypeByID(dstID);
 
-    // engine::ecs::detail::location src_loc = entityRecords[entityID].location;
+    // engine::ecs::detail::location src_loc = entityManager.records[entityID].location;
     engine::ecs::detail::location dst_loc = dst->allocate(e);
 
     Signature common = src->mask & dst->mask;
@@ -598,7 +556,7 @@ engine::ecs::detail::records world::MoveEntity(engine::ecs::detail::records src_
     Entity moved = INVALID_ENTITY;
     if (src_rec.location.chunk != INVALID_CHUNK && (moved = src->deallocate(src_rec.location)) != INVALID_ENTITY)
     {
-        entityRecords[handle_get_first(moved)].location = src_rec.location;
+        entityManager.records[handle_get_first(moved)].location = src_rec.location;
     }
 
     return
@@ -609,45 +567,50 @@ engine::ecs::detail::records world::MoveEntity(engine::ecs::detail::records src_
     };
 }
 
-archetype* world::GetArchetypeByID(ArchetypeID id) const
+archetype* World::GetArchetypeByID(ArchetypeID id) const
 {
-    if (id >= m_count)
+    if (id >= storage.count)
         return nullptr;
-    return &m_archetypePool[id];
+    return &storage.archetypes[id];
 }
 
-void world::LinkAdd(ArchetypeID src, TypeID typeID, ArchetypeID dst)
+ArchetypeStorage& World::GetStorage()
 {
-    if (typeID >= graphs[src].capacity)
-        graphs[src].grow(typeID + 1);
-
-    if (typeID >= graphs[dst].capacity)
-        graphs[dst].grow(typeID + 1);
-
-    graphs[src].addEdges[typeID] = dst;
-    graphs[dst].removeEdges[typeID] = src;
+    return storage;
 }
 
-ArchetypeID world::AddEdges(ArchetypeID src, TypeID typeID)
+void World::LinkAdd(ArchetypeID src, TypeID typeID, ArchetypeID dst)
 {
-    if (typeID >= graphs[src].capacity)
-        graphs[src].grow(typeID + 1);
+    if (typeID >= storage.graphs[src].capacity)
+        storage.graphs[src].grow(typeID + 1);
 
-    return graphs[src].addEdges[typeID];
+    if (typeID >= storage.graphs[dst].capacity)
+        storage.graphs[dst].grow(typeID + 1);
+
+    storage.graphs[src].addEdges[typeID] = dst;
+    storage.graphs[dst].removeEdges[typeID] = src;
 }
 
-void world::resize()
+ArchetypeID World::AddEdges(ArchetypeID src, TypeID typeID)
 {
-    m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
+    if (typeID >= storage.graphs[src].capacity)
+        storage.graphs[src].grow(typeID + 1);
 
-    m_archetypePool =
+    return storage.graphs[src].addEdges[typeID];
+}
+
+void World::resize()
+{
+    storage.capacity = storage.capacity > 0 ? storage.capacity * 2 : 2;
+
+    storage.archetypes =
         (archetype*)realloc(
-            m_archetypePool,
-            m_capacity * sizeof(archetype)
+            storage.archetypes,
+            storage.capacity * sizeof(archetype)
         );
 
-    graphs =
-        (graph*)realloc(graphs, m_capacity * sizeof(graph));
+    storage.graphs =
+        (graph*)realloc(storage.graphs, storage.capacity * sizeof(graph));
 }
 }
 

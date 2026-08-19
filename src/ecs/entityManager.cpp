@@ -1,22 +1,24 @@
 #include "gr-base/ecs/entityManager.hpp"
 
-#include <iostream>
 #include <cstdlib>
 
-namespace engine::ecs::manager
+namespace engine::ecs
 {
 
-entity::entity() : freeID(INVALID_INDEX32), count(0), capacity(0), entities(nullptr)
-{
-}
+EntityManager::EntityManager() :
+    freeID(INVALID_INDEX32),
+    count(0),
+    capacity(0),
+    entities(nullptr)
+{}
 
-entity::~entity()
+EntityManager::~EntityManager()
 {
     if (entities != nullptr)
         free(entities);
 }
 
-Entity entity::create()
+Entity EntityManager::create()
 {
     if (freeID == INVALID_INDEX32)
         grow();
@@ -26,12 +28,22 @@ Entity entity::create()
     EntityInfo& info = entities[id];
     freeID = info.next;
 
+    records[id] = {
+        .mask = INVALID_SIGNATURE,
+        .archetype = 0,
+
+        .location = {
+            .chunk = INVALID_CHUNK,
+            .row = 0
+        }
+    };
+
     count++;
 
     return handle_create(id, info.generation);
 }
 
-void entity::destroy(Entity entity)
+void EntityManager::destroy(Entity entity)
 {
     EntityID id = handle_get_first(entity);
     EntityID generation = handle_get_second(entity);
@@ -39,6 +51,16 @@ void entity::destroy(Entity entity)
     EntityInfo& info = entities[id];
     if (info.generation != generation)
         return;
+
+    records[id] = {
+        .mask = INVALID_SIGNATURE,
+        .archetype = 0,
+
+        .location = {
+            .chunk = INVALID_CHUNK,
+            .row = 0
+        }
+    };
 
     info.next = freeID;
     freeID = id;
@@ -48,7 +70,7 @@ void entity::destroy(Entity entity)
     count--;
 }
 
-bool entity::isAlive(Entity entity) const
+bool EntityManager::isAlive(Entity entity) const
 {
     EntityID id = handle_get_first(entity);
     EntityID generation = handle_get_second(entity);
@@ -57,17 +79,20 @@ bool entity::isAlive(Entity entity) const
 }
 
 // private
-void entity::grow()
+void EntityManager::grow()
 {
     size_t oldCapacity = capacity;
     capacity = capacity > 0 ? capacity * 2 : 2;
 
-    entities = (EntityInfo*)realloc(entities, capacity * sizeof(EntityInfo));
+    records =
+        (detail::records*)realloc(records, capacity * sizeof(detail::records));
+    entities =
+        (EntityInfo*)realloc(entities, capacity * sizeof(EntityInfo));
 
     addFreeID(oldCapacity);
 }
 
-void entity::addFreeID(size_t oldCapacity)
+void EntityManager::addFreeID(size_t oldCapacity)
 {
     for (size_t i=oldCapacity;i<capacity - 1;i++)
         entities[i] = { static_cast<EntityID>(i) + 1, 1 };

@@ -100,7 +100,7 @@ Entity Scene::create(Entity other)
             Entity newChild = create(sibling);
             SetParent(go.entity, newChild);
 
-            auto siblingRel = world.GetComponent<Relationship>(sibling);
+            auto siblingRel = world.TryGetComponent<Relationship>(sibling);
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;
@@ -155,7 +155,7 @@ void Scene::destroy(Entity entity)
 {
     if (world.HasComponent<RenderBounds>(entity))
     {
-        auto renderBounds = world.GetComponent<RenderBounds>(entity);
+        auto renderBounds = world.TryGetComponent<RenderBounds>(entity);
         if (renderBounds->id != UINT32_MAX)
             bvhtree.remove(renderBounds->id);
     }
@@ -188,7 +188,7 @@ Entity Scene::GetRoot() const
 
 void Scene::Unlink(Entity entity)
 {
-    auto rel = world.GetComponent<Relationship>(entity);
+    auto rel = world.TryGetComponent<Relationship>(entity);
     if (rel == nullptr)
         return;
 
@@ -196,7 +196,7 @@ void Scene::Unlink(Entity entity)
 
     if (parent != INVALID_ENTITY)
     {
-        auto parentRel = world.GetComponent<Relationship>(parent);
+        auto parentRel = world.TryGetComponent<Relationship>(parent);
 
         // se era o primeiro filho
         if (parentRel->firstChild == entity)
@@ -205,7 +205,7 @@ void Scene::Unlink(Entity entity)
         // conecta anterior -> próximo
         if (rel->prevSibling != INVALID_ENTITY)
         {
-            auto prevRel = world.GetComponent<Relationship>(rel->prevSibling);
+            auto prevRel = world.TryGetComponent<Relationship>(rel->prevSibling);
 
             prevRel->nextSibling = rel->nextSibling;
         }
@@ -213,7 +213,7 @@ void Scene::Unlink(Entity entity)
         // conecta próximo -> anterior
         if (rel->nextSibling != INVALID_ENTITY)
         {
-            auto nextRel = world.GetComponent<Relationship>(rel->nextSibling);
+            auto nextRel = world.TryGetComponent<Relationship>(rel->nextSibling);
 
             nextRel->prevSibling = rel->prevSibling;
         }
@@ -252,7 +252,7 @@ void Scene::SetParent(Entity parentEntity, Entity childEntity)
     {
         Entity oldFirst = parentRel->firstChild;
 
-        auto oldFirstRel = world.GetComponent<Relationship>(oldFirst);
+        auto oldFirstRel = world.TryGetComponent<Relationship>(oldFirst);
 
         // novo filho aponta pro antigo primeiro
         childRel->nextSibling = oldFirst;
@@ -296,14 +296,14 @@ bool Scene::CanSyncHierarchyUI() const
 
 void Scene::GetRootEntities(std::vector<Entity>& entities) const
 {
-    auto rel = world.GetComponent<Relationship>(m_root);
+    auto rel = world.TryGetComponent<Relationship>(m_root);
 
     Entity child = rel->firstChild;
     while (child != INVALID_ENTITY)
     {
         entities.push_back(child);
 
-        auto rel = world.GetComponent<Relationship>(child);
+        auto rel = world.TryGetComponent<Relationship>(child);
         if (rel == nullptr)
             break;
         child = rel->nextSibling;

@@ -5,7 +5,7 @@ namespace engine::ecs
 template<typename... Components>
 class View
 {
-    using World = engine::ecs::world;
+    using World = engine::ecs::World;
 
     World* world;
 public:
@@ -28,9 +28,11 @@ public:
     template<typename Func>
     void Each(Func&& func)
     {
-        for (size_t i=0;i<world->GetArchetypeCount();i++)
+        auto& storage = world->GetStorage();
+
+        for (size_t i=0;i<storage.count;i++)
         {
-            const auto& arche = world->GetRawArchetype()[i];
+            const auto& arche = storage.archetypes[i];
 
             if ((arche.mask & m_requiredMask) != m_requiredMask)
                 continue;

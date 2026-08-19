@@ -60,8 +60,6 @@ bool GameObject::HasComponentByName(const std::string& name) const
 
 bool GameObject::HasComponentByID(TypeID type) const
 {
-    assert(world != nullptr);
-
     Signature mask = (1ull << type);
 
     return (scene->world.GetMask(entity) & mask) == mask;

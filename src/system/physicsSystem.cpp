@@ -135,7 +135,7 @@ void PhysicsSystem::Update()
     SyncTransforms(&scene->world);
 }
 
-void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
+void PhysicsSystem::SyncTransforms(engine::ecs::World* world)
 {
     world->Query<TransformLocal, Rigidbody>(
             [&](
@@ -217,18 +217,18 @@ void PhysicsSystem::SyncTransforms(engine::ecs::world* world)
         );
 }
 
-void PhysicsSystem::onCreateShape(engine::ecs::world* world, Entity entity)
+void PhysicsSystem::onCreateShape(engine::ecs::World* world, Entity entity)
 {
-    auto transform = world->GetComponent<TransformLocal>(entity);
+    auto& transform = world->GetComponent<TransformLocal>(entity);
 
     btCollisionShape* shape = nullptr;
     if (world->HasComponent<BoxCollider>(entity))
         shape = 
             new btBoxShape(
                 btVector3(
-                    transform->scale.x,
-                    transform->scale.y,
-                    transform->scale.z
+                    transform.scale.x,
+                    transform.scale.y,
+                    transform.scale.z
                 )
             );
     else if (world->HasComponent<CapsuleCollider>(entity))
@@ -244,7 +244,7 @@ void PhysicsSystem::onCreateShape(engine::ecs::world* world, Entity entity)
         );
 }
 
-void PhysicsSystem::onCreateRigidbody(engine::ecs::world* world, Entity entity)
+void PhysicsSystem::onCreateRigidbody(engine::ecs::World* world, Entity entity)
 {
     if (!world->HasComponent<PhysicsShape, Rigidbody>(entity))
         return;
@@ -285,35 +285,35 @@ void PhysicsSystem::onCreateRigidbody(engine::ecs::world* world, Entity entity)
     dynamicsWorld->addRigidBody(rb->body);
 }
 
-void PhysicsSystem::onCreateCharacter(engine::ecs::world* world, Entity entity)
+void PhysicsSystem::onCreateCharacter(engine::ecs::World* world, Entity entity)
 {
     if (!world->HasComponent<PhysicsShape>(entity))
         world->AddComponent<CapsuleCollider>(entity);
 
-    auto physicsShape =
+    auto& physicsShape =
         world->GetComponent<PhysicsShape>(entity);
 
-    auto transform =
+    auto& transform =
         world->GetComponent<TransformLocal>(entity);
 
-    auto characterController =
+    auto& characterController =
         world->GetComponent<CharacterController>(entity);
 
     auto ghostObject = new btPairCachingGhostObject();
-    ghostObject->setCollisionShape(physicsShape->shape);
+    ghostObject->setCollisionShape(physicsShape.shape);
     ghostObject->setCollisionFlags(btCollisionObject::CF_CHARACTER_OBJECT);
 
     btTransform start(
         btQuaternion(
-            transform->rotation.x,
-            transform->rotation.y,
-            transform->rotation.z,
-            transform->rotation.w
+            transform.rotation.x,
+            transform.rotation.y,
+            transform.rotation.z,
+            transform.rotation.w
         ),
         btVector3(
-            transform->position.x,
-            transform->position.y,
-            transform->position.z
+            transform.position.x,
+            transform.position.y,
+            transform.position.z
         )
     );
 
@@ -322,7 +322,7 @@ void PhysicsSystem::onCreateCharacter(engine::ecs::world* world, Entity entity)
     auto character =
       new KinematicCharacterController(
           ghostObject,
-          (btConvexShape *)physicsShape->shape,
+          (btConvexShape *)physicsShape.shape,
           0.35f,
           btVector3(0.0f, 1.0f, 0.0f)
       );
@@ -332,8 +332,8 @@ void PhysicsSystem::onCreateCharacter(engine::ecs::world* world, Entity entity)
     character->setFallSpeed(55.0f);
     character->setJumpSpeed(10.0f);
 
-    characterController->ghostObject = ghostObject;
-    characterController->character = character;
+    characterController.ghostObject = ghostObject;
+    characterController.character = character;
 
     AddCollisionObject(ghostObject, character);
 }

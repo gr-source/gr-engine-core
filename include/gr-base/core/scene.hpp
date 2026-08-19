@@ -29,7 +29,7 @@ class ISystem;
 class Scene
 {
 public:
-    engine::ecs::world world;
+    engine::ecs::World world;
     BVHtree bvhtree;
 
     static Scene* GetCurrent();

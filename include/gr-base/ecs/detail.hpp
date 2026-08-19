@@ -17,7 +17,7 @@ struct records
 {
     Signature mask = INVALID_SIGNATURE;
 
-    ArchetypeID archetype = INVALID_ARCHETYPE;
+    ArchetypeID archetype = 0;
 
     location location;
 };

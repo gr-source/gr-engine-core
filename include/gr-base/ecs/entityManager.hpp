@@ -1,11 +1,12 @@
 #pragma once
 
 #include "gr-base/ecs/default.hpp"
+#include "gr-base/ecs/detail.hpp"
 
-namespace engine::ecs::manager
+namespace engine::ecs
 {
 
-struct entity
+struct EntityManager
 {
     typedef struct EntityInfo
     {
@@ -13,15 +14,16 @@ struct entity
         uint32_t generation;
     } EntityInfo;
 
-    EntityInfo *entities;
+    detail::records* records = nullptr;
+    EntityInfo *entities = nullptr;
 
     size_t capacity;
     size_t count;
 
     EntityID freeID;
 
-    entity();
-    ~entity();
+    EntityManager();
+    ~EntityManager();
 
     Entity create();
 
@@ -29,6 +31,7 @@ struct entity
 
     bool isAlive(Entity entity) const;
 
+private:
     void grow();
 
     void addFreeID(size_t oldCapacity);

@@ -15,32 +15,36 @@ namespace engine::ecs
 template<typename... Components>
 class View;
 
-class world
+struct ArchetypeStorage
+{
+    archetype* archetypes = nullptr;
+    graph* graphs = nullptr;
+
+    size_t capacity = 0;
+    size_t count = 0;
+};
+
+class World
 {
     std::unordered_map<Signature, ArchetypeID> signatureToArchetype;
 
-    std::vector<detail::records> entityRecords;
+    // std::vector<detail::records> entityRecords;
 
-    manager::entity entityManager;
+    EntityManager entityManager;
 
     ArchetypeID m_emptyArchetypeStorage = INVALID_ARCHETYPE;
 
-    archetype* m_archetypePool = nullptr;
-    graph* graphs = nullptr;
-    
-    size_t m_capacity = 0;
-
-    size_t m_count = 0;
+    ArchetypeStorage storage;
 
 public:
-    world();
-    ~world();
+    World();
+    ~World();
 
-    world(const world&) = delete;
-    world& operator=(const world&) = delete;
+    World(const World&) = delete;
+    World& operator=(const World&) = delete;
 
-    world(world&&) = default;
-    world& operator=(world&&) = default;
+    World(World&&) = default;
+    World& operator=(World&&) = default;
 
     Entity Create();
 
@@ -68,13 +72,11 @@ public:
             return nullptr;
 
         uint32_t entityID = handle_get_first(entity);
-        if (entityID >= entityRecords.size())
-            return nullptr;
 
         Signature requiredMask =
             GetComponentMask<T>::Get();
 
-        auto& current = entityRecords[entityID];
+        auto& current = entityManager.records[entityID];
         if (
                 current.mask != INVALID_SIGNATURE &&
                 ((current.mask & requiredMask) == requiredMask)
@@ -98,7 +100,29 @@ public:
     }
 
     template <typename T>
-    T* GetComponent(Entity entity) const
+    T& GetComponent(Entity entity) const
+    {
+        static_assert(!engine::type_traits::tag<T>,
+              "All template arguments must be Tags.");
+
+        uint32_t entityID = handle_get_first(entity);
+
+        auto& record = entityManager.records[entityID];
+        assert(record.archetype != INVALID_ARCHETYPE);
+        assert(record.mask != INVALID_SIGNATURE);
+
+        Signature requiredMask =
+            GetComponentMask<T>::Get();
+
+        assert((record.mask & requiredMask) == requiredMask);
+
+        auto arche = GetArchetypeByID(record.archetype);
+
+        return *arche->get<T>(record.location);
+    }
+
+    template <typename T>
+    T* TryGetComponent(Entity entity) const
     {
         static_assert(!engine::type_traits::tag<T>,
               "All template arguments must be Tags.");
@@ -112,10 +136,8 @@ public:
             return nullptr;
 
         uint32_t entityID = handle_get_first(entity);
-        if (entityID >= entityRecords.size())
-            return nullptr;
 
-        auto& record = entityRecords[entityID];
+        auto& record = entityManager.records[entityID];
         assert(record.archetype != INVALID_ARCHETYPE);
         assert(record.mask != INVALID_SIGNATURE);
 
@@ -141,7 +163,7 @@ public:
 
         uint32_t entityID = handle_get_first(entity);
 
-        auto& record = entityRecords[entityID];
+        auto& record = entityManager.records[entityID];
 
         auto arche = GetArchetypeByID(record.archetype);
 
@@ -155,9 +177,8 @@ public:
             GetComponentMask<Components...>::Get();
 
         uint32_t entityID = handle_get_first(entity);
-        assert(entityID < entityRecords.size());
 
-        auto& record = entityRecords[entityID];
+        auto& record = entityManager.records[entityID];
         assert(record.archetype != INVALID_ARCHETYPE);
 
         return record.mask != INVALID_SIGNATURE && (record.mask & requiredMask) == requiredMask;
@@ -181,9 +202,9 @@ public:
         Signature requiredMask =
             GetComponentMask<Components...>::Get();
 
-        for (size_t i=0;i<m_count;i++)
+        for (size_t i=0;i<storage.count;i++)
         {
-            const auto& arche = m_archetypePool[i];
+            const auto& arche = storage.archetypes[i];
 
             if ((arche.mask & requiredMask) != requiredMask)
                 continue;
@@ -199,8 +220,6 @@ public:
                         chunk->count,
                         chunk->entities,
                         reinterpret_cast<Components*>(chunk->base + offsets[GetComponentID<Components>::id])...
-
-                        // arche.getRaw<Components>(static_cast<ChunkID>(j))...
                     );
             }
         }
@@ -216,15 +235,7 @@ public:
 
     archetype* GetArchetypeByID(ArchetypeID id) const;
 
-    inline archetype* GetRawArchetype() const
-    {
-        return m_archetypePool;
-    }
-
-    inline size_t GetArchetypeCount() const
-    {
-        return m_count;
-    }
+    ArchetypeStorage& GetStorage();
 
 private:
 

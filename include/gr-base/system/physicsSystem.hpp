@@ -65,13 +65,13 @@ private:
 
     void Update() override;
 
-    void SyncTransforms(engine::ecs::world* world);
+    void SyncTransforms(engine::ecs::World* world);
 
-    void onCreateShape(engine::ecs::world* world, Entity entity);
+    void onCreateShape(engine::ecs::World* world, Entity entity);
 
-    void onCreateRigidbody(engine::ecs::world* world, Entity entity);
+    void onCreateRigidbody(engine::ecs::World* world, Entity entity);
 
-    void onCreateCharacter(engine::ecs::world* world, Entity entity);
+    void onCreateCharacter(engine::ecs::World* world, Entity entity);
 };
 
 template <>
