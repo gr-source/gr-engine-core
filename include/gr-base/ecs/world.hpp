@@ -57,7 +57,7 @@ public:
     detail::records Allocate(Entity entity, TypeID type);
 
     template <typename T, typename... Args>
-    T* AddComponent(Entity entity, Args&&... args)
+    inline T* AddComponent(Entity entity, Args&&... args)
     {
         if (!entityManager.isAlive(entity))
             return nullptr;

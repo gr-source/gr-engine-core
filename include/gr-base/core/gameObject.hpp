@@ -59,12 +59,10 @@ struct GameObject
 
     std::vector<TypeID> GetAllComponentIDs() const;
 
-    /*
-    template <typename T>
-    inline void DelComponent()
+
+    explicit operator bool() const
     {
-        DelComponent(ComponentRegistry::GetTypeID<T>());
+        return IsAlive();
     }
-    */
 };
 

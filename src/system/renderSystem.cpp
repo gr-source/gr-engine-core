@@ -49,8 +49,6 @@ void RenderSystem::SyncBVHBounds()
         scene->world.view<TransformWorld, RenderBounds>()
         .Without<Static>();
 
-    // Vector3 corners[8];
-
     view.Each([&](
                 size_t count,
                 Entity*,
@@ -127,13 +125,13 @@ void RenderSystem::SyncBVHBounds()
             corners[6] = { local.max.x, local.max.y, local.min.z };
             corners[7] = { local.max.x, local.max.y, local.max.z };
 
-            Vector3 worldCorner = MultiplyPoint(transformWorld->world, corners[0]);
+            Vector3 worldCorner = Math::transform_point(transformWorld->world, corners[0]);
             Vector3 worldMin = worldCorner;
             Vector3 worldMax = worldCorner;
 
             for (int i = 1; i < 8; ++i)
             {
-                worldCorner = MultiplyPoint(transformWorld->world, corners[i]);
+                worldCorner = Math::transform_point(transformWorld->world, corners[i]);
                 
                 if (worldCorner.x < worldMin.x) worldMin.x = worldCorner.x;
                 if (worldCorner.y < worldMin.y) worldMin.y = worldCorner.y;
