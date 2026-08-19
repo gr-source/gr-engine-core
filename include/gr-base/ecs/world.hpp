@@ -227,4 +227,37 @@ private:
     void resize();
 };
 
+template<typename... Components>
+class QueryBuilder
+{
+public:
+
+    QueryBuilder(Signature& requiredMask,
+                 Signature& excludedMask)
+        : m_requiredMask(requiredMask),
+          m_excludedMask(excludedMask)
+    {
+        m_requiredMask =
+            (0ull | ... | GetRequiredMask<Components>::Get());
+    }
+
+    template<typename... Excluded>
+    QueryBuilder& Without()
+    {
+        m_excludedMask |=
+            (0ull | ... | GetComponentMask<Excluded>::Get());
+
+        return *this;
+    }
+
+    template<typename Func>
+    void Each(Func&& func)
+    {
+        // executa a query
+    }
+
+private:
+    Signature& m_requiredMask;
+    Signature& m_excludedMask;
+};
 };

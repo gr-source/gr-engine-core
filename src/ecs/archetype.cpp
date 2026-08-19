@@ -53,14 +53,16 @@ Entity archetype::deallocate(detail::location loc)
         while (temp)
         {
             auto info = ComponentRegistry::GetComponentByID(__builtin_ctzll(temp));
+            if (info->stride > 0)
+            {
+                uint8_t* dst_array = dst_chunk->base + layout->offsets[info->index];
+                uint8_t* src_array = src_chunk->base + layout->offsets[info->index];
 
-            uint8_t* dst_array = dst_chunk->base + layout->offsets[info->index];
-            uint8_t* src_array = src_chunk->base + layout->offsets[info->index];
+                void* dst = dst_array + (info->stride * dstIndex);
+                void* src = src_array + (info->stride * srcIndex);
 
-            void* dst = dst_array + (info->stride * dstIndex);
-            void* src = src_array + (info->stride * srcIndex);
-
-            info->move(dst, src);
+                info->move(dst, src);
+            }
             
             temp &= (temp - 1);
         }

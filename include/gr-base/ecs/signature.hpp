@@ -19,6 +19,45 @@ struct GetComponentMask
     }
 };
 
+template<typename T>
+struct Without
+{
+    using type = T;
+};
+
+template<typename T>
+struct IsWithout : std::false_type {};
+
+template<typename T>
+struct IsWithout<Without<T>> : std::true_type
+{
+    using Component = T;
+};
+
+template<typename T>
+struct GetRequiredMask
+{
+    static Signature Get()
+    {
+        if constexpr (IsWithout<T>::value)
+            return {};
+        else
+            return GetComponentMask<T>::Get();
+    }
+};
+
+template<typename T>
+struct GetExcludedMask
+{
+    static Signature Get()
+    {
+        if constexpr (IsWithout<T>::value)
+            return GetComponentMask<typename IsWithout<T>::Component>::Get();
+        else
+            return {};
+    }
+};
+
 template <typename... Components>
 using Read = GetComponentMask<Components...>;
 
