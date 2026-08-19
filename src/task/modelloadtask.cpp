@@ -120,7 +120,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         try
         {
 
-            std::vector<MaterialHandle> materials;
+            std::vector<MaterialID> materials;
             for (auto& assetID : asset->materials)
             {
                 auto material =
@@ -130,10 +130,10 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
             }
 
             auto meshRender = go.GetOrAddComponent<MeshRender>();
-            meshRender->materials = (MaterialHandle*)malloc(materials.size() * sizeof(MaterialHandle));
+            meshRender->materials = (MaterialID*)malloc(materials.size() * sizeof(MaterialID));
             meshRender->numMaterials = materials.size();
 
-            memcpy(meshRender->materials, materials.data(), materials.size() * sizeof(MaterialHandle));
+            memcpy(meshRender->materials, materials.data(), materials.size() * sizeof(MaterialID));
         } catch (const std::exception& e)
         {
             Console::LogWarning("[ ModelLoadTask ] Material não carregado: error='%s'.", e.what());
@@ -143,7 +143,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
     if (go.HasComponent<MeshFilter, MeshRender>())
     {
         auto meshFilter = go.GetComponent<MeshFilter>();
-        if (meshFilter->mesh != HANDLE_INVALID)
+        if (meshFilter->mesh != INVALID_ID32)
         {
             auto mesh = AssetsManager::GetMesh(meshFilter->mesh);
             if (mesh != nullptr)

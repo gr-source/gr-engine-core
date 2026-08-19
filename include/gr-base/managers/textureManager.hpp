@@ -6,7 +6,8 @@
 
 #include <gr-render/default.hpp>
 
-#include "gr-base/pool/objectPool.hpp"
+#include <string.h>
+#include "gr-base/pool/sparseSet.hpp"
 
 #include <unordered_map>
 
@@ -16,16 +17,16 @@ public:
     TextureManager();
     ~TextureManager();
 
-    TextureHandle create();
+    TextureID create();
 
-    gr::texture *get(TextureHandle h) const;
+    gr::texture *get(TextureID h) const;
 
-    void remove(TextureHandle h);
+    void remove(TextureID h);
 
     size_t count() const;
 
 private:
-    ObjectPool<gr::texture> m_pool;
+    SparseSet2<gr::texture> m_pool;
 };
 
 

@@ -21,8 +21,8 @@
 struct Renderable
 {
     uint64_t sortKey;
-    MaterialHandle material;
-    MeshHandle mesh;
+    MaterialID material;
+    MeshID mesh;
     uint32_t submesh;
     const Matrix4x4 *world;
 };
@@ -40,7 +40,7 @@ public:
 
     static void Render();
 
-    static void Submit(const MaterialHandle& material, const MeshHandle& mesh, uint32_t submesh, const Matrix4x4* matrice);
+    static void Submit(const MaterialID& material, const MeshID& mesh, uint32_t submesh, const Matrix4x4* matrice);
 
     static void DrawFullScreenQuad();
 

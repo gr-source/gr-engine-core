@@ -4,25 +4,27 @@
 
 #include "gr-base/externals/handle.h"
 
+#include <string.h>
+
 #include <cassert>
 #include <cstdlib>
 
 MeshManager::MeshManager()
 {}
 
-MeshHandle MeshManager::create()
+MeshID MeshManager::create()
 {
-    return m_pool.create();
+    return m_pool.emplace();
 }
 
-Mesh *MeshManager::get(MeshHandle h) const
+Mesh *MeshManager::get(MeshID h) const
 {
-    return m_pool.get(h);
+    return &m_pool.get(h);
 }
 
-void MeshManager::remove(MeshHandle h)
+void MeshManager::remove(MeshID h)
 {
-    m_pool.destroy(h);
+    m_pool.destroy((uint32_t)h);
 }
 
 size_t MeshManager::GetCount() const
@@ -30,18 +32,18 @@ size_t MeshManager::GetCount() const
     return m_pool.count();
 }
 
-void MeshManager::addInCache(AssetID assetID, MeshHandle handle)
+void MeshManager::addInCache(AssetID assetID, MeshID index)
 {
-    uint32_t index = handle_get_first(handle);
+    // uint32_t index = handle_get_first(handle);
     if (index >= meshIDCache.size())
         meshIDCache.resize(index + 1, INVALID_ASSET);
 
     meshIDCache[index] = assetID;
 }
 
-AssetID MeshManager::findInCache(MeshHandle handle) const
+AssetID MeshManager::findInCache(MeshID index) const
 {
-    uint32_t index = handle_get_first(handle);
+    // uint32_t index = handle_get_first(handle);
     if (index >= meshIDCache.size())
         return INVALID_ASSET;
 

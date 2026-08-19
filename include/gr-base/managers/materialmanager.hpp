@@ -5,7 +5,8 @@
 #include "gr-base/core/default.hpp"
 
 #include "gr-base/asset/default.hpp"
-#include "gr-base/pool/objectPool.hpp"
+
+#include "gr-base/pool/sparseSet.hpp"
 
 #include <vector>
 
@@ -14,22 +15,22 @@ class MaterialManager
 public:
     MaterialManager();
 
-    MaterialHandle create();
+    MaterialID create();
 
-    Material *get(MaterialHandle h) const;
+    Material& get(MaterialID h) const;
 
-    void destroy(MaterialHandle h);
+    void destroy(MaterialID h);
 
     size_t GetCount() const;
 
-    void addInCache(AssetID assetID, MaterialHandle handle);
+    void addInCache(AssetID assetID, MaterialID handle);
 
-    AssetID findInCache(MaterialHandle handle) const;
+    AssetID findInCache(MaterialID handle) const;
 
 private:
     std::vector<AssetID> materialIDCacheList;
 
-    ObjectPool<Material> m_pool;
+    SparseSet2<Material> m_pool;
 };
 
 

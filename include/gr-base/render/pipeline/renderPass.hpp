@@ -1,16 +1,16 @@
 #pragma once
 
 #include "gr-base/core/assetPtr.hpp"
+#include "gr-base/core/default.hpp"
 
 #include <gr-render/default.hpp>
 
 #include <vector>
-#include <array>
 
 struct RenderGraphBuild
 {
-    std::vector<Handle> write;
-    std::vector<Handle> read;
+    std::vector<TextureID> write;
+    std::vector<TextureID> read;
 
     std::vector<AssetPtr<gr::texture>> colorAttachment;
 
@@ -44,14 +44,14 @@ struct RenderGraphBuild
 
         add(write.size());
 
-        for (Handle handle : write)
+        for (TextureID handle : write)
             add(handle);
 
         add(0xDEADBEEFCAFEBABEULL);
 
         add(read.size());
 
-        for (Handle handle : read)
+        for (TextureID handle : read)
             add(handle);
 
         return hash;

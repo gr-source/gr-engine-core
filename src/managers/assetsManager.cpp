@@ -28,6 +28,8 @@
 
 #include <stdexcept>
 
+#include <string.h>
+
 AssetsManager* AssetsManager::s_AssetsManager = nullptr;
 
 void AssetsManager::Initialize()
@@ -55,8 +57,8 @@ AssetPtr<gr::texture> AssetsManager::LoadTexture(const std::string& uri)
 #include <gr-render/texture.hpp>
 AssetPtr<gr::texture> AssetsManager::LoadTexture(AssetID id)
 {
-    TextureHandle h = s_AssetsManager->findHandleInCache(id);
-    if (h != HANDLE_INVALID)
+    TextureID h = s_AssetsManager->findHandleInCache(id);
+    if (h != INVALID_ID32)
         return h;
 
     auto info = AssetDB::GetAsset(id);
@@ -122,14 +124,14 @@ void AssetsManager::DestroyTexture(AssetPtr<gr::texture> ptr)
     s_AssetsManager->mTextureManager->remove(ptr.handle);
 }
 
-gr::texture* AssetsManager::GetTexture(TextureHandle h)
+gr::texture* AssetsManager::GetTexture(TextureID h)
 {
     return s_AssetsManager->mTextureManager->get(h);
 }
 
 // ********** Mesh ********** //
 /*
-MeshHandle AssetsManager::LoadMesh(const std::string& name)
+MeshID AssetsManager::LoadMesh(const std::string& name)
 {
     return LoadMesh(engine::hash::fnv1_str(name.c_str()));
 }
@@ -139,8 +141,8 @@ MeshHandle AssetsManager::LoadMesh(const std::string& name)
 
 AssetPtr<Mesh> AssetsManager::LoadMesh(AssetID id)
 {
-    MeshHandle h = s_AssetsManager->findHandleInCache(id);
-    if (h != HANDLE_INVALID)
+    MeshID h = s_AssetsManager->findHandleInCache(id);
+    if (h != INVALID_ID32)
         return h;
 
     auto info = AssetDB::GetAsset(id);
@@ -208,15 +210,15 @@ void AssetsManager::RemoveMesh(AssetPtr<Mesh> ptr)
     s_AssetsManager->mMeshManager->remove(ptr.handle);
 }
 
-Mesh *AssetsManager::GetMesh(MeshHandle h)
+Mesh *AssetsManager::GetMesh(MeshID h)
 {
     return s_AssetsManager->mMeshManager->get(h);
 }
 
 AssetPtr<Material> AssetsManager::LoadMaterial(AssetID id)
 {
-    MaterialHandle h = s_AssetsManager->findHandleInCache(id);
-    if (h != HANDLE_INVALID)
+    MaterialID h = s_AssetsManager->findHandleInCache(id);
+    if (h != INVALID_ID32)
         return h;
 
     auto info = AssetDB::GetAsset(id);
@@ -258,7 +260,7 @@ AssetPtr<Material> AssetsManager::CreateMaterial()
     return s_AssetsManager->mMaterialManager->create();
 }
 
-Material *AssetsManager::GetMaterial(MaterialHandle h)
+Material& AssetsManager::GetMaterial(MaterialID h)
 {
     return s_AssetsManager->mMaterialManager->get(h);
 }

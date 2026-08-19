@@ -1,7 +1,6 @@
 #pragma once
 
 #include "gr-base/core/assetPtr.hpp"
-#include "gr-base/render/rendertarget.hpp"
 
 #include <gr-render/default.hpp>
 
@@ -22,7 +21,7 @@ public:
     void compile();
 
 private:
-    std::unordered_map<Handle, uint32_t> m_cacheRenderTarget;
+    std::unordered_map<uint64_t, uint32_t> m_cacheRenderTarget;
 
     std::vector<std::shared_ptr<IRenderPass>> passes;
 

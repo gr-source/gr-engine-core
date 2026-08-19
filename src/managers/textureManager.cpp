@@ -18,24 +18,24 @@ TextureManager::~TextureManager()
     }
 }
 
-TextureHandle TextureManager::create()
+TextureID TextureManager::create()
 {
-    TextureHandle h = m_pool.create();
+    TextureID h = m_pool.emplace();
 
-    gr::texture* texture = m_pool.get(h);
-    texture->create();
+    auto& texture = m_pool.get(h);
+    texture.create();
 
     return h;
 }
 
-gr::texture *TextureManager::get(TextureHandle h) const
+gr::texture *TextureManager::get(TextureID h) const
 {
-    return m_pool.get(h);
+    return m_pool.try_get(h);
 }
 
-void TextureManager::remove(TextureHandle h)
+void TextureManager::remove(TextureID h)
 {
-    gr::texture* texture = m_pool.get(h);
+    gr::texture* texture = m_pool.try_get(h);
     if (texture == nullptr)
         return;
 

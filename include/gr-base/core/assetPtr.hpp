@@ -1,15 +1,15 @@
 #pragma once
 
-#include "gr-base/externals/handle.h"
+#include <cstdint>
 
 template<typename T>
 class AssetPtr
 {
 public:
-    Handle handle = HANDLE_INVALID;
+    uint32_t handle = UINT32_MAX;
 
     AssetPtr() = default;
-    AssetPtr(Handle h) : handle(h) {}
+    AssetPtr(uint32_t h) : handle(h) {}
 
     T* get();
 

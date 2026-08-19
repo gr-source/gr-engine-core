@@ -2,9 +2,11 @@
 
 #include <cstdint>
 
-typedef uint64_t MaterialHandle;
-typedef uint64_t MeshHandle;
-typedef uint64_t TextureHandle;
+#define INVALID_ID32 UINT32_MAX
+
+typedef uint32_t MaterialID;
+typedef uint32_t TextureID;
+typedef uint32_t MeshID;
 
 struct GameObject;
 

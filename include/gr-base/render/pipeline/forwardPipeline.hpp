@@ -2,7 +2,6 @@
 
 #include "gr-base/render/pipeline/renderPipeline.hpp"
 #include "gr-base/render/pipeline/renderGraph.hpp"
-#include "gr-base/render/default.hpp"
 
 #include "gr-base/core/assetPtr.hpp"
 

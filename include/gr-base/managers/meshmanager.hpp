@@ -7,29 +7,29 @@
 
 #include "gr-base/asset/default.hpp"
 
-#include "gr-base/pool/objectPool.hpp"
+#include "gr-base/pool/sparseSet.hpp"
 
 class MeshManager
 {
 public:
     MeshManager();
 
-    MeshHandle create();
+    MeshID create();
 
-    Mesh *get(MeshHandle h) const;
+    Mesh *get(MeshID h) const;
 
-    void remove(MeshHandle h);
+    void remove(MeshID h);
 
     size_t GetCount() const;
 
-    void addInCache(AssetID assetID, MeshHandle handle);
+    void addInCache(AssetID assetID, MeshID handle);
 
-    AssetID findInCache(MeshHandle handle) const;
+    AssetID findInCache(MeshID handle) const;
 
 private:
     std::vector<AssetID> meshIDCache;
 
-    ObjectPool<Mesh> m_pool;
+    SparseSet2<Mesh> m_pool;
 };
 
 

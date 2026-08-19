@@ -38,7 +38,7 @@ public:
 
     static void DestroyTexture(AssetPtr<gr::texture> ptr);
 
-    static gr::texture* GetTexture(TextureHandle h);
+    static gr::texture* GetTexture(TextureID h);
 
     // template <typename ...Args>
     // static void LoadTexture(const std::string &path, Args &&...args);
@@ -60,7 +60,7 @@ public:
     static void LoadGameObjectAsync(const std::string &name, Args &&...args);
 
     // ********** Mesh ********** //
-    // static MeshHandle LoadMesh(const std::string& name);
+    // static MeshID LoadMesh(const std::string& name);
 
     static AssetPtr<Mesh> LoadMesh(AssetID id);
 
@@ -71,20 +71,20 @@ public:
 
     static void RemoveMesh(AssetPtr<Mesh> ptr);
 
-    static Mesh *GetMesh(MeshHandle h);
+    static Mesh *GetMesh(MeshID h);
 
     // shader property
     static usize GetTextureCount();
 
     // ********** Material API publica ********** //
-    // static MaterialHandle LoadMaterial(const std::string& name);
+    // static MaterialID LoadMaterial(const std::string& name);
 
     static AssetPtr<Material> LoadMaterial(AssetID id);
 
     static AssetPtr<Material> CreateMaterial();
 
     // ********** Material API privada ********** //
-    static Material *GetMaterial(MaterialHandle h);
+    static Material& GetMaterial(MaterialID h);
 
     static size_t GetMaterialCount();
 

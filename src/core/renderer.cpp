@@ -48,14 +48,14 @@ void Renderer::Render()
 }
 
 void Renderer::Submit(
-        const MaterialHandle& material,
-        const MeshHandle& mesh,
+        const MaterialID& material,
+        const MeshID& mesh,
         uint32_t submesh,
         const Matrix4x4* matrice)
 {
     uint64_t sortKey =
-          (uint64_t)handle_get_first(material) << 32
-        | (uint64_t)handle_get_first(mesh) << 8
+          (uint64_t)material << 32
+        | (uint64_t)mesh << 8
         | (uint64_t)submesh;
     
     s_Renderer->m_renderables.push_back({ sortKey, material, mesh, submesh, matrice });
@@ -141,8 +141,8 @@ void Renderer::flush()
         return a.sortKey < b.sortKey;
     });
 
-    MeshHandle lastMesh =
-        HANDLE_INVALID;
+    MeshID lastMesh =
+        INVALID_ID32;
 
     gr::shader* lastShader =
         nullptr;
@@ -180,7 +180,7 @@ void Renderer::flush()
 
             auto& submesh = mesh->submeshes[first.submesh];
 
-            auto material = AssetsManager::GetMaterial(first.material);
+            auto material = &AssetsManager::GetMaterial(first.material);
             auto shader = material->shader;
             auto instances = &m_metrices[matrixID - instanceCount];
 

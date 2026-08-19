@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <utility>
 
+#include <assert.h>
 #include <stdint.h>
 
 #define INVALID_SPARSE_ID UINT32_MAX
@@ -273,7 +274,7 @@ public:
 
     void destroy(SparseID id)
     {
-        T* ptr = get(id);
+        T* ptr = try_get(id);
         if (ptr == nullptr)
             return;
 
@@ -283,7 +284,7 @@ public:
         deallocate(id);
     }
 
-    inline T* get(SparseID sparseID) const
+    inline T* try_get(SparseID sparseID) const
     {
         if (sparseID >= m_sparseCapacity)
             return nullptr;
@@ -293,6 +294,17 @@ public:
             return nullptr;
 
         return &m_dense[denseID];
+    }
+
+
+    inline T& get(SparseID id) const
+    {
+        assert(id < m_sparseCapacity);
+
+        const uint32_t denseID = m_sparseToDense[id];
+        assert(denseID != INVALID_SPARSE_ID);
+
+        return m_dense[denseID];
     }
 
     inline size_t count() const

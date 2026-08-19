@@ -50,12 +50,11 @@ void RenderGraph::Execute()
 #include <functional>
 #include <algorithm>
 
-#include <iostream>
 void RenderGraph::compile()
 {
-    std::unordered_map<TextureHandle, std::vector<std::shared_ptr<IRenderPass>>> readers;
+    std::unordered_map<TextureID, std::vector<std::shared_ptr<IRenderPass>>> readers;
 
-    std::unordered_map<TextureHandle, std::vector<std::shared_ptr<IRenderPass>>> writers;
+    std::unordered_map<TextureID, std::vector<std::shared_ptr<IRenderPass>>> writers;
 
     for (auto& pass : passes)
     {

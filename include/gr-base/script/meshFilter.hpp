@@ -6,11 +6,10 @@
 
 #include "gr-base/asset/default.hpp"
 
-#include "gr-base/externals/handle.h"
-
 struct MeshFilter
 {
-    MeshHandle mesh = HANDLE_INVALID;
+    MeshID mesh =
+        INVALID_ID32;
 };
 
 template <>

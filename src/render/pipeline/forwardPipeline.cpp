@@ -6,6 +6,8 @@
 #include "gr-base/render/pipeline/scenePass.hpp"
 #include "gr-base/render/pipeline/toneMappingPass.hpp"
 
+#include <gr-render/texture.hpp>
+
 AssetPtr<gr::texture> ForwardPipeline::GetTextureOutput() const
 {
     return m_ldr;

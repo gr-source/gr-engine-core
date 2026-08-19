@@ -6,11 +6,13 @@
 
 #include "gr-base/ecs/world.hpp"
 
+#include "gr-base/scopeTimer.hpp"
 #include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/spatial/bvhtree.hpp"
+#include <iostream>
 
 void RenderSystem::Update()
 {
@@ -20,6 +22,9 @@ void RenderSystem::Update()
 void RenderSystem::Render()
 {
     scene->bvhtree.queryFrustumAABB(entities);
+
+    ScopeTimer scope;
+    scope.start();
 
     for (auto& entity : entities)
     {
@@ -37,6 +42,10 @@ void RenderSystem::Render()
                 );
         }
     }
+
+    double ms = scope.end();
+
+    std::cout << entities.size() << ": " << ms << std::endl;
 
     entities.clear();
 }
