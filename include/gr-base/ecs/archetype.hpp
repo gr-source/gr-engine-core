@@ -8,7 +8,7 @@ namespace engine::ecs
 {
     struct archetype
     {
-        engine::ecs::detail::layout* layout = nullptr;
+        detail::layout* layout = nullptr;
 
         Signature mask = INVALID_SIGNATURE;
 
@@ -21,14 +21,14 @@ namespace engine::ecs
         size_t chunkCount = 0;
         Chunk** chunks = nullptr;
 
-        ArchetypeID addEdges(TypeID typeID);
+        // ArchetypeID addEdges(TypeID typeID);
 
-        engine::ecs::detail::location allocate(Entity entity);
+        detail::location allocate(Entity entity);
 
-        Entity deallocate(engine::ecs::detail::location loc);
+        Entity deallocate(detail::location loc);
 
         template <typename T>
-        inline T* get(engine::ecs::detail::location loc) const
+        inline T* get(detail::location loc) const
         {
             return getRaw<T>(loc.chunk) + loc.row;
         }
@@ -46,6 +46,17 @@ namespace engine::ecs
         Chunk* create() const;
 
         void addFreeID(size_t oldCapacity);
+    };
+
+
+    struct graph
+    {
+        size_t capacity = 0;
+
+        ArchetypeID* removeEdges = nullptr;
+        ArchetypeID* addEdges = nullptr;
+
+        void grow(size_t new_capacity);
     };
 }
 

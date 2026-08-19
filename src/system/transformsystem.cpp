@@ -1,23 +1,35 @@
 #include "gr-base/system/transformsystem.hpp"
 
 #include "gr-base/core/gameObject.hpp"
-#include "gr-base/managers/assetsManager.hpp"
 
-#include "gr-base/core/geometry/mesh.hpp"
-
-#include "gr-base/script/meshFilter.hpp"
-#include "gr-base/script/meshRender.hpp"
 #include "gr-base/script/relationship.hpp"
 #include "gr-base/script/transform.hpp"
 
 #include "gr-base/core/scene.hpp"
 
-#include "gr-base/spatial/bvhtree.hpp"
-
-#include <iostream>
-
 void TransformSystem::Update()
 {
+    /*
+    scene->world.Query<TransformLocal, TransformWorld>(
+        [](size_t count,
+           Entity* entities,
+           TransformLocal* local,
+           TransformWorld* world)
+        {
+            for (size_t i = 0; i < count; ++i)
+            {
+                world[i].local =
+                    Math::CreateTRS(
+                        local[i].position,
+                        local[i].rotation,
+                        local[i].scale
+                    );
+
+                world[i].world = world[i].local;
+            }
+        });
+    */
+
     if (!scene->Changed<TransformWorld>(entities))
         return;
 

@@ -10,6 +10,19 @@
 #include <cstdlib>
 #include <cstring>
 
+size_t bit_floor(size_t value)
+{
+    if (value == 0)
+        return 0;
+
+    size_t result = 1;
+
+    while ((result << 1) <= value)
+        result <<= 1;
+
+    return result;
+}
+
 namespace engine::ecs
 {
 
@@ -20,19 +33,105 @@ world::world()
 
 world::~world()
 {
+    /*
+    printf("\n========== Archetype Graph ==========\n");
+
+    for (size_t id = 0; id < m_count; ++id)
+    {
+        const auto& g = graphs[id];
+        const auto& arche = m_archetypePool[id];
+
+        printf("\n[%zu] mask=0x%016llX\n",
+               id,
+               (unsigned long long)arche.mask);
+
+        // Componentes do archetype
+        printf("  Components: ");
+
+        Signature mask = arche.mask;
+
+        if (mask == 0)
+        {
+            printf("(empty)");
+        }
+        else
+        {
+            bool first = true;
+
+            while (mask)
+            {
+                TypeID typeID = __builtin_ctzll(mask);
+
+                if (!first)
+                    printf(", ");
+
+                printf("%s", ComponentRegistry::GetComponentByID(typeID)->name);
+
+                first = false;
+                mask &= mask - 1;
+            }
+        }
+
+        printf("\n");
+
+        bool hasEdges = false;
+
+        for (size_t typeID = 0; typeID < g.capacity; ++typeID)
+        {
+            ArchetypeID add =
+                g.addEdges
+                    ? g.addEdges[typeID]
+                    : INVALID_ARCHETYPE;
+
+            ArchetypeID remove =
+                g.removeEdges
+                    ? g.removeEdges[typeID]
+                    : INVALID_ARCHETYPE;
+
+            if (add != INVALID_ARCHETYPE)
+            {
+                printf(
+                    "  ADD    Type %zu -> Archetype %u\n",
+                    typeID,
+                    add
+                );
+
+                hasEdges = true;
+            }
+
+            if (remove != INVALID_ARCHETYPE)
+            {
+                printf(
+                    "  REMOVE Type %zu -> Archetype %u\n",
+                    typeID,
+                    remove
+                );
+
+                hasEdges = true;
+            }
+        }
+
+        if (!hasEdges)
+            printf("  [no edges]\n");
+    }
+
+    printf("\n=====================================\n");
+    */
+
     for (size_t i=0;i<m_count;i++)
     {
         auto& arche = m_archetypePool[i];
+        auto& graph = graphs[i];
+
+        if (graph.addEdges != nullptr)
+            free(graph.addEdges);
+
+        if (graph.removeEdges != nullptr)
+            free(graph.removeEdges);
 
         auto layout = arche.layout;
         if (layout != nullptr)
         {
-            if (layout->graphy.addEdges != nullptr)
-                free(layout->graphy.addEdges);
-
-            if (layout->graphy.removeEdges != nullptr)
-                free(layout->graphy.removeEdges);
-
             if (layout->offsets != nullptr)
                 free(layout->offsets);
 
@@ -42,13 +141,19 @@ world::~world()
         if (arche.freeList != nullptr)
             free(arche.freeList);
 
-        /// TODO: Vai causa vazamentos de memoia em non-trivally
         if (arche.chunks != nullptr)
+        {
+            for (size_t i=0;i<arche.chunkCapacity;i++)
+                free(arche.chunks[i]);
             free(arche.chunks);
+        }
     }
 
     if (m_archetypePool != nullptr)
         free(m_archetypePool);
+
+    if (graphs != nullptr)
+        free(graphs);
 }
 
 Entity world::Create()
@@ -118,48 +223,43 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask)
     if (it != signatureToArchetype.end())
         return it->second;
 
-    if ((m_count + 1) >= m_capacity)
+    if (m_count >= m_capacity)
         resize();
 
-    TypeID maxTypeID = 0;
-
-    Signature temp = mask;
-    while (temp)
-    {
-        TypeID id = __builtin_ctzll(temp);
-        if (id >= maxTypeID)
-            maxTypeID = id + 1;
-        
-        temp &= (temp - 1);
-    }
-
-
-    engine::ecs::detail::layout layout;
-    if (maxTypeID > 0)
-    {
-        layout.numOffsets = maxTypeID;
-        layout.offsets = (size_t*)malloc(maxTypeID * sizeof(size_t));
-    }
-
+    size_t numOffsets = 0;
     size_t stride = 0;
     size_t maxAlign = 1;
 
     maxAlign = std::max(maxAlign, alignof(Chunk));
     maxAlign = std::max(maxAlign, alignof(Entity));
 
-    for (auto type : ComponentRegistry::GetTypesOfMask(mask))
+    Signature temp = mask;
+    while (temp)
     {
-        auto info = ComponentRegistry::GetComponentByID(type);
+        TypeID typeID = __builtin_ctzll(temp);
+        if (typeID >= numOffsets)
+            numOffsets = typeID + 1;
+
+        auto info = ComponentRegistry::GetComponentByID(typeID);
 
         stride += info->stride;
         maxAlign = std::max(maxAlign, info->alignment);
+        
+        temp &= (temp - 1);
     }
 
-    layout.stride = stride;
+    auto layout = (detail::layout*)malloc(sizeof(detail::layout));
+    new (layout) detail::layout();
 
-    layout.capacity = (stride > 0)
-        ? (CHUNK_SIZE / stride)
-        : 0;
+    layout->numOffsets = numOffsets;
+    layout->offsets = (size_t*)malloc(numOffsets * sizeof(size_t));
+
+    layout->stride = stride;
+
+    layout->capacity =
+        stride > 0 ? (CHUNK_SIZE / stride) : 0;
+
+    layout->capacity = bit_floor(layout->capacity);
 
     size_t localOffset = 0;
     for (auto type : ComponentRegistry::GetTypesOfMask(mask))
@@ -168,53 +268,49 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask)
 
         localOffset = align_up(localOffset, info->alignment);
 
-        layout.offsets[type] = localOffset;
+        layout->offsets[type] = localOffset;
 
-        localOffset += info->stride * layout.capacity;
+        localOffset += info->stride * layout->capacity;
     }
 
     size_t headerAndEntitiesSize =
         sizeof(Chunk) +
-        (sizeof(Entity) * layout.capacity);
+        (sizeof(Entity) * layout->capacity);
 
     size_t baseOffset =
         align_up(headerAndEntitiesSize, maxAlign);
 
     size_t data_size =
         stride > 0 ?
-            stride * layout.capacity : 0;
+            stride * layout->capacity : 0;
 
-    layout.payloadSize =
+    layout->payloadSize =
         align_up(
                 baseOffset + data_size,
                 maxAlign
             );
 
-    // layout.payloadSize =
-    //     stride > 0 ?
-    //         align_up(
-    //                 buffer_size,
-    //                 maxAlign
-    //             ) : 0;
+    layout->alignment = maxAlign;
 
-    layout.alignment = maxAlign;
+
+    // if (typeID != INVALID_TYPE)
+    {
+
+    }
 
     ArchetypeID id = static_cast<ArchetypeID>(m_count++);
+
+    graph* g = graphs + id;
+    new (g) graph();
+
+    if (numOffsets >= g->capacity)
+        g->grow(numOffsets + 1);
 
     archetype* arche = GetArchetypeByID(id);
     new (arche) archetype();
 
+    arche->layout = layout;
     arche->mask = mask;
-
-    // Define a layout para runtime
-    arche->layout = (detail::layout*)malloc(sizeof(detail::layout));
-    memcpy(arche->layout, &layout, sizeof(detail::layout));
-
-    // if (typeID != INVALID_TYPE)
-    {
-        if (maxTypeID >= arche->layout->graphy.capacity)
-            arche->layout->graphy.grow(maxTypeID + 1);
-    }
 
     signatureToArchetype.emplace(mask, id);
 
@@ -266,14 +362,14 @@ detail::records world::Allocate(Entity entity, TypeID type)
     if ((lastArcheType->mask & mask) == mask)
         return rec;
 
-    ArchetypeID dstID = lastArcheType->addEdges(type);
+    ArchetypeID dstID = AddEdges(rec.archetype, type);
     if (dstID == INVALID_ARCHETYPE)
     {
         Signature newMask = lastArcheType->mask | mask;
 
         dstID = GetOrCreateArcheType(newMask);
 
-        LinkAdd(type, rec.archetype, dstID);
+        LinkAdd(rec.archetype, type, dstID);
     }
 
     auto new_rec = MoveEntity(rec, dstID, entity);
@@ -406,24 +502,6 @@ void* world::GetComponentByID(Entity entity, TypeID type) const
     return (void*)(raw + record.location.row * info->stride);
 }
 
-/*
-    assert(entityManager.isAlive(entity));
-
-    auto info = ComponentRegistry::GetComponentByID(type);
-    assert(info != nullptr);
-
-    auto record = Allocate(entity, type);
-
-    auto arche = GetArchetypeByID(record.archetype);
-
-    uint8_t* raw = (uint8_t*)arche->getRaw(record.location.chunk, type);
-
-    void* component = (void*)(raw + record.location.row * info->stride);
-    info->constructor(component, nullptr);
-
-    return component;
-*/
-
 void world::DelComponentByID(Entity entity, TypeID typeID)
 {
     DelComponentByMask(entity, (Signature)(1ull << typeID));
@@ -450,56 +528,6 @@ void world::DelComponentByMask(Entity entity, Signature requiredMask)
     entityRecords[entityID] =
         MoveEntity(rec, dstID, entity);
 }
-
-/*
-void* world::GetComponent(Entity e, TypeID typeID) const
-{
-    if (!entityManager.isAlive(e))
-        return nullptr;
-
-    auto type = ComponentRegistry::GetComponentByID(typeID);
-    if (type == nullptr)
-        return nullptr;
-
-    EntityID entityID = handle_get_first(e);
-    if (entityID >= entityRecords.size())
-        return nullptr;
-
-    auto& rec = entityRecords[entityID];
-
-    auto arche = GetArchetypeByID(rec.archetype);
-    if ((arche->mask & (1ull << typeID)) != (1ull << typeID))
-        return nullptr;
-
-    return (void*)arche->get(rec.location, type);
-}
-
-void* world::GetOrAddComponent(Entity e, TypeID typeID)
-{
-    void* c = GetComponent(e, typeID);
-    if (c != nullptr)
-        return c;
-    return AddComponent(e, typeID, nullptr);
-}
-*/
-
-/*
-bool world::HasComponent(Entity entity, Signature mask) const
-{
-    if (!entityManager.isAlive(entity))
-        return false;
-
-    uint32_t entityID = handle_get_first(entity);
-    if (entityID >= entityRecords.size())
-        return false;
-
-    auto& loc = entityRecords[entityID];
-    
-    auto arche = GetArchetypeByID(loc.archetype);
-
-    return (arche->mask & mask) == mask;
-}
-*/
 
 std::vector<TypeID> world::GetAllComponentType(Entity e) const
 {
@@ -574,53 +602,24 @@ archetype* world::GetArchetypeByID(ArchetypeID id) const
     return &m_archetypePool[id];
 }
 
-void world::RemoveArchetype(ArchetypeID id)
+void world::LinkAdd(ArchetypeID src, TypeID typeID, ArchetypeID dst)
 {
-    auto arche = GetArchetypeByID(id);
-    if (arche == nullptr)
-        return;
+    if (typeID >= graphs[src].capacity)
+        graphs[src].grow(typeID + 1);
 
-    /*
-    if (!entityManager.isAlive(entity))
-        return;
+    if (typeID >= graphs[dst].capacity)
+        graphs[dst].grow(typeID + 1);
 
-    auto type = ComponentRegistry::GetComponentByID(typeID);
-    if (type == nullptr)
-        return;
-
-    uint32_t entityID = handle_get_first(entity);
-
-    auto& rec = entityRecords[entityID];
-
-    auto src = GetArchetypeByID(rec.archetype);
-
-    Signature oldMask = src->mask;
-    Signature newMask = oldMask & ~(1ull << type->index);
-
-    auto dstID = GetOrCreateArcheType(newMask, type->index);
-    if (dstID == rec.archetype)
-        return;
-
-    entityRecords[entityID] =
-        MoveEntity(rec, dstID, entity);
-        */
+    graphs[src].addEdges[typeID] = dst;
+    graphs[dst].removeEdges[typeID] = src;
 }
 
-void world::LinkAdd(TypeID typeID, ArchetypeID srcID, ArchetypeID dstID)
+ArchetypeID world::AddEdges(ArchetypeID src, TypeID typeID)
 {
-    auto src = GetArchetypeByID(srcID);
-    auto dst = GetArchetypeByID(dstID);
+    if (typeID >= graphs[src].capacity)
+        graphs[src].grow(typeID + 1);
 
-    if (typeID >= src->layout->graphy.capacity)
-        src->layout->graphy.grow(typeID + 1);
-
-    if (typeID >= dst->layout->graphy.capacity)
-        dst->layout->graphy.grow(typeID + 1);
-
-    // logger::trace("[ world ] LinkAdd typeID=%d src_edges=%ld dst_rem=%ld", typeID, src->m_addEdges.size(), dst->m_removeEdges.size());
-
-    src->layout->graphy.addEdges[typeID] = dstID;
-    dst->layout->graphy.removeEdges[typeID] = srcID;
+    return graphs[src].addEdges[typeID];
 }
 
 void world::resize()
@@ -632,6 +631,9 @@ void world::resize()
             m_archetypePool,
             m_capacity * sizeof(archetype)
         );
+
+    graphs =
+        (graph*)realloc(graphs, m_capacity * sizeof(graph));
 }
 }
 

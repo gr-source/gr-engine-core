@@ -24,6 +24,7 @@ class world
     ArchetypeID m_emptyArchetypeStorage = INVALID_ARCHETYPE;
 
     archetype* m_archetypePool = nullptr;
+    graph* graphs = nullptr;
     
     size_t m_capacity = 0;
 
@@ -186,11 +187,20 @@ public:
             if ((arche.mask & requiredMask) != requiredMask)
                 continue;
 
+            size_t* offsets =
+                arche.layout->offsets;
+
             for (size_t j=0;j<arche.chunkCount;j++)
             {
                 Chunk* chunk = arche.chunks[j];
 
-                func(chunk->count, chunk->entities, arche.getRaw<Components>(static_cast<ChunkID>(j))...);
+                func(
+                        chunk->count,
+                        chunk->entities,
+                        reinterpret_cast<Components*>(chunk->base + offsets[GetComponentID<Components>::id])...
+
+                        // arche.getRaw<Components>(static_cast<ChunkID>(j))...
+                    );
             }
         }
     }
@@ -209,13 +219,13 @@ public:
         return m_count;
     }
 
-    void RemoveArchetype(ArchetypeID id);
-
 private:
 
     engine::ecs::detail::records MoveEntity(engine::ecs::detail::records src_rec, ArchetypeID dstID, Entity e);
 
-    void LinkAdd(TypeID typeID, ArchetypeID srcID, ArchetypeID dstID);
+    void LinkAdd(ArchetypeID src, TypeID typeID, ArchetypeID dst);
+
+    ArchetypeID AddEdges(ArchetypeID src, TypeID typeID);
 
     void resize();
 };

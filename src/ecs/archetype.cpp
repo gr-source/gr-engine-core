@@ -7,20 +7,16 @@
 
 namespace engine::ecs
 {
-ArchetypeID archetype::addEdges(TypeID typeID)
-{
-    if (typeID >= layout->graphy.capacity)
-        layout->graphy.grow(typeID + 1);
+/*
 
-    return layout->graphy.addEdges[typeID];
-}
+*/
 
-engine::ecs::detail::location archetype::allocate(Entity entity)
+detail::location archetype::allocate(Entity entity)
 {
     uint32_t id = static_cast<uint32_t>(entityCount++);
 
     uint32_t chunkIndex = id / layout->capacity;
-    uint32_t row = id % layout->capacity;
+    uint32_t row = id & (layout->capacity - 1);
 
     if (chunkIndex >= chunkCapacity)
         grow();
@@ -36,7 +32,7 @@ engine::ecs::detail::location archetype::allocate(Entity entity)
     return { chunkIndex, row };
 }
 
-Entity archetype::deallocate(engine::ecs::detail::location loc)
+Entity archetype::deallocate(detail::location loc)
 {
     uint32_t lastGlobal = static_cast<uint32_t>(--entityCount);
 
@@ -44,7 +40,7 @@ Entity archetype::deallocate(engine::ecs::detail::location loc)
     uint32_t dstIndex = loc.row;
 
     uint32_t srcChunk = lastGlobal / layout->capacity;
-    uint32_t srcIndex = lastGlobal % layout->capacity;
+    uint32_t srcIndex = lastGlobal & (layout->capacity - 1);
 
     Entity moved = INVALID_ENTITY;
 
@@ -143,6 +139,25 @@ void archetype::addFreeID(size_t oldCapacity)
     freeChunk = static_cast<ChunkID>(oldCapacity);
 
     chunkCount++;
+}
+
+void graph::grow(size_t new_capacity)
+{
+    if (capacity >= new_capacity)
+        return;
+
+    size_t oldCapacity = capacity;
+
+    capacity = new_capacity;
+
+    removeEdges = (ArchetypeID*)realloc(removeEdges, capacity * sizeof(ArchetypeID));
+    addEdges = (ArchetypeID*)realloc(addEdges, capacity * sizeof(ArchetypeID));
+
+    for (size_t i=oldCapacity;i<capacity;i++)
+    {
+        removeEdges[i] = INVALID_ARCHETYPE;
+        addEdges[i] = INVALID_ARCHETYPE;
+    }
 }
 }
 
