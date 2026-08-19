@@ -9,7 +9,6 @@
 #include "gr-base/ecs/componentRegistry.hpp"
 #include "gr-base/ecs/systemRegistry.hpp"
 
-#include "gr-base/script/meshFilter.hpp"
 #include "gr-base/script/meshRender.hpp"
 #include "gr-base/spatial/bvhtree.hpp"
 
@@ -82,17 +81,16 @@ Entity Scene::create(Entity other)
     const GameObject otherGO(this, other);
     // m_isStatic = otherGO->m_isStatic;
 
-    auto otherTrans = otherGO.GetComponent<TransformLocal>();
+    auto& otherTrans = otherGO.GetComponent<TransformLocal>();
 
-    auto myTrans = go.GetComponent<TransformLocal>();
-    myTrans->position = otherTrans->position;
-    myTrans->rotation = otherTrans->rotation;
-    myTrans->scale = otherTrans->scale;
+    auto& myTrans = go.GetComponent<TransformLocal>();
+    myTrans.position = otherTrans.position;
+    myTrans.rotation = otherTrans.rotation;
+    myTrans.scale = otherTrans.scale;
 
     MarkChanged<TransformWorld>(go.entity);
 
-    auto otherRel = otherGO.GetComponent<Relationship>();
-    if (otherRel != nullptr)
+    if (auto otherRel = otherGO.TryGetComponent<Relationship>())
     {
         Entity sibling = otherRel->firstChild;
         while (sibling != INVALID_ENTITY)
@@ -107,7 +105,7 @@ Entity Scene::create(Entity other)
         }
     }
 
-    auto rel = go.GetComponent<Relationship>();
+    auto rel = go.TryGetComponent<Relationship>();
     if (rel == nullptr || rel->parent == INVALID_ENTITY)
         SetParent(m_root, go.entity);
 
@@ -139,12 +137,12 @@ Entity Scene::create(Entity other)
 
     if (otherGO.HasComponent<RenderBounds>())
     {
-        auto otherRenderBounds = otherGO.GetComponent<RenderBounds>();
-        if (otherRenderBounds->id != UINT32_MAX)
+        auto& otherRenderBounds = otherGO.GetComponent<RenderBounds>();
+        if (otherRenderBounds.id != UINT32_MAX)
         {
-            auto renderBounds = go.GetOrAddComponent<RenderBounds>();
-            renderBounds->localBounds = otherRenderBounds->localBounds;
-            renderBounds->id = bvhtree.insert(go.entity, otherRenderBounds->localBounds);
+            auto& renderBounds = go.GetOrAddComponent<RenderBounds>();
+            renderBounds.localBounds = otherRenderBounds.localBounds;
+            renderBounds.id = bvhtree.insert(go.entity, otherRenderBounds.localBounds);
         }
     }
 
@@ -234,34 +232,34 @@ void Scene::SetParent(Entity parentEntity, Entity childEntity)
     GameObject parent(this, parentEntity);
     GameObject child(this, childEntity);
 
-    auto childRel  = child.GetOrAddComponent<Relationship>();
-    auto parentRel = parent.GetOrAddComponent<Relationship>();
+    auto& childRel  = child.GetOrAddComponent<Relationship>();
+    auto& parentRel = parent.GetOrAddComponent<Relationship>();
 
-    if (childRel->parent != INVALID_ENTITY)
+    if (childRel.parent != INVALID_ENTITY)
         Unlink(child.entity);
 
-    childRel->parent = parent.entity;
-    childRel->nextSibling = INVALID_ENTITY;
-    childRel->prevSibling = INVALID_ENTITY;
+    childRel.parent = parent.entity;
+    childRel.nextSibling = INVALID_ENTITY;
+    childRel.prevSibling = INVALID_ENTITY;
 
     // Caso seja o primeiro filho
-    if (parentRel->firstChild == INVALID_ENTITY)
+    if (parentRel.firstChild == INVALID_ENTITY)
     {
-        parentRel->firstChild = child.entity;
+        parentRel.firstChild = child.entity;
     } else
     {
-        Entity oldFirst = parentRel->firstChild;
+        Entity oldFirst = parentRel.firstChild;
 
         auto oldFirstRel = world.TryGetComponent<Relationship>(oldFirst);
 
         // novo filho aponta pro antigo primeiro
-        childRel->nextSibling = oldFirst;
+        childRel.nextSibling = oldFirst;
 
         // antigo primeiro aponta de volta
         oldFirstRel->prevSibling = child.entity;
 
         // parent agora aponta pro novo
-        parentRel->firstChild = child.entity;
+        parentRel.firstChild = child.entity;
     }
 
     hierarchySync[writeIndex] = true;

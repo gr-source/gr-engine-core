@@ -61,7 +61,43 @@ public:
     detail::records Allocate(Entity entity, TypeID type);
 
     template <typename T, typename... Args>
-    inline T* AddComponent(Entity entity, Args&&... args)
+    inline T& AddComponent(Entity entity, Args&&... args)
+    {
+        static_assert(!engine::type_traits::tag<T>,
+              "All template arguments must be Tags.");
+
+        TypeID typeID =
+            GetComponentID<T>::id;
+        assert(typeID != INVALID_TYPE);
+
+        uint32_t entityID = handle_get_first(entity);
+
+        Signature requiredMask =
+            GetComponentMask<T>::Get();
+
+        auto& current = entityManager.records[entityID];
+        if (
+                current.mask != INVALID_SIGNATURE &&
+                ((current.mask & requiredMask) == requiredMask)
+           )
+        {
+            auto& arche = storage.archetypes[current.archetype];
+
+            return *arche.get<T>(current.location);
+        }
+
+        auto record = Allocate(entity, typeID);
+
+        auto& arche = storage.archetypes[record.archetype];
+
+        T* component = arche.get<T>(record.location);
+        new (component) T { std::forward<Args>(args)... };
+
+        return *component;
+    }
+
+    template <typename T, typename... Args>
+    inline T* TryAddComponent(Entity entity, Args&&... args)
     {
         if (!entityManager.isAlive(entity))
             return nullptr;
@@ -82,18 +118,18 @@ public:
                 ((current.mask & requiredMask) == requiredMask)
            )
         {
-            auto arche = GetArchetypeByID(current.archetype);
+            auto& arche = storage.archetypes[current.archetype];
 
-            return arche->get<T>(current.location);
+            return arche.get<T>(current.location);
         }
 
         auto record = Allocate(entity, typeID);
         if (engine::type_traits::tag<T>)
             return nullptr;
 
-        auto arche = GetArchetypeByID(record.archetype);
+        auto& arche = storage.archetypes[record.archetype];
 
-        T* component = arche->get<T>(record.location);
+        T* component = arche.get<T>(record.location);
         new (component) T { std::forward<Args>(args)... };
 
         return component;
@@ -164,10 +200,16 @@ public:
         uint32_t entityID = handle_get_first(entity);
 
         auto& record = entityManager.records[entityID];
+        auto& loc = record.location;
 
-        auto arche = GetArchetypeByID(record.archetype);
+        auto& arche = storage.archetypes[record.archetype];
 
-        return std::make_tuple(arche->get<Components>(record.location)...);
+        Chunk* chunk =
+            arche.chunks[loc.chunk];
+
+        return std::make_tuple(
+                reinterpret_cast<Components*>(chunk->base + arche.layout->offsets[GetComponentID<Components>::id]) + loc.row...
+            );
     }
 
     template <typename... Components>

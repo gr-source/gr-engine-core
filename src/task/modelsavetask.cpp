@@ -23,12 +23,11 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
     ModelAsset asset;
     asset.name = gameObject.GetName();
 
-    auto meshFilter = gameObject.GetComponent<MeshFilter>();
+    auto meshFilter = gameObject.TryGetComponent<MeshFilter>();
     if (meshFilter != nullptr && meshFilter->mesh != INVALID_ID32)
         asset.mesh = AssetsManager::FindAssetIDInCacheMesh(meshFilter->mesh);
 
-    auto meshRender = gameObject.GetComponent<MeshRender>();
-    if (meshRender != nullptr)
+    if (auto meshRender = gameObject.TryGetComponent<MeshRender>())
     {
         std::vector<AssetID> materials;
 
@@ -73,8 +72,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
         asset.componentBuffer.emplace(type->hash, buffer);
     }
 
-    auto rel = gameObject.GetComponent<Relationship>();
-    if (rel != nullptr)
+    if (auto rel = gameObject.TryGetComponent<Relationship>())
     {
         Entity sibling = rel->firstChild;
         while (sibling != INVALID_ENTITY)
@@ -83,7 +81,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
 
             asset.children.push_back(ConvertToAssetModel(siblingGo));
 
-            auto siblingRel = siblingGo.GetComponent<Relationship>();
+            auto siblingRel = siblingGo.TryGetComponent<Relationship>();
             if (siblingRel == nullptr)
                 break;
             sibling = siblingRel->nextSibling;

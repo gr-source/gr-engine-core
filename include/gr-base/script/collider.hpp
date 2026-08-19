@@ -21,22 +21,22 @@ template <>
 inline constexpr TypeCategory engine::type_traits::category<PhysicsShape> =
     TypeCategory::Component;
 
-struct BoxCollider
-{
-};
+// struct BoxCollider
+// {
+// };
+//
+// template <>
+// inline constexpr TypeCategory engine::type_traits::category<BoxCollider> =
+//     TypeCategory::Component;
 
-template <>
-inline constexpr TypeCategory engine::type_traits::category<BoxCollider> =
-    TypeCategory::Component;
-
-struct CapsuleCollider
-{
-};
-
-template <>
-inline constexpr TypeCategory engine::type_traits::category<CapsuleCollider> =
-    TypeCategory::Component;
-
+// struct CapsuleCollider
+// {
+// };
+//
+// template <>
+// inline constexpr TypeCategory engine::type_traits::category<CapsuleCollider> =
+//     TypeCategory::Component;
+//
 struct Rigidbody
 {
     btMotionState* motionState = nullptr;

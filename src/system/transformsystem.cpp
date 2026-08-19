@@ -74,11 +74,10 @@ void TransformSystem::Update()
 
 bool TransformSystem::SyncTransform(const GameObject& gameObject, const Matrix4x4& parentMatrix) const
 {
-    auto transform = gameObject.GetComponent<TransformWorld>();
-    if (transform != nullptr)
-        transform->world = parentMatrix * transform->local;
+    auto& transform = gameObject.GetComponent<TransformWorld>();
+    transform.world = parentMatrix * transform.local;
 
-    auto rel = gameObject.GetComponent<Relationship>();
+    auto rel = gameObject.TryGetComponent<Relationship>();
     if (rel == nullptr)
         return false;
 
@@ -86,10 +85,10 @@ bool TransformSystem::SyncTransform(const GameObject& gameObject, const Matrix4x
     while (firstChild != INVALID_ENTITY)
     {
         GameObject child(scene, firstChild);
-        if (!SyncTransform(child, transform != nullptr ? transform->world : parentMatrix))
+        if (!SyncTransform(child, transform.world))
             break;
 
-        rel = child.GetComponent<Relationship>();
+        rel = child.TryGetComponent<Relationship>();
         firstChild = rel->nextSibling;
     }
 

@@ -17,19 +17,32 @@ struct GameObject
     std::string GetName() const;
 
     template <typename T, typename... Args>
-    inline T* AddComponent(Args&&... args)
+    inline T& AddComponent(Args&&... args)
     {
         return scene->world.AddComponent<T>(entity, std::forward<Args>(args)...);
     }
 
+
+    template <typename T, typename... Args>
+    inline T* TryAddComponent(Args&&... args)
+    {
+        return scene->world.TryAddComponent<T>(entity, std::forward<Args>(args)...);
+    }
+
     template <typename T>
-    inline T* GetComponent() const
+    inline T& GetComponent() const
+    {
+        return scene->world.GetComponent<T>(entity);
+    }
+
+    template <typename T>
+    inline T* TryGetComponent() const
     {
         return scene->world.TryGetComponent<T>(entity);
     }
 
     template <typename T>
-    inline T* GetOrAddComponent()
+    inline T& GetOrAddComponent()
     {
         return HasComponent<T>() ? GetComponent<T>() : AddComponent<T>();
     }

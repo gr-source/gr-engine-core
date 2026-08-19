@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
 
 struct Relationship

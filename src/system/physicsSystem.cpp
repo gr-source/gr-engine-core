@@ -219,6 +219,7 @@ void PhysicsSystem::SyncTransforms(engine::ecs::World* world)
 
 void PhysicsSystem::onCreateShape(engine::ecs::World* world, Entity entity)
 {
+    /*
     auto& transform = world->GetComponent<TransformLocal>(entity);
 
     btCollisionShape* shape = nullptr;
@@ -242,6 +243,7 @@ void PhysicsSystem::onCreateShape(engine::ecs::World* world, Entity entity)
             entity,
             shape
         );
+    */
 }
 
 void PhysicsSystem::onCreateRigidbody(engine::ecs::World* world, Entity entity)
@@ -287,6 +289,7 @@ void PhysicsSystem::onCreateRigidbody(engine::ecs::World* world, Entity entity)
 
 void PhysicsSystem::onCreateCharacter(engine::ecs::World* world, Entity entity)
 {
+    /*
     if (!world->HasComponent<PhysicsShape>(entity))
         world->AddComponent<CapsuleCollider>(entity);
 
@@ -336,5 +339,6 @@ void PhysicsSystem::onCreateCharacter(engine::ecs::World* world, Entity entity)
     characterController.character = character;
 
     AddCollisionObject(ghostObject, character);
+    */
 }
 

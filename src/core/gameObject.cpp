@@ -15,8 +15,7 @@ bool GameObject::IsAlive() const
 
 std::string GameObject::GetName() const
 {
-    Name* name = GetComponent<Name>();
-    if (name != nullptr)
+    if (Name* name = TryGetComponent<Name>())
         return name->value;
 
     EntityID entityID = handle_get_first(entity);
