@@ -135,8 +135,8 @@ inline void ComponentRegistry::Register(bool serializable)
     info.hash = engine::type_traits::hash<T>;
     info.index = INVALID_TYPE;
 
-    info.stride = engine::type_traits::size<T>;
-    info.alignment = engine::type_traits::alignment<T>;
+    info.stride = std::is_empty_v<T> ? 0 : engine::type_traits::size<T>;
+    info.alignment = std::is_empty_v<T> ? 0 : engine::type_traits::alignment<T>;
     
     info.storage = engine::type_traits::storage<T>;
 

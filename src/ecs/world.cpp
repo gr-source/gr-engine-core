@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 size_t bit_floor(size_t value)
 {
@@ -237,13 +238,16 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask)
     while (temp)
     {
         TypeID typeID = __builtin_ctzll(temp);
-        if (typeID >= numOffsets)
-            numOffsets = typeID + 1;
 
         auto info = ComponentRegistry::GetComponentByID(typeID);
+        if (info->stride > 0)
+        {
+            if (typeID >= numOffsets)
+                numOffsets = typeID + 1;
 
-        stride += info->stride;
-        maxAlign = std::max(maxAlign, info->alignment);
+            stride += info->stride;
+            maxAlign = std::max(maxAlign, info->alignment);
+        }
         
         temp &= (temp - 1);
     }
@@ -265,6 +269,8 @@ ArchetypeID world::GetOrCreateArcheType(Signature mask)
     for (auto type : ComponentRegistry::GetTypesOfMask(mask))
     {
         auto info = ComponentRegistry::GetComponentByID(type);
+        if (!info->stride)
+            continue;
 
         localOffset = align_up(localOffset, info->alignment);
 
@@ -408,10 +414,13 @@ void world::AddComponentByMask(Entity entity, Signature requiredMask)
 
         auto info = ComponentRegistry::GetComponentByID(typeID);
 
-        uint8_t* raw = (uint8_t*)arche->getRaw(record.location.chunk, typeID);
+        if (info->stride > 0)
+        {
+            uint8_t* raw = (uint8_t*)arche->getRaw(record.location.chunk, typeID);
 
-        void* component = (void*)(raw + record.location.row * info->stride);
-        info->constructor(component, nullptr);
+            void* component = (void*)(raw + record.location.row * info->stride);
+            info->constructor(component, nullptr);
+        }
         
         requiredMask &= (requiredMask - 1);
     }
@@ -438,6 +447,9 @@ void* world::AddComponentByID(Entity entity, TypeID typeID)
             ((current.mask & requiredMask) == requiredMask)
        )
     {
+        if (!info->stride)
+            return nullptr;
+
         auto arche = GetArchetypeByID(current.archetype);
 
         uint8_t* raw = (uint8_t*)arche->getRaw(current.location.chunk, typeID);
@@ -447,19 +459,15 @@ void* world::AddComponentByID(Entity entity, TypeID typeID)
 
     auto record = Allocate(entity, typeID);
 
+    if (!info->stride)
+        return nullptr;
+
     auto arche = GetArchetypeByID(record.archetype);
 
     uint8_t* raw = (uint8_t*)arche->getRaw(record.location.chunk, typeID);
 
     void* component = (void*)(raw + record.location.row * info->stride);
     info->constructor(component, nullptr);
-
-
-    if (typeID < events.size())
-    {
-        for (auto& func : events[typeID])
-            func(this, entity);
-    }
 
     return component;
 }
@@ -493,6 +501,9 @@ void* world::GetComponentByID(Entity entity, TypeID type) const
             record.mask == INVALID_SIGNATURE ||
             ((record.mask & requiredMask) != requiredMask)
         )
+        return nullptr;
+
+    if (!info->stride)
         return nullptr;
 
     auto arche = GetArchetypeByID(record.archetype);
@@ -555,28 +566,31 @@ engine::ecs::detail::records world::MoveEntity(engine::ecs::detail::records src_
         TypeID typeID = __builtin_ctzll(common);
 
         auto info = ComponentRegistry::GetComponentByID(typeID);
-
-        uint8_t* dst_raw = (uint8_t*)dst->getRaw(dst_loc.chunk, typeID);
-        uint8_t* src_raw = (uint8_t*)src->getRaw(src_rec.location.chunk, typeID);
-
-        void* dst_component = (void*)(dst_raw + dst_loc.row * info->stride);
-        void* src_component = (void*)(src_raw + src_rec.location.row * info->stride);
-
-        if (info->isTriviallyCopyable)
+        if (info->stride > 0)
         {
-            memcpy(
-                dst_component,
-                src_component,
-                info->stride
-            );
+            uint8_t* dst_raw = (uint8_t*)dst->getRaw(dst_loc.chunk, typeID);
+            uint8_t* src_raw = (uint8_t*)src->getRaw(src_rec.location.chunk, typeID);
 
-        } else
-        {
-            ((void(*)(void*, const void*))(info->move))(dst_component, src_component);
+            void* dst_component = (void*)(dst_raw + dst_loc.row * info->stride);
+            void* src_component = (void*)(src_raw + src_rec.location.row * info->stride);
+
+            if (info->isTriviallyCopyable)
+            {
+                memcpy(
+                    dst_component,
+                    src_component,
+                    info->stride
+                );
+
+            } else
+            {
+                ((void(*)(void*, const void*))(info->move))(dst_component, src_component);
+            }
+
+            // TODO: Isso deve crasha com objetos do stl.
+            ((void (*)(void*))(info->destructor))(src_component);
+
         }
-
-        // TODO: Isso deve crasha com objetos do stl.
-        ((void (*)(void*))(info->destructor))(src_component);
 
         common &= (common - 1);
     }

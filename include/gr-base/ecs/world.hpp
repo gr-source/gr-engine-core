@@ -15,8 +15,6 @@ class world
 {
     std::unordered_map<Signature, ArchetypeID> signatureToArchetype;
 
-    std::vector<std::vector<std::function<void(engine::ecs::world*, Entity)>>> events;
-
     std::vector<detail::records> entityRecords;
 
     manager::entity entityManager;
@@ -39,9 +37,6 @@ public:
 
     world(world&&) = default;
     world& operator=(world&&) = default;
-
-    template <typename Component, typename Callback, typename... Args>
-    void AddOnCreate(Callback&& callback, Args&&... args);
 
     Entity Create();
 
@@ -87,17 +82,13 @@ public:
         }
 
         auto record = Allocate(entity, typeID);
+        if (engine::type_traits::tag<T>)
+            return nullptr;
 
         auto arche = GetArchetypeByID(record.archetype);
 
         T* component = arche->get<T>(record.location);
         new (component) T { std::forward<Args>(args)... };
-
-        if (typeID < events.size())
-        {
-            for (auto& func : events[typeID])
-                func(this, entity);
-        }
 
         return component;
     }
@@ -105,6 +96,9 @@ public:
     template <typename T>
     T* GetComponent(Entity entity) const
     {
+        static_assert(!engine::type_traits::tag<T>,
+              "All template arguments must be Tags.");
+
         if (!entityManager.isAlive(entity))
             return nullptr;
 
@@ -138,6 +132,9 @@ public:
     template <typename... Components>
     std::tuple<Components*...> GetComponents(Entity entity) const
     {
+        static_assert((!engine::type_traits::tag<Components> && ...), 
+              "All template arguments must be Tags.");
+
         uint32_t entityID = handle_get_first(entity);
 
         auto& record = entityRecords[entityID];
@@ -229,35 +226,5 @@ private:
 
     void resize();
 };
-
-
-template <typename Component, typename Callback, typename... Args>
-inline void world::AddOnCreate(Callback&& callback, Args&&... args)
-{
-    auto arguments = std::make_tuple(std::forward<Args>(args)...);
-
-    std::function<void(engine::ecs::world*, Entity)> function =
-        [callback = std::forward<Callback>(callback),
-         arguments = std::move(arguments)](engine::ecs::world* world, Entity entity) mutable
-        {
-            std::apply(
-                [&](auto&&... unpacked)
-                {
-                    std::invoke(callback, unpacked..., world, entity);
-                },
-                arguments
-            );
-        };
-
-    auto typeID =
-        GetComponentID<Component>::id;
-    if (typeID != INVALID_TYPE)
-    {
-        if (typeID >= events.size())
-            events.resize(typeID + 1);
-
-        events[typeID].push_back(function);
-    }
-}
 
 };

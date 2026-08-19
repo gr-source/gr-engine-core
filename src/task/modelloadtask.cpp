@@ -85,7 +85,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         if (component == nullptr)
             continue;
 
-        if (!type->serializable)
+        if (!type->serializable || !type->stride)
             continue;
 
         if (type->isTriviallyCopyable)

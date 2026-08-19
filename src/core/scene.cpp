@@ -112,24 +112,27 @@ Entity Scene::create(Entity other)
 
     for (auto& typeID : world.GetAllComponentType(other))
     {
-        auto type = ComponentRegistry::GetComponentByID(typeID);
+        auto info = ComponentRegistry::GetComponentByID(typeID);
 
         if (go.HasComponentByID(typeID))
             continue;
 
-        void* src = otherGO.GetComponentByID(typeID);
         void* dst = go.AddComponentByID(typeID);
+        if (!info->stride)
+            continue;
 
-        if (type->isTriviallyCopyable)
+        void* src = otherGO.GetComponentByID(typeID);
+
+        if (info->isTriviallyCopyable)
         {
-            memcpy(dst, src, type->stride);
+            memcpy(dst, src, info->stride);
         } else
         {
             // o component foi inicializado em AddComponent
-            ((void(*)(void*))(type->destructor))(dst);
+            info->destructor(dst);
 
             // Reinicializa com os dados novos copiados
-            ((void(*)(void*, const void*))(type->copy))(dst, src);
+            info->copy(dst, src);
         }
     }
 

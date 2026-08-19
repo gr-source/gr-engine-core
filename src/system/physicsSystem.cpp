@@ -118,10 +118,10 @@ void PhysicsSystem::Init()
         ghostCallback
     );
 
-    scene->world.AddOnCreate<CapsuleCollider>(&PhysicsSystem::onCreateShape, this);
-    scene->world.AddOnCreate<BoxCollider>(&PhysicsSystem::onCreateShape, this);
-    scene->world.AddOnCreate<Rigidbody>(&PhysicsSystem::onCreateRigidbody, this);
-    scene->world.AddOnCreate<CharacterController>(&PhysicsSystem::onCreateCharacter, this);
+    // scene->world.AddOnCreate<CapsuleCollider>(&PhysicsSystem::onCreateShape, this);
+    // scene->world.AddOnCreate<BoxCollider>(&PhysicsSystem::onCreateShape, this);
+    // scene->world.AddOnCreate<Rigidbody>(&PhysicsSystem::onCreateRigidbody, this);
+    // scene->world.AddOnCreate<CharacterController>(&PhysicsSystem::onCreateCharacter, this);
 }
 
 void PhysicsSystem::OnGUI()

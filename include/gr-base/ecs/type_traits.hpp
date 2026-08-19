@@ -57,6 +57,11 @@ template <typename T>
 inline constexpr StorageKind storage =
     StorageKind::Archetype;
 
+
+template <typename T>
+inline constexpr bool tag =
+    std::is_empty_v<T>;
+
 template <typename T>
 inline constexpr size_t size =
     sizeof(T);

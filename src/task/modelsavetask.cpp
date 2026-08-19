@@ -17,6 +17,8 @@
 
 #include "gr-base/managers/assetsManager.hpp"
 
+#include <iostream>
+
 ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
 {
     ModelAsset asset;
@@ -44,31 +46,33 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
         if (type == nullptr)
             continue;
 
-        auto component = gameObject.GetComponentByID(typeID);
-        if (component == nullptr)
-            continue;
-
         if (!type->serializable)
             continue;
 
         std::vector<uint8_t> buffer;
-        if (type->isTriviallyCopyable)
+        if (type->stride > 0)
         {
-            buffer.resize(type->stride, 0);
+            auto component = gameObject.GetComponentByID(typeID);
+            if (component == nullptr)
+                continue;
 
-            memcpy(buffer.data(), component, type->stride);
-        } else if (type->serialize != nullptr)
-        {
-            MemoryStream stream;
-            ((void (*)(Stream*, const void*))(type->serialize))(&stream, component);
+            if (type->isTriviallyCopyable)
+            {
+                buffer.resize(type->stride, 0);
 
-            buffer.resize(stream.tellg(), 0);
+                memcpy(buffer.data(), component, type->stride);
+            } else if (type->serialize != nullptr)
+            {
+                MemoryStream stream;
+                ((void (*)(Stream*, const void*))(type->serialize))(&stream, component);
 
-            memcpy(buffer.data(), stream.data(), stream.tellg());
+                buffer.resize(stream.tellg(), 0);
+
+                memcpy(buffer.data(), stream.data(), stream.tellg());
+            }
         }
 
-        if (!buffer.empty())
-            asset.componentBuffer.emplace(type->hash, buffer);
+        asset.componentBuffer.emplace(type->hash, buffer);
     }
 
     auto rel = gameObject.GetComponent<Relationship>();

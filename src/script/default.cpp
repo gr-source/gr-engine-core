@@ -35,6 +35,8 @@ void RegistryDefaultComponent()
     REGISTER_COMPONENT(MeshFilter, false);
     REGISTER_COMPONENT(MeshRef, false);
     
+    REGISTER_COMPONENT(Static, true);
+
     REGISTER_COMPONENT(TransformLocal, true);
     REGISTER_COMPONENT(TransformWorld, false);
 
