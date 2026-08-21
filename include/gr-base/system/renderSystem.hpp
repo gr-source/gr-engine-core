@@ -20,6 +20,7 @@ public:
     ~RenderSystem() override = default;
 
 private:
+    std::vector<Entity> visibleEntities;
     std::vector<Entity> entities;
 
     void Update() override;

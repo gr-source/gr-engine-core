@@ -20,9 +20,9 @@ void RenderSystem::Update()
 
 void RenderSystem::Render()
 {
-    scene->bvhtree.queryFrustumAABB(entities);
+    scene->bvhtree.queryFrustumAABB(visibleEntities);
 
-    for (auto& entity : entities)
+    for (auto& entity : visibleEntities)
     {
         auto&& [transform, meshFilter, meshRender] = scene->world.GetComponents<TransformWorld, MeshFilter, MeshRender>(entity);
 
@@ -39,7 +39,7 @@ void RenderSystem::Render()
         }
     }
 
-    entities.clear();
+    visibleEntities.clear();
 }
 
 #include "gr-base/ecs/view.hpp"

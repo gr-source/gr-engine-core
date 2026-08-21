@@ -19,7 +19,7 @@ MeshID MeshManager::create()
 
 Mesh *MeshManager::get(MeshID h) const
 {
-    return &m_pool.get(h);
+    return m_pool.try_get(h);
 }
 
 void MeshManager::remove(MeshID h)

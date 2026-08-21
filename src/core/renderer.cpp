@@ -67,11 +67,12 @@ void Renderer::DrawFullScreenQuad()
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
+#include <iostream>
+
 // priuvae
 Renderer::Renderer()
 {
     logger::info("[ Renderer ] Intialize '%p'.", this);
-
 
     std::vector<Vertex2D> vertices = {
         {{-1.0f,  1.0f}, {0.0f, 1.0f}},
