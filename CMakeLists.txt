@@ -4,9 +4,23 @@ project(gr-base VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 find_package(Bullet QUIET)
 if(NOT Bullet_FOUND)
-    message(FATAL_ERROR "Please install libbullet-dev")
+  message(FATAL_ERROR "Please install libbullet-dev")
+  return()
+endif()
+
+find_package(GLEW QUIET)
+if(NOT GLEW_FOUND)
+  message(FATAL_ERROR "Please install GLEW.")
+  return()
+endif()
+
+find_package(glfw3 QUIET)
+if(NOT glfw3_FOUND)
+    message(FATAL_ERROR "Please install libglfw3-dev")
     return()
 endif()
 
@@ -32,7 +46,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     )
 endif()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${BULLET_LIBRARIES} imgui)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${BULLET_LIBRARIES} ${GLEW_LIBRARIES} imgui)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC INTERNAL_REGISTER_SCRIPT)
 

@@ -7,11 +7,11 @@
 
 namespace engine::ecs::detail
 {
-typedef struct location
+struct location
 {
     ChunkID chunk = INVALID_CHUNK;
     uint32_t row = 0;
-} location;
+};
 
 struct records
 {
@@ -19,7 +19,7 @@ struct records
 
     ArchetypeID archetype = 0;
 
-    location location;
+    engine::ecs::detail::location location;
 };
 
 struct layout
