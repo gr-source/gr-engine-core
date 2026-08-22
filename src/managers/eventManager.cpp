@@ -62,7 +62,7 @@ void EventManager::detach(EventID id)
     logger::debug("[ EventManager ] Detached event '%d'.", id);
 }
 
-void EventManager::notify(EventID id, std::shared_ptr<IEvent> event)
+void EventManager::notify(EventID id, IEvent* event)
 {
     std::vector<std::function<void (IEvent*)>> execute;
 
@@ -75,12 +75,14 @@ void EventManager::notify(EventID id, std::shared_ptr<IEvent> event)
     }
 
     for (auto& func : execute)
-        func(event.get());
+        func(event);
 }
 
 void EventManager::notifyAsync(EventID id, std::shared_ptr<IEvent> event)
 {
-    MainThreadDispatcher::Queue(&EventManager::notify, this, id, event);
+    MainThreadDispatcher::Queue([this, id, event]{
+            notify(id, event.get());
+        });
 }
 
 

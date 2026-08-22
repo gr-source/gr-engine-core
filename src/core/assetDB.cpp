@@ -78,7 +78,6 @@ AssetDB::~AssetDB()
     logger::info("[ AssetDB ] Shutdown.");
 }
 
-#include <iostream>
 void AssetDB::load(Scheme_ scheme, const std::string &file)
 {
     FileStream is(file, StreamType::INPUT);
@@ -149,7 +148,7 @@ void AssetDB::load(Scheme_ scheme, const std::string &file)
     }
     */
 
-    EventManager::Notify<AssetEventOnLoaded>(nullptr);
+    EventManager::Emit<AssetEventOnLoaded>({});
 
     is.close();
 }
@@ -201,10 +200,9 @@ void AssetDB::registry(const AssetInfo& info)
         m_refMapped.emplace(info.hash, info.id);
     }
 
-    AssetEventOnCreated event;
-    event.value = info.id;
-
-    EventManager::Notify<AssetEventOnCreated>(&event);
+    EventManager::Emit<AssetEventOnCreated>(AssetEventOnCreated{
+                .value = info.id
+            });
 }
 
 void AssetDB::unregistry(AssetID id)
@@ -214,9 +212,11 @@ void AssetDB::unregistry(AssetID id)
         return;
 
     AssetEventOnRemove event;
-    event.value = info->id;
+    ;
 
-    EventManager::Notify<AssetEventOnRemove>(&event);
+    EventManager::Emit<AssetEventOnRemove>(AssetEventOnRemove{
+            .value = info->id
+        });
 
     logger::trace("[ AssetDB ] unregister: '0x%lX' lookup: '%s'.", info->hash, info->uri);
 

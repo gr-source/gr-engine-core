@@ -4,10 +4,9 @@
 // private
 void Console::SendMessage(const std::string &msg)
 {
-    Console_onAddMessage event;
-    event.message = msg;
-
-    EventManager::Notify(&event);
+    EventManager::EmitAsync(Console_onAddMessage{
+            .message = msg
+        });
 }
 
 
