@@ -2,8 +2,6 @@
 
 #include <gr-render/shader.hpp>
 
-using ShaderOptimize_ = std::uint8_t;
-
 enum class ShaderDomain
 {
     PostProcess,
@@ -12,36 +10,23 @@ enum class ShaderDomain
     Debug
 };
 
-enum ShaderOptimize : ShaderOptimize_
-{
-    ShaderOptimize_static       = 1 << 0,
-    ShaderOptimize_dynamic      = 1 << 1,
-    ShaderOptimize_animated     = 1 << 2,
-    ShaderOptimize_instanced    = 1 << 3,
-};
-
 struct ShaderParams
 {
     std::string name;
     std::string base;
     ShaderDomain domain;
-    ShaderOptimize_ flags;
 };
 
+typedef uint32_t ShaderStage;
 
-enum class ShaderBuildType
+enum ShaderStage_
 {
-    NONE,
-    FRAGMENT,
-    VERTEX,
-    COUNT
+    ShaderStage_None = 0,
+    ShaderStage_Fragment = 1,
+    ShaderStage_Vertex = 2,
+    ShaderStage_Count = 3
 };
 
-#define IShaderStage 3
-
-std::string GetShaderParamsName(ShaderParams shaderParams);
-
-ShaderParams GetShaderParamsFromName(const std::string &name);
 
 
 

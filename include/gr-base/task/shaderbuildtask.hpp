@@ -19,14 +19,13 @@ public:
     ShaderBuildTask(const std::string& file, const URI& uri);
 
 private:
-    typedef struct
+    struct ShaderTextRaw
     {
-        std::string name;
-
-        std::string variable;
-
-        uint32_t count;
-    } ShaderUniformRaw;
+        std::string fragment;
+        std::string vertex;
+        std::vector<std::string> definations;
+        ShaderDomain domain;
+    };
 
     const URI m_uri;
 
@@ -42,8 +41,8 @@ private:
 
     ShaderAsset onStartParceShader();
 
-    std::tuple<std::string, std::string, std::vector<std::string>, ShaderDomain> ReadingSourceFileShader();
+    ShaderTextRaw ReadingSourceFileShader();
 
-    std::array<std::string, IShaderStage> LoadShaderBase(ShaderDomain domain);
+    std::array<std::string, ShaderStage_Count> LoadShaderBase(ShaderDomain domain);
 };
 

@@ -93,46 +93,46 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
 {
     std::array<std::string, 3> resultShaderSource;
 
-    auto&& [fragment, vertex, definations, domain] = ReadingSourceFileShader();
+    ShaderTextRaw raw = ReadingSourceFileShader();
 
-    auto baseShaderSource = LoadShaderBase(domain);
-    for (auto defination : definations)
+    auto baseShaderSource = LoadShaderBase(raw.domain);
+    for (auto defination : raw.definations)
     {
-        resultShaderSource[static_cast<int>(static_cast<int>(ShaderBuildType::FRAGMENT))] += defination + '\n';
-        resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += defination + '\n';
+        resultShaderSource[ShaderStage_Fragment] += defination + '\n';
+        resultShaderSource[ShaderStage_Vertex]   += defination + '\n';
     }
 
-    resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] += baseShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)];
-    resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += baseShaderSource[static_cast<int>(ShaderBuildType::VERTEX)];
+    resultShaderSource[ShaderStage_Fragment] += baseShaderSource[ShaderStage_Fragment];
+    resultShaderSource[ShaderStage_Vertex]   += baseShaderSource[ShaderStage_Vertex];
 
-    resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)] += fragment;
-    resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)]   += vertex;
+    resultShaderSource[ShaderStage_Fragment] += raw.fragment;
+    resultShaderSource[ShaderStage_Vertex]   += raw.vertex;
 
     auto name = m_uri.toString();
 
     ShaderAsset asset;
-    asset.domain = domain;
+    asset.domain = raw.domain;
     asset.name = name;
-    asset.fragment = resultShaderSource[static_cast<int>(ShaderBuildType::FRAGMENT)];
-    asset.vertex = resultShaderSource[static_cast<int>(ShaderBuildType::VERTEX)];
+    asset.fragment = resultShaderSource[ShaderStage_Fragment];
+    asset.vertex = resultShaderSource[ShaderStage_Vertex];
 
     return asset;
 }
 
-std::tuple<std::string, std::string, std::vector<std::string>, ShaderDomain> ShaderBuildTask::ReadingSourceFileShader()
+ShaderBuildTask::ShaderTextRaw ShaderBuildTask::ReadingSourceFileShader()
 {
     std::ifstream is(m_file, std::ios_base::in);
     if (!is.is_open())
         throw std::runtime_error(strerror(errno));
 
-    ShaderBuildType shaderBuildType = ShaderBuildType::NONE;
+    ShaderStage stage = ShaderStage_None;
     ShaderDomain domain;
 
     bool bCanIsInDefined = false;
 
     std::vector<std::string> defineMap;
 
-    std::array<std::string, IShaderStage> mCustomSourceShaderMap;
+    std::array<std::string, ShaderStage_Count> mCustomSourceShaderMap;
 
     std::string line;
     while (std::getline(is, line))
@@ -157,10 +157,10 @@ std::tuple<std::string, std::string, std::vector<std::string>, ShaderDomain> Sha
         {
             if (line.find("frag") != std::string::npos)
             {
-                shaderBuildType = ShaderBuildType::FRAGMENT;
+                stage = ShaderStage_Fragment;
             } else if (line.find("vert") != std::string::npos)
             {
-                shaderBuildType = ShaderBuildType::VERTEX;
+                stage = ShaderStage_Vertex;
             }
 
             bCanIsInDefined = false;
@@ -173,19 +173,25 @@ std::tuple<std::string, std::string, std::vector<std::string>, ShaderDomain> Sha
             continue;
         }
 
-        if (shaderBuildType != ShaderBuildType::NONE)
-            mCustomSourceShaderMap[static_cast<int>(shaderBuildType)] += line + '\n';
+        if (stage != ShaderStage_None)
+            mCustomSourceShaderMap[stage] += line + '\n';
 
     }
     is.close();
 
-    return std::make_tuple(mCustomSourceShaderMap[static_cast<int>(ShaderBuildType::FRAGMENT)], mCustomSourceShaderMap[static_cast<int>(ShaderBuildType::VERTEX)], defineMap, domain);
+    ShaderTextRaw raw;
+    raw.fragment = mCustomSourceShaderMap[ShaderStage_Fragment];
+    raw.vertex = mCustomSourceShaderMap[ShaderStage_Vertex];
+    raw.definations = defineMap;
+    raw.domain = domain;
+
+    return raw;
 }
 
 
-std::array<std::string, IShaderStage> ShaderBuildTask::LoadShaderBase(ShaderDomain domain)
+std::array<std::string, ShaderStage_Count> ShaderBuildTask::LoadShaderBase(ShaderDomain domain)
 {
-    std::array<std::string, IShaderStage> mShaderMap;
+    std::array<std::string, ShaderStage_Count> mShaderMap;
 
     std::string path_to_base;
     switch (domain)
@@ -214,7 +220,7 @@ std::array<std::string, IShaderStage> ShaderBuildTask::LoadShaderBase(ShaderDoma
         throw std::runtime_error("Fail to open file: " + path);
     }
 
-    ShaderBuildType shaderBuildType = ShaderBuildType::FRAGMENT;
+    ShaderStage stage = ShaderStage_None;
 
     std::string line;
     while (std::getline(is, line))
@@ -222,16 +228,13 @@ std::array<std::string, IShaderStage> ShaderBuildTask::LoadShaderBase(ShaderDoma
         if (line.find("define_type") != std::string::npos)
         {
             if (line.find("frag") != std::string::npos)
-            {
-                shaderBuildType = ShaderBuildType::FRAGMENT;
-            }
+                stage = ShaderStage_Fragment;
             else if (line.find("vert") != std::string::npos)
-            {
-                shaderBuildType = ShaderBuildType::VERTEX;
-            }
+                stage = ShaderStage_Vertex;
             continue;
         }
-        mShaderMap[static_cast<std::uint8_t>(shaderBuildType)] += line + '\n';
+        if (stage != ShaderStage_None)
+            mShaderMap[stage] += line + '\n';
     }
     is.close();
 
