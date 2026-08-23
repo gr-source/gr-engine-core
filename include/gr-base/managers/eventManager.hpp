@@ -20,6 +20,9 @@ public:
     static void Subscribe(Callback&& callback, Args&&...args);
 
     template <typename T>
+    static void Unsubscribe();
+
+    template <typename T>
     static void Emit(T&& event);
 
     template <typename T>
@@ -40,9 +43,9 @@ private:
 
     std::mutex m_mutex;
 
-    void attach(EventID id, std::function<void (IEvent*)> func);
+    void subscribe(EventID id, std::function<void (IEvent*)> func);
 
-    void detach(EventID id);
+    void unsubscribe(EventID id);
 
     void notify(EventID id, IEvent* event);
 
@@ -59,7 +62,7 @@ inline void EventManager::Subscribe(Callback&& callback, Args&&...args)
 
     auto arguments = std::make_tuple(std::forward<Args>(args)...);
 
-    s_EventManager->attach(
+    s_EventManager->subscribe(
             GetEventIDByType<T>(), [callback = std::forward<Callback>(callback),
             arguments = std::move(arguments)](IEvent* event) mutable
             {
@@ -71,6 +74,12 @@ inline void EventManager::Subscribe(Callback&& callback, Args&&...args)
                     arguments
                 );
             });
+}
+
+template <typename T>
+inline void EventManager::Unsubscribe()
+{
+    s_EventManager->unsubscribe(GetEventIDByType<T>());
 }
 
 template <typename T>

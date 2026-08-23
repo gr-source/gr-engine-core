@@ -143,8 +143,8 @@ inline void SystemRegistry::Register()
     info.constructor = &SystemRegistry::Constructor<T>;
     info.destructor = &SystemRegistry::Destructor<T>;
 
-    info.copy = &SystemRegistry::Copy<T>;
-    info.move = &SystemRegistry::Move<T>;
+    info.copy = nullptr; // &SystemRegistry::Copy<T>;
+    info.move = nullptr; //&SystemRegistry::Move<T>;
 
     info.depends_on = GetMask<Systems...>();
 
@@ -191,10 +191,7 @@ inline TypeID SystemRegistry::GetTypeID()
 template <typename T>
 inline void SystemRegistry::Constructor(void* dst, const void* src)
 {
-    if (src != nullptr)
-        new (dst) T(*reinterpret_cast<const T*>(src));
-    else
-        new (dst) T();
+    new (dst) T();
 }
 
 template <typename T>

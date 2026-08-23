@@ -55,6 +55,99 @@ public:
             free(m_denseToSparse);
     }
 
+    ObjectPool(const ObjectPool& other) noexcept :
+        m_slotCapacity(other.m_slotCapacity),
+        m_denseCount(other.m_denseCount),
+        m_denseCapacity(other.m_denseCapacity),
+        m_dense(nullptr),
+        m_generations(nullptr),
+        m_freeList(nullptr),
+        m_freeID(other.m_freeID),
+        m_sparseToDense(nullptr),
+        m_denseToSparse(nullptr)
+    {
+        if (other.m_sparseToDense != nullptr)
+        {
+            m_sparseToDense =
+                (PoolID*)malloc(m_slotCapacity * sizeof(PoolID));
+
+            memcpy(m_sparseToDense, other.m_sparseToDense, m_slotCapacity * sizeof(PoolID));
+        }
+
+        if (other.m_generations != nullptr)
+        {
+            m_generations =
+                (PoolID*)malloc(m_slotCapacity * sizeof(uint32_t));
+
+            memcpy(m_generations, other.m_generations, m_slotCapacity * sizeof(uint32_t));
+        }
+
+        if (other.m_freeList != nullptr)
+        {
+            m_freeList =
+                (PoolID*)malloc(m_slotCapacity * sizeof(PoolID));
+
+            memcpy(m_freeList, other.m_freeList, m_slotCapacity * sizeof(PoolID));
+        }
+
+        if (other.m_denseToSparse != nullptr)
+        {
+            m_denseToSparse =
+                (PoolID*)malloc(m_denseCapacity * sizeof(PoolID));
+
+            memcpy(m_denseToSparse, other.m_denseToSparse, m_denseCapacity * sizeof(PoolID));
+        }
+
+        if (other.m_dense != nullptr)
+        {
+            if constexpr (!std::is_trivially_copyable_v<T>)
+            {
+                T* array = (T*)malloc(m_denseCapacity * sizeof(T));
+                for (size_t i=0;i<m_denseCount;i++)
+                {
+                    T* src = other.m_dense + i;
+                    T* dst = array + i;
+
+                    new (dst) T(*src);
+                }
+
+                m_dense = array;
+            } else
+            {
+                m_dense =
+                    (T*)malloc(m_dense, m_denseCapacity * sizeof(T));
+
+                memcpy(m_dense, other.m_dense, m_denseCapacity * sizeof(T));
+            }
+        }
+    }
+
+    ObjectPool(ObjectPool&& other) noexcept :
+        m_slotCapacity(other.m_slotCapacity),
+        m_denseCount(other.m_denseCount),
+        m_denseCapacity(other.m_denseCapacity),
+        m_dense(other.m_dense),
+        m_generations(other.m_generations),
+        m_freeList(other.m_freeList),
+        m_freeID(other.m_freeID),
+        m_sparseToDense(other.m_sparseToDense),
+        m_denseToSparse(other.m_denseToSparse)
+    {
+        other.m_slotCapacity = 0;
+
+        other.m_generations = nullptr;
+
+        other.m_denseCapacity = 0;
+        other.m_denseCount = 0;
+        other.m_dense = nullptr;
+
+        other.m_freeList = nullptr;
+        other.m_freeID = INVALID_ID;
+
+        other.m_sparseToDense = nullptr;
+        other.m_denseToSparse = nullptr;
+    }
+
     Handle push(T&& value)
     {
         return emplace(std::move(value));
@@ -118,19 +211,19 @@ private:
         uint32_t gen;
     };
 
-    size_t m_slotCapacity;
+    size_t m_slotCapacity = 0;
 
-    uint32_t* m_generations;
+    uint32_t* m_generations = nullptr;
 
-    size_t m_denseCapacity;
-    size_t m_denseCount;
-    T* m_dense;
+    size_t m_denseCapacity = 0;
+    size_t m_denseCount = 0;
+    T* m_dense = nullptr;
 
-    PoolID* m_freeList;
-    PoolID m_freeID;
+    PoolID* m_freeList = nullptr;
+    PoolID m_freeID = INVALID_ID;
 
-    uint32_t* m_sparseToDense;
-    uint32_t* m_denseToSparse;
+    uint32_t* m_sparseToDense = nullptr;
+    uint32_t* m_denseToSparse = nullptr;
 
     Handle allocate()
     {

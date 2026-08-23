@@ -37,7 +37,7 @@ public:
             }
         }
 
-        if (m_dense != NULL)
+        if (m_dense != nullptr)
             free(m_dense);
 
         if (m_sparseToDense != nullptr)
@@ -45,6 +45,81 @@ public:
 
         if (m_denseToSparse != nullptr)
             free(m_denseToSparse);
+    }
+
+    SparseSet(SparseSet&& other) noexcept
+        : m_sparseCapacity(other.m_sparseCapacity),
+        m_denseCapacity(other.m_denseCapacity),
+        m_denseCount(other.m_denseCount),
+        m_dense(other.m_dense),
+        m_sparseToDense(other.m_sparseToDense),
+        m_denseToSparse(other.m_denseToSparse)
+    {
+        other.m_sparseCapacity = 0;
+
+        other.m_denseCapacity = 0;
+        other.m_denseCount = 0;
+        other.m_dense = nullptr;
+
+        other.m_sparseToDense = nullptr;
+        other.m_denseToSparse = nullptr;
+    }
+
+    SparseSet(const SparseSet& other) noexcept
+        : m_sparseCapacity(other.m_sparseCapacity),
+        m_denseCapacity(other.m_denseCapacity),
+        m_denseCount(other.m_denseCount),
+        m_dense(nullptr),
+        m_sparseToDense(nullptr),
+        m_denseToSparse(nullptr)
+    {
+        if (other.m_sparseToDense != nullptr)
+        {
+            m_sparseToDense =
+                (SparseID*)malloc(m_sparseCapacity * sizeof(SparseID));
+
+            memcpy(
+                m_sparseToDense,
+                other.m_sparseToDense,
+                sizeof(SparseID) * m_sparseCapacity
+            );
+        }
+
+        if (other.m_denseToSparse != nullptr)
+        {
+            m_denseToSparse =
+                (SparseID*)malloc(m_denseCapacity * sizeof(SparseID));
+
+
+            memcpy(
+                m_denseToSparse,
+                other.m_denseToSparse,
+                sizeof(SparseID) * m_denseCapacity
+            );
+        }
+
+        if (other.m_dense != nullptr)
+        {
+            if constexpr (!std::is_trivially_copyable_v<T>)
+            {
+                T* array = (T*)malloc(m_denseCapacity * sizeof(T));
+
+                for (size_t i=0;i<m_denseCount;i++)
+                {
+                    T* src = other.m_dense + i;
+                    T* dst = array + i;
+
+                    new (dst) T(*src);
+                }
+
+                m_dense = array;
+            } else
+            {
+                m_dense = (T*)malloc(m_denseCapacity * sizeof(T));
+
+                memcpy(m_dense, other.m_dense, m_denseCapacity * sizeof(T));
+            }
+        }
     }
 
     template <typename... Args>
@@ -79,7 +154,7 @@ public:
 
     void destroy(SparseID id)
     {
-        T* ptr = get(id);
+        T* ptr = try_get(id);
         if (ptr == nullptr)
             return;
 
@@ -89,7 +164,7 @@ public:
         deallocate(id);
     }
 
-    inline T* get(SparseID sparseID) const
+    inline T* try_get(SparseID sparseID) const
     {
         if (sparseID >= m_sparseCapacity)
             return nullptr;
@@ -99,6 +174,16 @@ public:
             return nullptr;
 
         return &m_dense[denseID];
+    }
+
+    inline T& get(SparseID id) const
+    {
+        assert(id < m_sparseCapacity);
+
+        const uint32_t denseID = m_sparseToDense[id];
+        assert(denseID != INVALID_SPARSE_ID);
+
+        return m_dense[denseID];
     }
 
     inline size_t count() const
@@ -223,7 +308,7 @@ public:
             }
         }
 
-        if (m_dense != NULL)
+        if (m_dense != nullptr)
             free(m_dense);
 
         if (freeList != nullptr)
@@ -235,6 +320,118 @@ public:
         if (m_denseToSparse != nullptr)
             free(m_denseToSparse);
     }
+
+    SparseSet2(SparseSet2&& other) noexcept
+        : m_sparseCapacity(other.m_sparseCapacity),
+        freeID(other.freeID),
+        freeList(other.freeList),
+        m_denseCapacity(other.m_denseCapacity),
+        m_denseCount(other.m_denseCount),
+        m_dense(other.m_dense),
+        m_sparseToDense(other.m_sparseToDense),
+        m_denseToSparse(other.m_denseToSparse)
+    {
+        other.m_sparseCapacity = 0;
+
+        other.freeID =
+            INVALID_SPARSE_ID;
+        other.freeList =
+            nullptr;
+
+        other.m_denseCapacity = 0;
+        other.m_denseCount = 0;
+        other.m_dense = nullptr;
+
+        other.m_sparseToDense = nullptr;
+        other.m_denseToSparse = nullptr;
+    }
+
+    SparseSet2(const SparseSet2& other) noexcept
+        : m_sparseCapacity(other.m_sparseCapacity),
+        freeID(other.freeID),
+        freeList(nullptr),
+        m_denseCapacity(other.m_denseCapacity),
+        m_denseCount(other.m_denseCount),
+        m_dense(nullptr),
+        m_sparseToDense(nullptr),
+        m_denseToSparse(nullptr)
+    {
+
+        if (other.freeList != nullptr)
+        {
+            freeList = (SparseID*)malloc(
+                sizeof(SparseID) * m_sparseCapacity
+            );
+
+            memcpy(
+                freeList,
+                other.freeList,
+                sizeof(SparseID) * m_sparseCapacity
+            );
+        }
+
+        if (other.m_sparseToDense != nullptr)
+        {
+            m_sparseToDense =
+                (SparseID*)malloc(m_sparseCapacity * sizeof(SparseID));
+
+            memcpy(
+                m_sparseToDense,
+                other.m_sparseToDense,
+                sizeof(SparseID) * m_sparseCapacity
+            );
+        }
+
+        if (other.m_denseToSparse != nullptr)
+        {
+            m_denseToSparse =
+                (SparseID*)malloc(m_denseCapacity * sizeof(SparseID));
+
+
+            memcpy(
+                m_denseToSparse,
+                other.m_denseToSparse,
+                sizeof(SparseID) * m_denseCapacity
+            );
+        }
+
+        if (other.m_dense != nullptr)
+        {
+            if constexpr (!std::is_trivially_copyable_v<T>)
+            {
+                T* array = (T*)malloc(m_denseCapacity * sizeof(T));
+
+                for (size_t i=0;i<m_denseCount;i++)
+                {
+                    T* src = other.m_dense + i;
+                    T* dst = array + i;
+
+                    new (dst) T(*src);
+                }
+
+                m_dense = array;
+            } else
+            {
+                m_dense = (T*)malloc(m_denseCapacity * sizeof(T));
+
+                memcpy(m_dense, other.m_dense, m_denseCapacity * sizeof(T));
+            }
+        }
+    }
+
+    /*
+    SparseSet2& operator =(SparseSet2& other) noexcept
+    {
+        m_sparseCapacity = other.m_sparseCapacity;
+        freeID = other.freeID;
+        freeList = other.freeList;
+        m_denseCapacity = other.m_denseCapacity;
+        m_denseCount = other.m_denseCount;
+        m_dense = other.m_dense;
+        m_sparseToDense = other.m_sparseToDense;
+        m_denseToSparse = other.m_denseToSparse;
+    }
+    */
 
     template <typename... Args>
     SparseID emplace(Args&&... args)

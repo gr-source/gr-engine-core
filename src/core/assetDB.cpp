@@ -8,8 +8,6 @@
 #include "gr-base/managers/eventManager.hpp"
 
 #include <cstring>
-#include <fstream>
-#include <sstream>
 
 AssetDB* AssetDB::s_AssetDB = nullptr;
 
@@ -64,7 +62,7 @@ AssetID AssetDB::CreateID()
 
 AssetInfo* AssetDB::GetAsset(AssetID id)
 {
-    return s_AssetDB->m_spaseSet.get(id);
+    return s_AssetDB->m_spaseSet.try_get(id);
 }
 
 // private
@@ -207,7 +205,7 @@ void AssetDB::registry(const AssetInfo& info)
 
 void AssetDB::unregistry(AssetID id)
 {
-    auto info = m_spaseSet.get(id);
+    auto info = m_spaseSet.try_get(id);
     if (info == nullptr)
         return;
 

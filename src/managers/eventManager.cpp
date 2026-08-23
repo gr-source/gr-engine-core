@@ -36,20 +36,20 @@ EventManager::~EventManager()
     logger::info("[ EventManager ] Shutdown '%p'.", this);
 }
 
-void EventManager::attach(EventID id, std::function<void (IEvent*)> func)
+void EventManager::subscribe(EventID id, std::function<void (IEvent*)> func)
 {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         if (id >= m_listener.size())
             m_listener.resize(id + 1);
 
-        m_listener[id].push_back(func);
+        m_listener[id].push_back(std::move(func));
     }
 
     logger::debug("[ EventManager ] Attached event '%d'.", id);
 }
 
-void EventManager::detach(EventID id)
+void EventManager::unsubscribe(EventID id)
 {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
