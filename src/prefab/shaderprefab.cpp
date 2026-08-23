@@ -25,7 +25,7 @@ static std::unordered_map<std::string, gr::UniformType> mTypeMapping =
 ShaderPrefab::ShaderPrefab(const ShaderAsset& asset) : m_asset(asset)
 {}
 
-gr::shader* ShaderPrefab::Get(ShaderVariantFlags_ flags)
+gr::shader* ShaderPrefab::Get(ShaderVariantFlags flags)
 {
     auto it = m_shadervariant.find(flags);
     if (it != m_shadervariant.end())
@@ -34,7 +34,7 @@ gr::shader* ShaderPrefab::Get(ShaderVariantFlags_ flags)
 }
 
 // private
-gr::shader* ShaderPrefab::create(ShaderVariantFlags_ flags)
+gr::shader* ShaderPrefab::create(ShaderVariantFlags flags)
 {
     std::string fragment = "#version 420\n";
     if ((m_asset.flags & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)

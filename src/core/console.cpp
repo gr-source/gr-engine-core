@@ -4,7 +4,7 @@
 // private
 void Console::SendMessage(const std::string &msg)
 {
-    EventManager::EmitAsync(Console_onAddMessage{
+    EventManager::Emit(Console_onAddMessage{
             .message = msg
         });
 }

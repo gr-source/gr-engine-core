@@ -11,6 +11,7 @@
 
 #include <gr-render/shader.hpp>
 #include <gr-render/gl.h>
+#include <iostream>
 
 #include "gr-base/core/geometry/material.hpp"
 #include "gr-base/core/geometry/mesh.hpp"
@@ -180,42 +181,24 @@ void Renderer::flush()
             auto& submesh = mesh->submeshes[first.submesh];
 
             auto material = AssetsManager::GetMaterial(first.material);
-            auto shader = material->shader;
             auto instances = &m_metrices[matrixID - instanceCount];
 
             bool instancing = instanceCount > 1;
 
+            ShaderVariantFlags flags = 0;
             if (instancing)
+                flags |= ShaderVariantFlags_Instancing;
+
+            if (material->flags != flags)
             {
-                if ((material->flags & ShaderVariantFlags_Instancing) != 0)
-                {
-                    shader = material->shader;
-                } else
-                {
-                    shader = 
-                        material->prefab->Get(ShaderVariantFlags_Instancing);
+                material->shader = material->prefab->Get(flags);
+                material->Sync();
 
-                    material->shader = shader;
-                    material->Sync();
-
-                    material->flags = ShaderVariantFlags_Instancing;
-                }
-            } else 
-            {
-                if ((material->flags & ShaderVariantFlags_none) != 0)
-                {
-                    shader = material->shader;
-                } else
-                {
-                    shader = 
-                        material->prefab->Get(ShaderVariantFlags_none);
-
-                    material->shader = shader;
-                    material->Sync();
-
-                    material->flags = ShaderVariantFlags_none;
-                }
+                material->flags = flags;
             }
+
+            auto shader =
+                material->shader;
 
             if (lastShader != shader)
             {

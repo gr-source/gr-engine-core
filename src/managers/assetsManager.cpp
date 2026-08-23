@@ -239,14 +239,16 @@ AssetPtr<Material> AssetsManager::LoadMaterial(AssetID id)
     if (prefab == nullptr)
         prefab = LoadShader(asset.shader);
 
-    material->prefab = prefab;
-
     for (auto&& [name, buffer] : asset.overrides)
         material->Set(name, buffer.data(), buffer.size());
 
     for (auto&&[name, assetID] : asset.textures)
     {
     }
+
+    material->prefab = prefab;
+    material->shader = prefab->Get(0);
+    material->Sync();
 
     s_AssetsManager->addInCache(id, static_cast<MaterialID>(material));
     s_AssetsManager->mMaterialManager->addInCache(id, static_cast<MaterialID>(material));

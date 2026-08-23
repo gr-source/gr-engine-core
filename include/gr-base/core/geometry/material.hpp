@@ -21,7 +21,7 @@ struct Material
     gr::shader* lastShader = nullptr;
     gr::shader* shader = nullptr;
 
-    ShaderVariantFlags_ flags = 0;
+    ShaderVariantFlags flags = 0;
     
     template <typename T>
     void Set(const std::string &name, const T &value);

@@ -24,7 +24,7 @@ void ToneMappingPass::Setup(RenderGraphBuild& build)
     clearColor = true;
     clearDepth = false;
 
-    shader = AssetsManager::LoadShader(AssetDB::FindByName("engine://shader/screen"))->Get(ShaderVariantFlags_none);
+    shader = AssetsManager::LoadShader(AssetDB::FindByName("engine://shader/screen"))->Get(ShaderVariantFlags_None);
 }
 
 void ToneMappingPass::Execute()

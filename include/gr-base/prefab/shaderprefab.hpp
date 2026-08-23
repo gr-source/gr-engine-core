@@ -8,12 +8,13 @@
 #include <vector>
 #include <memory>
 
-typedef uint32_t ShaderVariantFlags_;
+typedef uint32_t ShaderVariantFlags;
 
-enum : uint8_t
+enum ShaderVariantFlags_
 {
-    ShaderVariantFlags_none        = 1 << 0,
-    ShaderVariantFlags_Instancing  = 1 << 1
+    ShaderVariantFlags_None        = 0,
+    ShaderVariantFlags_Instancing  = 1 << 0,
+    ShaderVariantFlags_Skinning    = 1 << 1
 };
 
 class ShaderPrefab
@@ -21,16 +22,16 @@ class ShaderPrefab
 public:
     ShaderPrefab(const ShaderAsset& asset);
 
-    gr::shader* Get(ShaderVariantFlags_ flags);
+    gr::shader* Get(ShaderVariantFlags flags);
 
 private:
-    std::unordered_map<ShaderVariantFlags_, std::shared_ptr<gr::shader>> m_shadervariant;
+    std::unordered_map<ShaderVariantFlags, std::shared_ptr<gr::shader>> m_shadervariant;
 
     std::vector<gr::shader*> m_shaders;
 
     ShaderAsset m_asset;
 
-    gr::shader* create(ShaderVariantFlags_ flags);
+    gr::shader* create(ShaderVariantFlags flags);
 };
 
 

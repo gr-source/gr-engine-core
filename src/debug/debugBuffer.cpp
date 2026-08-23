@@ -80,7 +80,7 @@ bool DebugBuffer::initialize()
         return false;
     }
 
-    m_shader = prefab->Get(ShaderVariantFlags_none);
+    m_shader = prefab->Get(ShaderVariantFlags_None);
     return true;
 }
 
