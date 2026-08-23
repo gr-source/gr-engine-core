@@ -4,17 +4,13 @@
 
 using ShaderOptimize_ = std::uint8_t;
 
-enum class ShaderType : uint8_t
+enum class ShaderDomain
 {
-    NONE,
-    SHADER2D,
-    SHADER3D,
-    SKY,
-    LINE,
-    COUNT
+    PostProcess,
+    Surface,
+    Sprite,
+    Debug
 };
-
-constexpr uint8_t ShaderTypeCount = static_cast<uint8_t>(ShaderType::COUNT);
 
 enum ShaderOptimize : ShaderOptimize_
 {
@@ -28,7 +24,7 @@ struct ShaderParams
 {
     std::string name;
     std::string base;
-    ShaderType type;
+    ShaderDomain domain;
     ShaderOptimize_ flags;
 };
 

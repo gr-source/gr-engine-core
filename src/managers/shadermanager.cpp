@@ -69,12 +69,6 @@ gr::shader *ShaderManager::find(const std::string &name)
     return it->second.get();
 }
 
-std::vector<gr::shader *> ShaderManager::get_shader(ShaderType type)
-{
-    std::lock_guard<std::mutex> lock(s_Mutex);
-    return s_ShaderTypeList;
-}
-
 
 
 

@@ -3,9 +3,11 @@
 #include "gr-base/core/console.hpp"
 
 #include <gr-render/shader.hpp>
+#include <gr-render/gl.h>
 
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 
 static std::unordered_map<std::string, gr::UniformType> mTypeMapping =
 {
@@ -37,7 +39,7 @@ gr::shader* ShaderPrefab::Get(ShaderVariantFlags flags)
 gr::shader* ShaderPrefab::create(ShaderVariantFlags flags)
 {
     std::string fragment = "#version 420\n";
-    if ((m_asset.flags & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
+    if (m_asset.domain == ShaderDomain::Surface)
     {
         if ((flags & ShaderVariantFlags_Instancing) != 0)
             fragment += "#define USE_INSTANCED\n";
@@ -46,7 +48,7 @@ gr::shader* ShaderPrefab::create(ShaderVariantFlags flags)
     fragment += m_asset.fragment;
 
     std::string vertex = "#version 420\n";
-    if ((m_asset.flags & ShaderAssetFlags_Line) != ShaderAssetFlags_Line)
+    if (m_asset.domain == ShaderDomain::Surface)
     {
         if ((flags & ShaderVariantFlags_Instancing) != 0)
             vertex += "#define USE_INSTANCED\n";
@@ -82,6 +84,8 @@ gr::shader* ShaderPrefab::create(ShaderVariantFlags flags)
             return nullptr;
         }
 
+
+        /*
         for (auto&& [name, info] : m_asset.parameters)
         {
             auto &&[typesname, count] = info;
@@ -96,7 +100,9 @@ gr::shader* ShaderPrefab::create(ShaderVariantFlags flags)
             if (shader->registry(name.c_str(), count, it->second) == GR_INVALID_ID)
                 Console::LogWarning("[ ShaderLoadTask ] uniform '%s' not found!", name.c_str());
         }
+        */
 
+        /*
         std::vector<gr::uniform> uniforms(shader->count);
         for (size_t i=0;i<shader->count;i++)
         {
@@ -117,6 +123,7 @@ gr::shader* ShaderPrefab::create(ShaderVariantFlags flags)
 
         void* dst = (void*)shader->uniforms;
         void* src = (void*)uniforms.data();
+        */
 
         // memcpy(dst, src, uniforms.size() * sizeof(gr::uniform));
 

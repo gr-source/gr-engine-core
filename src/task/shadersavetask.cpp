@@ -4,6 +4,7 @@
 
 #include "gr-base/core/console.hpp"
 
+#include "gr-base/externals/hash.hpp"
 #include "gr-base/file/fileStream.hpp"
 #include "gr-base/file/file.hpp"
 

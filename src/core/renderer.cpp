@@ -65,7 +65,7 @@ void Renderer::Submit(
 void Renderer::DrawFullScreenQuad()
 {
     s_Renderer->fullScreenQuad.vao->Bind();
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 // priuvae
@@ -73,32 +73,32 @@ Renderer::Renderer()
 {
     logger::info("[ Renderer ] Intialize '%p'.", this);
 
-    std::vector<Vertex2D> vertices = {
-        {{-1.0f,  1.0f}, {0.0f, 1.0f}},
-        {{-1.0f, -1.0f}, {0.0f, 0.0f}},
-        {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
+    // std::vector<Vertex2D> vertices = {
+    //     {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+    //     {{-1.0f, -1.0f}, {0.0f, 0.0f}},
+    //     {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
+    //
+    //     {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+    //     {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
+    //     {{ 1.0f,  1.0f}, {1.0f, 1.0f}}
+    // };
 
-        {{-1.0f,  1.0f}, {0.0f, 1.0f}},
-        {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
-        {{ 1.0f,  1.0f}, {1.0f, 1.0f}}
-    };
+    // gr::buffer_layout layout = {
+    //     {gr::shader_data_type::Float2, "in_position", false},
+    //     {gr::shader_data_type::Float2, "in_texCoord", false}
+    // };
 
-    gr::buffer_layout layout = {
-        {gr::shader_data_type::Float2, "in_position", false},
-        {gr::shader_data_type::Float2, "in_texCoord", false}
-    };
-
-    auto vbo = gr::vertex_buffer::create(vertices.data(), vertices.size() * sizeof(Vertex2D), gr::buffer_usage::static_draw);
-    vbo->SetLayout(layout);
+    // auto vbo = gr::vertex_buffer::create(vertices.data(), vertices.size() * sizeof(Vertex2D), gr::buffer_usage::static_draw);
+    // vbo->SetLayout(layout);
 
     auto vertexarray = gr::vertex_array::create();
-    vertexarray->Bind();
-    vertexarray->AddVertexBuffer(vbo);
+    // vertexarray->Bind();
+    // vertexarray->AddVertexBuffer(vbo);
 
-    vertexarray->Unbind();
+    // vertexarray->Unbind();
 
     fullScreenQuad.vao = vertexarray;
-    fullScreenQuad.vbo = vbo;
+    // fullScreenQuad.vbo = vbo;
 }
 
 Renderer::~Renderer()

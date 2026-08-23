@@ -1,11 +1,9 @@
 #pragma once
 
 #include "gr-base/asset/shaderasset.hpp"
+#include "gr-base/asset/default.hpp"
 
-#include "gr-base/externals/hash.hpp"
 #include "gr-base/prefab/shaderprefab.hpp"
-
-#include <memory>
 
 class ShaderPrefabManager
 {
