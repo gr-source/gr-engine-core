@@ -9,8 +9,8 @@
 
 struct RenderGraphBuild
 {
-    std::vector<TextureID> write;
-    std::vector<TextureID> read;
+    std::vector<AssetPtr<gr::texture>> write;
+    std::vector<AssetPtr<gr::texture>> read;
 
     std::vector<AssetPtr<gr::texture>> colorAttachment;
 
@@ -44,15 +44,15 @@ struct RenderGraphBuild
 
         add(write.size());
 
-        for (TextureID handle : write)
-            add(handle);
+        for (const auto& textureID : write)
+            add(static_cast<TextureID>(textureID));
 
         add(0xDEADBEEFCAFEBABEULL);
 
         add(read.size());
 
-        for (TextureID handle : read)
-            add(handle);
+        for (const auto& textureID : read)
+            add(static_cast<TextureID>(textureID));
 
         return hash;
     }

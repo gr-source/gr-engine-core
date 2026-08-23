@@ -71,12 +71,12 @@ void RenderGraph::compile()
 
         for (auto& read : builder.read)
         {
-            readers[read].push_back(pass);
+            readers[static_cast<TextureID>(read)].push_back(pass);
         }
 
         for (auto& write : builder.write)
         {
-            readers[write].push_back(pass);
+            readers[static_cast<TextureID>(write)].push_back(pass);
         }
     }
 

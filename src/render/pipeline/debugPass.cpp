@@ -14,8 +14,8 @@ DebugPass::DebugPass(
 
 void DebugPass::Setup(RenderGraphBuild& build)
 {
-    build.write.push_back(m_hdr.handle);
-    build.read.push_back(m_depth.handle);
+    build.write.push_back(m_hdr);
+    build.read.push_back(m_depth);
 
     build.AddColorAttachment(m_hdr);
     build.SetDepthAttachment(m_depth);

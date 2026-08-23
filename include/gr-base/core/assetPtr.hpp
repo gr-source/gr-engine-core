@@ -2,14 +2,14 @@
 
 #include <cstdint>
 
-template<typename T>
+template<typename T, typename IdType = uint32_t>
 class AssetPtr
 {
+private:
+    IdType id;
 public:
-    uint32_t handle = UINT32_MAX;
-
     AssetPtr() = default;
-    AssetPtr(uint32_t h) : handle(h) {}
+    AssetPtr(IdType id) : id(id) {}
 
     T* get();
 
@@ -38,6 +38,11 @@ public:
     explicit operator bool() const
     {
         return get() != nullptr;
+    }
+
+    explicit operator IdType() const
+    {
+        return id;
     }
 };
 

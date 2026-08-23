@@ -108,7 +108,7 @@ AssetPtr<gr::texture> AssetsManager::LoadTexture(AssetID id)
     AssetPtr<gr::texture> texture =
         CreateTexture(desc);
 
-    s_AssetsManager->addInCache(id, texture.handle);
+    s_AssetsManager->addInCache(id, static_cast<TextureID>(texture));
 
     return texture;
 }
@@ -120,7 +120,7 @@ AssetPtr<gr::texture> AssetsManager::CreateTexture(const TextureDesc& desc)
 
 void AssetsManager::DestroyTexture(AssetPtr<gr::texture> ptr)
 {
-    s_AssetsManager->mTextureManager->remove(ptr.handle);
+    s_AssetsManager->mTextureManager->remove(static_cast<TextureID>(ptr));
 }
 
 gr::texture* AssetsManager::GetTexture(TextureID h)
@@ -188,8 +188,8 @@ AssetPtr<Mesh> AssetsManager::LoadMesh(AssetID id)
         submesh.indexCount = assetSubmesh.indexCount;
     }
 
-    s_AssetsManager->addInCache(id, mesh.handle);
-    s_AssetsManager->mMeshManager->addInCache(id, mesh.handle);
+    s_AssetsManager->addInCache(id, static_cast<MeshID>(mesh));
+    s_AssetsManager->mMeshManager->addInCache(id, static_cast<MeshID>(mesh));
 
     return mesh;
 }
@@ -206,7 +206,7 @@ AssetPtr<Mesh> AssetsManager::CreateMesh()
 
 void AssetsManager::RemoveMesh(AssetPtr<Mesh> ptr)
 {
-    s_AssetsManager->mMeshManager->remove(ptr.handle);
+    s_AssetsManager->mMeshManager->remove(static_cast<MeshID>(ptr));
 }
 
 Mesh *AssetsManager::GetMesh(MeshID h)
@@ -248,8 +248,8 @@ AssetPtr<Material> AssetsManager::LoadMaterial(AssetID id)
     {
     }
 
-    s_AssetsManager->addInCache(id, material.handle);
-    s_AssetsManager->mMaterialManager->addInCache(id, material.handle);
+    s_AssetsManager->addInCache(id, static_cast<MaterialID>(material));
+    s_AssetsManager->mMaterialManager->addInCache(id, static_cast<MaterialID>(material));
 
     return material;
 }

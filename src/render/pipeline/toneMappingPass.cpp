@@ -16,8 +16,8 @@ ToneMappingPass::ToneMappingPass(AssetPtr<gr::texture> hdr, AssetPtr<gr::texture
 
 void ToneMappingPass::Setup(RenderGraphBuild& build)
 {
-    build.write.push_back(m_ldr.handle);
-    build.read.push_back(m_hdr.handle);
+    build.write.push_back(m_ldr);
+    build.read.push_back(m_hdr);
 
     build.AddColorAttachment(m_ldr);
 

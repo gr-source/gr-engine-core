@@ -109,7 +109,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
             if (mesh)
             {
                 auto& meshFilter = go.GetOrAddComponent<MeshFilter>();
-                meshFilter.mesh = mesh.handle;
+                meshFilter.mesh = static_cast<MeshID>(mesh);
             }
 
         } catch (const std::exception& e)
@@ -126,7 +126,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
                 auto material =
                     AssetsManager::LoadMaterial(assetID);
 
-                materials.push_back(material.handle);
+                materials.push_back(static_cast<MaterialID>(material));
             }
 
             auto& meshRender = go.GetOrAddComponent<MeshRender>();
