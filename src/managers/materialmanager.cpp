@@ -12,9 +12,9 @@ MaterialID MaterialManager::create()
     return m_pool.emplace();
 }
 
-Material& MaterialManager::get(MaterialID h) const
+Material* MaterialManager::get(MaterialID h) const
 {
-    return m_pool.get(h);
+    return m_pool.try_get(h);
 }
 
 void MaterialManager::destroy(MaterialID h)

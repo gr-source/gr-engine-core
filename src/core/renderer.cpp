@@ -67,8 +67,6 @@ void Renderer::DrawFullScreenQuad()
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-#include <iostream>
-
 // priuvae
 Renderer::Renderer()
 {
@@ -181,7 +179,7 @@ void Renderer::flush()
 
             auto& submesh = mesh->submeshes[first.submesh];
 
-            auto material = &AssetsManager::GetMaterial(first.material);
+            auto material = AssetsManager::GetMaterial(first.material);
             auto shader = material->shader;
             auto instances = &m_metrices[matrixID - instanceCount];
 

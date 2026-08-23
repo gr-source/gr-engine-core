@@ -259,7 +259,7 @@ AssetPtr<Material> AssetsManager::CreateMaterial()
     return s_AssetsManager->mMaterialManager->create();
 }
 
-Material& AssetsManager::GetMaterial(MaterialID h)
+Material* AssetsManager::GetMaterial(MaterialID h)
 {
     return s_AssetsManager->mMaterialManager->get(h);
 }

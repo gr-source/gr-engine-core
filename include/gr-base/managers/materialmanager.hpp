@@ -17,7 +17,7 @@ public:
 
     MaterialID create();
 
-    Material& get(MaterialID h) const;
+    Material* get(MaterialID h) const;
 
     void destroy(MaterialID h);
 

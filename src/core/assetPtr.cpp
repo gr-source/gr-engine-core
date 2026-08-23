@@ -34,13 +34,13 @@ const Mesh* AssetPtr<Mesh>::get() const
 template <>
 Material* AssetPtr<Material>::get()
 {
-    return &AssetsManager::GetMaterial(id);
+    return AssetsManager::GetMaterial(id);
 }
 
 template <>
 const Material* AssetPtr<Material>::get() const
 {
-    return &AssetsManager::GetMaterial(id);
+    return AssetsManager::GetMaterial(id);
 }
 
 

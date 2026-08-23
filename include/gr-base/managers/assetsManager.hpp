@@ -85,7 +85,7 @@ public:
     static AssetPtr<Material> CreateMaterial();
 
     // ********** Material API privada ********** //
-    static Material& GetMaterial(MaterialID h);
+    static Material* GetMaterial(MaterialID h);
 
     static size_t GetMaterialCount();
 
