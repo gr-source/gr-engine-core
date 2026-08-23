@@ -62,8 +62,6 @@ class IRenderPass
 {
 public:
     uint32_t fbo = 0;
-    uint32_t width = 0;
-    uint32_t height = 0;
 
     bool clearColor = false;
     bool clearDepth = false;

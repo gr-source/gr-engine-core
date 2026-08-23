@@ -15,7 +15,6 @@ void RenderGraph::Execute()
     {
         if (lastFrameBuffer != pass->fbo)
         {
-            glViewport(0, 0, pass->width, pass->height);
             glBindFramebuffer(GL_FRAMEBUFFER, pass->fbo);
 
             gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
@@ -66,8 +65,6 @@ void RenderGraph::compile()
             m_cacheRenderTarget.emplace(hash, CreateFrameBuffer(builder.colorAttachment, builder.depthAttachment));
 
         pass->fbo = m_cacheRenderTarget[hash];
-        pass->width = builder.colorAttachment[0]->width;
-        pass->height = builder.colorAttachment[0]->height;
 
         for (auto& read : builder.read)
         {

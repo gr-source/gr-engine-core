@@ -19,9 +19,9 @@ private:
 
     AssetPtr<gr::texture> m_depth;
 
-    // AssetPtr<gr::texture> m_output;
-
     RenderGraph graph;
+
+    Rect viewport = { 0.0f, 0.0f, 512.0f, 512.0f };
 
     void Initialize() override;
 

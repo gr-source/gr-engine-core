@@ -69,8 +69,44 @@ void ForwardPipeline::Initialize()
     graph.compile();
 }
 
+#include <gr-render/gl.h>
+
 void ForwardPipeline::Render(CameraRenderData& camera)
 {
+    auto& camViewport = camera.viewport;
+    if (camViewport.w != viewport.w  || camViewport.h != viewport.h)
+    {
+        // hdr
+        m_hdr->width = camViewport.w;
+        m_hdr->height = camViewport.h;
+
+        m_hdr->bind();
+        m_hdr->applyTextureBuffer(nullptr);
+        m_hdr->unbind();
+
+        // ldr
+        m_ldr->width = camViewport.w;
+        m_ldr->height = camViewport.h;
+
+        m_ldr->bind();
+        m_ldr->applyTextureBuffer(nullptr);
+        m_ldr->unbind();
+
+        // depth
+        m_depth->width = camViewport.w;
+        m_depth->height = camViewport.h;
+
+        m_depth->bind();
+        m_depth->applyTextureBuffer(nullptr);
+        m_depth->unbind();
+
+        viewport = camViewport;
+    }
+
+
+    glViewport(viewport.x, viewport.y, viewport.w, viewport.h);
+
+    // if (viewport.w !=)
     graph.Execute();
 }
 

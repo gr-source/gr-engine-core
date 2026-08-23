@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/core/default.hpp"
 #include "gr-base/render/default.hpp"
 
 #include "gr-base/core/assetPtr.hpp"
@@ -45,7 +46,8 @@ inline constexpr TypeCategory engine::type_traits::category<CameraData> =
 
 struct CameraRenderResult
 {
-    AssetPtr<gr::texture> output;
+    TextureID color;
+    TextureID depth;
 };
 
 template <>
