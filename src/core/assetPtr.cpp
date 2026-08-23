@@ -8,13 +8,13 @@
 template <>
 gr::texture* AssetPtr<gr::texture>::get()
 {
-    return AssetsManager::GetTexture(id);
+    return AssetsManager::GetTexture(TextureID{id});
 }
 
 template <>
 const gr::texture* AssetPtr<gr::texture>::get() const
 {
-    return AssetsManager::GetTexture(id);
+    return AssetsManager::GetTexture(TextureID{id});
 }
 
 // ===== Texture ===== //

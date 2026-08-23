@@ -57,9 +57,9 @@ AssetPtr<gr::texture> AssetsManager::LoadTexture(const std::string& uri)
 #include <gr-render/texture.hpp>
 AssetPtr<gr::texture> AssetsManager::LoadTexture(AssetID id)
 {
-    TextureID h = s_AssetsManager->findHandleInCache(id);
-    if (h != INVALID_ID32)
-        return h;
+    TextureID h = s_AssetsManager->findTextureIDInCache(id);
+    if (h)
+        return h.value;
 
     auto info = AssetDB::GetAsset(id);
     if (info == nullptr)
@@ -108,19 +108,19 @@ AssetPtr<gr::texture> AssetsManager::LoadTexture(AssetID id)
     AssetPtr<gr::texture> texture =
         CreateTexture(desc);
 
-    s_AssetsManager->addInCache(id, static_cast<TextureID>(texture));
+    s_AssetsManager->addTextureIDInCache(id, {static_cast<uint32_t>(texture)});
 
     return texture;
 }
 
 AssetPtr<gr::texture> AssetsManager::CreateTexture(const TextureDesc& desc)
 {
-    return s_AssetsManager->mTextureManager->create(desc);
+    return s_AssetsManager->mTextureManager->create(desc).value;
 }
 
 void AssetsManager::DestroyTexture(AssetPtr<gr::texture> ptr)
 {
-    s_AssetsManager->mTextureManager->remove(static_cast<TextureID>(ptr));
+    s_AssetsManager->mTextureManager->remove(TextureID{static_cast<uint32_t>(ptr)});
 }
 
 gr::texture* AssetsManager::GetTexture(TextureID h)
@@ -347,10 +347,14 @@ AssetsManager::~AssetsManager()
     delete mTextureManager;
 }
 
-
 void AssetsManager::addInCache(AssetID id, Handle handle)
 {
     m_idToHandle[id] = handle;
+}
+
+void AssetsManager::addTextureIDInCache(AssetID id, TextureID textureID)
+{
+    textureIDCache[id] = textureID;
 }
 
 Handle AssetsManager::findHandleInCache(AssetID id) const
@@ -359,6 +363,14 @@ Handle AssetsManager::findHandleInCache(AssetID id) const
     if (it != m_idToHandle.end())
         return it->second;
     return HANDLE_INVALID;
+}
+
+TextureID AssetsManager::findTextureIDInCache(AssetID id) const
+{
+    auto it = textureIDCache.find(id);
+    if (it != textureIDCache.end())
+        return it->second;
+    return TextureID::Invalid();
 }
 
 bool AssetsManager::LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func)

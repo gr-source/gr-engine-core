@@ -52,9 +52,9 @@ void RenderGraph::Execute()
 
 void RenderGraph::compile()
 {
-    std::unordered_map<TextureID, std::vector<std::shared_ptr<IRenderPass>>> readers;
+    std::unordered_map<uint32_t, std::vector<std::shared_ptr<IRenderPass>>> readers;
 
-    std::unordered_map<TextureID, std::vector<std::shared_ptr<IRenderPass>>> writers;
+    std::unordered_map<uint32_t, std::vector<std::shared_ptr<IRenderPass>>> writers;
 
     for (auto& pass : passes)
     {
@@ -71,12 +71,12 @@ void RenderGraph::compile()
 
         for (auto& read : builder.read)
         {
-            readers[static_cast<TextureID>(read)].push_back(pass);
+            readers[static_cast<uint32_t>(read)].push_back(pass);
         }
 
         for (auto& write : builder.write)
         {
-            readers[static_cast<TextureID>(write)].push_back(pass);
+            readers[static_cast<uint32_t>(write)].push_back(pass);
         }
     }
 

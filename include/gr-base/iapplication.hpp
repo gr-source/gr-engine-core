@@ -3,13 +3,13 @@
 #include <vector>
 #include <string>
 
-class Application
+class IApplication
 {
 public:
-    static Application* application;
+    static IApplication* GetInstance();
 
-    Application();
-    virtual ~Application();
+    IApplication();
+    virtual ~IApplication();
 
     virtual void initialize() = 0;
 
@@ -18,6 +18,9 @@ public:
     virtual void run() = 0;
 
     virtual void dropPath(const std::vector<std::string>& entries) {}
+
+private:
+    static IApplication* gApplication;
 };
 
 

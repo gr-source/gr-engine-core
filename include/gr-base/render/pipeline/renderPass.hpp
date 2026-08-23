@@ -45,14 +45,14 @@ struct RenderGraphBuild
         add(write.size());
 
         for (const auto& textureID : write)
-            add(static_cast<TextureID>(textureID));
+            add(static_cast<uint32_t>(textureID));
 
         add(0xDEADBEEFCAFEBABEULL);
 
         add(read.size());
 
         for (const auto& textureID : read)
-            add(static_cast<TextureID>(textureID));
+            add(static_cast<uint32_t>(textureID));
 
         return hash;
     }

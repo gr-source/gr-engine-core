@@ -109,6 +109,8 @@ private:
     static AssetsManager* s_AssetsManager;
 
     // Cache
+    std::unordered_map<AssetID, TextureID> textureIDCache;
+
     std::unordered_map<AssetID, Handle> m_idToHandle;
 
     ShaderPrefabManager *mShaderPrefabManager;
@@ -127,7 +129,11 @@ private:
 
     void addInCache(AssetID id, Handle handle);
 
+    void addTextureIDInCache(AssetID id, TextureID textureID);
+
     Handle findHandleInCache(AssetID id) const;
+
+    TextureID findTextureIDInCache(AssetID id) const;
 
     static bool LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func);
 
