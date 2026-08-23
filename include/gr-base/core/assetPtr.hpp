@@ -6,7 +6,7 @@ template<typename T, typename IdType = uint32_t>
 class AssetPtr
 {
 private:
-    IdType id;
+    IdType id = UINT32_MAX;
 public:
     AssetPtr() = default;
     AssetPtr(IdType id) : id(id) {}

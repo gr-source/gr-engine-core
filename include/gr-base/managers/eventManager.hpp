@@ -20,10 +20,10 @@ public:
     static void Subscribe(Callback&& callback, Args&&...args);
 
     template <typename T>
-    static void Emit(T& event);
+    static void Emit(T&& event);
 
     template <typename T>
-    static void EmitAsync(T& event);
+    static void EmitAsync(T&& event);
 
 private:
     static EventManager* s_EventManager;
@@ -74,13 +74,13 @@ inline void EventManager::Subscribe(Callback&& callback, Args&&...args)
 }
 
 template <typename T>
-inline void EventManager::Emit(T& event)
+inline void EventManager::Emit(T&& event)
 {
     s_EventManager->notify(GetEventIDByType<T>(), &event);
 }
 
 template <typename T>
-inline void EventManager::EmitAsync(T& event)
+inline void EventManager::EmitAsync(T&& event)
 {
     auto copy = std::make_shared<T>(
         std::forward<T>(event)
