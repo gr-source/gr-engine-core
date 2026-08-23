@@ -1,15 +1,11 @@
 #pragma once
 
 #include "gr-base/core/default.hpp"
+#include "gr-base/core/texture.hpp"
 
-#include "gr-base/asset/default.hpp"
-
-#include <gr-render/default.hpp>
-
-#include <string.h>
 #include "gr-base/pool/sparseSet.hpp"
 
-#include <unordered_map>
+#include <gr-render/default.hpp>
 
 class TextureManager
 {
@@ -17,7 +13,7 @@ public:
     TextureManager();
     ~TextureManager();
 
-    TextureID create();
+    TextureID create(const TextureDesc& desc);
 
     gr::texture *get(TextureID h) const;
 
@@ -26,7 +22,7 @@ public:
     size_t count() const;
 
 private:
-    SparseSet2<gr::texture> m_pool;
+    SparseSet2<gr::texture> sparseSet;
 };
 
 

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "gr-base/render/pipeline/renderPipeline.hpp"
+#include "gr-base/render/pipeline/ipipeline.hpp"
 #include "gr-base/render/pipeline/renderGraph.hpp"
 
 #include "gr-base/core/assetPtr.hpp"
 
 #include <gr-render/default.hpp>
 
-class ForwardPipeline : public IRenderPipeline
+class ForwardPipeline : public IPipeline
 {
 public:
     AssetPtr<gr::texture> GetTextureOutput() const;
@@ -25,7 +25,7 @@ private:
 
     void Initialize() override;
 
-    void Execute() override;
+    void Render(CameraRenderData& camera) override;
 };
 
 

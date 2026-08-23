@@ -12,6 +12,7 @@
 
 #include "gr-base/core/default.hpp"
 
+#include "gr-base/core/texture.hpp"
 #include "gr-base/managers/default.hpp"
 
 #include "gr-base/ecs/default.hpp"
@@ -34,7 +35,7 @@ public:
 
     static AssetPtr<gr::texture> LoadTexture(AssetID id);
 
-    static AssetPtr<gr::texture> CreateTexture();
+    static AssetPtr<gr::texture> CreateTexture(const TextureDesc& desc);
 
     static void DestroyTexture(AssetPtr<gr::texture> ptr);
 

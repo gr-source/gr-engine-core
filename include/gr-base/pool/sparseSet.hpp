@@ -1,10 +1,12 @@
 #pragma once
 
+#include <type_traits>
+#include <cassert>
+#include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <utility>
-
-#include <assert.h>
-#include <stdint.h>
+#include <new>
 
 #define INVALID_SPARSE_ID UINT32_MAX
 

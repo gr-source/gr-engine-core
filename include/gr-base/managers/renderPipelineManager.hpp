@@ -1,11 +1,10 @@
 #pragma once
 
+#include "gr-base/render/pipeline/default.hpp"
 #include "gr-base/render/default.hpp"
 
 #include <memory>
 #include <vector>
-
-class IRenderPipeline;
 
 class RenderPipelineManager
 {
@@ -23,9 +22,9 @@ public:
 private:
     static RenderPipelineManager* gRenderPipelineManager;
 
-    std::vector<std::shared_ptr<IRenderPipeline>> pipelines;
+    std::vector<std::shared_ptr<IPipeline>> pipelines;
 
-    void set(RenderPipelineID id, std::shared_ptr<IRenderPipeline> pipeline);
+    void set(RenderPipelineID id, std::shared_ptr<IPipeline> pipeline);
 };
 
 template <typename T, typename... Args>

@@ -16,70 +16,51 @@ AssetPtr<gr::texture> ForwardPipeline::GetTextureOutput() const
 void ForwardPipeline::Initialize()
 {
     m_hdr =
-        AssetsManager::CreateTexture();
+        AssetsManager::CreateTexture({
+            .width = 512,
+            .height = 512,
 
-    m_hdr->width =
-        512;
-    m_hdr->height =
-        512;
+            .filter =
+                TEXTURE_FILTER_LINEAR,
+            .format =
+                TEXTURE_FORMAT_RGBA16F,
+            .wrap =
+                TEXTURE_WRAP_REPEAT,
+            .type =
+                TEXTURE_TYPE_2D,
+            });
 
-    m_hdr->type =
-        TEXTURE_TYPE_2D;
-    m_hdr->filter =
-        TEXTURE_FILTER_LINEAR;
-    m_hdr->wrap =
-        TEXTURE_WRAP_REPEAT;
-    m_hdr->format =
-        TEXTURE_FORMAT_RGBA16F;
-
-    m_hdr->bind();
-    m_hdr->applyTextureSettings();
-    m_hdr->applyTextureBuffer(nullptr);
-    m_hdr->unbind();
 
     m_ldr =
-        AssetsManager::CreateTexture();
+        AssetsManager::CreateTexture({
+            .width = 512,
+            .height = 512,
 
-    m_ldr->width =
-        512;
-    m_ldr->height =
-        512;
-
-    m_ldr->type =
-        TEXTURE_TYPE_2D;
-    m_ldr->filter =
-        TEXTURE_FILTER_LINEAR;
-    m_ldr->wrap =
-        TEXTURE_WRAP_REPEAT;
-    m_ldr->format =
-        TEXTURE_FORMAT_RGBA8;
-
-    m_ldr->bind();
-    m_ldr->applyTextureSettings();
-    m_ldr->applyTextureBuffer(nullptr);
-    m_ldr->unbind();
+            .filter =
+                TEXTURE_FILTER_LINEAR,
+            .format =
+                TEXTURE_FORMAT_RGBA8,
+            .wrap =
+                TEXTURE_WRAP_REPEAT,
+            .type =
+                TEXTURE_TYPE_2D,
+            });
 
     m_depth =
-        AssetsManager::CreateTexture();
+        AssetsManager::CreateTexture({
+            .width = 512,
+            .height = 512,
 
-    m_depth->width =
-        512;
-    m_depth->height =
-        512;
+            .filter =
+                TEXTURE_FILTER_LINEAR,
+            .format =
+                TEXTURE_FORMAT_DEPTH,
+            .wrap =
+                TEXTURE_WRAP_REPEAT,
+            .type =
+                TEXTURE_TYPE_2D,
+            });
 
-    m_depth->type =
-        TEXTURE_TYPE_2D;
-    m_depth->filter =
-        TEXTURE_FILTER_NEAREST;
-    m_depth->wrap =
-        TEXTURE_WRAP_CLAMP;
-    m_depth->format =
-        TEXTURE_FORMAT_DEPTH;
-
-    m_depth->bind();
-    m_depth->applyTextureSettings();
-    m_depth->applyTextureBuffer(nullptr);
-    m_depth->unbind();
 
     graph.add<ScenePass>(m_hdr, m_depth);
     graph.add<DebugPass>(m_hdr, m_depth);
@@ -88,7 +69,7 @@ void ForwardPipeline::Initialize()
     graph.compile();
 }
 
-void ForwardPipeline::Execute()
+void ForwardPipeline::Render(CameraRenderData& camera)
 {
     graph.Execute();
 }

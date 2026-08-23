@@ -73,50 +73,49 @@ AssetPtr<gr::texture> AssetsManager::LoadTexture(AssetID id)
     if (!ImportAssetFromFile(path, &asset))
         throw std::runtime_error("invalid binary");
 
-    AssetPtr<gr::texture> texture =
-        CreateTexture();
+    TextureDesc desc;
 
-    texture->width = asset.width;
-    texture->height = asset.height;
+    desc.width = asset.width;
+    desc.height = asset.height;
 
-    texture->filter = TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR;
-    texture->wrap = TEXTURE_WRAP_MIRROR;
-    texture->type = TEXTURE_TYPE_2D;
+    desc.filter = TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR;
+    desc.wrap = TEXTURE_WRAP_MIRROR;
+    desc.type = TEXTURE_TYPE_2D;
 
     switch (asset.channels)
     {
         case 1:
-            texture->format = TEXTURE_FORMAT_RED;
+            desc.format = TEXTURE_FORMAT_RED;
             break;
 
         case 2:
-            texture->format = asset.hdr ? TEXTURE_FORMAT_RG16F : TEXTURE_FORMAT_RG;
+            desc.format = asset.hdr ? TEXTURE_FORMAT_RG16F : TEXTURE_FORMAT_RG;
             break;
 
         case 3:
-            texture->format = asset.hdr ? TEXTURE_FORMAT_RGB16F : TEXTURE_FORMAT_RGB;
+            desc.format = asset.hdr ? TEXTURE_FORMAT_RGB16F : TEXTURE_FORMAT_RGB;
             break;
 
         case 4:
-            texture->format = asset.hdr ? TEXTURE_FORMAT_RGBA16F : TEXTURE_FORMAT_RGBA;
+            desc.format = asset.hdr ? TEXTURE_FORMAT_RGBA16F : TEXTURE_FORMAT_RGBA;
             break;
         default:
             throw std::runtime_error("Unsupported channel count: " + std::to_string(asset.channels));
     }
 
-    texture->bind();
-    texture->applyTextureSettings();
-    texture->applyTextureBuffer(asset.raw.data());
-    texture->unbind();
+    desc.pixels = asset.raw.data();
+
+    AssetPtr<gr::texture> texture =
+        CreateTexture(desc);
 
     s_AssetsManager->addInCache(id, texture.handle);
 
     return texture;
 }
 
-AssetPtr<gr::texture> AssetsManager::CreateTexture()
+AssetPtr<gr::texture> AssetsManager::CreateTexture(const TextureDesc& desc)
 {
-    return s_AssetsManager->mTextureManager->create();
+    return s_AssetsManager->mTextureManager->create(desc);
 }
 
 void AssetsManager::DestroyTexture(AssetPtr<gr::texture> ptr)

@@ -1,6 +1,7 @@
 #include "gr-base/managers/renderPipelineManager.hpp"
 
-#include "gr-base/render/pipeline/renderPipeline.hpp"
+#include "gr-base/core/console.hpp"
+#include "gr-base/render/pipeline/ipipeline.hpp"
 
 RenderPipelineManager* RenderPipelineManager::gRenderPipelineManager = nullptr;
 
@@ -18,12 +19,19 @@ void RenderPipelineManager::Shutdown()
 }
 
 // private
-void RenderPipelineManager::set(RenderPipelineID id, std::shared_ptr<IRenderPipeline> pipeline)
+void RenderPipelineManager::set(RenderPipelineID id, std::shared_ptr<IPipeline> pipeline)
 {
     if (id.value >= pipelines.size())
         pipelines.resize(id.value + 1, nullptr);
 
-    pipeline->Initialize();
+    try
+    {
+        pipeline->Initialize();
+    } catch (const std::exception& e)
+    {
+        Console::LogError("[ RenderPipelineManager ] %s", e.what());
+        return;
+    }
 
     pipelines[id.value] = pipeline;
 }
