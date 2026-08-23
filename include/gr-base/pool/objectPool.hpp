@@ -55,8 +55,13 @@ public:
             free(m_denseToSparse);
     }
 
+    Handle push(T&& value)
+    {
+        return emplace(std::move(value));
+    }
+
     template <typename... Args>
-    Handle create(Args&&... args)
+    Handle emplace(Args&&... args)
     {
         Handle h = allocate();
 
