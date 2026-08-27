@@ -1,6 +1,5 @@
 #pragma once
 
-#include "gr-base/core/assetPtr.hpp"
 #include "gr-base/core/default.hpp"
 
 #include <gr-render/default.hpp>
@@ -9,19 +8,19 @@
 
 struct RenderGraphBuild
 {
-    std::vector<AssetPtr<gr::texture>> write;
-    std::vector<AssetPtr<gr::texture>> read;
+    std::vector<TextureRef> write;
+    std::vector<TextureRef> read;
 
-    std::vector<AssetPtr<gr::texture>> colorAttachment;
+    std::vector<TextureRef> colorAttachment;
 
-    AssetPtr<gr::texture> depthAttachment;
+    TextureRef depthAttachment;
 
-    void AddColorAttachment(AssetPtr<gr::texture> texture)
+    void AddColorAttachment(TextureRef texture)
     {
         colorAttachment.push_back(texture);
     }
 
-    void SetDepthAttachment(AssetPtr<gr::texture> texture)
+    void SetDepthAttachment(TextureRef texture)
     {
         depthAttachment = texture;
     }
@@ -45,14 +44,14 @@ struct RenderGraphBuild
         add(write.size());
 
         for (const auto& textureID : write)
-            add(static_cast<uint32_t>(textureID));
+            add(static_cast<TextureID>(textureID));
 
         add(0xDEADBEEFCAFEBABEULL);
 
         add(read.size());
 
         for (const auto& textureID : read)
-            add(static_cast<uint32_t>(textureID));
+            add(static_cast<TextureID>(textureID));
 
         return hash;
     }

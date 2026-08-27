@@ -9,20 +9,11 @@
 struct MeshFilter
 {
     MeshID mesh =
-        INVALID_ID32;
+        MeshID::Invalid();
 };
 
 template <>
 inline constexpr TypeCategory engine::type_traits::category<MeshFilter> =
-    TypeCategory::Component;
-
-struct MeshRef
-{
-    AssetHash hash = INVALID_HASH64;
-};
-
-template <>
-inline constexpr TypeCategory engine::type_traits::category<MeshRef> =
     TypeCategory::Component;
 
 

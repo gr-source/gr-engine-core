@@ -14,17 +14,17 @@ MeshManager::MeshManager()
 
 MeshID MeshManager::create()
 {
-    return m_pool.emplace();
+    return {m_pool.emplace()};
 }
 
 Mesh *MeshManager::get(MeshID h) const
 {
-    return m_pool.try_get(h);
+    return m_pool.try_get(h.value);
 }
 
 void MeshManager::remove(MeshID h)
 {
-    m_pool.destroy((uint32_t)h);
+    m_pool.destroy(h.value);
 }
 
 size_t MeshManager::GetCount() const
@@ -35,19 +35,19 @@ size_t MeshManager::GetCount() const
 void MeshManager::addInCache(AssetID assetID, MeshID index)
 {
     // uint32_t index = handle_get_first(handle);
-    if (index >= meshIDCache.size())
-        meshIDCache.resize(index + 1, INVALID_ASSET);
+    if (index.value >= meshIDCache.size())
+        meshIDCache.resize(index.value + 1, INVALID_ASSET);
 
-    meshIDCache[index] = assetID;
+    meshIDCache[index.value] = assetID;
 }
 
 AssetID MeshManager::findInCache(MeshID index) const
 {
     // uint32_t index = handle_get_first(handle);
-    if (index >= meshIDCache.size())
+    if (index.value >= meshIDCache.size())
         return INVALID_ASSET;
 
-    return meshIDCache[index];
+    return meshIDCache[index.value];
 }
 
 

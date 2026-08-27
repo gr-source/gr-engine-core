@@ -9,7 +9,7 @@
 #include <gr-render/texture.hpp>
 #include <gr-render/shader.hpp>
 
-ToneMappingPass::ToneMappingPass(AssetPtr<gr::texture> hdr, AssetPtr<gr::texture> ldr) :
+ToneMappingPass::ToneMappingPass(TextureRef hdr, TextureRef ldr) :
     m_hdr(hdr),
     m_ldr(ldr)
 {}

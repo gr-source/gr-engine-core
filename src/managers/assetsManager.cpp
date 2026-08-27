@@ -1,4 +1,5 @@
 #include "gr-base/managers/assetsManager.hpp"
+#include "gr-base/asset/textureAsset.hpp"
 #include "gr-base/managers/taskmanager.hpp"
 
 #include "gr-base/asset/materialasset.hpp"
@@ -46,7 +47,7 @@ void AssetsManager::Shutdown()
     s_AssetsManager = nullptr;
 }
 
-AssetPtr<gr::texture> AssetsManager::LoadTexture(const std::string& uri)
+TextureRef AssetsManager::LoadTexture(const std::string& uri)
 {
     AssetID assetID = AssetDB::FindByHash(engine::hash::fnv1_str(uri));
     if (assetID != INVALID_ASSET)
@@ -55,11 +56,11 @@ AssetPtr<gr::texture> AssetsManager::LoadTexture(const std::string& uri)
 }
 
 #include <gr-render/texture.hpp>
-AssetPtr<gr::texture> AssetsManager::LoadTexture(AssetID id)
+TextureRef AssetsManager::LoadTexture(AssetID id)
 {
     TextureID h = s_AssetsManager->findTextureIDInCache(id);
     if (h)
-        return h.value;
+        return h;
 
     auto info = AssetDB::GetAsset(id);
     if (info == nullptr)
@@ -105,22 +106,22 @@ AssetPtr<gr::texture> AssetsManager::LoadTexture(AssetID id)
 
     desc.pixels = asset.raw.data();
 
-    AssetPtr<gr::texture> texture =
+    TextureRef texture =
         CreateTexture(desc);
 
-    s_AssetsManager->addTextureIDInCache(id, {static_cast<uint32_t>(texture)});
+    s_AssetsManager->addTextureIDInCache(id, static_cast<TextureID>(texture));
 
     return texture;
 }
 
-AssetPtr<gr::texture> AssetsManager::CreateTexture(const TextureDesc& desc)
+TextureRef AssetsManager::CreateTexture(const TextureDesc& desc)
 {
-    return s_AssetsManager->mTextureManager->create(desc).value;
+    return s_AssetsManager->mTextureManager->create(desc);
 }
 
-void AssetsManager::DestroyTexture(AssetPtr<gr::texture> ptr)
+void AssetsManager::DestroyTexture(TextureRef ptr)
 {
-    s_AssetsManager->mTextureManager->remove(TextureID{static_cast<uint32_t>(ptr)});
+    s_AssetsManager->mTextureManager->remove(static_cast<TextureID>(ptr));
 }
 
 gr::texture* AssetsManager::GetTexture(TextureID h)
@@ -138,10 +139,10 @@ MeshID AssetsManager::LoadMesh(const std::string& name)
 
 #include "gr-base/asset/meshasset.hpp"
 
-AssetPtr<Mesh> AssetsManager::LoadMesh(AssetID id)
+MeshRef AssetsManager::LoadMesh(AssetID id)
 {
-    MeshID h = s_AssetsManager->findHandleInCache(id);
-    if (h != INVALID_ID32)
+    MeshID h = s_AssetsManager->findMeshIDInCache(id);
+    if (h)
         return h;
 
     auto info = AssetDB::GetAsset(id);
@@ -188,7 +189,7 @@ AssetPtr<Mesh> AssetsManager::LoadMesh(AssetID id)
         submesh.indexCount = assetSubmesh.indexCount;
     }
 
-    s_AssetsManager->addInCache(id, static_cast<MeshID>(mesh));
+    s_AssetsManager->addMeshIDInCache(id, static_cast<MeshID>(mesh));
     s_AssetsManager->mMeshManager->addInCache(id, static_cast<MeshID>(mesh));
 
     return mesh;
@@ -199,12 +200,12 @@ size_t AssetsManager::GetMeshCount()
     return s_AssetsManager->mMeshManager->GetCount();
 }
 
-AssetPtr<Mesh> AssetsManager::CreateMesh()
+MeshRef AssetsManager::CreateMesh()
 {
     return s_AssetsManager->mMeshManager->create();
 }
 
-void AssetsManager::RemoveMesh(AssetPtr<Mesh> ptr)
+void AssetsManager::RemoveMesh(MeshRef ptr)
 {
     s_AssetsManager->mMeshManager->remove(static_cast<MeshID>(ptr));
 }
@@ -214,11 +215,10 @@ Mesh *AssetsManager::GetMesh(MeshID h)
     return s_AssetsManager->mMeshManager->get(h);
 }
 
-#include <iostream>
-AssetPtr<Material> AssetsManager::LoadMaterial(AssetID id)
+MaterialRef AssetsManager::LoadMaterial(AssetID id)
 {
-    MaterialID h = s_AssetsManager->findHandleInCache(id);
-    if (h != INVALID_ID32)
+    MaterialID h = s_AssetsManager->findMaterialIDInCache(id);
+    if (h)
         return h;
 
     auto info = AssetDB::GetAsset(id);
@@ -260,13 +260,13 @@ AssetPtr<Material> AssetsManager::LoadMaterial(AssetID id)
     material->shader = prefab->Get(material->flags);
     material->Sync();
 
-    s_AssetsManager->addInCache(id, static_cast<MaterialID>(material));
+    s_AssetsManager->addMaterialIDInCache(id, static_cast<MaterialID>(material));
     s_AssetsManager->mMaterialManager->addInCache(id, static_cast<MaterialID>(material));
 
     return material;
 }
 
-AssetPtr<Material> AssetsManager::CreateMaterial()
+MaterialRef AssetsManager::CreateMaterial()
 {
     return s_AssetsManager->mMaterialManager->create();
 }
@@ -325,19 +325,19 @@ bool AssetsManager::ImportAssetFromFile(const std::string& file, IAsset* asset)
     return asset->deserialize(&stream);
 }
 
-Handle AssetsManager::FindHandleInCache(AssetID id)
+// Handle AssetsManager::FindHandleInCache(AssetID id)
+// {
+//     return s_AssetsManager->findHandleInCache(id);
+// }
+
+AssetID AssetsManager::FindAssetIDInCacheMaterial(MaterialID materialID)
 {
-    return s_AssetsManager->findHandleInCache(id);
+    return s_AssetsManager->mMaterialManager->findInCache(materialID);
 }
 
-AssetID AssetsManager::FindAssetIDInCacheMaterial(Handle handle)
+AssetID AssetsManager::FindAssetIDInCacheMesh(MeshID meshID)
 {
-    return s_AssetsManager->mMaterialManager->findInCache(handle);
-}
-
-AssetID AssetsManager::FindAssetIDInCacheMesh(Handle handle)
-{
-    return s_AssetsManager->mMeshManager->findInCache(handle);
+    return s_AssetsManager->mMeshManager->findInCache(meshID);
 }
 
 // private
@@ -359,9 +359,9 @@ AssetsManager::~AssetsManager()
     delete mTextureManager;
 }
 
-void AssetsManager::addInCache(AssetID id, Handle handle)
+void AssetsManager::addMeshIDInCache(AssetID id, MeshID meshID)
 {
-    m_idToHandle[id] = handle;
+    meshIDToCache[id] = meshID;
 }
 
 void AssetsManager::addTextureIDInCache(AssetID id, TextureID textureID)
@@ -369,12 +369,17 @@ void AssetsManager::addTextureIDInCache(AssetID id, TextureID textureID)
     textureIDCache[id] = textureID;
 }
 
-Handle AssetsManager::findHandleInCache(AssetID id) const
+void AssetsManager::addMaterialIDInCache(AssetID id, MaterialID materialID)
 {
-    auto it = m_idToHandle.find(id);
-    if (it != m_idToHandle.end())
+    materialIDCache[id] = materialID;
+}
+
+MeshID AssetsManager::findMeshIDInCache(AssetID id) const
+{
+    auto it = meshIDToCache.find(id);
+    if (it != meshIDToCache.end())
         return it->second;
-    return HANDLE_INVALID;
+    return MeshID::Invalid();
 }
 
 TextureID AssetsManager::findTextureIDInCache(AssetID id) const
@@ -383,6 +388,14 @@ TextureID AssetsManager::findTextureIDInCache(AssetID id) const
     if (it != textureIDCache.end())
         return it->second;
     return TextureID::Invalid();
+}
+
+MaterialID AssetsManager::findMaterialIDInCache(AssetID id) const
+{
+    auto it = materialIDCache.find(id);
+    if (it != materialIDCache.end())
+        return it->second;
+    return MaterialID::Invalid();
 }
 
 bool AssetsManager::LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func)

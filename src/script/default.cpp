@@ -33,7 +33,6 @@ void RegistryDefaultComponent()
     REGISTER_COMPONENT(RenderBounds, false);
 
     REGISTER_COMPONENT(MeshFilter, false);
-    REGISTER_COMPONENT(MeshRef, false);
     
     REGISTER_COMPONENT(Static, true);
 

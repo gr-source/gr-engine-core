@@ -55,8 +55,8 @@ void Renderer::Submit(
         const Matrix4x4* matrice)
 {
     uint64_t sortKey =
-          (uint64_t)material << 32
-        | (uint64_t)mesh << 8
+          (uint64_t)material.value << 32
+        | (uint64_t)mesh.value << 8
         | (uint64_t)submesh;
     
     s_Renderer->m_renderables.push_back({ sortKey, material, mesh, submesh, matrice });
@@ -142,7 +142,7 @@ void Renderer::flush()
     });
 
     MeshID lastMesh =
-        INVALID_ID32;
+        MeshID::Invalid();
 
     gr::shader* lastShader =
         nullptr;

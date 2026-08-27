@@ -8,7 +8,7 @@
 
 #include <gr-render/texture.hpp>
 
-AssetPtr<gr::texture> ForwardPipeline::GetTextureOutput() const
+TextureRef ForwardPipeline::GetTextureOutput() const
 {
     return m_ldr;
 }

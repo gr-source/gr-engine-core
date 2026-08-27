@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gr-base/core/assetPtr.hpp"
+#include "gr-base/core/default.hpp"
 
 #include <gr-render/default.hpp>
 
@@ -27,7 +28,7 @@ private:
 
     uint32_t GetOrCreateFrameBuffer(uint64_t hash);
 
-    uint32_t CreateFrameBuffer(const std::vector<AssetPtr<gr::texture>>& attachments, AssetPtr<gr::texture> depth);
+    uint32_t CreateFrameBuffer(const std::vector<TextureRef>& attachments, TextureRef depth);
 
     void Set(std::shared_ptr<IRenderPass> pass);
 };

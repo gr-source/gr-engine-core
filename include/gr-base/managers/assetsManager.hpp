@@ -2,8 +2,8 @@
 
 #include <gr-render/gRender.h>
 
-#include "gr-base/asset/shaderasset.hpp"
-#include "gr-base/asset/textureAsset.hpp"
+// #include "gr-base/asset/shaderasset.hpp"
+// #include "gr-base/asset/textureAsset.hpp"
 #include "gr-base/asset/default.hpp"
 
 #include "gr-base/core/assetPtr.hpp"
@@ -31,13 +31,13 @@ public:
     static void Shutdown();
 
     // ********** Texture ********** //
-    static AssetPtr<gr::texture> LoadTexture(const std::string& uri);
+    static TextureRef LoadTexture(const std::string& uri);
 
-    static AssetPtr<gr::texture> LoadTexture(AssetID id);
+    static TextureRef LoadTexture(AssetID id);
 
-    static AssetPtr<gr::texture> CreateTexture(const TextureDesc& desc);
+    static TextureRef CreateTexture(const TextureDesc& desc);
 
-    static void DestroyTexture(AssetPtr<gr::texture> ptr);
+    static void DestroyTexture(TextureRef ptr);
 
     static gr::texture* GetTexture(TextureID h);
 
@@ -63,14 +63,14 @@ public:
     // ********** Mesh ********** //
     // static MeshID LoadMesh(const std::string& name);
 
-    static AssetPtr<Mesh> LoadMesh(AssetID id);
+    static MeshRef LoadMesh(AssetID id);
 
     static size_t GetMeshCount();
 
     // API Privada
-    static AssetPtr<Mesh> CreateMesh();
+    static MeshRef CreateMesh();
 
-    static void RemoveMesh(AssetPtr<Mesh> ptr);
+    static void RemoveMesh(MeshRef ptr);
 
     static Mesh *GetMesh(MeshID h);
 
@@ -80,9 +80,9 @@ public:
     // ********** Material API publica ********** //
     // static MaterialID LoadMaterial(const std::string& name);
 
-    static AssetPtr<Material> LoadMaterial(AssetID id);
+    static MaterialRef LoadMaterial(AssetID id);
 
-    static AssetPtr<Material> CreateMaterial();
+    static MaterialRef CreateMaterial();
 
     // ********** Material API privada ********** //
     static Material* GetMaterial(MaterialID h);
@@ -99,19 +99,20 @@ public:
 
     static bool ImportAssetFromFile(const std::string& file, IAsset* asset);
 
-    static Handle FindHandleInCache(AssetID id);
+    // static Handle FindHandleInCache(AssetID id);
 
-    static AssetID FindAssetIDInCacheMaterial(Handle handle);
+    static AssetID FindAssetIDInCacheMaterial(MaterialID materialID);
 
-    static AssetID FindAssetIDInCacheMesh(Handle handle);
+    static AssetID FindAssetIDInCacheMesh(MeshID meshID);
 
 private:
     static AssetsManager* s_AssetsManager;
 
     // Cache
     std::unordered_map<AssetID, TextureID> textureIDCache;
+    std::unordered_map<AssetID, MaterialID> materialIDCache;
 
-    std::unordered_map<AssetID, Handle> m_idToHandle;
+    std::unordered_map<AssetID, MeshID> meshIDToCache;
 
     ShaderPrefabManager *mShaderPrefabManager;
 
@@ -127,13 +128,17 @@ private:
     AssetsManager();
     ~AssetsManager();
 
-    void addInCache(AssetID id, Handle handle);
+    void addMeshIDInCache(AssetID id, MeshID meshID);
 
     void addTextureIDInCache(AssetID id, TextureID textureID);
 
-    Handle findHandleInCache(AssetID id) const;
+    void addMaterialIDInCache(AssetID id, MaterialID materialID);
+
+    MeshID findMeshIDInCache(AssetID id) const;
 
     TextureID findTextureIDInCache(AssetID id) const;
+
+    MaterialID findMaterialIDInCache(AssetID id) const;
 
     static bool LoadFromFile(const std::string& file, Hash64 sign, std::function<bool (Stream*)> func);
 

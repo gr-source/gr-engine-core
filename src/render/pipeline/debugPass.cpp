@@ -6,8 +6,8 @@
 #include <gr-render/gl.h>
 
 DebugPass::DebugPass(
-        AssetPtr<gr::texture> hdr,
-        AssetPtr<gr::texture> depth) :
+        TextureRef hdr,
+        TextureRef depth) :
     m_hdr(hdr),
     m_depth(depth)
 {}

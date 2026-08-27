@@ -143,7 +143,7 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
     if (go.HasComponent<MeshFilter, MeshRender>())
     {
         auto meshFilter = go.GetComponent<MeshFilter>();
-        if (meshFilter.mesh != INVALID_ID32)
+        if (meshFilter.mesh != MeshID::Invalid())
         {
             auto mesh = AssetsManager::GetMesh(meshFilter.mesh);
             if (mesh != nullptr)

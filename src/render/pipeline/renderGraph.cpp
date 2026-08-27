@@ -42,15 +42,16 @@ void RenderGraph::Execute()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+
 #include <unordered_set>
 #include <functional>
 #include <algorithm>
 
 void RenderGraph::compile()
 {
-    std::unordered_map<uint32_t, std::vector<std::shared_ptr<IRenderPass>>> readers;
+    std::unordered_map<TextureID, std::vector<std::shared_ptr<IRenderPass>>> readers;
 
-    std::unordered_map<uint32_t, std::vector<std::shared_ptr<IRenderPass>>> writers;
+    std::unordered_map<TextureID, std::vector<std::shared_ptr<IRenderPass>>> writers;
 
     for (auto& pass : passes)
     {
@@ -65,12 +66,12 @@ void RenderGraph::compile()
 
         for (auto& read : builder.read)
         {
-            readers[static_cast<uint32_t>(read)].push_back(pass);
+            readers[read].push_back(pass);
         }
 
         for (auto& write : builder.write)
         {
-            readers[static_cast<uint32_t>(write)].push_back(pass);
+            readers[write].push_back(pass);
         }
     }
 
@@ -181,8 +182,8 @@ void RenderGraph::compile()
 }
 
 uint32_t RenderGraph::CreateFrameBuffer(
-    const std::vector<AssetPtr<gr::texture>>& attachments,
-    AssetPtr<gr::texture> depth)
+    const std::vector<TextureRef>& attachments,
+    TextureRef depth)
 {
     uint32_t framebuffer = 0;
 

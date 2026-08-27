@@ -5,12 +5,12 @@
 class DebugPass : public IRenderPass
 {
 public:
-    DebugPass(AssetPtr<gr::texture> hdr, AssetPtr<gr::texture> depth);
+    DebugPass(TextureRef hdr, TextureRef depth);
 
 private:
-    AssetPtr<gr::texture> m_hdr;
+    TextureRef m_hdr;
 
-    AssetPtr<gr::texture> m_depth;
+    TextureRef m_depth;
 
     void Setup(RenderGraphBuild& build) override;
 

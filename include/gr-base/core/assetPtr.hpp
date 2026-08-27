@@ -1,12 +1,10 @@
 #pragma once
 
-#include <cstdint>
-
-template<typename T, typename IdType = uint32_t>
+template<typename T, typename IdType>
 class AssetPtr
 {
 private:
-    IdType id = UINT32_MAX;
+    IdType id;
 public:
     AssetPtr() = default;
     AssetPtr(IdType id) : id(id) {}
@@ -35,12 +33,12 @@ public:
         return *get();
     }
 
-    explicit operator bool() const
+    constexpr explicit operator bool() const noexcept
     {
         return get() != nullptr;
     }
 
-    explicit operator IdType() const
+    constexpr operator IdType() const noexcept
     {
         return id;
     }

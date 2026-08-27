@@ -10,14 +10,14 @@
 class ForwardPipeline : public IPipeline
 {
 public:
-    AssetPtr<gr::texture> GetTextureOutput() const;
+    TextureRef GetTextureOutput() const;
 
 private:
-    AssetPtr<gr::texture> m_hdr;
+    TextureRef m_hdr;
 
-    AssetPtr<gr::texture> m_ldr;
+    TextureRef m_ldr;
 
-    AssetPtr<gr::texture> m_depth;
+    TextureRef m_depth;
 
     RenderGraph graph;
 

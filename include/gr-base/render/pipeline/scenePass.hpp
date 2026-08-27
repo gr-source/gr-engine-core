@@ -3,12 +3,12 @@
 class ScenePass : public IRenderPass
 {
 public:
-    ScenePass(AssetPtr<gr::texture> hdr, AssetPtr<gr::texture> depth);
+    ScenePass(TextureRef hdr, TextureRef depth);
 
 private:
-    AssetPtr<gr::texture> m_hdr;
+    TextureRef m_hdr;
     
-    AssetPtr<gr::texture> m_depth;
+    TextureRef m_depth;
 
     void Setup(RenderGraphBuild& build) override;
 

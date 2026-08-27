@@ -5,11 +5,11 @@
 class ToneMappingPass : public IRenderPass
 {
 public:
-    ToneMappingPass(AssetPtr<gr::texture> hdr, AssetPtr<gr::texture> ldr);
+    ToneMappingPass(TextureRef hdr, TextureRef ldr);
 
 private:
-    AssetPtr<gr::texture> m_hdr;
-    AssetPtr<gr::texture> m_ldr;
+    TextureRef m_hdr;
+    TextureRef m_ldr;
 
     gr::shader* shader =
         nullptr;
