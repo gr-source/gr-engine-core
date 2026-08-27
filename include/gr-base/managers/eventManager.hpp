@@ -2,6 +2,8 @@
 
 #include "gr-base/core/ievent.hpp"
 
+#include "gr-base/pool/objectPool.hpp"
+
 #include <functional>
 #include <cstdint>
 #include <memory>
@@ -17,10 +19,10 @@ public:
     static void Shutdown();
 
     template <typename T, typename Callback, typename... Args>
-    static void Subscribe(Callback&& callback, Args&&...args);
+    static Handle Subscribe(Callback&& callback, Args&&...args);
 
     template <typename T>
-    static void Unsubscribe();
+    static void Unsubscribe(Handle handle);
 
     template <typename T>
     static void Emit(T&& event);
@@ -39,13 +41,13 @@ private:
     EventManager();
     ~EventManager();
 
-    std::vector<std::vector<std::function<void (IEvent*)>>> m_listener;
+    std::vector<ObjectPool<std::function<void (IEvent*)>>> m_listener;
 
     std::mutex m_mutex;
 
-    void subscribe(EventID id, std::function<void (IEvent*)> func);
+    Handle subscribe(EventID id, std::function<void (IEvent*)> func);
 
-    void unsubscribe(EventID id);
+    void unsubscribe(EventID id, Handle handle);
 
     void notify(EventID id, IEvent* event);
 
@@ -53,7 +55,7 @@ private:
 };
 
 template <typename T, typename Callback, typename... Args>
-inline void EventManager::Subscribe(Callback&& callback, Args&&...args)
+inline Handle EventManager::Subscribe(Callback&& callback, Args&&...args)
 {
     static_assert(
         std::is_invocable_v<Callback, Args..., T&>,
@@ -62,7 +64,7 @@ inline void EventManager::Subscribe(Callback&& callback, Args&&...args)
 
     auto arguments = std::make_tuple(std::forward<Args>(args)...);
 
-    s_EventManager->subscribe(
+    return s_EventManager->subscribe(
             GetEventIDByType<T>(), [callback = std::forward<Callback>(callback),
             arguments = std::move(arguments)](IEvent* event) mutable
             {
@@ -77,9 +79,9 @@ inline void EventManager::Subscribe(Callback&& callback, Args&&...args)
 }
 
 template <typename T>
-inline void EventManager::Unsubscribe()
+inline void EventManager::Unsubscribe(Handle handle)
 {
-    s_EventManager->unsubscribe(GetEventIDByType<T>());
+    s_EventManager->unsubscribe(GetEventIDByType<T>(), handle);
 }
 
 template <typename T>

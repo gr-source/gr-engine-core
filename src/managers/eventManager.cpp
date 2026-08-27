@@ -36,27 +36,30 @@ EventManager::~EventManager()
     logger::info("[ EventManager ] Shutdown '%p'.", this);
 }
 
-void EventManager::subscribe(EventID id, std::function<void (IEvent*)> func)
+Handle EventManager::subscribe(EventID id, std::function<void (IEvent*)> func)
 {
+    Handle handle = HANDLE_INVALID;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         if (id >= m_listener.size())
             m_listener.resize(id + 1);
 
-        m_listener[id].push_back(std::move(func));
+        handle = m_listener[id].push(std::move(func));
     }
 
     logger::debug("[ EventManager ] Attached event '%d'.", id);
+
+    return handle;
 }
 
-void EventManager::unsubscribe(EventID id)
+void EventManager::unsubscribe(EventID id, Handle handle)
 {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         if (id >= m_listener.size())
-            m_listener.resize(id + 1);
+            return;
 
-        m_listener[id].clear();
+        m_listener[id].destroy(handle);
     }
 
     logger::debug("[ EventManager ] Detached event '%d'.", id);
@@ -64,7 +67,7 @@ void EventManager::unsubscribe(EventID id)
 
 void EventManager::notify(EventID id, IEvent* event)
 {
-    std::vector<std::function<void (IEvent*)>> execute;
+    ObjectPool<std::function<void (IEvent*)>> execute;
 
     {
         std::scoped_lock<std::mutex> lock(m_mutex);
@@ -74,8 +77,8 @@ void EventManager::notify(EventID id, IEvent* event)
         execute = m_listener[id];
     }
 
-    for (auto& func : execute)
-        func(event);
+    for (size_t i=0;i<execute.count();i++)
+        execute.data()[i](event);
 }
 
 void EventManager::notifyAsync(EventID id, std::shared_ptr<IEvent> event)
