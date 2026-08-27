@@ -5,6 +5,7 @@
 #include "gr-base/core/logger.hpp"
 
 #include "gr-base/file/fileStream.hpp"
+
 #include "gr-base/managers/eventManager.hpp"
 
 #include <cstring>
@@ -100,55 +101,8 @@ void AssetDB::load(Scheme_ scheme, const std::string &file)
 
         registry(info);
     }
-    /*
-    std::ifstream is(file);
-    if (!is.is_open())
-        return logger::error("[AssetDB] Fail in to load source '%s'.", strerror(errno));
-
-    logger::info("[AssetDB] loading ref: '%s'.", file.c_str());
-
-    std::string line;
-    while (std::getline(is, line))
-    {
-        std::string path;
-        AssetID id;
-        Hash64 hash;
-        int type;
-
-        std::stringstream iss(line);
-        if (!(iss >> hash >> id >> type >> path))
-            continue;
-
-        std::cout << path << std::endl;
-
-        URI uri = URI::parse(path);
-        if (uri.scheme != scheme)
-            continue;
-
-        AssetInfo info;
-        info.hash = hash;
-        info.id = id;
-        info.type = static_cast<AssetType>(type);
-
-        size_t size = path.size();
-        size = size > ASSET_MAX_PATH_LENGHT ? ASSET_MAX_PATH_LENGHT : size;
-
-        strncpy(info.uri, path.c_str(), size);
-        info.uri[size] = '\0';
-
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            if (id >= m_nextID)
-                m_nextID = id + 1;
-        }
-
-        registry(info);
-    }
-    */
 
     EventManager::Emit<AssetEventOnLoaded>({});
-
-    is.close();
 }
 
 void AssetDB::save(Scheme_ scheme, const std::string &file)
@@ -198,9 +152,10 @@ void AssetDB::registry(const AssetInfo& info)
         m_refMapped.emplace(info.hash, info.id);
     }
 
-    EventManager::Emit<AssetEventOnCreated>(AssetEventOnCreated{
-                .value = info.id
-            });
+    EventManager::Emit<AssetEventOnCreated>
+        ({
+            .value = info.id
+        });
 }
 
 void AssetDB::unregistry(AssetID id)
@@ -212,7 +167,8 @@ void AssetDB::unregistry(AssetID id)
     AssetEventOnRemove event;
     ;
 
-    EventManager::Emit<AssetEventOnRemove>(AssetEventOnRemove{
+    EventManager::Emit<AssetEventOnRemove>
+        ({
             .value = info->id
         });
 

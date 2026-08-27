@@ -20,7 +20,7 @@ void AssetSaveTask::onPreExecute()
     auto name =
         m_info.uri.toString();
 
-    Console::LogInfo("[ Asset ] Saving %s....", name.c_str());
+    Console::LogDefault("{00FF00}[ AssetSaveTask ]{FFFFFF} Saving {FFFF00}%s{FFFFFF}....", name.c_str());
 }
 
 std::string AssetSaveTask::doInBackground()
@@ -74,7 +74,7 @@ void AssetSaveTask::onPostExecute(Result<std::string> result)
     auto name = m_info.uri.toString();
 
     if (!result.success)
-        return Console::LogError("[ Asset ] name='%s' error='%s'.", name.c_str(), result.error.c_str());
+        return Console::LogError("[ AssetSaveTask ] name='%s' error='%s'.", name.c_str(), result.error.c_str());
 
     std::string extension = ".unknown";
     switch (m_info.type)
@@ -125,7 +125,10 @@ void AssetSaveTask::onPostExecute(Result<std::string> result)
 
     AssetDB::Registry(info);
 
-    Console::LogInfo("[ MaterialSaveTask ] Asset saved sucessfully '%s'", name.c_str());
+
+    Console::LogDefault("{00FF00}[ AssetSaveTask ]{FFFFFF} Saved sucessfully {FFFF00}%s{FFFFFF}....", name.c_str());
+
+    // Console::LogInfo("[ AssetSaveTask ] Asset saved sucessfully '%s'", name.c_str());
 }
 
 
