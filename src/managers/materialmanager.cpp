@@ -9,17 +9,17 @@ MaterialManager::MaterialManager()
 
 MaterialID MaterialManager::create()
 {
-    return { m_pool.emplace() };
+    return m_pool.emplace();
 }
 
-Material* MaterialManager::get(MaterialID h) const
+Material* MaterialManager::get(MaterialID id) const
 {
-    return m_pool.try_get(h.value);
+    return m_pool.try_get(id);
 }
 
-void MaterialManager::destroy(MaterialID h)
+void MaterialManager::destroy(MaterialID id)
 {
-    m_pool.destroy(h.value);
+    m_pool.destroy(id);
 }
 
 size_t MaterialManager::GetCount() const
@@ -29,20 +29,18 @@ size_t MaterialManager::GetCount() const
 
 void MaterialManager::addInCache(AssetID assetID, MaterialID index)
 {
-    // uint32_t index = handle_get_first(handle);
-    if (index.value >= materialIDCacheList.size())
-        materialIDCacheList.resize(index.value + 1, INVALID_ASSET);
+    if (index >= materialIDCacheList.size())
+        materialIDCacheList.resize(index + 1, INVALID_ASSET);
 
-    materialIDCacheList[index.value] = assetID;
+    materialIDCacheList[index] = assetID;
 }
 
 AssetID MaterialManager::findInCache(MaterialID index) const
 {
-    // uint32_t index = handle_get_first(handle);
-    if (index.value >= materialIDCacheList.size())
+    if (index >= materialIDCacheList.size())
         return INVALID_ASSET;
 
-    return materialIDCacheList[index.value];
+    return materialIDCacheList[index];
 }
 
 

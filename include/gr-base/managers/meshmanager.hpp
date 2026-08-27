@@ -16,15 +16,15 @@ public:
 
     MeshID create();
 
-    Mesh *get(MeshID h) const;
+    Mesh *get(MeshID id) const;
 
-    void remove(MeshID h);
+    void remove(MeshID id);
 
     size_t GetCount() const;
 
-    void addInCache(AssetID assetID, MeshID handle);
+    void addInCache(AssetID assetID, MeshID index);
 
-    AssetID findInCache(MeshID handle) const;
+    AssetID findInCache(MeshID index) const;
 
 private:
     std::vector<AssetID> meshIDCache;

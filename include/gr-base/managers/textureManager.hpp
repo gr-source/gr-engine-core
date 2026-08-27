@@ -15,9 +15,9 @@ public:
 
     TextureID create(const TextureDesc& desc);
 
-    gr::texture *get(TextureID h) const;
+    gr::texture *get(TextureID id) const;
 
-    void remove(TextureID h);
+    void remove(TextureID id);
 
     size_t count() const;
 

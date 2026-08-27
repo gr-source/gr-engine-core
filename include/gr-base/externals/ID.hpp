@@ -19,6 +19,9 @@ struct ID
 
     IdType value = InvalidValue;
 
+    constexpr ID() noexcept = default;
+    constexpr ID(IdType _value) noexcept : value(_value) {}
+
     constexpr explicit operator bool() const
     {
         return value != InvalidValue;

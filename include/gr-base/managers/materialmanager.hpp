@@ -17,15 +17,15 @@ public:
 
     MaterialID create();
 
-    Material* get(MaterialID h) const;
+    Material* get(MaterialID id) const;
 
-    void destroy(MaterialID h);
+    void destroy(MaterialID id);
 
     size_t GetCount() const;
 
-    void addInCache(AssetID assetID, MaterialID handle);
+    void addInCache(AssetID assetID, MaterialID index);
 
-    AssetID findInCache(MaterialID handle) const;
+    AssetID findInCache(MaterialID index) const;
 
 private:
     std::vector<AssetID> materialIDCacheList;

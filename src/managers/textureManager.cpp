@@ -17,9 +17,9 @@ TextureManager::~TextureManager()
 
 TextureID TextureManager::create(const TextureDesc& desc)
 {
-    TextureID h = { sparseSet.emplace() };
+    TextureID h = sparseSet.emplace();
 
-    auto& texture = sparseSet.get(h.value);
+    auto& texture = sparseSet.get(h);
     texture.create();
 
     texture.width = desc.width;
@@ -38,20 +38,20 @@ TextureID TextureManager::create(const TextureDesc& desc)
     return h;
 }
 
-gr::texture *TextureManager::get(TextureID h) const
+gr::texture *TextureManager::get(TextureID id) const
 {
-    return sparseSet.try_get(h.value);
+    return sparseSet.try_get(id);
 }
 
-void TextureManager::remove(TextureID h)
+void TextureManager::remove(TextureID id)
 {
-    gr::texture* texture = sparseSet.try_get(h.value);
+    gr::texture* texture = sparseSet.try_get(id);
     if (texture == nullptr)
         return;
 
     texture->destroy();
 
-    sparseSet.destroy(h.value);
+    sparseSet.destroy(id);
 }
 
 size_t TextureManager::count() const

@@ -109,7 +109,7 @@ TextureRef AssetsManager::LoadTexture(AssetID id)
     TextureRef texture =
         CreateTexture(desc);
 
-    s_AssetsManager->addTextureIDInCache(id, static_cast<TextureID>(texture));
+    s_AssetsManager->addTextureIDInCache(id, texture);
 
     return texture;
 }
@@ -121,7 +121,7 @@ TextureRef AssetsManager::CreateTexture(const TextureDesc& desc)
 
 void AssetsManager::DestroyTexture(TextureRef ptr)
 {
-    s_AssetsManager->mTextureManager->remove(static_cast<TextureID>(ptr));
+    s_AssetsManager->mTextureManager->remove(ptr);
 }
 
 gr::texture* AssetsManager::GetTexture(TextureID h)
@@ -189,8 +189,8 @@ MeshRef AssetsManager::LoadMesh(AssetID id)
         submesh.indexCount = assetSubmesh.indexCount;
     }
 
-    s_AssetsManager->addMeshIDInCache(id, static_cast<MeshID>(mesh));
-    s_AssetsManager->mMeshManager->addInCache(id, static_cast<MeshID>(mesh));
+    s_AssetsManager->addMeshIDInCache(id, mesh);
+    s_AssetsManager->mMeshManager->addInCache(id, mesh);
 
     return mesh;
 }
@@ -207,7 +207,7 @@ MeshRef AssetsManager::CreateMesh()
 
 void AssetsManager::RemoveMesh(MeshRef ptr)
 {
-    s_AssetsManager->mMeshManager->remove(static_cast<MeshID>(ptr));
+    s_AssetsManager->mMeshManager->remove(ptr);
 }
 
 Mesh *AssetsManager::GetMesh(MeshID h)
@@ -260,8 +260,8 @@ MaterialRef AssetsManager::LoadMaterial(AssetID id)
     material->shader = prefab->Get(material->flags);
     material->Sync();
 
-    s_AssetsManager->addMaterialIDInCache(id, static_cast<MaterialID>(material));
-    s_AssetsManager->mMaterialManager->addInCache(id, static_cast<MaterialID>(material));
+    s_AssetsManager->addMaterialIDInCache(id, material);
+    s_AssetsManager->mMaterialManager->addInCache(id, material);
 
     return material;
 }
