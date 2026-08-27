@@ -120,20 +120,20 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
         try
         {
 
-            std::vector<MaterialID> materials;
+            std::vector<MaterialRef> materials;
             for (auto& assetID : asset->materials)
             {
                 auto material =
                     AssetsManager::LoadMaterial(assetID);
 
-                materials.push_back(static_cast<MaterialID>(material));
+                materials.push_back(material);
             }
 
             auto& meshRender = go.GetOrAddComponent<MeshRender>();
-            meshRender.materials = (MaterialID*)malloc(materials.size() * sizeof(MaterialID));
+            meshRender.materials = (MaterialRef*)malloc(materials.size() * sizeof(MaterialRef));
             meshRender.numMaterials = materials.size();
 
-            memcpy(meshRender.materials, materials.data(), materials.size() * sizeof(MaterialID));
+            memcpy(meshRender.materials, materials.data(), materials.size() * sizeof(MaterialRef));
         } catch (const std::exception& e)
         {
             Console::LogWarning("[ ModelLoadTask ] Material não carregado: error='%s'.", e.what());
@@ -143,15 +143,11 @@ Entity ModelLoadTask::CreateFromAsset(const ModelAsset* asset)
     if (go.HasComponent<MeshFilter, MeshRender>())
     {
         auto meshFilter = go.GetComponent<MeshFilter>();
-        if (meshFilter.mesh != MeshID::Invalid())
+        if (meshFilter.mesh)
         {
-            auto mesh = AssetsManager::GetMesh(meshFilter.mesh);
-            if (mesh != nullptr)
-            {
-                auto bounds = Mesh_CalculateBounds(mesh);
-                if (bounds.Volume() > 0.0f)
-                    go.AddComponent<RenderBounds>(bounds, m_scene->bvhtree.insert(go.entity, bounds));
-            }
+            auto bounds = Mesh_CalculateBounds(meshFilter.mesh.get());
+            if (bounds.Volume() > 0.0f)
+                go.AddComponent<RenderBounds>(bounds, m_scene->bvhtree.insert(go.entity, bounds));
         }
     }
 

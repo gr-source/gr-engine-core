@@ -110,6 +110,7 @@ void Renderer::beginFrame()
 {
     RendererStats::InstanceCount = 0;
     RendererStats::TriangleCount = 0;
+    RendererStats::BatchCount = 0;
 
     m_renderables.clear();
     // m_commands.clear();
@@ -239,6 +240,9 @@ void Renderer::flush()
         }
 
         i = start;
+
+        RendererStats::InstanceCount += instanceCount;
+        RendererStats::BatchCount++;
     }
 }
 

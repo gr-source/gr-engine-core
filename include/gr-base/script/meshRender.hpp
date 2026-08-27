@@ -9,7 +9,7 @@
 
 struct MeshRender
 {
-    MaterialID* materials = nullptr;
+    MaterialRef* materials = nullptr;
     size_t numMaterials = 0;
 };
 

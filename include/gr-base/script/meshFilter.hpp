@@ -8,8 +8,7 @@
 
 struct MeshFilter
 {
-    MeshID mesh =
-        MeshID::Invalid();
+    MeshRef mesh;
 };
 
 template <>

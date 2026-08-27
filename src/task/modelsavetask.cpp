@@ -24,7 +24,7 @@ ModelAsset ModelSaveTask::ConvertToAssetModel(const GameObject& gameObject)
     asset.name = gameObject.GetName();
 
     auto meshFilter = gameObject.TryGetComponent<MeshFilter>();
-    if (meshFilter != nullptr && meshFilter->mesh != MeshID::Invalid())
+    if (meshFilter != nullptr && meshFilter->mesh)
         asset.mesh = AssetsManager::FindAssetIDInCacheMesh(meshFilter->mesh);
 
     if (auto meshRender = gameObject.TryGetComponent<MeshRender>())
