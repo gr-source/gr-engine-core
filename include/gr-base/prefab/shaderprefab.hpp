@@ -12,9 +12,10 @@ typedef uint32_t ShaderVariantFlags;
 
 enum ShaderVariantFlags_
 {
-    ShaderVariantFlags_None        = 0,
-    ShaderVariantFlags_Instancing  = 1 << 0,
-    ShaderVariantFlags_Skinning    = 1 << 1
+    ShaderVariantFlags_None         = 0,
+    ShaderVariantFlags_Instancing   = 1 << 0,
+    ShaderVariantFlags_Skinning     = 1 << 1,
+    ShaderVariantFlags_BaseColorMap = 1 << 2
 };
 
 class ShaderPrefab

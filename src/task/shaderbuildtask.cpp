@@ -81,7 +81,8 @@ bool ShaderBuildTask::compile(const ShaderAsset* asset)
     gr::shader shader;
     if (!shader.create(&fragment_src, 1, &vertex_src, 1, &error))
     {
-        Console::LogError("[ ShaderBuildTask ] %s", error.c_str());
+        Console::LogDefault("{FF0000}[ ShaderBuildTask ] %s", error.c_str());
+        shader.destroy();
         return false;
     }
     shader.destroy();

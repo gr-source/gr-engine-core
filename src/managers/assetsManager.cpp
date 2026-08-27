@@ -214,6 +214,7 @@ Mesh *AssetsManager::GetMesh(MeshID h)
     return s_AssetsManager->mMeshManager->get(h);
 }
 
+#include <iostream>
 AssetPtr<Material> AssetsManager::LoadMaterial(AssetID id)
 {
     MaterialID h = s_AssetsManager->findHandleInCache(id);
@@ -244,10 +245,19 @@ AssetPtr<Material> AssetsManager::LoadMaterial(AssetID id)
 
     for (auto&&[name, assetID] : asset.textures)
     {
+        auto texture =
+            LoadTexture(assetID);
+        if (texture)
+            material->Set(name, texture->id);
+
+        if (name.find("albedoTex") != std::string::npos)
+            material->flags |= ShaderVariantFlags_BaseColorMap;
+
+        // std::cout << "LoadTexture: " << assetID << std::endl;
     }
 
     material->prefab = prefab;
-    material->shader = prefab->Get(0);
+    material->shader = prefab->Get(material->flags);
     material->Sync();
 
     s_AssetsManager->addInCache(id, static_cast<MaterialID>(material));

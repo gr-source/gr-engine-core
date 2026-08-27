@@ -4,9 +4,6 @@
 
 #include <gr-render/shader.hpp>
 #include <gr-render/gl.h>
-
-#include <algorithm>
-#include <cstring>
 #include <iostream>
 
 static std::unordered_map<std::string, gr::UniformType> mTypeMapping =
@@ -43,6 +40,8 @@ gr::shader* ShaderPrefab::create(ShaderVariantFlags flags)
     {
         if ((flags & ShaderVariantFlags_Instancing) != 0)
             fragment += "#define USE_INSTANCED\n";
+        if ((flags & ShaderVariantFlags_BaseColorMap) != 0)
+            fragment += "#define USE_BASECOLOR_MAP\n";
     }
 
     fragment += m_asset.fragment;
@@ -52,6 +51,8 @@ gr::shader* ShaderPrefab::create(ShaderVariantFlags flags)
     {
         if ((flags & ShaderVariantFlags_Instancing) != 0)
             vertex += "#define USE_INSTANCED\n";
+        if ((flags & ShaderVariantFlags_BaseColorMap) != 0)
+            vertex += "#define USE_BASECOLOR_MAP\n";
     }
 
     vertex += m_asset.vertex;
@@ -59,17 +60,9 @@ gr::shader* ShaderPrefab::create(ShaderVariantFlags flags)
     const char* fragment_src = fragment.c_str();
     const char* vertex_src = vertex.c_str();
 
-    auto&& [it, inserted] = m_shadervariant.emplace(flags, std::make_shared<gr::shader>());
+    auto shader = std::make_shared<gr::shader>();
 
-    gr::shader* shader = it->second.get();
-    if (inserted)
     {
-        // std::cout << "[ ===== " << m_asset.GetName() << " ===== ]" << std::endl;
-        // std::cout << "============================ fragment ============================" << std::endl;
-        // std::cout << fragment_src << std::endl;
-        // std::cout << "============================ vertex ============================" << std::endl;
-        // std::cout << vertex_src << std::endl;
-
         std::string error;
         if (!shader->create(&fragment_src, 1, &vertex_src, 1, &error))
         {
@@ -78,58 +71,20 @@ gr::shader* ShaderPrefab::create(ShaderVariantFlags flags)
                 m_asset.name.c_str(),
                 error.c_str()
             );
+            shader->destroy();
 
             m_shadervariant.erase(flags);
 
             return nullptr;
         }
 
-
-        /*
-        for (auto&& [name, info] : m_asset.parameters)
-        {
-            auto &&[typesname, count] = info;
-
-            auto it = mTypeMapping.find(typesname);
-            if (it == mTypeMapping.end())
-            {
-                Console::LogWarning("[ ShaderLoadTask ] Vertex Shader uniform type do not is valid: %s, %s", name.c_str(), typesname.c_str());
-                continue;
-            }
-
-            if (shader->registry(name.c_str(), count, it->second) == GR_INVALID_ID)
-                Console::LogWarning("[ ShaderLoadTask ] uniform '%s' not found!", name.c_str());
-        }
-        */
-
-        /*
-        std::vector<gr::uniform> uniforms(shader->count);
-        for (size_t i=0;i<shader->count;i++)
-        {
-            uniforms[i] = shader->uniforms[i];
-        }
-
-        std::sort(uniforms.begin(), uniforms.end(),
-        [](const gr::uniform& a, const gr::uniform& b)
-        {
-            bool aMat = strncmp(a.name, "u_mat_", 6) != 0;
-            bool bMat = strncmp(b.name, "u_mat_", 6) != 0;
-
-            if (aMat != bMat)
-                return aMat;
-
-            return strcmp(a.name, b.name) < 0;
-        });
-
-        void* dst = (void*)shader->uniforms;
-        void* src = (void*)uniforms.data();
-        */
-
-        // memcpy(dst, src, uniforms.size() * sizeof(gr::uniform));
-
-        m_shaders.push_back(shader);
+        // m_shaders.push_back(shader);
     }
 
-    return shader;
+    m_shadervariant.emplace(flags, shader);
+
+    m_shaders.push_back(shader.get());
+
+    return shader.get();
 }
 

@@ -40,7 +40,7 @@ void ToneMappingPass::Execute()
     shader->unbind();
 
 
-    // glActiveTexture(GL_TEXTURE0);
-    // m_hdr->unbind();
+    glActiveTexture(GL_TEXTURE0);
+    m_hdr->unbind();
 }
 

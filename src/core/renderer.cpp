@@ -185,9 +185,11 @@ void Renderer::flush()
 
             bool instancing = instanceCount > 1;
 
-            ShaderVariantFlags flags = 0;
+            ShaderVariantFlags flags = material->flags;
             if (instancing)
                 flags |= ShaderVariantFlags_Instancing;
+            else
+                flags &= ~ShaderVariantFlags_Instancing;
 
             if (material->flags != flags)
             {

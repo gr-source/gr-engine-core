@@ -33,6 +33,8 @@ TextureAsset TextureBuildTask::doInBackground()
     if (!gfile::exists(m_file))
         throw std::runtime_error(m_file + ": " + strerror(ENOENT));
 
+    // stbi_set_flip_vertically_on_load_thread(true);
+
     bool isHDR = stbi_is_hdr(m_file.c_str());
 
     int width;
