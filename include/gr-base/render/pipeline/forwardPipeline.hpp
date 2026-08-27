@@ -26,6 +26,8 @@ private:
     void Initialize() override;
 
     void Render(CameraRenderData& camera) override;
+
+    void resize(uint32_t width, uint32_t height);
 };
 
 

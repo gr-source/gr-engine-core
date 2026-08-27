@@ -6,16 +6,19 @@
 
 #include <gr-math/gmath.hpp>
 
-enum class LightType : int
+typedef uint32_t LightType;
+
+enum LightType_
 {
-    eDirection,
-    ePoint,
-    eSpot
+    LightType_Direction,
+    LightType_Point,
+    LightType_Spot,
+    LightType_Count
 };
 
 struct Light
 {
-    LightType type = LightType::eDirection;
+    LightType type = LightType_Direction;
 
     Color color = Color::White();
 

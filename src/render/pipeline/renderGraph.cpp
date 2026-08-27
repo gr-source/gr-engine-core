@@ -1,6 +1,5 @@
 #include "gr-base/render/pipeline/renderGraph.hpp"
 
-#include "gr-base/core/default.hpp"
 #include "gr-base/render/pipeline/renderPass.hpp"
 
 #include <gr-render/gRender.h>
@@ -19,9 +18,7 @@ void RenderGraph::Execute()
 
             gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
             gr::gRender::SetEnable(GR_CULL_FACE, true);
-            // gr::gRender::SetEnable(GR_FRAMEBUFFER_SRGB, true);
 
-            // gr::gRender::SetViewport(viewport.data);
             gr::gRender::SetBackgroundColor(Color::Black());
 
             if (pass->clearColor || pass->clearDepth)
@@ -132,8 +129,6 @@ void RenderGraph::compile()
         if (hasCycle)
             return;
 
-        // Encontrou um nó que ainda está sendo processado.
-        // Portanto temos um ciclo.
         if (temp.count(node.get()))
         {
             hasCycle = true;
@@ -241,22 +236,6 @@ uint32_t RenderGraph::CreateFrameBuffer(
 
 void RenderGraph::Set(std::shared_ptr<IRenderPass> pass)
 {
-    /*
-    RenderGraphBuild builder;
-    pass->Setup(builder);
-
-    Handle sign =
-        handle_create(handle_get_first(builder.color), handle_get_first(builder.depth));
-
-    if (m_cacheRenderTarget.find(sign) == m_cacheRenderTarget.end())
-    {
-        RenderTarget rt =
-            Create({builder.color}, {builder.depth});
-
-        m_cacheRenderTarget[sign] = rt;
-    }
-    */
-
     passes.emplace_back(pass);
 }
 
