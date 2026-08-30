@@ -17,9 +17,15 @@ struct PhysicsShape
     btCollisionShape* shape = nullptr;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<PhysicsShape> =
-    TypeCategory::Component;
+struct category_traits<PhysicsShape>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 // struct BoxCollider
 // {
@@ -45,8 +51,14 @@ struct Rigidbody
     float mass = 1.0f;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<Rigidbody> =
-    TypeCategory::Component;
+struct category_traits<Rigidbody>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 

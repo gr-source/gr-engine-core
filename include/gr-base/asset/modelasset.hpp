@@ -36,6 +36,6 @@ struct ModelAsset : IAsset
 template <typename T>
 inline void ModelAsset::AddComponent(const T& pref)
 {
-    AddComponent(engine::type_traits::hash<T>, &pref, sizeof(T));
+    AddComponent(engine::type_traits<T>::hash, &pref, sizeof(T));
 }
 

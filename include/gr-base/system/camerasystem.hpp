@@ -18,8 +18,16 @@ public:
     Matrix4x4 CreateViewMatrix(const TransformWorld* Transform) const;
 };
 
+
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<CameraSystem> =
-    TypeCategory::System;
+struct category_traits<CameraSystem>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::System;
+};
+}
+
 
 

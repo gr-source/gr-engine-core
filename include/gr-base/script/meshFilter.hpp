@@ -11,8 +11,14 @@ struct MeshFilter
     MeshRef mesh;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<MeshFilter> =
-    TypeCategory::Component;
+struct category_traits<MeshFilter>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 

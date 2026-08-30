@@ -28,9 +28,15 @@ struct Camera
         45.0f;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<Camera> =
-    TypeCategory::Component;
+struct category_traits<Camera>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 struct CameraData
 {
@@ -40,9 +46,15 @@ struct CameraData
         type_traits<Matrix4x4>::identity;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<CameraData> =
-    TypeCategory::Component;
+struct category_traits<CameraData>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 struct CameraRenderResult
 {
@@ -50,9 +62,15 @@ struct CameraRenderResult
     TextureID depth;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<CameraRenderResult> =
-    TypeCategory::Component;
+struct category_traits<CameraRenderResult>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 
 

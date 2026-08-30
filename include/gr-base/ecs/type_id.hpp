@@ -25,7 +25,7 @@ struct TypeId
     static const uint32_t GetID() noexcept
     {
         static const uint32_t id =
-            Generate(engine::type_traits::hash<T>);
+            Generate(engine::type_traits<T>::hash);
         return id;
     }
 };

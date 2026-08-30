@@ -63,7 +63,7 @@ public:
     template <typename T, typename... Args>
     inline T& AddComponent(Entity entity, Args&&... args)
     {
-        static_assert(!engine::type_traits::tag<T>,
+        static_assert(!engine::type_traits<T>::tag,
               "All template arguments must be Tags.");
 
         TypeID typeID =
@@ -124,7 +124,7 @@ public:
         }
 
         auto record = Allocate(entity, typeID);
-        if (engine::type_traits::tag<T>)
+        if (engine::type_traits<T>::tag)
             return nullptr;
 
         auto& arche = storage.archetypes[record.archetype];
@@ -138,7 +138,7 @@ public:
     template <typename T>
     T& GetComponent(Entity entity) const
     {
-        static_assert(!engine::type_traits::tag<T>,
+        static_assert(!engine::type_traits<T>::tag,
               "All template arguments must be Tags.");
 
         uint32_t entityID = handle_get_first(entity);
@@ -160,7 +160,7 @@ public:
     template <typename T>
     T* TryGetComponent(Entity entity) const
     {
-        static_assert(!engine::type_traits::tag<T>,
+        static_assert(!engine::type_traits<T>::tag,
               "All template arguments must be Tags.");
 
         if (!entityManager.isAlive(entity))
@@ -194,7 +194,7 @@ public:
     template <typename... Components>
     std::tuple<Components*...> GetComponents(Entity entity) const
     {
-        static_assert((!engine::type_traits::tag<Components> && ...), 
+        static_assert((!engine::type_traits<Components>::tag && ...), 
               "All template arguments must be Tags.");
 
         uint32_t entityID = handle_get_first(entity);

@@ -14,9 +14,15 @@ struct CharacterController
     KinematicCharacterController* character = nullptr;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<CharacterController> =
-    TypeCategory::Component;
+struct category_traits<CharacterController>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 struct CharacterInput
 {
@@ -24,17 +30,29 @@ struct CharacterInput
     bool jump = false;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<CharacterInput> =
-    TypeCategory::Component;
+struct category_traits<CharacterInput>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 struct CharacterState
 {
     bool canJump = false;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<CharacterState> =
-    TypeCategory::Component;
+struct category_traits<CharacterState>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 

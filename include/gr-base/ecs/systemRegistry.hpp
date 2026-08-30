@@ -121,23 +121,23 @@ private:
 template <typename T, typename... Systems>
 inline void SystemRegistry::Register()
 {
-    static_assert(engine::type_traits::size<T> > 0,
+    static_assert(engine::type_traits<T>::size > 0,
         "TypeTraits must be a complete type.");
-    static_assert(engine::type_traits::category<T> == TypeCategory::System,
+    static_assert(engine::category_traits<T>::value == TypeCategory::System,
         "TypeTraits must be specialized for T");
 
-    std::string_view temp = engine::type_traits::name<T>;
+    std::string_view temp = engine::type_traits<T>::name;
 
     SystemInfo info;
 
     strncpy(info.name, temp.data(), sizeof(info.name));
     info.name[temp.size()] = '\0';
 
-    info.hash = engine::type_traits::hash<T>;
+    info.hash = engine::type_traits<T>::hash;
     info.index = INVALID_TYPE;
 
-    info.stride = engine::type_traits::size<T>;
-    info.alignment = engine::type_traits::alignment<T>;
+    info.stride = engine::type_traits<T>::size;
+    info.alignment = engine::type_traits<T>::alignment;
     
     // Methods
     info.constructor = &SystemRegistry::Constructor<T>;
@@ -154,24 +154,24 @@ inline void SystemRegistry::Register()
 template <typename T>
 inline const SystemInfo* SystemRegistry::GetSystem()
 {
-    static_assert(engine::type_traits::size<T> > 0,
+    static_assert(engine::type_traits<T>::size > 0,
         "TypeTraits must be a complete type.");
-    static_assert(engine::type_traits::category<T> == TypeCategory::System,
+    static_assert(engine::category_traits<T>::value == TypeCategory::System,
         "TypeTraits must be specialized for T");
 
-    static const SystemInfo* info = s_SystemRegistry->getSystemByHash(engine::type_traits::hash<T>);
+    static const SystemInfo* info = s_SystemRegistry->getSystemByHash(engine::type_traits<T>::hash);
     return info;
 }
 
 template <typename T>
 inline void SystemRegistry::Unregister()
 {
-    static_assert(engine::type_traits::size<T> > 0,
+    static_assert(engine::type_traits<T>::size > 0,
         "TypeTraits must be a complete type.");
-    static_assert(engine::type_traits::category<T> == TypeCategory::System,
+    static_assert(engine::category_traits<T>::value == TypeCategory::System,
         "TypeTraits must be specialized for T");
 
-    TypeID id = s_SystemRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
+    TypeID id = s_SystemRegistry->getTypeIDByHash(engine::type_traits<T>::hash);
     if (id != INVALID_TYPE)
         s_SystemRegistry->unregister(id);
 }
@@ -179,12 +179,12 @@ inline void SystemRegistry::Unregister()
 template <typename T>
 inline TypeID SystemRegistry::GetTypeID()
 {
-    static_assert(engine::type_traits::size<T> > 0,
+    static_assert(engine::type_traits<T>::size > 0,
         "TypeTraits must be a complete type.");
-    static_assert(engine::type_traits::category<T> == TypeCategory::System,
+    static_assert(engine::category_traits<T>::value == TypeCategory::System,
         "TypeTraits must be specialized for T");
 
-    static TypeID id = s_SystemRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
+    static TypeID id = s_SystemRegistry->getTypeIDByHash(engine::type_traits<T>::hash);
     return id;
 }
 

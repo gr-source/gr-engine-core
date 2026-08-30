@@ -13,7 +13,13 @@ private:
     void Update() override;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<CharacterControllerSystem> =
-    TypeCategory::System;
+struct category_traits<CharacterControllerSystem>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::System;
+};
+}
 

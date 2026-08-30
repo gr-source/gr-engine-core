@@ -30,8 +30,14 @@ struct Light
     float angleOuterCone = 0.0f;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<Light> =
-    TypeCategory::Component;
+struct category_traits<Light>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 

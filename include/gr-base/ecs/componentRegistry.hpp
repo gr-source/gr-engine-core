@@ -120,25 +120,25 @@ private:
 template <typename T>
 inline void ComponentRegistry::Register(bool serializable)
 {
-    static_assert(engine::type_traits::size<T> > 0,
+    static_assert(engine::type_traits<T>::size > 0,
         "TypeTraits must be a complete type.");
-    static_assert(engine::type_traits::category<T> == TypeCategory::Component,
+    static_assert(engine::category_traits<T>::value == TypeCategory::Component,
         "TypeTraits must be specialized for T");
 
-    std::string_view temp = engine::type_traits::name<T>;
+    std::string_view temp = engine::type_traits<T>::name;
 
     ComponentInfo info;
 
     strncpy(info.name, temp.data(), sizeof(info.name));
     info.name[temp.size()] = '\0';
 
-    info.hash = engine::type_traits::hash<T>;
+    info.hash = engine::type_traits<T>::hash;
     info.index = INVALID_TYPE;
 
-    info.stride = std::is_empty_v<T> ? 0 : engine::type_traits::size<T>;
-    info.alignment = std::is_empty_v<T> ? 0 : engine::type_traits::alignment<T>;
+    info.stride = std::is_empty_v<T> ? 0 : engine::type_traits<T>::size;
+    info.alignment = std::is_empty_v<T> ? 0 : engine::type_traits<T>::alignment;
     
-    info.storage = engine::type_traits::storage<T>;
+    info.storage = engine::storage_traits<T>::value;
 
     // flags
     info.isTriviallyCopyable = std::is_trivially_copyable_v<T>;
@@ -151,7 +151,7 @@ inline void ComponentRegistry::Register(bool serializable)
     info.copy = &ComponentRegistry::Copy<T>;
     info.move = &ComponentRegistry::Move<T>;
 
-    if constexpr (engine::type_traits::serialize<T>::value)
+    if constexpr (engine::serialize<T>::value)
     {
         info.serialize = (MethodPointer)T::Serialize;
     } else
@@ -159,7 +159,7 @@ inline void ComponentRegistry::Register(bool serializable)
         info.serialize = nullptr;
     }
 
-    if constexpr (engine::type_traits::deserialize<T>::value)
+    if constexpr (engine::deserialize<T>::value)
     {
         info.deserialize = (MethodPointer)T::Deserialize;
     } else
@@ -173,12 +173,12 @@ inline void ComponentRegistry::Register(bool serializable)
 template <typename T>
 inline void ComponentRegistry::Unregister()
 {
-    static_assert(engine::type_traits::size<T> > 0,
+    static_assert(engine::type_traits<T>::size > 0,
         "TypeTraits must be a complete type.");
-    static_assert(engine::type_traits::category<T> == TypeCategory::Component,
+    static_assert(engine::category_traits<T>::value == TypeCategory::Component,
         "TypeTraits must be specialized for T");
 
-    TypeID id = s_ComponentRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
+    TypeID id = s_ComponentRegistry->getTypeIDByHash(engine::type_traits<T>::hash);
     if (id != INVALID_TYPE)
         s_ComponentRegistry->unregister(id);
 }
@@ -186,24 +186,24 @@ inline void ComponentRegistry::Unregister()
 template <typename T>
 inline const ComponentInfo* ComponentRegistry::GetType()
 {
-    static_assert(engine::type_traits::size<T> > 0,
+    static_assert(engine::type_traits<T>::size > 0,
         "TypeTraits must be a complete type.");
-    static_assert(engine::type_traits::category<T> == TypeCategory::Component,
+    static_assert(engine::category_traits<T>::value == TypeCategory::Component,
         "TypeTraits must be specialized for T");
 
-    static ComponentInfo* info = s_ComponentRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
+    static ComponentInfo* info = s_ComponentRegistry->getTypeIDByHash(engine::type_traits<T>::hash);
     return info;
 }
 
 template <typename T>
 inline TypeID ComponentRegistry::GetTypeID()
 {
-    static_assert(engine::type_traits::size<T> > 0,
+    static_assert(engine::type_traits<T>::size > 0,
         "TypeTraits must be a complete type.");
-    static_assert(engine::type_traits::category<T> == TypeCategory::Component,
+    static_assert(engine::category_traits<T>::value == TypeCategory::Component,
         "TypeTraits must be specialized for T");
 
-    static TypeID cacheID = s_ComponentRegistry->getTypeIDByHash(engine::type_traits::hash<T>);
+    static TypeID cacheID = s_ComponentRegistry->getTypeIDByHash(engine::type_traits<T>::hash);
     return cacheID;
 }
 

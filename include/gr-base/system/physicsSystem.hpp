@@ -74,8 +74,14 @@ private:
     void onCreateCharacter(engine::ecs::World* world, Entity entity);
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<PhysicsSystem> =
-    TypeCategory::System;
+struct category_traits<PhysicsSystem>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::System;
+};
+}
 
 

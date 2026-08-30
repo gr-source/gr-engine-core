@@ -18,8 +18,14 @@ private:
     bool SyncTransform(const GameObject& gameObject, const Matrix4x4& parentMatrix) const;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<TransformSystem> =
-    TypeCategory::System;
+struct category_traits<TransformSystem>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::System;
+};
+}
 
 

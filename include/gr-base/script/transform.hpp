@@ -11,9 +11,15 @@ struct TransformLocal
     Vector3 scale = type_traits<Vector3>::one;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<TransformLocal> =
-    TypeCategory::Component;
+struct category_traits<TransformLocal>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 struct TransformWorld
 {
@@ -22,16 +28,27 @@ struct TransformWorld
     Matrix4x4 world = type_traits<Matrix4x4>::identity;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<TransformWorld> =
-    TypeCategory::Component;
-
+struct category_traits<TransformWorld>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 struct Static
 {
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<Static> =
-    TypeCategory::Component;
+struct category_traits<Static>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 

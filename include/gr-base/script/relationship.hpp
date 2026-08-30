@@ -11,7 +11,13 @@ struct Relationship
     Entity prevSibling = INVALID_ENTITY;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<Relationship> =
-    TypeCategory::Component;
+struct category_traits<Relationship>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 

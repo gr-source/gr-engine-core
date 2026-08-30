@@ -22,60 +22,60 @@ enum class StorageKind
     Sparse
 };
 
-namespace engine::type_traits
+namespace engine
 {
 template <typename T>
-inline constexpr std::string_view get_type_name()
+struct category_traits
 {
+    static constexpr TypeCategory value =
+        TypeCategory::Unknown;
+};
+
+template <typename T>
+struct storage_traits
+{
+    static constexpr StorageKind value =
+        StorageKind::Archetype;
+};
+
+template <typename T>
+struct type_traits
+{
+    static constexpr std::string_view get_type_name()
+    {
 #if defined(__clang__)
-    constexpr auto prefix = std::string_view{"[T = "};
-    constexpr auto suffix = std::string_view{"]"};
-    constexpr auto func = std::string_view{__PRETTY_FUNCTION__};
+        constexpr auto prefix = std::string_view{"[T = "};
+        constexpr auto suffix = std::string_view{"]"};
+        constexpr auto func = std::string_view{__PRETTY_FUNCTION__};
 #else // GCC
-    constexpr auto prefix = std::string_view{"with T = "};
-    constexpr auto suffix = std::string_view{";"};
-    constexpr auto func = std::string_view{__PRETTY_FUNCTION__};
+        constexpr auto prefix = std::string_view{"with T = "};
+        constexpr auto suffix = std::string_view{";"};
+        constexpr auto func = std::string_view{__PRETTY_FUNCTION__};
 #endif
-    constexpr auto start = func.find(prefix) + prefix.size();
-    constexpr auto end = func.find(suffix);
-    return func.substr(start, end - start);
-}
+        constexpr auto start = func.find(prefix) + prefix.size();
+        constexpr auto end = func.find(suffix);
+        return func.substr(start, end - start);
+    }
 
-template <typename T>
-inline constexpr std::string_view name =
-    get_type_name<T>();
+    static constexpr std::string_view name =
+        get_type_name();
 
-template <typename T>
-inline constexpr Hash64 hash =
-    engine::hash::fnv1_str(engine::type_traits::name<T>);
+    static constexpr Hash64 hash =
+        engine::hash::fnv1_str(get_type_name());
 
-template <typename T>
-inline constexpr TypeCategory category =
-    TypeCategory::Unknown;
+    static constexpr bool tag =
+        std::is_empty_v<T>;
 
-template <typename T>
-inline constexpr StorageKind storage =
-    StorageKind::Archetype;
+    static constexpr size_t size =
+        sizeof(T);
 
+    static constexpr size_t alignment =
+        alignof(T);
 
-template <typename T>
-inline constexpr bool tag =
-    std::is_empty_v<T>;
+    static constexpr size_t stride = sizeof(T);
 
-template <typename T>
-inline constexpr size_t size =
-    sizeof(T);
-
-template <typename T>
-inline constexpr size_t alignment =
-    alignof(T);
-
-
-template <typename... T>
-constexpr size_t stride = (sizeof(T) + ...);
-
-template <typename... T>
-constexpr size_t capacity = (stride<T...> > 0) ? (COMPONENT_CHUNK_SIZE / stride<T...>) : 0;
+    static constexpr size_t capacity = (stride > 0) ? (COMPONENT_CHUNK_SIZE / stride) : 0;
+};
 
 template<typename, typename = void>
 struct serialize : std::false_type {};

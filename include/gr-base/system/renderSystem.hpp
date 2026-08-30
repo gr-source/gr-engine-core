@@ -30,7 +30,13 @@ private:
     void SyncBVHBounds();
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<RenderSystem> =
-    TypeCategory::System;
+struct category_traits<RenderSystem>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::System;
+};
+}
 

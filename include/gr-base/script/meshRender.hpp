@@ -13,9 +13,15 @@ struct MeshRender
     size_t numMaterials = 0;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<MeshRender> =
-    TypeCategory::Component;
+struct category_traits<MeshRender>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 struct RenderBounds
 {
@@ -23,8 +29,14 @@ struct RenderBounds
     uint32_t id = UINT32_MAX;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<RenderBounds> =
-    TypeCategory::Component;
+struct category_traits<RenderBounds>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 

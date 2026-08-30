@@ -13,8 +13,14 @@ private:
     void Update() override;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<CharacterInputSystem> =
-    TypeCategory::System;
+struct category_traits<CharacterInputSystem>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::System;
+};
+}
 
 

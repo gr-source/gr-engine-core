@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/ecs/type_traits.hpp"
 #include "gr-base/ecs/default.hpp"
 
 struct Name
@@ -7,8 +8,14 @@ struct Name
     char* value = nullptr;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<Name> =
-    TypeCategory::Component;
+struct category_traits<Name>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 
