@@ -1,12 +1,11 @@
 #pragma once
 
-#include "gr-base/core/default.hpp"
-#include "gr-base/render/default.hpp"
+#include "gr-base/render/pipeline/pipelineID.hpp"
 
-#include "gr-base/core/assetPtr.hpp"
+#include "gr-base/core/default.hpp"
+
 
 #include "gr-base/ecs/type_traits.hpp"
-// #include "gr-base/ecs/default.hpp"
 
 #include <gr-render/default.hpp>
 #include <gr-render/rect.hpp>
@@ -15,8 +14,8 @@
 
 struct Camera
 {
-    RenderPipelineID pipeline =
-        RenderPipelineForward;
+    PipelineID pipeline =
+        PipelineForward;
 
     Rect viewport =
         { 0.0f, 0.0f, 512.0f, 512.0f };

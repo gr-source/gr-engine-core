@@ -1,13 +1,11 @@
 #pragma once
 
-#include <cstdint>
 #include <functional>
 #include <limits>
 
-#include <cstdint>
 #include <limits>
 
-template <typename Tag, typename IdType = uint32_t>
+template <typename Tag, typename IdType>
 struct ID
 {
     static constexpr IdType InvalidValue = std::numeric_limits<IdType>::max();

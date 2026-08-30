@@ -19,10 +19,10 @@ void RenderPipelineManager::Shutdown()
 }
 
 // private
-void RenderPipelineManager::set(RenderPipelineID id, std::shared_ptr<IPipeline> pipeline)
+void RenderPipelineManager::set(PipelineID id, std::shared_ptr<IPipeline> pipeline)
 {
-    if (id.value >= pipelines.size())
-        pipelines.resize(id.value + 1, nullptr);
+    if (id >= pipelines.size())
+        pipelines.resize(id + 1, nullptr);
 
     try
     {

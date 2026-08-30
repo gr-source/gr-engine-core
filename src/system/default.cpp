@@ -5,6 +5,7 @@
 // #include "gr-base/system/characterControllerSystem.hpp"
 #include "gr-base/system/characterControllerSystem.hpp"
 #include "gr-base/system/characterInputSystem.hpp"
+#include "gr-base/system/lightSystem.hpp"
 #include "gr-base/system/physicsSystem.hpp"
 #include "gr-base/system/renderSystem.hpp"
 #include "gr-base/system/transformsystem.hpp"
@@ -18,7 +19,7 @@
 
 void RegistryDefaultSystem()
 {
-    // REGISTER_SYSTEM(CharacterControllerSystem);
+    REGISTER_SYSTEM(LightSystem);
 
     REGISTER_SYSTEM(PhysicsSystem);
 
