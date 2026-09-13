@@ -9,25 +9,6 @@
 
 #include <vector>
 
-struct Node
-{
-    NodeID parent;
-
-    NodeID right;
-    NodeID left;
-
-    Entity entity;
-
-    AABB boundary;
-
-    int height;
-
-    inline bool isLeaf() const
-    {
-        return right == INVALID_NODE;
-    }
-};
-
 class BVHtree
 {
 public:
@@ -51,6 +32,29 @@ public:
     void renderer();
 
 private:
+    struct Node
+    {
+        NodeID parent =
+            INVALID_NODE;
+
+        NodeID right =
+            INVALID_NODE;
+        NodeID left =
+            INVALID_NODE;
+
+        Entity entity =
+            INVALID_ENTITY;
+
+        AABB boundary;
+
+        int height = 0;
+
+        bool isLeaf() const
+        {
+            return right == INVALID_NODE;
+        }
+    };
+
     NodeID* m_freeList;
 
     Node* m_nodes;

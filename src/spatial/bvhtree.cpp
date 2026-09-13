@@ -44,21 +44,10 @@ void BVHtree::remove(NodeID id)
     deallocate(id);
 }
 
-bool Contains(const AABB& lhs, const AABB& rhs)
-{
-    return
-        lhs.min.x <= rhs.min.x &&
-        lhs.min.y <= rhs.min.y &&
-        lhs.min.z <= rhs.min.z &&
-        lhs.max.x >= rhs.max.x &&
-        lhs.max.y >= rhs.max.y &&
-        lhs.max.z >= rhs.max.z;
-}
-
 void BVHtree::sync(NodeID id, const AABB& bounds)
 {
     Node& node = m_nodes[id];
-    if (Contains(node.boundary, bounds))
+    if (node.boundary.Contains(bounds))
         return;
 
     removeLeaf(id);
