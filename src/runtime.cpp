@@ -46,6 +46,12 @@ void Runtime::initialize()
 
     EventManager::Initialize();
 
+    AssetDB::Initialize();
+
+    AssetResolver::Initialize();
+
+    AssetResolver::Registry<EngineFileProvider>(Scheme_Engine);
+
     ComponentRegistry::Initialize();
     SystemRegistry::Initialize();
 
@@ -61,13 +67,7 @@ void Runtime::initialize()
 
     Renderer::Initialize();
 
-    AssetDB::Initialize();
-
     DebugDraw::Initialize();
-
-    AssetResolver::Initialize();
-
-    AssetResolver::Registry<EngineFileProvider>(Scheme_Engine);
 }
 
 void Runtime::shutdown()

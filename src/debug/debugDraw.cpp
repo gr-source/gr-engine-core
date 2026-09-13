@@ -3,6 +3,21 @@
 #include "gr-base/core/logger.hpp"
 #include <gr-math/gmath.hpp>
 
+/*
+const float cx = m_boundary.x + m_boundary.w * 0.5f;
+const float cz = m_boundary.y + m_boundary.h * 0.5f;
+
+DebugDraw::DrawLine(
+    {cx - 1.0f, 0.0f, cz},
+    {cx + 1.0f, 0.0f, cz}
+);
+
+DebugDraw::DrawLine(
+    {cx, 0.0f, cz - 1.0f},
+    {cx, 0.0f, cz + 1.0f}
+);
+*/
+
 DebugDraw* DebugDraw::s_DebugDraw = nullptr;
 
 // public
@@ -81,8 +96,8 @@ DebugDraw::~DebugDraw()
 
 void DebugDraw::render()
 {
-    if (!debugBuffer.initialize())
-        return;
+    // if (!debugBuffer.initialize())
+        // return;
 
     debugBuffer.renderer();
 }

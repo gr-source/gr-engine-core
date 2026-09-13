@@ -41,21 +41,6 @@ public:
 
     static gr::texture* GetTexture(TextureID h);
 
-    // template <typename ...Args>
-    // static void LoadTexture(const std::string &path, Args &&...args);
-
-    // static std::string GetRefTextureName(gr::gTexture *texture);
-
-    // template <typename ...Args>
-    // static std::shared_ptr<TaskInfo> LoadShaderAsync(ShaderParams shaderParams, Args &&...args);
-
-    // static gr::Shader *CreateShader(const std::string& name);
-
-    // static gr::Shader *FindShader(const std::string &name);
-
-    // static std::string GetShaderName(gr::Shader *shader);
-
-    // static void RemoveShader(gr::Shader *shader);
 
     template <typename ...Args>
     static void LoadGameObjectAsync(const std::string &name, Args &&...args);
@@ -93,7 +78,7 @@ public:
 
     static ShaderPrefab* FindShader(AssetID id);
 
-    // static ShaderPrefab* LoadShader(const std::string& name);
+    static ShaderPrefab* LoadShader(const std::string& uri);
 
     static ShaderPrefab* LoadShader(AssetID id);
 

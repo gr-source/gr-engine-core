@@ -291,6 +291,11 @@ ShaderPrefab* AssetsManager::FindShader(AssetID id)
     return s_AssetsManager->mShaderPrefabManager->find(id);
 }
 
+ShaderPrefab* AssetsManager::LoadShader(const std::string& uri)
+{
+    return LoadShader(AssetDB::FindByName(uri));
+}
+
 ShaderPrefab* AssetsManager::LoadShader(AssetID id)
 {
     if (auto prefab = FindShader(id))

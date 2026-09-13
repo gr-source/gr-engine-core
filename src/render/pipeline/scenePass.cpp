@@ -21,9 +21,14 @@ void ScenePass::Setup(RenderGraphBuild& build)
     clearDepth = true;
 }
 
+#include <gr-render/gl.h>
+
 void ScenePass::Execute()
 {
     gr::gRender::SetEnable(GR_DEPTH, true);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     Renderer::Render();
+
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
