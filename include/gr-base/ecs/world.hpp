@@ -52,7 +52,7 @@ public:
 
     bool IsAlive(Entity entity) const;
 
-    ArchetypeID GetOrCreateArcheType(Signature mask);
+    ArchetypeID GetOrCreateArcheType(const Signature mask);
 
     Signature GetMask(Entity e) const;
 

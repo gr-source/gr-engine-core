@@ -1,11 +1,10 @@
 #pragma once
 
 #include "gr-base/ecs/typeinfo.hpp"
-#include "gr-base/ecs/default.hpp"
+
+#include "gr-base/pool/sparseSet.hpp"
 
 #include <unordered_map>
-#include <cstring>
-#include <vector>
 
 class SystemRegistry
 {
@@ -51,44 +50,27 @@ public:
         return s_SystemRegistry->getSystemByID(id);
     }
 
-    template <typename... Components>
-    inline static Signature GetMask()
-    {
-        static Signature mask = (0ull | ... | (1ull << GetTypeID<Components>()));
-        return mask;
-    }
-
-    static std::vector<TypeID> GetTypesOfMask(Signature mask);
-
     inline static size_t GetCount()
     {
-        return s_SystemRegistry->m_count;
+        return s_SystemRegistry->sparseSet.count();
     }
 
     inline static const SystemInfo* GetSystems()
     {
-        return s_SystemRegistry->m_systems;
+        return s_SystemRegistry->sparseSet.data();
     }
 
 private:
     static SystemRegistry* s_SystemRegistry;
 
-    std::unordered_map<Hash64, TypeID> m_cachedID;
+    std::unordered_map<Hash64, TypeID> m_persistentTypeIDs;
 
-    std::unordered_map<Hash64, TypeID> m_hashMap;
+    std::unordered_map<Hash64, TypeID> m_registeredTypeIDs;
+    
+    SparseSet<SystemInfo> sparseSet;
 
-    std::vector<TypeID> m_typeIDToIndex;
-    std::vector<TypeID> m_indexToTypeID;
-
-    SystemInfo* m_systems;
-
-    size_t m_capacity;
-
-    size_t m_count;
-
-    size_t m_nextID;
-
-    std::vector<Hash64> m_typeIDToHash;
+    size_t m_nextID =
+        0;
 
     SystemRegistry();
     ~SystemRegistry();
@@ -96,8 +78,6 @@ private:
     void register_info(SystemInfo* info);
 
     void unregister(TypeID id);
-
-    void grow();
 
     const SystemInfo* getSystemByHash(Hash64 hash) const;
 
@@ -145,8 +125,6 @@ inline void SystemRegistry::Register()
 
     info.copy = nullptr; // &SystemRegistry::Copy<T>;
     info.move = nullptr; //&SystemRegistry::Move<T>;
-
-    info.depends_on = GetMask<Systems...>();
 
     s_SystemRegistry->register_info(&info);
 }

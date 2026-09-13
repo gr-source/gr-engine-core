@@ -34,27 +34,51 @@ struct IsWithout<Without<T>> : std::true_type
     using Component = T;
 };
 
-template<typename T>
-struct GetRequiredMask
+template <typename T>
+struct RequiredMask
 {
-    static Signature Get()
+    static Signature Get() noexcept
     {
         if constexpr (IsWithout<T>::value)
-            return {};
+        {
+            return 0;
+        }
         else
-            return GetComponentMask<T>::Get();
+        {
+            return 1ull << GetComponentID<T>::id;
+        }
     }
 };
 
-template<typename T>
-struct GetExcludedMask
+template <typename T>
+struct ExcludedMask
 {
-    static Signature Get()
+    static Signature Get() noexcept
     {
         if constexpr (IsWithout<T>::value)
-            return GetComponentMask<typename IsWithout<T>::Component>::Get();
+        {
+            using Component = typename IsWithout<T>::Component;
+
+            return 1ull << GetComponentID<T>::id;
+        }
         else
-            return {};
+        {
+            return 0;
+        }
+    }
+};
+
+template <typename... Components>
+struct Query
+{
+    static Signature GetRequiredMask() noexcept
+    {
+        return (0ull | ... | RequiredMask<Components>::Get());
+    }
+
+    static Signature GetExcludedMask() noexcept
+    {
+        return (0ull | ... | ExcludedMask<Components>::Get());
     }
 };
 

@@ -151,7 +151,7 @@ void PhysicsSystem::SyncTransforms(engine::ecs::World* world)
                     auto& rb = bodies[i];
 
                     auto body = rb.body;
-                    if (!body->isActive())
+                    if (body == nullptr || !body->isActive())
                         continue;
 
                     btTransform tr;

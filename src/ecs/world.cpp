@@ -185,7 +185,7 @@ bool World::IsAlive(Entity entity) const
     return entityManager.isAlive(entity);
 }
 
-ArchetypeID World::GetOrCreateArcheType(Signature mask)
+ArchetypeID World::GetOrCreateArcheType(const Signature mask)
 {
     auto it = signatureToArchetype.find(mask);
     if (it != signatureToArchetype.end())
@@ -209,12 +209,12 @@ ArchetypeID World::GetOrCreateArcheType(Signature mask)
         auto info = ComponentRegistry::GetComponentByID(typeID);
         if (info->stride > 0)
         {
-            if (typeID >= numOffsets)
-                numOffsets = typeID + 1;
-
             stride += info->stride;
             maxAlign = std::max(maxAlign, info->alignment);
         }
+
+        if (typeID >= numOffsets)
+            numOffsets = typeID + 1;
         
         temp &= (temp - 1);
     }
@@ -233,17 +233,24 @@ ArchetypeID World::GetOrCreateArcheType(Signature mask)
     layout->capacity = bit_floor(layout->capacity);
 
     size_t localOffset = 0;
-    for (auto type : ComponentRegistry::GetTypesOfMask(mask))
     {
-        auto info = ComponentRegistry::GetComponentByID(type);
-        if (!info->stride)
-            continue;
+        Signature temp = mask;
+        while (temp)
+        {
+            TypeID index = __builtin_ctzll(temp);
 
-        localOffset = align_up(localOffset, info->alignment);
+            auto info = ComponentRegistry::GetComponentByID(index);
+            if (info->stride > 0)
+            {
+                localOffset = align_up(localOffset, info->alignment);
 
-        layout->offsets[type] = localOffset;
+                layout->offsets[index] = localOffset;
 
-        localOffset += info->stride * layout->capacity;
+                localOffset += info->stride * layout->capacity;
+            }
+
+            temp &= (temp - 1);
+        }
     }
 
     size_t headerAndEntitiesSize =
@@ -264,12 +271,6 @@ ArchetypeID World::GetOrCreateArcheType(Signature mask)
             );
 
     layout->alignment = maxAlign;
-
-
-    // if (typeID != INVALID_TYPE)
-    {
-
-    }
 
     ArchetypeID id = static_cast<ArchetypeID>(storage.count++);
 
@@ -500,7 +501,17 @@ void World::DelComponentByMask(Entity entity, Signature requiredMask)
 
 std::vector<TypeID> World::GetAllComponentType(Entity e) const
 {
-    return ComponentRegistry::GetTypesOfMask(GetMask(e));
+    std::vector<TypeID> vector;
+
+    Signature temp = GetMask(e);
+    while (temp)
+    {
+        vector.push_back(__builtin_ctzll(temp));
+
+        temp &= (temp - 1);
+    }
+
+    return vector;
 }
 
 size_t World::GetEntityCount() const

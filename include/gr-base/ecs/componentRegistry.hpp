@@ -1,13 +1,13 @@
 #pragma once
 
+#include "gr-base/pool/sparseSet.hpp"
+
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/ecs/typeinfo.hpp"
 
 #include "gr-base/externals/hash.hpp"
 
 #include <unordered_map>
-#include <cstring>
-#include <vector>
 
 class ComponentRegistry
 {
@@ -40,54 +40,34 @@ public:
         return s_ComponentRegistry->getTypeIDByHash(hash);
     }
 
-    inline static TypeID GetTypeIDByName(const char* name)
-    {
-        return s_ComponentRegistry->getTypeIDByHash(engine::hash::fnv1_str(name));
-    }
+    static TypeID GetTypeIDByName(const char* name);
 
     template <typename T>
     static TypeID GetTypeID();
 
     static const ComponentInfo* GetComponentByID(TypeID id);
 
-    template <typename... Components>
-    inline static Signature GetMask()
-    {
-        static Signature mask = (0ull | ... | (1ull << GetTypeID<Components>()));
-        return mask;
-    }
-
-    static std::vector<TypeID> GetTypesOfMask(Signature mask);
-
     inline static const ComponentInfo* GetComponents()
     {
-        return s_ComponentRegistry->m_components;
+        return s_ComponentRegistry->sparseSet.data();
     }
 
     inline static size_t GetComponentCount()
     {
-        return s_ComponentRegistry->m_count;
+        return s_ComponentRegistry->sparseSet.count();
     }
 
 private:
     static ComponentRegistry* s_ComponentRegistry;
 
-    std::unordered_map<Hash64, TypeID> m_bitsetMap;
+    std::unordered_map<Hash64, TypeID> m_persistentTypeIDs;
 
-    std::unordered_map<Hash64, TypeID> m_hashMap;
+    std::unordered_map<Hash64, TypeID> m_registeredTypeIDs;
     
-    std::vector<Hash64> m_typeIDToHash;
+    SparseSet<ComponentInfo> sparseSet;
 
-    std::vector<TypeID> m_typeIDToIndex;
-    std::vector<TypeID> m_indexToTypeID;
-
-    ComponentInfo* m_components;
-    
-    size_t m_capacity;
-
-    size_t m_count;
-
-    size_t m_nextID;
+    size_t m_nextID =
+        0;
 
     ComponentRegistry();
     ~ComponentRegistry();
@@ -95,8 +75,6 @@ private:
     void register_info(ComponentInfo* info);
 
     void unregister(TypeID id);
-
-    void grow();
 
     const ComponentInfo* getComponentInfoByHash(Hash64 hash) const;
 

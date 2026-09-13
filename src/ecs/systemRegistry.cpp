@@ -23,24 +23,8 @@ void SystemRegistry::Shutdown()
     s_SystemRegistry = nullptr;
 }
 
-std::vector<TypeID> SystemRegistry::GetTypesOfMask(Signature mask)
-{
-    std::vector<TypeID> types;
-    while (mask)
-    {
-        types.push_back(__builtin_ctzll(mask));
-        
-        mask &= (mask - 1);
-    }
-    return types;
-}
-
 // private
-SystemRegistry::SystemRegistry() :
-    m_capacity(0),
-    m_count(0),
-    m_systems(nullptr),
-    m_nextID(0)
+SystemRegistry::SystemRegistry()
 {
     logger::info("[ SystemRegistry ] Initialize '%p'.", this);
 }
@@ -48,105 +32,58 @@ SystemRegistry::SystemRegistry() :
 SystemRegistry::~SystemRegistry()
 {
     logger::info("[ SystemRegistry ] Shutdown '%p'.", this);
-
-    if (m_systems != nullptr)
-        free(m_systems);
 }
 
 void SystemRegistry::register_info(SystemInfo* src)
 {
-    if (m_hashMap.find(src->hash) != m_hashMap.end())
+    if (m_registeredTypeIDs.find(src->hash) != m_registeredTypeIDs.end())
         return logger::warn("[ SystemRegistry ] type already registered '%s'.", src->name);
 
-    if ((m_count + 1) >= m_capacity)
-        grow();
+    if (m_persistentTypeIDs.find(src->hash) == m_persistentTypeIDs.end())
+        m_persistentTypeIDs.emplace(src->hash, static_cast<TypeID>(m_nextID++));
 
-    if (m_cachedID.find(src->hash) == m_cachedID.end())
-        m_cachedID.emplace(src->hash, static_cast<TypeID>(m_nextID++));
+    TypeID typeID = m_persistentTypeIDs[src->hash];
 
-    TypeID typeID = m_cachedID[src->hash];
-    if (typeID >= m_typeIDToIndex.size())
-        m_typeIDToIndex.resize(typeID + 1, INVALID_TYPE);
+    src->index = typeID;
+    sparseSet.insert(typeID, *src);
 
-    TypeID index = static_cast<TypeID>(m_count++);
-    m_typeIDToIndex[typeID] = index;
-    m_indexToTypeID[index] = typeID;
-
-    auto dst = &m_systems[index];
-    memcpy((void*)dst, (void*)src, sizeof(SystemInfo));
-
-    dst->index = typeID;
-
-    m_hashMap.emplace(dst->hash, typeID);
+    m_registeredTypeIDs.emplace(src->hash, typeID);
 
     logger::debug("[ SystemRegistry ] registered: name=%s, hash=0x%llX, index=%d, stride=%ld alignment=%ld",
-        dst->name, dst->hash, dst->index, dst->stride, dst->alignment);
+        src->name, src->hash, src->index, src->stride, src->alignment);
 }
 
 void SystemRegistry::unregister(TypeID id)
 {
-    if (id >= m_typeIDToIndex.size())
+    auto info = sparseSet.try_get(id);
+    if (info == nullptr)
         return;
-
-    TypeID index = m_typeIDToIndex[id];
-    if (index == INVALID_TYPE)
-        return;
-
-    SystemInfo info = m_systems[index];
-
-    m_typeIDToIndex[id] = INVALID_TYPE;
-    m_hashMap.erase(info.hash);
-
-    TypeID lastIndex = static_cast<TypeID>(--m_count);
-    if (index != lastIndex)
-    {
-        auto dst = m_systems + index;
-        auto src = m_systems + lastIndex;
-
-        TypeID movedTypeID = m_indexToTypeID[lastIndex];
-
-        memcpy(dst, src, sizeof(ComponentInfo));
-
-        m_typeIDToIndex[movedTypeID] = index;
-        m_indexToTypeID[index] = movedTypeID;
-    }
 
     logger::debug("[ SystemRegistry ] unregistered: name=%s, hash=0x%llX, index=%d, stride=%ld alignment=%ld",
-        info.name, info.hash, info.index, info.stride, info.alignment);
-}
+        info->name, info->hash, info->index, info->stride, info->alignment);
 
-void SystemRegistry::grow()
-{
-    m_capacity = m_capacity > 0 ? m_capacity * 2 : 2;
+    m_registeredTypeIDs.erase(info->hash);
 
-    m_systems = (SystemInfo*)realloc(m_systems, m_capacity * sizeof(SystemInfo));
-
-    m_indexToTypeID.resize(m_capacity, INVALID_TYPE);
+    sparseSet.destroy(id);
 }
 
 const SystemInfo* SystemRegistry::getSystemByHash(Hash64 hash) const
 {
-    auto it = m_hashMap.find(hash);
-    if (it == m_hashMap.end())
+    auto it = m_registeredTypeIDs.find(hash);
+    if (it == m_registeredTypeIDs.end())
         return nullptr;
     return getSystemByID(it->second);
 }
 
 const SystemInfo* SystemRegistry::getSystemByID(TypeID id) const
 {
-    if (id >= m_typeIDToIndex.size())
-        return nullptr;
-
-    TypeID index = m_typeIDToIndex[id];
-    if (index == INVALID_TYPE)
-        return nullptr;
-    return &m_systems[index];
+    return sparseSet.try_get(id);
 }
 
 TypeID SystemRegistry::getTypeIDByHash(Hash64 hash) const
 {
-    auto it = m_hashMap.find(hash);
-    if (it != m_hashMap.end())
+    auto it = m_registeredTypeIDs.find(hash);
+    if (it != m_registeredTypeIDs.end())
         return it->second;
     return INVALID_TYPE;
 }

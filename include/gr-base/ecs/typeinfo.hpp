@@ -40,7 +40,6 @@ struct ComponentInfo : TypeInfo
 
 struct SystemInfo : TypeInfo
 {
-    Signature depends_on = 0;
 };
 
 
