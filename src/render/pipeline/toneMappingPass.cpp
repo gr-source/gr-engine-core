@@ -3,8 +3,6 @@
 #include "gr-base/core/renderer.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 
-#include "gr-base/core/assetDB.hpp"
-
 #include <GL/gl.h>
 #include <gr-render/texture.hpp>
 #include <gr-render/shader.hpp>
@@ -24,7 +22,7 @@ void ToneMappingPass::Setup(RenderGraphBuild& build)
     clearColor = true;
     clearDepth = false;
 
-    shader = AssetsManager::LoadShader(AssetDB::FindByName("engine://shader/screen"))->Get(ShaderVariantFlags_None);
+    shader = AssetsManager::LoadShader("engine://shader/screen")->Get(ShaderVariantFlags_None);
 }
 
 void ToneMappingPass::Execute()

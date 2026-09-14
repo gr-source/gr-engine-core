@@ -3,6 +3,7 @@
 #include "gr-base/managers/assetsManager.hpp"
 
 #include "gr-base/render/pipeline/debugPass.hpp"
+#include "gr-base/render/pipeline/depthPass.hpp"
 #include "gr-base/render/pipeline/scenePass.hpp"
 #include "gr-base/render/pipeline/toneMappingPass.hpp"
 
