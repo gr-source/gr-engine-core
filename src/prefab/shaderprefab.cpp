@@ -4,22 +4,6 @@
 
 #include <gr-render/shader.hpp>
 #include <gr-render/gl.h>
-#include <iostream>
-
-static std::unordered_map<std::string, gr::UniformType> mTypeMapping =
-{
-    {"float",       gr::UniformType::FLOAT},
-    {"int",         gr::UniformType::INT},
-    {"bool",        gr::UniformType::BOOL},
-    {"samplerCube", gr::UniformType::SAMPLERCUBE},
-    {"sampler2D",   gr::UniformType::SAMPLER2D},
-    {"mat3",        gr::UniformType::MAT3},
-    {"mat4",        gr::UniformType::MAT4},
-    {"vec2",        gr::UniformType::VEC2},
-    {"vec3",        gr::UniformType::VEC3},
-    {"vec4",        gr::UniformType::VEC4},
-};
-
 
 ShaderPrefab::ShaderPrefab(const ShaderAsset& asset) : m_asset(asset)
 {}

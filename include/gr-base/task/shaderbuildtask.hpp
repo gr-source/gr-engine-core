@@ -3,8 +3,6 @@
 #include "gr-base/asset/shaderasset.hpp"
 #include "gr-base/asset/URI.hpp"
 
-#include "gr-base/core/geometry/shaderData.hpp"
-
 #include "gr-base/core/thread/asynctask.hpp"
 
 #include <unordered_set>
@@ -37,9 +35,7 @@ private:
 
     void onPostExecute(Result<ShaderAsset> result) override;
 
-    bool compile(const ShaderAsset* asset);
-
-    ShaderAsset onStartParceShader();
+    void compile(const ShaderAsset* asset);
 
     ShaderTextRaw ReadingSourceFileShader();
 

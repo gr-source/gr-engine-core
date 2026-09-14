@@ -21,10 +21,10 @@ typedef uint32_t ShaderStage;
 
 enum ShaderStage_
 {
-    ShaderStage_None = 0,
     ShaderStage_Fragment = 1,
     ShaderStage_Vertex = 2,
-    ShaderStage_Count = 3
+    ShaderStage_Count = 3,
+    ShaderStage_None = 4
 };
 
 

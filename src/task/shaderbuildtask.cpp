@@ -13,9 +13,8 @@
 
 #include "gr-base/managers/taskmanager.hpp"
 
-#include <cstring>
+#include <stdexcept>
 #include <fstream>
-#include <cerrno>
 #include <array>
 
 ShaderBuildTask::ShaderBuildTask(const std::string& file, const URI& uri) : m_file(file), m_uri(uri)
@@ -25,72 +24,10 @@ void ShaderBuildTask::onPreExecute()
 {
     auto name = m_uri.toString();
 
-    Console::LogInfo("[ ShaderBuildTask ] Building shader file '%s'", name.c_str());
+    Console::LogDefault("{00FF00}[ ShaderBuildTask ]{FFFFFF} Starting shader build: {FFFF00}'%s'", name.c_str());
 }
 
 ShaderAsset ShaderBuildTask::doInBackground()
-{
-    return onStartParceShader();
-}
-
-void ShaderBuildTask::onPostExecute(Result<ShaderAsset> result)
-{
-    auto name = m_uri.toString();
-
-    Console::LogInfo("[ ShaderBuildTask ] Compiling '%s'...", name.c_str());
-
-    if (!result.success)
-    {
-        Console::LogError("[ ShaderBuildTask ] falied in to build shader '%s'", name.c_str());
-        Console::LogError("%s", result.error.c_str());
-
-        return;
-    }
-
-    if (!compile(&result.value))
-        return;
-
-    Console::LogInfo("[ShaderBuildTask] Shader building sucessfully '%s'", name.c_str());
-
-    AssetID assetID = AssetDB::FindByHash(engine::hash::fnv1_str(name));
-    if (assetID == INVALID_ASSET)
-        assetID = AssetDB::CreateID();
-
-    AssetSaveInfo info;
-    info.uri = m_uri;
-    info.id = assetID;
-    info.type = AssetType_Shader;
-    info.asset = std::make_shared<ShaderAsset>(result.value);
-
-    TaskManager::Add<AssetSaveTask>(info);
-}
-
-bool ShaderBuildTask::compile(const ShaderAsset* asset)
-{
-    std::string fragment = "#version 420\n";
-    fragment += asset->fragment;
-
-    std::string vertex = "#version 420\n";
-    vertex += asset->vertex;
-
-    const char* fragment_src = fragment.c_str();
-    const char* vertex_src = vertex.c_str();
-
-    std::string error;
-
-    gr::shader shader;
-    if (!shader.create(&fragment_src, 1, &vertex_src, 1, &error))
-    {
-        Console::LogDefault("{FF0000}[ ShaderBuildTask ] %s", error.c_str());
-        shader.destroy();
-        return false;
-    }
-    shader.destroy();
-
-    return true;
-}
-
-ShaderAsset ShaderBuildTask::onStartParceShader()
 {
     std::array<std::string, 3> resultShaderSource;
 
@@ -118,6 +55,66 @@ ShaderAsset ShaderBuildTask::onStartParceShader()
     asset.vertex = resultShaderSource[ShaderStage_Vertex];
 
     return asset;
+}
+
+void ShaderBuildTask::onPostExecute(Result<ShaderAsset> result)
+{
+    auto name = m_uri.toString();
+
+    if (!result.success)
+    {
+        Console::LogDefault("{FF0000}[ ShaderBuildTask ]{FFFFFF} Failed to parse shader {FFFF00}'%s': {FF0000}%s", name.c_str(), result.error.c_str());
+
+        return;
+    }
+
+    Console::LogInfo("[ ShaderBuildTask ] Compiling shader {FFFF00}'%s'{FFFFFF}...", name.c_str());
+
+    try
+    {
+        compile(&result.value);
+    } catch (const std::exception& e)
+    {
+        Console::LogDefault("{FF0000}[ ShaderBuildTask ]{FFFFFF} Failed compile shader {FFFF00}'%s': {FF0000}%s", name.c_str(), e.what());
+        return;
+    }
+
+    Console::LogInfo("[ ShaderBuildTask ] Shader '%s' built successfully.", name.c_str());
+
+    AssetID assetID = AssetDB::FindByHash(engine::hash::fnv1_str(name));
+    if (assetID == INVALID_ASSET)
+        assetID = AssetDB::CreateID();
+
+    AssetSaveInfo info;
+    info.uri = m_uri;
+    info.id = assetID;
+    info.type = AssetType_Shader;
+    info.asset = std::make_shared<ShaderAsset>(result.value);
+
+    TaskManager::Add<AssetSaveTask>(info);
+}
+
+void ShaderBuildTask::compile(const ShaderAsset* asset)
+{
+    std::string fragment = "#version 420\n";
+    fragment += asset->fragment;
+
+    std::string vertex = "#version 420\n";
+    vertex += asset->vertex;
+
+    const char* fragment_src = fragment.c_str();
+    const char* vertex_src = vertex.c_str();
+
+    std::string error;
+
+    gr::shader shader;
+    if (!shader.create(&fragment_src, 1, &vertex_src, 1, &error))
+    {
+        shader.destroy();
+
+        throw std::runtime_error(error);
+    }
+    shader.destroy();
 }
 
 ShaderBuildTask::ShaderTextRaw ShaderBuildTask::ReadingSourceFileShader()
