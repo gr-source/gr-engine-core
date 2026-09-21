@@ -22,13 +22,20 @@ public:
     void compile();
 
 private:
+    struct FrameBufferDesc
+    {
+        std::vector<TextureRef> color;
+
+        TextureRef depth;
+    };
+
     std::unordered_map<uint64_t, uint32_t> m_cacheRenderTarget;
 
     std::vector<std::shared_ptr<IRenderPass>> passes;
 
     uint32_t GetOrCreateFrameBuffer(uint64_t hash);
 
-    uint32_t CreateFrameBuffer(const std::vector<TextureRef>& attachments, TextureRef depth);
+    uint32_t CreateFrameBuffer(const FrameBufferDesc& desc);
 
     void Set(std::shared_ptr<IRenderPass> pass);
 };

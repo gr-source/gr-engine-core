@@ -60,7 +60,13 @@ void RenderGraph::compile()
 
         uint64_t hash = builder.hash();
         if (m_cacheRenderTarget.find(hash) == m_cacheRenderTarget.end())
-            m_cacheRenderTarget.emplace(hash, CreateFrameBuffer(builder.colorAttachment, builder.depthAttachment));
+        {
+            FrameBufferDesc desc;
+            desc.color = builder.colorAttachment;
+            desc.depth = builder.depthAttachment;
+
+            m_cacheRenderTarget.emplace(hash, CreateFrameBuffer(desc));
+        }
 
         pass->fbo = m_cacheRenderTarget[hash];
 
@@ -71,7 +77,7 @@ void RenderGraph::compile()
 
         for (auto& write : builder.write)
         {
-            readers[write].push_back(pass);
+            writers[write].push_back(pass);
         }
     }
 
@@ -181,19 +187,16 @@ void RenderGraph::compile()
     passes = order;
 }
 
-uint32_t RenderGraph::CreateFrameBuffer(
-    const std::vector<TextureRef>& attachments,
-    TextureRef depth)
+uint32_t RenderGraph::CreateFrameBuffer(const FrameBufferDesc& desc)
 {
     uint32_t framebuffer = 0;
 
     glGenFramebuffers(1, &framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-    std::vector<GLenum> drawBuffers;
-    drawBuffers.reserve(attachments.size());
+    std::vector<GLenum> drawBuffers(desc.color.size(), 0);
 
-    for (size_t i = 0; i < attachments.size(); ++i)
+    for (size_t i = 0; i < desc.color.size(); ++i)
     {
         const GLenum attachment = GL_COLOR_ATTACHMENT0 + i;
 
@@ -201,20 +204,20 @@ uint32_t RenderGraph::CreateFrameBuffer(
             GL_FRAMEBUFFER,
             attachment,
             GL_TEXTURE_2D,
-            attachments[i]->id,
+            desc.color[i]->id,
             0
         );
 
-        drawBuffers.push_back(attachment);
+        drawBuffers[i] = attachment;
     }
 
-    if (depth)
+    if (desc.depth)
     {
         glFramebufferTexture2D(
             GL_FRAMEBUFFER,
             GL_DEPTH_ATTACHMENT,
             GL_TEXTURE_2D,
-            depth->id,
+            desc.depth->id,
             0
         );
     }
