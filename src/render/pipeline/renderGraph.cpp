@@ -62,7 +62,7 @@ void RenderGraph::compile()
         if (m_cacheRenderTarget.find(hash) == m_cacheRenderTarget.end())
         {
             FrameBufferDesc desc;
-            desc.color = builder.colorAttachment;
+            desc.color = builder.colorAttachments;
             desc.depth = builder.depthAttachment;
 
             m_cacheRenderTarget.emplace(hash, CreateFrameBuffer(desc));
@@ -70,12 +70,12 @@ void RenderGraph::compile()
 
         pass->fbo = m_cacheRenderTarget[hash];
 
-        for (auto& read : builder.read)
+        for (auto& read : builder.reads)
         {
             readers[read].push_back(pass);
         }
 
-        for (auto& write : builder.write)
+        for (auto& write : builder.writes)
         {
             writers[write].push_back(pass);
         }

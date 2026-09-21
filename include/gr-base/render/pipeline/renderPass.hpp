@@ -8,19 +8,29 @@
 
 struct RenderGraphBuild
 {
-    std::vector<TextureRef> write;
-    std::vector<TextureRef> read;
+    std::vector<TextureRef> writes;
+    std::vector<TextureRef> reads;
 
-    std::vector<TextureRef> colorAttachment;
+    std::vector<TextureRef> colorAttachments;
 
     TextureRef depthAttachment;
 
-    void AddColorAttachment(TextureRef texture)
+    void Read(const TextureRef& texture)
     {
-        colorAttachment.push_back(texture);
+        reads.push_back(texture);
     }
 
-    void SetDepthAttachment(TextureRef texture)
+    void Write(const TextureRef& texture)
+    {
+        writes.push_back(texture);
+    }
+
+    void AddColorAttachment(const TextureRef& texture)
+    {
+        colorAttachments.push_back(texture);
+    }
+
+    void SetDepthAttachment(const TextureRef& texture)
     {
         depthAttachment = texture;
     }
@@ -41,16 +51,16 @@ struct RenderGraphBuild
             }
         };
 
-        add(write.size());
+        add(writes.size());
 
-        for (const auto& textureID : write)
+        for (const auto& textureID : writes)
             add(static_cast<TextureID>(textureID));
 
         add(0xDEADBEEFCAFEBABEULL);
 
-        add(read.size());
+        add(reads.size());
 
-        for (const auto& textureID : read)
+        for (const auto& textureID : reads)
             add(static_cast<TextureID>(textureID));
 
         return hash;

@@ -14,8 +14,8 @@ ToneMappingPass::ToneMappingPass(TextureRef hdr, TextureRef ldr) :
 
 void ToneMappingPass::Setup(RenderGraphBuild& build)
 {
-    build.write.push_back(m_ldr);
-    build.read.push_back(m_hdr);
+    build.Write(m_ldr);
+    build.Read(m_hdr);
 
     build.AddColorAttachment(m_ldr);
 

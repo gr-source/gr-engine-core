@@ -16,8 +16,8 @@ DepthPass::DepthPass(TextureRef depth, TextureRef ldr) :
 
 void DepthPass::Setup(RenderGraphBuild& build)
 {
-    build.write.push_back(m_ldr);
-    build.read.push_back(m_depth);
+    build.Write(m_ldr);
+    build.Read(m_depth);
 
     build.AddColorAttachment(m_ldr);
 
