@@ -18,12 +18,21 @@
 
 #include "gr-base/prefab/shaderprefab.hpp"
 
+#include "gr-base/render/debug/debugRenderContext.hpp"
+
+DebugRenderContext* gDebugRenderContext =
+    nullptr;
+
 Renderer* Renderer::s_Renderer = nullptr;
 
 void Renderer::Initialize()
 {
     if (s_Renderer == nullptr)
         s_Renderer = new Renderer();
+
+    if (gDebugRenderContext == nullptr)
+        gDebugRenderContext =
+            new DebugRenderContext();
 }
 
 void Renderer::Shutdown()
@@ -31,16 +40,32 @@ void Renderer::Shutdown()
     if (s_Renderer != nullptr)
         delete s_Renderer;
     s_Renderer = nullptr;
+
+    if (gDebugRenderContext != nullptr)
+    {
+        if (gDebugRenderContext->lines != nullptr)
+            free(gDebugRenderContext->lines);
+
+        if (gDebugRenderContext->points != nullptr)
+            free(gDebugRenderContext->points);
+
+        delete gDebugRenderContext;
+    }
+    gDebugRenderContext =
+        nullptr;
 }
 
-void Renderer::BeginFrame()
+void Renderer::BeginCamera()
 {
-    s_Renderer->beginFrame();
+    s_Renderer->beginCamera();
+
+    gDebugRenderContext->lineCount = 0;
+    gDebugRenderContext->pointCount = 0;
 }
 
-void Renderer::EndFrame()
+void Renderer::EndCamera()
 {
-    s_Renderer->endFrame();
+    s_Renderer->endCamera();
 }
 
 void Renderer::Render()
@@ -106,7 +131,7 @@ Renderer::~Renderer()
     logger::info("[ Renderer ] Shutdown '%p'.", this);
 }
 
-void Renderer::beginFrame()
+void Renderer::beginCamera()
 {
     RendererStats::InstanceCount = 0;
     RendererStats::TriangleCount = 0;
@@ -116,7 +141,7 @@ void Renderer::beginFrame()
     // m_commands.clear();
 }
 
-void Renderer::endFrame()
+void Renderer::endCamera()
 {
 }
 

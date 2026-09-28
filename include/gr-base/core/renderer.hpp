@@ -34,9 +34,9 @@ public:
 
     static void Shutdown();
 
-    static void BeginFrame();
+    static void BeginCamera();
 
-    static void EndFrame();
+    static void EndCamera();
 
     static void Render();
 
@@ -62,9 +62,9 @@ private:
     Renderer();
     ~Renderer();
 
-    void beginFrame();
+    void beginCamera();
 
-    void endFrame();
+    void endCamera();
 
     void render();
 

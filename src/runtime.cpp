@@ -67,12 +67,12 @@ void Runtime::initialize()
 
     Renderer::Initialize();
 
-    DebugDraw::Initialize();
+    // DebugDraw::Initialize();
 }
 
 void Runtime::shutdown()
 {
-    DebugDraw::Shutdown();
+    // DebugDraw::Shutdown();
 
     AssetResolver::Shutdown();
 

@@ -1,7 +1,7 @@
 #include "gr-base/debug/debugDraw.hpp"
 
-#include "gr-base/core/logger.hpp"
-#include <gr-math/gmath.hpp>
+#include "gr-base/render/debug/debugRenderContext.hpp"
+#include <cassert>
 
 /*
 const float cx = m_boundary.x + m_boundary.w * 0.5f;
@@ -18,9 +18,10 @@ DebugDraw::DrawLine(
 );
 */
 
-DebugDraw* DebugDraw::s_DebugDraw = nullptr;
+// DebugDraw* DebugDraw::s_DebugDraw = nullptr;
 
 // public
+/*
 void DebugDraw::Initialize()
 {
     if (s_DebugDraw == nullptr)
@@ -33,18 +34,51 @@ void DebugDraw::Shutdown()
         delete s_DebugDraw;
     s_DebugDraw = nullptr;
 }
+*/
 
-void DebugDraw::DrawPoint(const Vector3& position, const Color& color)
+namespace DebugDraw
 {
-    s_DebugDraw->debugBuffer.drawPoint(position, color);
+
+void DrawPoint(const Vector3& position, const Color& color)
+{
+    assert(gDebugRenderContext != nullptr);
+
+    if ((gDebugRenderContext->pointCount + 1) >= gDebugRenderContext->pointCapacity)
+    {
+        gDebugRenderContext->pointCapacity =
+            gDebugRenderContext->pointCapacity > 0 ? gDebugRenderContext->pointCapacity * 2 : 2;
+
+        gDebugRenderContext->points =
+            (DebugPoint*)realloc(gDebugRenderContext->points, gDebugRenderContext->pointCapacity * sizeof(DebugPoint));
+    }
+
+    DebugPoint& point =
+        gDebugRenderContext->points[gDebugRenderContext->pointCount++];
+    point.position = position;
+    point.color = color;
 }
 
-void DebugDraw::DrawLine(const Vector3 &start, const Vector3 &end, const Color &color)
+void DrawLine(const Vector3 &start, const Vector3 &end, const Color &color)
 {
-    s_DebugDraw->debugBuffer.drawLine(start, end, color);
+    assert(gDebugRenderContext != nullptr);
+
+    if ((gDebugRenderContext->lineCount + 1) >= gDebugRenderContext->lineCapacity)
+    {
+        gDebugRenderContext->lineCapacity =
+            gDebugRenderContext->lineCapacity > 0 ? gDebugRenderContext->lineCapacity * 2 : 2;
+
+        gDebugRenderContext->lines =
+            (DebugLine*)realloc(gDebugRenderContext->lines, gDebugRenderContext->lineCapacity * sizeof(DebugLine));
+    }
+
+    DebugLine& line =
+        gDebugRenderContext->lines[gDebugRenderContext->lineCount++];
+    line.start = start;
+    line.end = end;
+    line.color = color;
 }
 
-void DebugDraw::DrawSphere(const Vector3& center, float radius, const Color &color)
+void DrawSphere(const Vector3& center, float radius, const Color &color)
 {
     constexpr size_t stepSize = 15;
     constexpr size_t segment = 360 / stepSize;
@@ -69,8 +103,8 @@ void DebugDraw::DrawSphere(const Vector3& center, float radius, const Color &col
             temp.y = center.y + cosf(Math::rad((float)j)) * radius * s;
             temp.z = lastPoint.z;
 
-            s_DebugDraw->debugBuffer.drawLine(lastPoint, temp, color);
-            s_DebugDraw->debugBuffer.drawLine(lastPoint, cache[n], color);
+            DrawLine(lastPoint, temp, color);
+            DrawLine(lastPoint, cache[n], color);
 
             cache[n] = lastPoint;
             lastPoint = temp;
@@ -78,30 +112,7 @@ void DebugDraw::DrawSphere(const Vector3& center, float radius, const Color &col
     }
 }
 
-void DebugDraw::Renderer()
-{
-    s_DebugDraw->render();
 }
-
-// private
-DebugDraw::DebugDraw()
-{
-    logger::info("[ DebugDraw ] Initialize '%p'.", this);
-}
-
-DebugDraw::~DebugDraw()
-{
-    logger::info("[ DebugDraw ] Shutdown '%p'.", this);
-}
-
-void DebugDraw::render()
-{
-    // if (!debugBuffer.initialize())
-        // return;
-
-    debugBuffer.renderer();
-}
-
 
 
 
