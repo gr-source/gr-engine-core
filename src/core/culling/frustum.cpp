@@ -1,18 +1,26 @@
 #include "gr-base/core/culling/frustum.hpp"
 
-#include <cfloat>
-
-enum FrustumSide
+struct Plane
 {
-	RIGHT	= 0,
-	LEFT	= 1,
-	BOTTOM	= 2,
-	TOP		= 3,
-    BACK	= 4,
-    FRONT	= 5
-}; 
+    union
+    {
+        struct
+        {
+            Vector3 normal;
+            float d;
+        };
+        Vector4 col;
+    };
 
-Frustum::Plane Frustum::planes[6] {};
+    float& operator [](int index) noexcept
+    {
+        return col[index];
+    }
+};
+
+static_assert(sizeof(Plane) == sizeof(Vector4));
+
+static Plane gPlanes[6];
 
 void Frustum::CalculateFrustum(const Matrix4x4& matrix) 
 {
@@ -23,16 +31,16 @@ void Frustum::CalculateFrustum(const Matrix4x4& matrix)
     const Vector4& column2 = vp[2];
     const Vector4& column3 = vp[3];
 
-    planes[0].col = column3 + column0;
-    planes[1].col = column3 - column0;
-    planes[2].col = column3 + column1;
-    planes[3].col = column3 - column1;
-    planes[4].col = column3 + column2;
-    planes[5].col = column3 - column2;
+    gPlanes[0].col = column3 + column0;
+    gPlanes[1].col = column3 - column0;
+    gPlanes[2].col = column3 + column1;
+    gPlanes[3].col = column3 - column1;
+    gPlanes[4].col = column3 + column2;
+    gPlanes[5].col = column3 - column2;
 
     for (int i=0;i<6;i++)
     {
-        auto& p = planes[i];
+        auto& p = gPlanes[i];
 
         float len = Math::length(p.normal);
 
@@ -43,7 +51,7 @@ void Frustum::CalculateFrustum(const Matrix4x4& matrix)
 
 FrustumResult Frustum::TestAABB(const Vector3& min, const Vector3& max, int planeIndex)
 {
-    const auto& p = planes[planeIndex];
+    const auto& p = gPlanes[planeIndex];
 
     Vector3 positive;
     Vector3 negative;
@@ -113,7 +121,7 @@ bool Frustum::IsCubeInFrustumAABB(const Vector3& min,
 {
     for (int i = 0; i < 6; ++i)
     {
-        const auto& p = planes[i];
+        const auto& p = gPlanes[i];
 
         Vector3 positive;
 
@@ -161,10 +169,10 @@ bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) {
 bool Frustum::IsSphereInFrustum(const Vector3 &center, float radius)
 {
     for (int i = 0; i < 6; i++) {
-        float distance = planes[i][0] * center.x +
-                         planes[i][1] * center.y +
-                         planes[i][2] * center.z +
-                         planes[i][3];
+        float distance = gPlanes[i][0] * center.x +
+                         gPlanes[i][1] * center.y +
+                         gPlanes[i][2] * center.z +
+                         gPlanes[i][3];
         if (distance < -radius)
             return false;
     }
@@ -185,7 +193,7 @@ AABB Frustum::ComputeAABB()
             for (int k = j + 1; k < 6; k++)
             {
                 Vector3 point;
-                if (IntersectPlanes(planes[i], planes[j], planes[k], point))
+                if (IntersectgPlanes(gPlanes[i], gPlanes[j], gPlanes[k], point))
                 {
                     min.x = std::min(min.x, point.x);
                     min.y = std::min(min.y, point.y);
@@ -203,7 +211,8 @@ AABB Frustum::ComputeAABB()
 }
 */
 
-bool Frustum::IntersectPlanes(const float planeA[4], const float planeB[4], const float planeC[4], Vector3 &out)
+/*
+bool Frustum::IntersectgPlanes(const float planeA[4], const float planeB[4], const float planeC[4], Vector3 &out)
 {
     // Usando determinante
     Vector3 n1{planeA[0], planeA[1], planeA[2]};
@@ -218,5 +227,5 @@ bool Frustum::IntersectPlanes(const float planeA[4], const float planeB[4], cons
     out = p;
     return true;
 }
-
+*/
 
