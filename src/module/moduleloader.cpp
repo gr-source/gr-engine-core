@@ -22,6 +22,24 @@ void ModuleLoader::Shutdown()
     s_ModuleLoader = nullptr;
 }
 
+void ModuleLoader::Load(const std::string& name, const std::string& path)
+{
+    return s_ModuleLoader->load(name, path);
+}
+
+void ModuleLoader::Unload(const std::string& name)
+{
+    return s_ModuleLoader->unload(name);
+}
+
+void ModuleLoader::UnloadAll()
+{
+    for (auto&& [name, handle] : s_ModuleLoader->m_moduleMap)
+        dlclose(handle);
+
+    s_ModuleLoader->m_moduleMap.clear();
+}
+
 bool ModuleLoader::CheckModuleHasInMemory(const char* name)
 {
     FILE* fp = fopen("/proc/self/maps", "r");
